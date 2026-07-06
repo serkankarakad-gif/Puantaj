@@ -233,6 +233,18 @@
     font-family:'Space Mono',monospace; font-size:13px;
   }
 
+  #loadingOverlay{
+    position:fixed; inset:0; z-index:998; background: var(--bg-deep);
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+  }
+  #loadingOverlay.hidden{ display:none !important; }
+  .loading-spinner{
+    width:34px; height:34px; border-radius:50%;
+    border:3px solid rgba(255,184,76,0.2); border-top-color: var(--accent);
+    animation: spin 0.8s linear infinite;
+  }
+  @keyframes spin{ to{ transform: rotate(360deg); } }
+
   @media (max-width: 480px){ .nav-drawer{ width: 78vw; } }
 
   @media print{
@@ -293,6 +305,11 @@
   </div>
 </div>
 
+<div id="loadingOverlay">
+  <div class="loading-spinner"></div>
+  <div style="margin-top:14px; color:var(--muted); font-size:12px;">Yükleniyor…</div>
+</div>
+
 <button class="hamburger" id="hamburgerBtn" onclick="toggleNav(true)" style="display:none;"><span></span></button>
 <div class="nav-overlay hidden" id="navOverlay" onclick="toggleNav(false)"></div>
 <nav class="nav-drawer" id="navDrawer">
@@ -301,6 +318,7 @@
   <a onclick="goSection('entryCard')">➕ Yeni Kayıt</a>
   <a onclick="goSection('calendarCard')">🗓️ Takvim (✔/✕)</a>
   <a onclick="goSection('expenseCard')">💸 Cepten Harcamalar</a>
+  <a onclick="goSection('paymentCard')">💰 Aldığım Ödemeler</a>
   <a onclick="goSection('filterCard')">📅 Aylık Filtre / Arama</a>
   <a onclick="goSection('summaryCard')">📊 Özet</a>
   <a onclick="goSection('daysCard')">📋 Çalışma Günleri (Liste)</a>
@@ -384,6 +402,10 @@
     <button class="btn-outline" onclick="goSection('entryCard'); dismissBanner();">Kayıt Ekle</button>
   </div>
 
+  <div class="today-banner hidden" id="paydayBanner" style="background: rgba(88,201,255,0.1); border-color: rgba(88,201,255,0.4); color: var(--accent2);">
+    <span id="paydayBannerText"></span>
+  </div>
+
   <div class="card">
     <div class="user-bar">
       <div class="who">Merhaba, <span id="whoName"></span></div>
@@ -404,6 +426,19 @@
         <input id="overtimeRate" type="number" placeholder="örn. 100">
       </div>
     </div>
+    <label for="currencySelect">Para birimi</label>
+    <select id="currencySelect">
+      <option value="₺">₺ Türk Lirası</option>
+      <option value="$">$ Dolar</option>
+      <option value="€">€ Euro</option>
+      <option value="£">£ Sterlin</option>
+    </select>
+    <div class="toggle-row">
+      <label for="autoOvertimeChk">Mesai ücretini otomatik hesapla (günlük ücret ÷ 8 × 1.5)</label>
+      <input type="checkbox" id="autoOvertimeChk" onchange="onAutoOvertimeToggle()">
+    </div>
+    <label for="paydayInput">Maaş günün (ayın kaçı, isteğe bağlı)</label>
+    <input id="paydayInput" type="number" min="1" max="31" placeholder="örn. 5">
     <button class="btn-primary" onclick="saveSettings()">Ayarları Kaydet</button>
     <div id="settingsMsg" class="msg"></div>
 
@@ -502,6 +537,28 @@
     <div id="expensesWrap" style="margin-top:10px;"><div class="empty">Henüz harcama yok.</div></div>
   </div>
 
+  <!-- Payments received from employer -->
+  <div class="card app-section" id="paymentCard">
+    <h2>Aldığım Ödemeler</h2>
+    <p style="color:var(--muted); font-size:11px; margin:-8px 0 12px;">Patronundan aldığın maaş ödemelerini buraya gir; kalan alacağından otomatik düşülür.</p>
+    <label for="paymentDate">Tarih</label>
+    <input id="paymentDate" type="date">
+    <label for="paymentAmount">Tutar</label>
+    <input id="paymentAmount" type="number" placeholder="örn. 5000">
+    <label for="paymentNote">Açıklama (isteğe bağlı)</label>
+    <input id="paymentNote" type="text" placeholder="örn. Haziran maaşı, kısmi ödeme">
+    <div class="btn-row">
+      <button class="btn-primary" id="paymentSaveBtn" onclick="addPayment()">Ödeme Ekle</button>
+      <button class="btn-outline hidden" id="paymentCancelBtn" onclick="cancelEditPayment()">İptal</button>
+    </div>
+    <div id="paymentMsg" class="msg"></div>
+    <div class="summary-box earn" style="margin-top:14px;">
+      <div class="val" id="sumPayment">0 ₺</div>
+      <div class="lbl">Toplam alınan ödeme</div>
+    </div>
+    <div id="paymentsWrap" style="margin-top:10px;"><div class="empty">Henüz ödeme kaydı yok.</div></div>
+  </div>
+
   <!-- Filter / search -->
   <div class="card app-section" id="filterCard">
     <h2>Filtre &amp; Arama</h2>
@@ -521,6 +578,15 @@
       <button class="btn-outline" onclick="exportCSV()">📊 CSV / Excel indir</button>
       <button class="btn-outline" onclick="window.print()">🖨️ PDF (Yazdır)</button>
     </div>
+    <hr style="border-color: var(--border); margin:18px 0;">
+    <h2 style="margin-bottom:8px;">💾 Yedekleme</h2>
+    <p style="color:var(--muted); font-size:11px; margin:-4px 0 12px;">Tüm verilerini (kayıtlar, harcamalar, ayarlar) tek dosyada indir veya geri yükle.</p>
+    <div class="btn-row">
+      <button class="btn-outline" onclick="exportBackup()">⬇️ Yedek indir (JSON)</button>
+      <button class="btn-outline" onclick="document.getElementById('restoreFileInput').click()">⬆️ Yedek yükle</button>
+    </div>
+    <input type="file" id="restoreFileInput" accept="application/json" class="hidden" onchange="importBackup(this.files[0])">
+    <div id="backupMsg" class="msg"></div>
   </div>
 
   <!-- Summary -->
@@ -543,11 +609,18 @@
         <div class="val" id="sumAdvance">0 ₺</div>
         <div class="lbl">Toplam avans</div>
       </div>
+      <div class="summary-box earn">
+        <div class="val" id="sumPaymentSummary">0 ₺</div>
+        <div class="lbl">Toplam ödenen</div>
+      </div>
     </div>
     <div class="summary-box net" style="margin-top:12px;">
       <div class="val" id="sumNet">0 ₺</div>
-      <div class="lbl">Kalan alacak (harcamalar hariç)</div>
+      <div class="lbl">Kalan alacak (avans ve ödemeler düşülmüş)</div>
     </div>
+    <h2 style="margin:18px 0 8px;">Aylık Kazanç Trendi</h2>
+    <canvas id="earnChart" width="400" height="160" style="width:100%; height:140px;"></canvas>
+    <div id="chartEmpty" class="empty hidden">Grafik için henüz yeterli veri yok.</div>
   </div>
 
   <!-- Work days breakdown -->
@@ -594,7 +667,13 @@
     measurementId: "G-3M7FXX8XR4"
   };
 
+  function hideLoadingOverlay(){
+    const ov = document.getElementById('loadingOverlay');
+    if(ov) ov.classList.add('hidden');
+  }
+
   function showFatalError(detail){
+    hideLoadingOverlay();
     const box = document.getElementById('fatalErrorBox');
     if(!box) return;
     box.classList.remove('hidden');
@@ -609,12 +688,21 @@
     showFatalError(ev && ev.reason ? String(ev.reason.message || ev.reason) : 'Bilinmeyen hata');
   });
 
+  // Firebase kütüphaneleri (gstatic.com üzerinden) yüklenemezse kullanıcı
+  // sonsuza dek yüklenme ekranında kalmasın diye 10 saniyelik güvenlik zamanlayıcısı.
+  const bootTimeoutId = setTimeout(function(){
+    if(typeof firebase === 'undefined'){
+      showFatalError('İnternet bağlantısı Firebase sunucularına (gstatic.com) ulaşamadı. Wi-Fi/mobil veri bağlantını kontrol edip sayfayı yenile.');
+    }
+  }, 10000);
+
   let auth, db;
   try{
     firebase.initializeApp(firebaseConfig);
     auth = firebase.auth();
     db = firebase.database();
   }catch(err){
+    clearTimeout(bootTimeoutId);
     showFatalError('Firebase başlatılamadı: ' + err.message);
   }
 
@@ -622,8 +710,10 @@
   let settings = { dailyWage: 0, overtimeRate: 0 };
   let entries = {};
   let expenses = {};
+  let payments = {};
   let editingEntryKey = null;
   let editingExpenseKey = null;
+  let editingPaymentKey = null;
   let pinBuffer = '';
   let appUnlockedThisSession = false;
   let reminderTimerId = null;
@@ -727,6 +817,8 @@
 
   // ---------- Auth state ----------
   auth.onAuthStateChanged(user => {
+    clearTimeout(bootTimeoutId);
+    hideLoadingOverlay();
     currentUser = user;
     if(user){
       document.getElementById('authCard').classList.add('hidden');
@@ -759,6 +851,10 @@
         settings = s;
         document.getElementById('dailyWage').value = s.dailyWage || '';
         document.getElementById('overtimeRate').value = s.overtimeRate || '';
+        document.getElementById('currencySelect').value = s.currency || '₺';
+        document.getElementById('autoOvertimeChk').checked = !!s.autoOvertime;
+        document.getElementById('overtimeRate').disabled = !!s.autoOvertime;
+        document.getElementById('paydayInput').value = s.paydayDay || '';
         document.getElementById('pinEnabledChk').checked = !!s.pinEnabled;
         document.getElementById('pinSetupBox').classList.toggle('hidden', !s.pinEnabled);
         document.getElementById('reminderEnabledChk').checked = !!s.reminderEnabled;
@@ -778,6 +874,11 @@
 
     db.ref('users/' + uid + '/expenses').on('value', snap => {
       expenses = snap.val() || {};
+      renderAll();
+    });
+
+    db.ref('users/' + uid + '/payments').on('value', snap => {
+      payments = snap.val() || {};
       renderAll();
     });
 
@@ -822,22 +923,53 @@
       .sort((a, b) => (b.date || '').localeCompare(a.date || ''));
   }
 
+  function getFilteredPayments(){
+    const month = document.getElementById('monthFilter').value;
+    const q = document.getElementById('searchBox').value.trim().toLowerCase();
+    return Object.entries(payments)
+      .map(([key, v]) => ({ key, ...v }))
+      .filter(e => month === 'all' || (e.date || '').startsWith(month))
+      .filter(e => !q || (e.note || '').toLowerCase().includes(q) || (e.date || '').includes(q))
+      .sort((a, b) => (b.date || '').localeCompare(a.date || ''));
+  }
+
   function renderAll(){
     renderEntries();
     renderExpenses();
+    renderPayments();
     renderSummary();
     renderDayList();
     renderCalendar();
+    updatePaydayBanner();
+  }
+
+  function onAutoOvertimeToggle(){
+    const auto = document.getElementById('autoOvertimeChk').checked;
+    const rateInput = document.getElementById('overtimeRate');
+    rateInput.disabled = auto;
+    if(auto){
+      const dailyWage = parseFloat(document.getElementById('dailyWage').value) || 0;
+      rateInput.value = ((dailyWage / 8) * 1.5).toFixed(2);
+    }
   }
 
   function saveSettings(){
     clearMsg('settingsMsg');
     if(!currentUser) return;
     const dailyWage = parseFloat(document.getElementById('dailyWage').value) || 0;
-    const overtimeRate = parseFloat(document.getElementById('overtimeRate').value) || 0;
+    const autoOvertime = document.getElementById('autoOvertimeChk').checked;
+    const overtimeRate = autoOvertime
+      ? Math.round(((dailyWage / 8) * 1.5) * 100) / 100
+      : (parseFloat(document.getElementById('overtimeRate').value) || 0);
+    const currency = document.getElementById('currencySelect').value || '₺';
+    const paydayDay = parseInt(document.getElementById('paydayInput').value, 10) || null;
 
-    db.ref('users/' + currentUser.uid + '/settings').set({ dailyWage, overtimeRate })
-      .then(() => showMsg('settingsMsg', 'Ayarlar kaydedildi.', true))
+    db.ref('users/' + currentUser.uid + '/settings').update({ dailyWage, overtimeRate, currency, autoOvertime, paydayDay })
+      .then(() => {
+        showMsg('settingsMsg', 'Ayarlar kaydedildi.', true);
+        renderAll();
+        checkTodayReminder();
+      })
       .catch(err => showMsg('settingsMsg', 'Hata: ' + err.message, false));
   }
 
@@ -949,6 +1081,111 @@
     if(!confirm('Bu harcamayı silmek istediğine emin misin?')) return;
     db.ref('users/' + currentUser.uid + '/expenses/' + key).remove();
     if(editingExpenseKey === key) cancelEditExpense();
+  }
+
+  // ---------- Payments received (patrondan alınan maaş ödemeleri) ----------
+  function addPayment(){
+    clearMsg('paymentMsg');
+    if(!currentUser) return;
+    const date = document.getElementById('paymentDate').value;
+    const amount = parseFloat(document.getElementById('paymentAmount').value) || 0;
+    const note = document.getElementById('paymentNote').value.trim();
+
+    if(!date){ showMsg('paymentMsg', 'Lütfen bir tarih seç.', false); return; }
+    if(!amount){ showMsg('paymentMsg', 'Lütfen bir tutar gir.', false); return; }
+
+    const payload = { date, amount, note, createdAt: Date.now() };
+    const ref = editingPaymentKey
+      ? db.ref('users/' + currentUser.uid + '/payments/' + editingPaymentKey)
+      : db.ref('users/' + currentUser.uid + '/payments').push();
+
+    ref.set(payload)
+      .then(() => {
+        showMsg('paymentMsg', editingPaymentKey ? 'Ödeme güncellendi.' : 'Ödeme eklendi.', true);
+        cancelEditPayment();
+      })
+      .catch(err => showMsg('paymentMsg', 'Hata: ' + err.message, false));
+  }
+
+  function editPayment(key){
+    const e = payments[key];
+    if(!e) return;
+    editingPaymentKey = key;
+    document.getElementById('paymentDate').value = e.date || '';
+    document.getElementById('paymentAmount').value = e.amount || 0;
+    document.getElementById('paymentNote').value = e.note || '';
+    document.getElementById('paymentSaveBtn').textContent = 'Güncelle';
+    document.getElementById('paymentCancelBtn').classList.remove('hidden');
+    goSection('paymentCard');
+  }
+
+  function cancelEditPayment(){
+    editingPaymentKey = null;
+    document.getElementById('paymentDate').value = '';
+    document.getElementById('paymentAmount').value = '';
+    document.getElementById('paymentNote').value = '';
+    document.getElementById('paymentSaveBtn').textContent = 'Ödeme Ekle';
+    document.getElementById('paymentCancelBtn').classList.add('hidden');
+  }
+
+  function deletePayment(key){
+    if(!currentUser) return;
+    if(!confirm('Bu ödeme kaydını silmek istediğine emin misin?')) return;
+    db.ref('users/' + currentUser.uid + '/payments/' + key).remove();
+    if(editingPaymentKey === key) cancelEditPayment();
+  }
+
+  function renderPayments(){
+    const wrap = document.getElementById('paymentsWrap');
+    if(!wrap) return;
+    const list = getFilteredPayments();
+
+    if(list.length === 0){
+      wrap.innerHTML = '<div class="empty">Henüz ödeme kaydı yok.</div>';
+    } else {
+      let html = '';
+      list.forEach(e => {
+        html += `<div class="exp-item">
+          <div>${escapeHtml(e.date)}<div class="desc">${e.note ? escapeHtml(e.note) : ''}${e.createdAt ? ' · ' + formatTime(e.createdAt) : ''}</div></div>
+          <div style="display:flex; align-items:center; gap:6px;">
+            <span style="color:var(--ok); font-weight:700;">${formatMoney(e.amount)}</span>
+            <button class="edit-btn" onclick="editPayment('${e.key}')">✎</button>
+            <button class="del-btn" onclick="deletePayment('${e.key}')">✕</button>
+          </div>
+        </div>`;
+      });
+      wrap.innerHTML = html;
+    }
+
+    const totalPayment = list.reduce((sum, e) => sum + (e.amount || 0), 0);
+    const el = document.getElementById('sumPayment');
+    if(el) el.textContent = formatMoney(totalPayment);
+  }
+
+  // ---------- Payday countdown ----------
+  function updatePaydayBanner(){
+    const banner = document.getElementById('paydayBanner');
+    const textEl = document.getElementById('paydayBannerText');
+    if(!banner || !textEl) return;
+    const paydayDay = settings.paydayDay;
+    if(!paydayDay || paydayDay < 1 || paydayDay > 31){
+      banner.classList.add('hidden');
+      return;
+    }
+    const now = new Date();
+    let target = new Date(now.getFullYear(), now.getMonth(), paydayDay);
+    if(target < now){
+      target = new Date(now.getFullYear(), now.getMonth() + 1, paydayDay);
+    }
+    const diffDays = Math.ceil((target - now) / (1000 * 60 * 60 * 24));
+    if(diffDays <= 0){
+      textEl.textContent = '💰 Bugün maaş günün!';
+    } else if(diffDays === 1){
+      textEl.textContent = '💰 Yarın maaş günün!';
+    } else {
+      textEl.textContent = '💰 Maaş gününe ' + diffDays + ' gün kaldı.';
+    }
+    banner.classList.remove('hidden');
   }
 
   // ---------- Theme ----------
@@ -1115,7 +1352,7 @@
         <td>${escapeHtml(e.date)}${e.note ? '<br><span style="color:var(--muted); font-size:10px;">' + escapeHtml(e.note) + (e.createdAt ? ' · ' + formatTime(e.createdAt) : '') + '</span>' : (e.createdAt ? '<br><span style="color:var(--muted); font-size:10px;">' + formatTime(e.createdAt) + '</span>' : '')}</td>
         <td>${dayLabel}</td>
         <td>${e.overtimeHours || 0} sa</td>
-        <td class="num adv">${e.advance ? e.advance + ' ₺' : '-'}</td>
+        <td class="num adv">${e.advance ? formatMoney(e.advance) : '-'}</td>
         <td>
           <button class="edit-btn" onclick="editEntry('${e.key}')">✎</button>
           <button class="del-btn" onclick="deleteEntry('${e.key}')">✕</button>
@@ -1138,7 +1375,7 @@
         html += `<div class="exp-item">
           <div>${escapeHtml(e.date)}<div class="desc">${e.note ? escapeHtml(e.note) : ''}${e.createdAt ? ' · ' + formatTime(e.createdAt) : ''}</div></div>
           <div style="display:flex; align-items:center; gap:6px;">
-            <span class="exp-amt">${(e.amount || 0).toLocaleString('tr-TR')} ₺</span>
+            <span class="exp-amt">${formatMoney(e.amount)}</span>
             <button class="edit-btn" onclick="editExpense('${e.key}')">✎</button>
             <button class="del-btn" onclick="deleteExpense('${e.key}')">✕</button>
           </div>
@@ -1148,22 +1385,75 @@
     }
 
     const totalExpense = list.reduce((sum, e) => sum + (e.amount || 0), 0);
-    document.getElementById('sumExpense').textContent = totalExpense.toLocaleString('tr-TR') + ' ₺';
+    document.getElementById('sumExpense').textContent = formatMoney(totalExpense);
   }
 
   function renderSummary(){
     const list = getFilteredEntries();
+    const paymentList = getFilteredPayments();
     const totalDays = list.reduce((sum, e) => sum + (e.daysWorked || 0), 0);
     const totalOvertime = list.reduce((sum, e) => sum + (e.overtimeHours || 0), 0);
     const totalAdvance = list.reduce((sum, e) => sum + (e.advance || 0), 0);
+    const totalPayments = paymentList.reduce((sum, e) => sum + (e.amount || 0), 0);
     const totalEarned = (totalDays * (settings.dailyWage || 0)) + (totalOvertime * (settings.overtimeRate || 0));
-    const net = totalEarned - totalAdvance;
+    const net = totalEarned - totalAdvance - totalPayments;
 
     document.getElementById('sumDays').textContent = totalDays;
     document.getElementById('sumOvertime').textContent = totalOvertime;
-    document.getElementById('sumEarned').textContent = totalEarned.toLocaleString('tr-TR') + ' ₺';
-    document.getElementById('sumAdvance').textContent = totalAdvance.toLocaleString('tr-TR') + ' ₺';
-    document.getElementById('sumNet').textContent = net.toLocaleString('tr-TR') + ' ₺';
+    document.getElementById('sumEarned').textContent = formatMoney(totalEarned);
+    document.getElementById('sumAdvance').textContent = formatMoney(totalAdvance);
+    document.getElementById('sumPaymentSummary').textContent = formatMoney(totalPayments);
+    document.getElementById('sumNet').textContent = formatMoney(net);
+    renderChart(list);
+  }
+
+  function renderChart(){
+    const canvas = document.getElementById('earnChart');
+    const emptyEl = document.getElementById('chartEmpty');
+    if(!canvas) return;
+    const ctx = canvas.getContext('2d');
+    const W = canvas.width, H = canvas.height;
+    ctx.clearRect(0, 0, W, H);
+
+    // Son 6 ay için toplam hak edişi hesapla (filtreden bağımsız, tüm kayıtlar üzerinden)
+    const monthTotals = {};
+    Object.values(entries).forEach(e => {
+      if(!e.date) return;
+      const m = e.date.slice(0, 7);
+      const earned = (e.daysWorked || 0) * (settings.dailyWage || 0) + (e.overtimeHours || 0) * (settings.overtimeRate || 0);
+      monthTotals[m] = (monthTotals[m] || 0) + earned;
+    });
+    const months = Object.keys(monthTotals).sort().slice(-6);
+
+    if(months.length === 0){
+      if(emptyEl) emptyEl.classList.remove('hidden');
+      canvas.style.display = 'none';
+      return;
+    }
+    if(emptyEl) emptyEl.classList.add('hidden');
+    canvas.style.display = 'block';
+
+    const values = months.map(m => monthTotals[m]);
+    const maxVal = Math.max(...values, 1);
+    const barW = W / months.length;
+    const accentColor = getComputedStyle(document.body).getPropertyValue('--accent') || '#ffb84c';
+    const mutedColor = getComputedStyle(document.body).getPropertyValue('--muted') || '#8a8f9c';
+
+    months.forEach((m, i) => {
+      const val = values[i];
+      const barH = (val / maxVal) * (H - 30);
+      const x = i * barW + barW * 0.2;
+      const w = barW * 0.6;
+      const y = H - 20 - barH;
+      ctx.fillStyle = accentColor.trim();
+      ctx.fillRect(x, y, w, barH);
+
+      ctx.fillStyle = mutedColor.trim();
+      ctx.font = '9px monospace';
+      ctx.textAlign = 'center';
+      const [yr, mo] = m.split('-');
+      ctx.fillText(mo + '/' + yr.slice(2), x + w / 2, H - 6);
+    });
   }
 
   function renderDayList(){
@@ -1210,12 +1500,15 @@
     if(!label) return;
     label.textContent = monthNamesFull[calMonth] + ' ' + calYear;
 
-    const entryByDate = {};
+    const dayAgg = {};
     Object.values(entries).forEach(e => {
       if(!e.date) return;
-      // en son girilen kayıt o günü temsil eder
-      if(!entryByDate[e.date] || (e.createdAt || 0) > (entryByDate[e.date].createdAt || 0)){
-        entryByDate[e.date] = e;
+      if(!dayAgg[e.date]) dayAgg[e.date] = { totalDays: 0, count: 0, lastNote: '', lastCreatedAt: 0 };
+      dayAgg[e.date].totalDays += (e.daysWorked || 0);
+      dayAgg[e.date].count += 1;
+      if((e.createdAt || 0) >= dayAgg[e.date].lastCreatedAt){
+        dayAgg[e.date].lastCreatedAt = e.createdAt || 0;
+        dayAgg[e.date].lastNote = e.note || '';
       }
     });
 
@@ -1236,16 +1529,17 @@
 
     for(let day = 1; day <= daysInMonth; day++){
       const dateStr = calYear + '-' + String(calMonth+1).padStart(2,'0') + '-' + String(day).padStart(2,'0');
-      const e = entryByDate[dateStr];
+      const agg = dayAgg[dateStr];
       let cls = 'cal-cell';
       let mark = '';
       let sub = '';
-      if(e){
-        const worked = (e.daysWorked || 0) > 0;
+      if(agg){
+        const worked = agg.totalDays > 0;
         cls += worked ? ' worked' : ' off';
         mark = worked ? '✔' : '✕';
-        const t = formatTime(e.createdAt);
-        if(e.note || t) sub = `<div class="t">${escapeHtml((e.note || '').slice(0,8))}${e.note && t ? ' ' : ''}${t}</div>`;
+        const t = formatTime(agg.lastCreatedAt);
+        const countBadge = agg.count > 1 ? ('×' + agg.count) : '';
+        if(agg.lastNote || t || countBadge) sub = `<div class="t">${escapeHtml((agg.lastNote || '').slice(0,6))}${countBadge}</div>`;
       }
       html += `<div class="${cls}"><span class="d">${day}</span><span class="mark">${mark}</span>${sub}</div>`;
     }
@@ -1315,6 +1609,7 @@
   function exportCSV(){
     const entryList = getFilteredEntries().slice().sort((a,b) => (a.date || '').localeCompare(b.date || ''));
     const expenseList = getFilteredExpenses().slice().sort((a,b) => (a.date || '').localeCompare(b.date || ''));
+    const paymentList = getFilteredPayments().slice().sort((a,b) => (a.date || '').localeCompare(b.date || ''));
 
     let csv = 'KAYITLAR\n';
     csv += 'Tarih,Durum,Mesai Saati,Avans,Not\n';
@@ -1327,6 +1622,11 @@
     expenseList.forEach(e => {
       csv += `${e.date},${e.amount || 0},"${(e.note || '').replace(/"/g,'""')}"\n`;
     });
+    csv += '\nALINAN ÖDEMELER\n';
+    csv += 'Tarih,Tutar,Açıklama\n';
+    paymentList.forEach(e => {
+      csv += `${e.date},${e.amount || 0},"${(e.note || '').replace(/"/g,'""')}"\n`;
+    });
 
     const blob = new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
@@ -1337,6 +1637,48 @@
     a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
+  }
+
+  function formatMoney(n){
+    return (n || 0).toLocaleString('tr-TR') + ' ' + (settings.currency || '₺');
+  }
+
+  function exportBackup(){
+    if(!currentUser) return;
+    const data = { settings, entries, expenses, payments, exportedAt: new Date().toISOString() };
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'yevmiye-yedek-' + todayStr() + '.json';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  }
+
+  function importBackup(file){
+    clearMsg('backupMsg');
+    if(!file || !currentUser) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      try{
+        const data = JSON.parse(reader.result);
+        if(!data || typeof data !== 'object'){ throw new Error('Geçersiz dosya.'); }
+        if(!confirm('Bu yedek mevcut verilerinin ÜZERİNE YAZILACAK. Emin misin?')) return;
+        const updates = {};
+        if(data.settings) updates['users/' + currentUser.uid + '/settings'] = data.settings;
+        if(data.entries) updates['users/' + currentUser.uid + '/entries'] = data.entries;
+        if(data.expenses) updates['users/' + currentUser.uid + '/expenses'] = data.expenses;
+        if(data.payments) updates['users/' + currentUser.uid + '/payments'] = data.payments;
+        db.ref().update(updates)
+          .then(() => showMsg('backupMsg', 'Yedek başarıyla geri yüklendi.', true))
+          .catch(err => showMsg('backupMsg', 'Hata: ' + err.message, false));
+      }catch(err){
+        showMsg('backupMsg', 'Dosya okunamadı: ' + err.message, false);
+      }
+    };
+    reader.readAsText(file);
   }
 
   function escapeHtml(str){
