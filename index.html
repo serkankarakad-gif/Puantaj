@@ -200,6 +200,39 @@
   .day-row.worked{ color: var(--ok); }
   .day-row.off{ color: var(--danger); }
 
+  /* ---- Single-section navigation (no long scrolling) ---- */
+  .app-section{ display:none; }
+  .app-section.active{ display:block; }
+
+  /* ---- Calendar grid ---- */
+  .cal-nav{ display:flex; align-items:center; justify-content:space-between; margin-bottom:10px; }
+  .cal-nav button{ width:auto; margin:0; padding:8px 12px; }
+  .cal-nav .cal-label{ font-family:'Sora',sans-serif; font-weight:700; font-size:13px; }
+  .cal-grid{ display:grid; grid-template-columns: repeat(7, 1fr); gap:5px; }
+  .cal-cell{
+    aspect-ratio: 1/1; border-radius:8px; border:1px solid var(--border);
+    background: rgba(255,255,255,0.02); display:flex; flex-direction:column;
+    align-items:center; justify-content:center; padding:2px; overflow:hidden;
+  }
+  .cal-cell .d{ font-size:10px; color: var(--muted); }
+  .cal-cell .mark{ font-size:15px; line-height:1.1; font-weight:800; }
+  .cal-cell.worked{ background: rgba(82,214,138,0.12); border-color: rgba(82,214,138,0.4); }
+  .cal-cell.worked .mark{ color: var(--ok); }
+  .cal-cell.off{ background: rgba(255,107,107,0.1); border-color: rgba(255,107,107,0.35); }
+  .cal-cell.off .mark{ color: var(--danger); }
+  .cal-cell.empty-day{ opacity:0.35; }
+  .cal-cell .t{ font-size:8px; color: var(--muted); margin-top:1px; }
+  .cal-legend{ display:flex; gap:14px; margin-top:12px; font-size:11px; color:var(--muted); }
+  .cal-legend span{ display:inline-flex; align-items:center; gap:4px; }
+  #calShareArea{ background: var(--bg-panel); padding:10px; border-radius:10px; }
+
+  /* ---- Fatal error fallback (prevents blank white screen) ---- */
+  #fatalErrorBox{
+    position:fixed; inset:0; z-index:999; background: var(--bg-deep); color: var(--text);
+    display:flex; align-items:center; justify-content:center; padding:24px; text-align:center;
+    font-family:'Space Mono',monospace; font-size:13px;
+  }
+
   @media (max-width: 480px){ .nav-drawer{ width: 78vw; } }
 
   @media print{
@@ -251,16 +284,26 @@
 </head>
 <body>
 
+<div id="fatalErrorBox" class="hidden">
+  <div>
+    <div style="font-size:28px; margin-bottom:10px;">⚠️</div>
+    <div style="margin-bottom:10px;">Bir şeyler ters gitti ve sayfa yüklenemedi.</div>
+    <div style="color:var(--muted); font-size:11px; margin-bottom:14px;" id="fatalErrorDetail"></div>
+    <button class="btn-primary" style="width:auto;" onclick="location.reload()">Sayfayı Yenile</button>
+  </div>
+</div>
+
 <button class="hamburger" id="hamburgerBtn" onclick="toggleNav(true)" style="display:none;"><span></span></button>
 <div class="nav-overlay hidden" id="navOverlay" onclick="toggleNav(false)"></div>
 <nav class="nav-drawer" id="navDrawer">
   <button class="nav-close" onclick="toggleNav(false)">✕</button>
   <h3>MENÜ</h3>
   <a onclick="goSection('entryCard')">➕ Yeni Kayıt</a>
+  <a onclick="goSection('calendarCard')">🗓️ Takvim (✔/✕)</a>
   <a onclick="goSection('expenseCard')">💸 Cepten Harcamalar</a>
   <a onclick="goSection('filterCard')">📅 Aylık Filtre / Arama</a>
   <a onclick="goSection('summaryCard')">📊 Özet</a>
-  <a onclick="goSection('daysCard')">🗓️ Çalışma Günleri</a>
+  <a onclick="goSection('daysCard')">📋 Çalışma Günleri (Liste)</a>
   <a onclick="goSection('entriesCard')">📋 Kayıtlar</a>
   <a onclick="goSection('settingsCard')">⚙️ Ücret Ayarları</a>
   <button class="theme-toggle" onclick="toggleTheme()" id="themeToggleBtn" style="margin-top:14px;">🌙 Koyu / ☀️ Açık Tema</button>
@@ -349,7 +392,7 @@
   </div>
 
   <!-- Settings -->
-  <div class="card" id="settingsCard">
+  <div class="card app-section" id="settingsCard">
     <h2>Ücret Ayarları</h2>
     <div class="row">
       <div>
@@ -392,7 +435,7 @@
   </div>
 
   <!-- Add entry -->
-  <div class="card" id="entryCard">
+  <div class="card app-section" id="entryCard">
     <h2 id="entryCardTitle">Yeni Kayıt Ekle</h2>
     <label for="entryDate">Tarih</label>
     <input id="entryDate" type="date">
@@ -415,8 +458,30 @@
     <div id="entryMsg" class="msg"></div>
   </div>
 
+  <!-- Calendar view: 30 gün, çalıştım/çalışmadım işareti -->
+  <div class="card app-section" id="calendarCard">
+    <h2>Takvim</h2>
+    <div id="calShareArea">
+      <div class="cal-nav">
+        <button class="btn-outline" onclick="shiftCalMonth(-1)">‹</button>
+        <span class="cal-label" id="calLabel"></span>
+        <button class="btn-outline" onclick="shiftCalMonth(1)">›</button>
+      </div>
+      <div class="cal-grid" id="calGrid"></div>
+      <div class="cal-legend">
+        <span>✔ <span style="color:var(--ok);">Çalıştım</span></span>
+        <span>✕ <span style="color:var(--danger);">Çalışmadım</span></span>
+        <span>· Not/saat varsa altında görünür</span>
+      </div>
+    </div>
+    <div class="btn-row">
+      <button class="btn-outline" onclick="shareCalendarImage()">📤 Görsel olarak paylaş (WhatsApp vb.)</button>
+    </div>
+    <div id="calShareMsg" class="msg"></div>
+  </div>
+
   <!-- Pocket expenses (not from balance) -->
-  <div class="card" id="expenseCard">
+  <div class="card app-section" id="expenseCard">
     <h2>Cepten Harcamalar</h2>
     <p style="color:var(--muted); font-size:11px; margin:-8px 0 12px;">Bu kayıtlar bakiyeni etkilemez, sadece cebinden çıkan parayı takip eder.</p>
     <label for="expDate">Tarih</label>
@@ -438,7 +503,7 @@
   </div>
 
   <!-- Filter / search -->
-  <div class="card" id="filterCard">
+  <div class="card app-section" id="filterCard">
     <h2>Filtre &amp; Arama</h2>
     <div class="filter-row">
       <div>
@@ -459,7 +524,7 @@
   </div>
 
   <!-- Summary -->
-  <div class="card" id="summaryCard">
+  <div class="card app-section" id="summaryCard">
     <h2>Özet</h2>
     <div class="summary-grid">
       <div class="summary-box">
@@ -486,7 +551,7 @@
   </div>
 
   <!-- Work days breakdown -->
-  <div class="card" id="daysCard">
+  <div class="card app-section" id="daysCard">
     <h2>Çalışma Günleri</h2>
     <div class="summary-grid">
       <div class="summary-box earn">
@@ -503,7 +568,7 @@
   </div>
 
   <!-- Entries list -->
-  <div class="card" id="entriesCard">
+  <div class="card app-section" id="entriesCard">
     <h2>Kayıtlar</h2>
     <div id="entriesWrap"><div class="empty">Henüz kayıt yok.</div></div>
   </div>
@@ -512,6 +577,7 @@
 
 <footer>Yevmiye Defteri · Firebase ile çalışır</footer>
 
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
@@ -528,9 +594,29 @@
     measurementId: "G-3M7FXX8XR4"
   };
 
-  firebase.initializeApp(firebaseConfig);
-  const auth = firebase.auth();
-  const db = firebase.database();
+  function showFatalError(detail){
+    const box = document.getElementById('fatalErrorBox');
+    if(!box) return;
+    box.classList.remove('hidden');
+    const d = document.getElementById('fatalErrorDetail');
+    if(d) d.textContent = detail || '';
+  }
+
+  window.addEventListener('error', function(ev){
+    showFatalError(ev && ev.message ? ev.message : 'Bilinmeyen hata');
+  });
+  window.addEventListener('unhandledrejection', function(ev){
+    showFatalError(ev && ev.reason ? String(ev.reason.message || ev.reason) : 'Bilinmeyen hata');
+  });
+
+  let auth, db;
+  try{
+    firebase.initializeApp(firebaseConfig);
+    auth = firebase.auth();
+    db = firebase.database();
+  }catch(err){
+    showFatalError('Firebase başlatılamadı: ' + err.message);
+  }
 
   let currentUser = null;
   let settings = { dailyWage: 0, overtimeRate: 0 };
@@ -544,6 +630,9 @@
   let reminderNotifiedToday = false;
   let bannerDismissed = false;
   let lastCheckedDate = null;
+  const today0 = new Date();
+  let calYear = today0.getFullYear();
+  let calMonth = today0.getMonth(); // 0-indexed
 
   // ---------- Nav drawer ----------
   function toggleNav(open){
@@ -552,8 +641,11 @@
   }
   function goSection(id){
     toggleNav(false);
+    document.querySelectorAll('.app-section').forEach(el => el.classList.remove('active'));
     const el = document.getElementById(id);
-    if(el) el.scrollIntoView({ behavior:'smooth', block:'start' });
+    if(el) el.classList.add('active');
+    window.scrollTo({ top: 0, behavior: 'auto' });
+    if(id === 'calendarCard') renderCalendar();
   }
 
   // ---------- UI helpers ----------
@@ -644,6 +736,7 @@
       document.getElementById('loginPass').value = '';
       document.getElementById('hamburgerBtn').style.display = 'flex';
       loadUserData(user.uid);
+      goSection('calendarCard');
     } else {
       document.getElementById('authCard').classList.remove('hidden');
       document.getElementById('appArea').classList.add('hidden');
@@ -734,6 +827,7 @@
     renderExpenses();
     renderSummary();
     renderDayList();
+    renderCalendar();
   }
 
   function saveSettings(){
@@ -1018,7 +1112,7 @@
     list.forEach(e => {
       const dayLabel = e.daysWorked === 1 ? 'Tam' : (e.daysWorked === 0.5 ? 'Yarım' : 'İzin');
       html += `<tr>
-        <td>${escapeHtml(e.date)}${e.note ? '<br><span style="color:var(--muted); font-size:10px;">' + escapeHtml(e.note) + '</span>' : ''}</td>
+        <td>${escapeHtml(e.date)}${e.note ? '<br><span style="color:var(--muted); font-size:10px;">' + escapeHtml(e.note) + (e.createdAt ? ' · ' + formatTime(e.createdAt) : '') + '</span>' : (e.createdAt ? '<br><span style="color:var(--muted); font-size:10px;">' + formatTime(e.createdAt) + '</span>' : '')}</td>
         <td>${dayLabel}</td>
         <td>${e.overtimeHours || 0} sa</td>
         <td class="num adv">${e.advance ? e.advance + ' ₺' : '-'}</td>
@@ -1042,7 +1136,7 @@
       let html = '';
       list.forEach(e => {
         html += `<div class="exp-item">
-          <div>${escapeHtml(e.date)}${e.note ? '<div class="desc">' + escapeHtml(e.note) + '</div>' : ''}</div>
+          <div>${escapeHtml(e.date)}<div class="desc">${e.note ? escapeHtml(e.note) : ''}${e.createdAt ? ' · ' + formatTime(e.createdAt) : ''}</div></div>
           <div style="display:flex; align-items:center; gap:6px;">
             <span class="exp-amt">${(e.amount || 0).toLocaleString('tr-TR')} ₺</span>
             <button class="edit-btn" onclick="editExpense('${e.key}')">✎</button>
@@ -1096,6 +1190,100 @@
     wrap.innerHTML = html;
   }
 
+  function formatTime(ts){
+    if(!ts) return '';
+    const d = new Date(ts);
+    return String(d.getHours()).padStart(2,'0') + ':' + String(d.getMinutes()).padStart(2,'0');
+  }
+
+  const monthNamesFull = ['Ocak','Şubat','Mart','Nisan','Mayıs','Haziran','Temmuz','Ağustos','Eylül','Ekim','Kasım','Aralık'];
+
+  function shiftCalMonth(delta){
+    calMonth += delta;
+    if(calMonth < 0){ calMonth = 11; calYear--; }
+    if(calMonth > 11){ calMonth = 0; calYear++; }
+    renderCalendar();
+  }
+
+  function renderCalendar(){
+    const label = document.getElementById('calLabel');
+    if(!label) return;
+    label.textContent = monthNamesFull[calMonth] + ' ' + calYear;
+
+    const entryByDate = {};
+    Object.values(entries).forEach(e => {
+      if(!e.date) return;
+      // en son girilen kayıt o günü temsil eder
+      if(!entryByDate[e.date] || (e.createdAt || 0) > (entryByDate[e.date].createdAt || 0)){
+        entryByDate[e.date] = e;
+      }
+    });
+
+    const firstOfMonth = new Date(calYear, calMonth, 1);
+    const daysInMonth = new Date(calYear, calMonth + 1, 0).getDate();
+    // Pazartesi başlangıçlı hafta için offset (0=Pazartesi)
+    let startOffset = firstOfMonth.getDay() - 1;
+    if(startOffset < 0) startOffset = 6;
+
+    const grid = document.getElementById('calGrid');
+    let html = '';
+    const dayHeaders = ['Pt','Sa','Ça','Pe','Cu','Ct','Pz'];
+    dayHeaders.forEach(h => { html += `<div class="cal-cell empty-day" style="border:none; background:none;"><span class="d">${h}</span></div>`; });
+
+    for(let i = 0; i < startOffset; i++){
+      html += '<div class="cal-cell empty-day" style="border:none; background:none;"></div>';
+    }
+
+    for(let day = 1; day <= daysInMonth; day++){
+      const dateStr = calYear + '-' + String(calMonth+1).padStart(2,'0') + '-' + String(day).padStart(2,'0');
+      const e = entryByDate[dateStr];
+      let cls = 'cal-cell';
+      let mark = '';
+      let sub = '';
+      if(e){
+        const worked = (e.daysWorked || 0) > 0;
+        cls += worked ? ' worked' : ' off';
+        mark = worked ? '✔' : '✕';
+        const t = formatTime(e.createdAt);
+        if(e.note || t) sub = `<div class="t">${escapeHtml((e.note || '').slice(0,8))}${e.note && t ? ' ' : ''}${t}</div>`;
+      }
+      html += `<div class="${cls}"><span class="d">${day}</span><span class="mark">${mark}</span>${sub}</div>`;
+    }
+
+    grid.innerHTML = html;
+  }
+
+  async function shareCalendarImage(){
+    clearMsg('calShareMsg');
+    const el = document.getElementById('calShareArea');
+    if(typeof html2canvas === 'undefined'){
+      showMsg('calShareMsg', 'Görsel oluşturucu yüklenemedi, internet bağlantını kontrol et.', false);
+      return;
+    }
+    try{
+      const canvas = await html2canvas(el, { backgroundColor: getComputedStyle(document.body).getPropertyValue('--bg-panel') || '#171a21' });
+      canvas.toBlob(async blob => {
+        if(!blob){ showMsg('calShareMsg', 'Görsel oluşturulamadı.', false); return; }
+        const fileName = 'takvim-' + calYear + '-' + String(calMonth+1).padStart(2,'0') + '.png';
+        const file = new File([blob], fileName, { type: 'image/png' });
+        if(navigator.canShare && navigator.canShare({ files: [file] })){
+          try{
+            await navigator.share({ files: [file], title: 'Çalışma Takvimi' });
+          }catch(err){ /* kullanıcı iptal etmiş olabilir */ }
+        } else {
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url; a.download = fileName;
+          document.body.appendChild(a); a.click(); document.body.removeChild(a);
+          URL.revokeObjectURL(url);
+          showMsg('calShareMsg', 'Görsel indirildi, WhatsApp\'tan galeriden paylaşabilirsin.', true);
+        }
+      });
+    }catch(err){
+      showMsg('calShareMsg', 'Hata: ' + err.message, false);
+    }
+  }
+
   function shareDayList(){
     const list = getFilteredEntries().slice().sort((a,b) => (a.date || '').localeCompare(b.date || ''));
     if(list.length === 0){ alert('Paylaşılacak kayıt yok.'); return; }
@@ -1105,7 +1293,8 @@
     list.forEach(e => {
       const worked = (e.daysWorked || 0) > 0;
       const label = e.daysWorked === 1 ? 'Tam gün' : (e.daysWorked === 0.5 ? 'Yarım gün' : 'Çalışmadım');
-      text += `${e.date} - ${worked ? '✔' : '✕'} ${label}${e.note ? ' (' + e.note + ')' : ''}\n`;
+      const t = formatTime(e.createdAt);
+      text += `${e.date} - ${worked ? '✔' : '✕'} ${label}${e.note ? ' (' + e.note + ')' : ''}${t ? ' [' + t + ']' : ''}\n`;
     });
 
     if(navigator.share){
