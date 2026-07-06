@@ -145,9 +145,127 @@
   .empty{ color: var(--muted); font-size:12px; text-align:center; padding: 14px 0; }
 
   footer{ color: var(--muted); font-size:11px; margin-top: 6px; text-align:center; }
+
+  /* ---- Hamburger + Nav ---- */
+  .hamburger{
+    position: fixed; top: 16px; left: 14px; z-index: 60;
+    width: 42px; height: 42px; border-radius: 10px;
+    background: var(--bg-panel); border: 1px solid var(--border);
+    display:flex; align-items:center; justify-content:center;
+    cursor:pointer; margin:0; padding:0;
+  }
+  .hamburger span, .hamburger span::before, .hamburger span::after{
+    content:''; display:block; width:18px; height:2px; background: var(--text); position:relative; transition:.2s;
+  }
+  .hamburger span::before{ position:absolute; top:-6px; }
+  .hamburger span::after{ position:absolute; top:6px; }
+
+  .nav-overlay{
+    position: fixed; inset:0; background: rgba(0,0,0,0.5); z-index:65;
+  }
+  .nav-drawer{
+    position: fixed; top:0; left:0; bottom:0; width: 250px; z-index:70;
+    background: var(--bg-panel); border-right:1px solid var(--border);
+    padding: 20px 16px; display:flex; flex-direction:column; gap:4px;
+    transform: translateX(-100%); transition: transform .25s ease;
+  }
+  .nav-drawer.open{ transform: translateX(0); }
+  .nav-drawer h3{ font-family:'Sora',sans-serif; color:var(--accent); font-size:14px; margin:0 0 12px; }
+  .nav-drawer a{
+    color: var(--text); text-decoration:none; font-size:13px; padding:10px 8px;
+    border-radius:8px; cursor:pointer;
+  }
+  .nav-drawer a:hover{ background: rgba(255,255,255,0.05); color:var(--accent2); }
+  .nav-close{ position:absolute; top:16px; right:14px; background:none; border:none; color:var(--muted); font-size:18px; width:auto; margin:0; padding:4px; cursor:pointer; }
+
+  /* ---- Filter / Search bar ---- */
+  .filter-row{ display:flex; gap:10px; margin-top:10px; }
+  .filter-row > *{ flex:1; }
+  .exp-row{ display:flex; gap:8px; align-items:center; }
+
+  .edit-btn{ background:none; border:none; color: var(--accent2); cursor:pointer; font-size:13px; width:auto; padding:2px 6px; margin:0; }
+  .edit-btn:hover{ color: var(--accent); }
+
+  .exp-item{ display:flex; justify-content:space-between; align-items:center; padding:9px 6px; border-bottom:1px solid var(--border); font-size:12px; }
+  .exp-item .desc{ color: var(--muted); font-size:10px; }
+  .exp-amt{ color: var(--danger); font-weight:700; }
+
+  .btn-row{ display:flex; gap:8px; }
+  .btn-row button{ margin-top:10px; }
+  .btn-outline{ background: transparent; border:1px solid rgba(255,255,255,0.14); color: var(--text); font-size:12px; padding:10px 12px; }
+  .btn-outline:hover{ border-color: var(--accent2); color: var(--accent2); }
+
+  .day-list{ max-height:260px; overflow-y:auto; margin-top:8px; }
+  .day-row{ display:flex; justify-content:space-between; padding:7px 4px; font-size:12px; border-bottom:1px dashed var(--border); }
+  .day-row.worked{ color: var(--ok); }
+  .day-row.off{ color: var(--danger); }
+
+  @media (max-width: 480px){ .nav-drawer{ width: 78vw; } }
+
+  @media print{
+    .hamburger, .nav-drawer, .nav-overlay, #authCard, .btn-primary, .btn-outline, .btn-danger, .del-btn, .edit-btn, #entryCard, #expenseCard, #filterCard, .user-bar button { display:none !important; }
+    body{ background:#fff; color:#000; }
+    .card{ background:#fff; border:1px solid #ccc; box-shadow:none; }
+  }
+
+  /* ---- Light theme ---- */
+  body.theme-light{
+    --bg-deep: #f4f5f7;
+    --bg-panel: #ffffff;
+    --accent: #e07b00;
+    --accent2: #0a84c9;
+    --text: #1c1f26;
+    --muted: #6b7280;
+    --danger: #d6414a;
+    --ok: #1f9d5c;
+    --border: rgba(0,0,0,0.08);
+  }
+  body.theme-light input, body.theme-light select{ background: rgba(0,0,0,0.03); border-color: rgba(0,0,0,0.14); }
+
+  .theme-toggle{
+    background: rgba(255,255,255,0.05); border:1px solid var(--border); color: var(--text);
+    font-size:12px; font-weight:600; padding:9px 12px; width:auto; margin:0;
+  }
+
+  /* ---- PIN lock ---- */
+  .pin-dots{ display:flex; gap:14px; justify-content:center; margin: 18px 0 6px; }
+  .pin-dots span{
+    width:14px; height:14px; border-radius:50%; border:1px solid var(--muted); display:inline-block;
+  }
+  .pin-dots span.filled{ background: var(--accent); border-color: var(--accent); }
+  .pin-pad{ display:grid; grid-template-columns: repeat(3, 1fr); gap:10px; margin-top:14px; }
+  .pin-pad button{ margin:0; padding:16px 0; font-size:18px; background: rgba(255,255,255,0.04); color: var(--text); border:1px solid var(--border); }
+  .pin-pad button:hover{ border-color: var(--accent2); }
+
+  /* ---- Reminder banner ---- */
+  .today-banner{
+    width:100%; max-width:460px; background: rgba(255,184,76,0.12); border:1px solid rgba(255,184,76,0.4);
+    color: var(--accent); border-radius:12px; padding:12px 16px; margin-bottom:14px;
+    font-size:12px; display:flex; align-items:center; justify-content:space-between; gap:10px;
+  }
+  .today-banner button{ width:auto; margin:0; padding:7px 10px; font-size:11px; }
+  .toggle-row{ display:flex; align-items:center; justify-content:space-between; margin-top:12px; }
+  .toggle-row label{ margin:0; font-size:12px; color: var(--text); }
+  .toggle-row input[type="checkbox"]{ width:auto; }
 </style>
 </head>
 <body>
+
+<button class="hamburger" id="hamburgerBtn" onclick="toggleNav(true)" style="display:none;"><span></span></button>
+<div class="nav-overlay hidden" id="navOverlay" onclick="toggleNav(false)"></div>
+<nav class="nav-drawer" id="navDrawer">
+  <button class="nav-close" onclick="toggleNav(false)">✕</button>
+  <h3>MENÜ</h3>
+  <a onclick="goSection('entryCard')">➕ Yeni Kayıt</a>
+  <a onclick="goSection('expenseCard')">💸 Cepten Harcamalar</a>
+  <a onclick="goSection('filterCard')">📅 Aylık Filtre / Arama</a>
+  <a onclick="goSection('summaryCard')">📊 Özet</a>
+  <a onclick="goSection('daysCard')">🗓️ Çalışma Günleri</a>
+  <a onclick="goSection('entriesCard')">📋 Kayıtlar</a>
+  <a onclick="goSection('settingsCard')">⚙️ Ücret Ayarları</a>
+  <button class="theme-toggle" onclick="toggleTheme()" id="themeToggleBtn" style="margin-top:14px;">🌙 Koyu / ☀️ Açık Tema</button>
+  <a onclick="doLogout()" style="color:var(--danger); margin-top:auto;">🚪 Çıkış yap</a>
+</nav>
 
 <header>
   <h1>YEVMİYE <span>DEFTERİ</span></h1>
@@ -192,8 +310,36 @@
   </div>
 </div>
 
+<!-- PIN LOCK SCREEN -->
+<div class="card hidden" id="pinLockCard" style="text-align:center;">
+  <h2>🔒 Kilit Ekranı</h2>
+  <p style="color:var(--muted); font-size:12px; margin:0;">Devam etmek için PIN kodunu gir</p>
+  <div class="pin-dots" id="pinDots">
+    <span></span><span></span><span></span><span></span>
+  </div>
+  <div id="pinLockMsg" class="msg"></div>
+  <div class="pin-pad">
+    <button onclick="pinPress('1')">1</button><button onclick="pinPress('2')">2</button><button onclick="pinPress('3')">3</button>
+    <button onclick="pinPress('4')">4</button><button onclick="pinPress('5')">5</button><button onclick="pinPress('6')">6</button>
+    <button onclick="pinPress('7')">7</button><button onclick="pinPress('8')">8</button><button onclick="pinPress('9')">9</button>
+    <button class="btn-outline" onclick="pinBackspace()">⌫</button><button onclick="pinPress('0')">0</button><button class="btn-outline" onclick="pinClear()">Temizle</button>
+  </div>
+  <button class="link-btn" style="margin-top:16px;" onclick="showForgotPin()">PIN'imi unuttum</button>
+  <div id="forgotPinBox" class="hidden" style="margin-top:14px; text-align:left;">
+    <label for="forgotPinPass">Hesap şifreni gir (PIN'i sıfırlamak için)</label>
+    <input id="forgotPinPass" type="password" placeholder="••••••••">
+    <button class="btn-primary" onclick="resetPinWithPassword()">Doğrula ve PIN'i Kaldır</button>
+    <div id="forgotPinMsg" class="msg"></div>
+  </div>
+</div>
+
 <!-- APP AREA (logged in) -->
 <div id="appArea" class="hidden" style="width:100%; display:flex; flex-direction:column; align-items:center;">
+
+  <div class="today-banner hidden" id="todayBanner">
+    <span id="todayBannerText">⚠️ Bugün için kayıt girmedin.</span>
+    <button class="btn-outline" onclick="goSection('entryCard'); dismissBanner();">Kayıt Ekle</button>
+  </div>
 
   <div class="card">
     <div class="user-bar">
@@ -203,7 +349,7 @@
   </div>
 
   <!-- Settings -->
-  <div class="card">
+  <div class="card" id="settingsCard">
     <h2>Ücret Ayarları</h2>
     <div class="row">
       <div>
@@ -217,11 +363,37 @@
     </div>
     <button class="btn-primary" onclick="saveSettings()">Ayarları Kaydet</button>
     <div id="settingsMsg" class="msg"></div>
+
+    <hr style="border-color: var(--border); margin:18px 0;">
+    <h2 style="margin-bottom:8px;">🔒 PIN Kilidi</h2>
+    <div class="toggle-row">
+      <label for="pinEnabledChk">Uygulamayı PIN ile kilitle</label>
+      <input type="checkbox" id="pinEnabledChk" onchange="onPinToggle()">
+    </div>
+    <div id="pinSetupBox" class="hidden" style="margin-top:10px;">
+      <label for="newPin">Yeni 4 haneli PIN</label>
+      <input id="newPin" type="password" inputmode="numeric" maxlength="4" placeholder="••••">
+      <label for="newPin2">PIN tekrar</label>
+      <input id="newPin2" type="password" inputmode="numeric" maxlength="4" placeholder="••••">
+      <button class="btn-primary" onclick="savePin()">PIN'i Kaydet</button>
+    </div>
+    <div id="pinMsg" class="msg"></div>
+
+    <hr style="border-color: var(--border); margin:18px 0;">
+    <h2 style="margin-bottom:8px;">🔔 Hatırlatma Bildirimi</h2>
+    <div class="toggle-row">
+      <label for="reminderEnabledChk">Bugün kayıt girmezsem hatırlat</label>
+      <input type="checkbox" id="reminderEnabledChk" onchange="saveReminderSettings()">
+    </div>
+    <label for="reminderTime">Hatırlatma saati</label>
+    <input id="reminderTime" type="time" value="20:00" onchange="saveReminderSettings()">
+    <p style="color:var(--muted); font-size:10px; margin-top:8px;">Not: Tarayıcı bildirimleri yalnızca uygulama sekmesi açıkken çalışır; kapalıyken bildirim gelmez.</p>
+    <div id="reminderMsg" class="msg"></div>
   </div>
 
   <!-- Add entry -->
-  <div class="card">
-    <h2>Yeni Kayıt Ekle</h2>
+  <div class="card" id="entryCard">
+    <h2 id="entryCardTitle">Yeni Kayıt Ekle</h2>
     <label for="entryDate">Tarih</label>
     <input id="entryDate" type="date">
     <label for="entryType">Çalışma durumu</label>
@@ -236,12 +408,58 @@
     <input id="entryAdvance" type="number" placeholder="örn. 500" value="0">
     <label for="entryNote">Not (isteğe bağlı)</label>
     <input id="entryNote" type="text" placeholder="örn. şantiye adı, açıklama">
-    <button class="btn-primary" onclick="addEntry()">Kaydet</button>
+    <div class="btn-row">
+      <button class="btn-primary" id="entrySaveBtn" onclick="addEntry()">Kaydet</button>
+      <button class="btn-outline hidden" id="entryCancelBtn" onclick="cancelEditEntry()">İptal</button>
+    </div>
     <div id="entryMsg" class="msg"></div>
   </div>
 
+  <!-- Pocket expenses (not from balance) -->
+  <div class="card" id="expenseCard">
+    <h2>Cepten Harcamalar</h2>
+    <p style="color:var(--muted); font-size:11px; margin:-8px 0 12px;">Bu kayıtlar bakiyeni etkilemez, sadece cebinden çıkan parayı takip eder.</p>
+    <label for="expDate">Tarih</label>
+    <input id="expDate" type="date">
+    <label for="expAmount">Tutar (₺)</label>
+    <input id="expAmount" type="number" placeholder="örn. 150">
+    <label for="expNote">Açıklama</label>
+    <input id="expNote" type="text" placeholder="örn. yemek, yol, malzeme">
+    <div class="btn-row">
+      <button class="btn-primary" id="expSaveBtn" onclick="addExpense()">Harcama Ekle</button>
+      <button class="btn-outline hidden" id="expCancelBtn" onclick="cancelEditExpense()">İptal</button>
+    </div>
+    <div id="expenseMsg" class="msg"></div>
+    <div class="summary-box adv" style="margin-top:14px;">
+      <div class="val" id="sumExpense">0 ₺</div>
+      <div class="lbl">Toplam cepten harcama</div>
+    </div>
+    <div id="expensesWrap" style="margin-top:10px;"><div class="empty">Henüz harcama yok.</div></div>
+  </div>
+
+  <!-- Filter / search -->
+  <div class="card" id="filterCard">
+    <h2>Filtre &amp; Arama</h2>
+    <div class="filter-row">
+      <div>
+        <label for="monthFilter">Ay seç</label>
+        <select id="monthFilter" onchange="renderAll()">
+          <option value="all">Tüm zamanlar</option>
+        </select>
+      </div>
+      <div>
+        <label for="searchBox">Not / tarihte ara</label>
+        <input id="searchBox" type="text" placeholder="ara..." oninput="renderAll()">
+      </div>
+    </div>
+    <div class="btn-row">
+      <button class="btn-outline" onclick="exportCSV()">📊 CSV / Excel indir</button>
+      <button class="btn-outline" onclick="window.print()">🖨️ PDF (Yazdır)</button>
+    </div>
+  </div>
+
   <!-- Summary -->
-  <div class="card">
+  <div class="card" id="summaryCard">
     <h2>Özet</h2>
     <div class="summary-grid">
       <div class="summary-box">
@@ -263,12 +481,29 @@
     </div>
     <div class="summary-box net" style="margin-top:12px;">
       <div class="val" id="sumNet">0 ₺</div>
-      <div class="lbl">Kalan alacak</div>
+      <div class="lbl">Kalan alacak (harcamalar hariç)</div>
     </div>
   </div>
 
+  <!-- Work days breakdown -->
+  <div class="card" id="daysCard">
+    <h2>Çalışma Günleri</h2>
+    <div class="summary-grid">
+      <div class="summary-box earn">
+        <div class="val" id="sumWorkedDays">0</div>
+        <div class="lbl">Çalıştığım gün</div>
+      </div>
+      <div class="summary-box adv">
+        <div class="val" id="sumOffDays">0</div>
+        <div class="lbl">Çalışmadığım gün</div>
+      </div>
+    </div>
+    <div class="day-list" id="dayListWrap"><div class="empty">Henüz kayıt yok.</div></div>
+    <button class="btn-outline" onclick="shareDayList()">📤 Bu listeyi paylaş</button>
+  </div>
+
   <!-- Entries list -->
-  <div class="card">
+  <div class="card" id="entriesCard">
     <h2>Kayıtlar</h2>
     <div id="entriesWrap"><div class="empty">Henüz kayıt yok.</div></div>
   </div>
@@ -300,6 +535,26 @@
   let currentUser = null;
   let settings = { dailyWage: 0, overtimeRate: 0 };
   let entries = {};
+  let expenses = {};
+  let editingEntryKey = null;
+  let editingExpenseKey = null;
+  let pinBuffer = '';
+  let appUnlockedThisSession = false;
+  let reminderTimerId = null;
+  let reminderNotifiedToday = false;
+  let bannerDismissed = false;
+  let lastCheckedDate = null;
+
+  // ---------- Nav drawer ----------
+  function toggleNav(open){
+    document.getElementById('navDrawer').classList.toggle('open', open);
+    document.getElementById('navOverlay').classList.toggle('hidden', !open);
+  }
+  function goSection(id){
+    toggleNav(false);
+    const el = document.getElementById(id);
+    if(el) el.scrollIntoView({ behavior:'smooth', block:'start' });
+  }
 
   // ---------- UI helpers ----------
   function showMsg(id, text, ok){
@@ -387,11 +642,19 @@
       document.getElementById('whoName').textContent = user.displayName || user.email;
       document.getElementById('loginEmail').value = '';
       document.getElementById('loginPass').value = '';
+      document.getElementById('hamburgerBtn').style.display = 'flex';
       loadUserData(user.uid);
     } else {
       document.getElementById('authCard').classList.remove('hidden');
       document.getElementById('appArea').classList.add('hidden');
+      document.getElementById('pinLockCard').classList.add('hidden');
+      document.getElementById('hamburgerBtn').style.display = 'none';
+      toggleNav(false);
       showLogin();
+      appUnlockedThisSession = false;
+      bannerDismissed = false;
+      reminderNotifiedToday = false;
+      if(reminderTimerId){ clearInterval(reminderTimerId); reminderTimerId = null; }
     }
   });
 
@@ -403,15 +666,74 @@
         settings = s;
         document.getElementById('dailyWage').value = s.dailyWage || '';
         document.getElementById('overtimeRate').value = s.overtimeRate || '';
+        document.getElementById('pinEnabledChk').checked = !!s.pinEnabled;
+        document.getElementById('pinSetupBox').classList.toggle('hidden', !s.pinEnabled);
+        document.getElementById('reminderEnabledChk').checked = !!s.reminderEnabled;
+        document.getElementById('reminderTime').value = s.reminderTime || '20:00';
+        applyTheme(s.theme || 'dark');
       }
       renderSummary();
+      checkPinScreen();
     });
 
     db.ref('users/' + uid + '/entries').on('value', snap => {
       entries = snap.val() || {};
-      renderEntries();
-      renderSummary();
+      populateMonthFilter();
+      renderAll();
+      checkTodayReminder();
     });
+
+    db.ref('users/' + uid + '/expenses').on('value', snap => {
+      expenses = snap.val() || {};
+      renderAll();
+    });
+
+    if(reminderTimerId) clearInterval(reminderTimerId);
+    reminderTimerId = setInterval(checkTodayReminder, 60000);
+  }
+
+  // ---------- Filter helpers ----------
+  function populateMonthFilter(){
+    const sel = document.getElementById('monthFilter');
+    const current = sel.value;
+    const months = new Set();
+    Object.values(entries).forEach(e => { if(e.date) months.add(e.date.slice(0,7)); });
+    Object.values(expenses).forEach(e => { if(e.date) months.add(e.date.slice(0,7)); });
+    const sorted = Array.from(months).sort().reverse();
+    const monthNames = ['Ocak','Şubat','Mart','Nisan','Mayıs','Haziran','Temmuz','Ağustos','Eylül','Ekim','Kasım','Aralık'];
+    sel.innerHTML = '<option value="all">Tüm zamanlar</option>' + sorted.map(m => {
+      const [y, mo] = m.split('-');
+      const label = monthNames[parseInt(mo,10)-1] + ' ' + y;
+      return `<option value="${m}">${label}</option>`;
+    }).join('');
+    if(sorted.includes(current)) sel.value = current;
+  }
+
+  function getFilteredEntries(){
+    const month = document.getElementById('monthFilter').value;
+    const q = document.getElementById('searchBox').value.trim().toLowerCase();
+    return Object.entries(entries)
+      .map(([key, v]) => ({ key, ...v }))
+      .filter(e => month === 'all' || (e.date || '').startsWith(month))
+      .filter(e => !q || (e.note || '').toLowerCase().includes(q) || (e.date || '').includes(q))
+      .sort((a, b) => (b.date || '').localeCompare(a.date || ''));
+  }
+
+  function getFilteredExpenses(){
+    const month = document.getElementById('monthFilter').value;
+    const q = document.getElementById('searchBox').value.trim().toLowerCase();
+    return Object.entries(expenses)
+      .map(([key, v]) => ({ key, ...v }))
+      .filter(e => month === 'all' || (e.date || '').startsWith(month))
+      .filter(e => !q || (e.note || '').toLowerCase().includes(q) || (e.date || '').includes(q))
+      .sort((a, b) => (b.date || '').localeCompare(a.date || ''));
+  }
+
+  function renderAll(){
+    renderEntries();
+    renderExpenses();
+    renderSummary();
+    renderDayList();
   }
 
   function saveSettings(){
@@ -436,33 +758,259 @@
 
     if(!date){ showMsg('entryMsg', 'Lütfen bir tarih seç.', false); return; }
 
-    const newRef = db.ref('users/' + currentUser.uid + '/entries').push();
-    newRef.set({ date, daysWorked, overtimeHours, advance, note, createdAt: Date.now() })
+    const payload = { date, daysWorked, overtimeHours, advance, note, createdAt: Date.now() };
+    const ref = editingEntryKey
+      ? db.ref('users/' + currentUser.uid + '/entries/' + editingEntryKey)
+      : db.ref('users/' + currentUser.uid + '/entries').push();
+
+    ref.set(payload)
       .then(() => {
-        showMsg('entryMsg', 'Kayıt eklendi.', true);
-        document.getElementById('entryDate').value = '';
-        document.getElementById('entryOvertime').value = '0';
-        document.getElementById('entryAdvance').value = '0';
-        document.getElementById('entryNote').value = '';
+        showMsg('entryMsg', editingEntryKey ? 'Kayıt güncellendi.' : 'Kayıt eklendi.', true);
+        cancelEditEntry();
       })
       .catch(err => showMsg('entryMsg', 'Hata: ' + err.message, false));
+  }
+
+  function editEntry(key){
+    const e = entries[key];
+    if(!e) return;
+    editingEntryKey = key;
+    document.getElementById('entryDate').value = e.date || '';
+    document.getElementById('entryType').value = e.daysWorked;
+    document.getElementById('entryOvertime').value = e.overtimeHours || 0;
+    document.getElementById('entryAdvance').value = e.advance || 0;
+    document.getElementById('entryNote').value = e.note || '';
+    document.getElementById('entryCardTitle').textContent = 'Kaydı Düzenle';
+    document.getElementById('entrySaveBtn').textContent = 'Güncelle';
+    document.getElementById('entryCancelBtn').classList.remove('hidden');
+    goSection('entryCard');
+  }
+
+  function cancelEditEntry(){
+    editingEntryKey = null;
+    document.getElementById('entryDate').value = '';
+    document.getElementById('entryType').value = '1';
+    document.getElementById('entryOvertime').value = '0';
+    document.getElementById('entryAdvance').value = '0';
+    document.getElementById('entryNote').value = '';
+    document.getElementById('entryCardTitle').textContent = 'Yeni Kayıt Ekle';
+    document.getElementById('entrySaveBtn').textContent = 'Kaydet';
+    document.getElementById('entryCancelBtn').classList.add('hidden');
   }
 
   function deleteEntry(key){
     if(!currentUser) return;
     if(!confirm('Bu kaydı silmek istediğine emin misin?')) return;
     db.ref('users/' + currentUser.uid + '/entries/' + key).remove();
+    if(editingEntryKey === key) cancelEditEntry();
+  }
+
+  // ---------- Expenses (cepten harcamalar, bakiyeyi etkilemez) ----------
+  function addExpense(){
+    clearMsg('expenseMsg');
+    if(!currentUser) return;
+    const date = document.getElementById('expDate').value;
+    const amount = parseFloat(document.getElementById('expAmount').value) || 0;
+    const note = document.getElementById('expNote').value.trim();
+
+    if(!date){ showMsg('expenseMsg', 'Lütfen bir tarih seç.', false); return; }
+    if(!amount){ showMsg('expenseMsg', 'Lütfen bir tutar gir.', false); return; }
+
+    const payload = { date, amount, note, createdAt: Date.now() };
+    const ref = editingExpenseKey
+      ? db.ref('users/' + currentUser.uid + '/expenses/' + editingExpenseKey)
+      : db.ref('users/' + currentUser.uid + '/expenses').push();
+
+    ref.set(payload)
+      .then(() => {
+        showMsg('expenseMsg', editingExpenseKey ? 'Harcama güncellendi.' : 'Harcama eklendi.', true);
+        cancelEditExpense();
+      })
+      .catch(err => showMsg('expenseMsg', 'Hata: ' + err.message, false));
+  }
+
+  function editExpense(key){
+    const e = expenses[key];
+    if(!e) return;
+    editingExpenseKey = key;
+    document.getElementById('expDate').value = e.date || '';
+    document.getElementById('expAmount').value = e.amount || 0;
+    document.getElementById('expNote').value = e.note || '';
+    document.getElementById('expSaveBtn').textContent = 'Güncelle';
+    document.getElementById('expCancelBtn').classList.remove('hidden');
+    goSection('expenseCard');
+  }
+
+  function cancelEditExpense(){
+    editingExpenseKey = null;
+    document.getElementById('expDate').value = '';
+    document.getElementById('expAmount').value = '';
+    document.getElementById('expNote').value = '';
+    document.getElementById('expSaveBtn').textContent = 'Harcama Ekle';
+    document.getElementById('expCancelBtn').classList.add('hidden');
+  }
+
+  function deleteExpense(key){
+    if(!currentUser) return;
+    if(!confirm('Bu harcamayı silmek istediğine emin misin?')) return;
+    db.ref('users/' + currentUser.uid + '/expenses/' + key).remove();
+    if(editingExpenseKey === key) cancelEditExpense();
+  }
+
+  // ---------- Theme ----------
+  function applyTheme(theme){
+    document.body.classList.toggle('theme-light', theme === 'light');
+  }
+  function toggleTheme(){
+    const isLight = document.body.classList.contains('theme-light');
+    const next = isLight ? 'dark' : 'light';
+    applyTheme(next);
+    if(currentUser){
+      db.ref('users/' + currentUser.uid + '/settings').update({ theme: next });
+    }
+  }
+
+  // ---------- PIN lock ----------
+  async function hashPin(pin){
+    const enc = new TextEncoder().encode(pin);
+    const buf = await crypto.subtle.digest('SHA-256', enc);
+    return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2,'0')).join('');
+  }
+
+  function onPinToggle(){
+    const on = document.getElementById('pinEnabledChk').checked;
+    document.getElementById('pinSetupBox').classList.toggle('hidden', !on);
+    if(!on && currentUser){
+      db.ref('users/' + currentUser.uid + '/settings').update({ pinEnabled: false, pinHash: null });
+    }
+  }
+
+  function savePin(){
+    clearMsg('pinMsg');
+    const p1 = document.getElementById('newPin').value.trim();
+    const p2 = document.getElementById('newPin2').value.trim();
+    if(!/^\d{4}$/.test(p1)){ showMsg('pinMsg', 'PIN 4 haneli rakam olmalı.', false); return; }
+    if(p1 !== p2){ showMsg('pinMsg', 'PIN\'ler eşleşmiyor.', false); return; }
+    hashPin(p1).then(hash => {
+      db.ref('users/' + currentUser.uid + '/settings').update({ pinEnabled: true, pinHash: hash })
+        .then(() => {
+          showMsg('pinMsg', 'PIN kaydedildi.', true);
+          document.getElementById('newPin').value = '';
+          document.getElementById('newPin2').value = '';
+          appUnlockedThisSession = true;
+        })
+        .catch(err => showMsg('pinMsg', 'Hata: ' + err.message, false));
+    });
+  }
+
+  function checkPinScreen(){
+    if(!currentUser) return;
+    const locked = settings.pinEnabled && settings.pinHash && !appUnlockedThisSession;
+    document.getElementById('pinLockCard').classList.toggle('hidden', !locked);
+    document.getElementById('appArea').classList.toggle('hidden', locked);
+    if(locked){ pinBuffer = ''; renderPinDots(); }
+  }
+
+  function renderPinDots(){
+    const dots = document.querySelectorAll('#pinDots span');
+    dots.forEach((d, i) => d.classList.toggle('filled', i < pinBuffer.length));
+  }
+
+  function pinPress(digit){
+    if(pinBuffer.length >= 4) return;
+    pinBuffer += digit;
+    renderPinDots();
+    if(pinBuffer.length === 4){
+      clearMsg('pinLockMsg');
+      hashPin(pinBuffer).then(hash => {
+        if(hash === settings.pinHash){
+          appUnlockedThisSession = true;
+          pinBuffer = '';
+          checkPinScreen();
+          checkTodayReminder();
+        } else {
+          showMsg('pinLockMsg', 'Yanlış PIN, tekrar dene.', false);
+          pinBuffer = '';
+          renderPinDots();
+        }
+      });
+    }
+  }
+  function pinBackspace(){ pinBuffer = pinBuffer.slice(0, -1); renderPinDots(); }
+  function pinClear(){ pinBuffer = ''; renderPinDots(); }
+
+  function showForgotPin(){
+    document.getElementById('forgotPinBox').classList.remove('hidden');
+  }
+
+  function resetPinWithPassword(){
+    clearMsg('forgotPinMsg');
+    const pass = document.getElementById('forgotPinPass').value;
+    if(!pass || !currentUser || !currentUser.email){ showMsg('forgotPinMsg', 'Şifreni gir.', false); return; }
+    auth.signInWithEmailAndPassword(currentUser.email, pass)
+      .then(() => db.ref('users/' + currentUser.uid + '/settings').update({ pinEnabled: false, pinHash: null }))
+      .then(() => {
+        appUnlockedThisSession = true;
+        document.getElementById('forgotPinBox').classList.add('hidden');
+        document.getElementById('forgotPinPass').value = '';
+        checkPinScreen();
+      })
+      .catch(err => showMsg('forgotPinMsg', translateError(err), false));
+  }
+
+  // ---------- Reminder notifications ----------
+  function todayStr(){
+    const d = new Date();
+    return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+  }
+
+  function saveReminderSettings(){
+    if(!currentUser) return;
+    const enabled = document.getElementById('reminderEnabledChk').checked;
+    const time = document.getElementById('reminderTime').value || '20:00';
+    if(enabled && 'Notification' in window && Notification.permission === 'default'){
+      Notification.requestPermission();
+    }
+    db.ref('users/' + currentUser.uid + '/settings').update({ reminderEnabled: enabled, reminderTime: time })
+      .then(() => showMsg('reminderMsg', 'Hatırlatma ayarları kaydedildi.', true))
+      .catch(err => showMsg('reminderMsg', 'Hata: ' + err.message, false));
+  }
+
+  function checkTodayReminder(){
+    if(!currentUser) return;
+    const today = todayStr();
+    if(lastCheckedDate !== today){ lastCheckedDate = today; reminderNotifiedToday = false; bannerDismissed = false; }
+    const hasToday = Object.values(entries).some(e => e.date === today);
+    const banner = document.getElementById('todayBanner');
+    if(!hasToday && !bannerDismissed){
+      banner.classList.remove('hidden');
+    } else {
+      banner.classList.add('hidden');
+    }
+
+    if(hasToday || !settings.reminderEnabled || reminderNotifiedToday) return;
+    const [h, m] = (settings.reminderTime || '20:00').split(':').map(Number);
+    const now = new Date();
+    const reminderMinutes = h * 60 + m;
+    const nowMinutes = now.getHours() * 60 + now.getMinutes();
+    if(nowMinutes >= reminderMinutes && 'Notification' in window && Notification.permission === 'granted'){
+      new Notification('Yevmiye Defteri', { body: 'Bugün için kayıt girmedin. Unutma!' });
+      reminderNotifiedToday = true;
+    }
+  }
+
+  function dismissBanner(){
+    bannerDismissed = true;
+    document.getElementById('todayBanner').classList.add('hidden');
   }
 
   // ---------- Render ----------
   function renderEntries(){
     const wrap = document.getElementById('entriesWrap');
-    const list = Object.entries(entries)
-      .map(([key, v]) => ({ key, ...v }))
-      .sort((a, b) => (b.date || '').localeCompare(a.date || ''));
+    const list = getFilteredEntries();
 
     if(list.length === 0){
-      wrap.innerHTML = '<div class="empty">Henüz kayıt yok.</div>';
+      wrap.innerHTML = '<div class="empty">Kayıt bulunamadı.</div>';
       return;
     }
 
@@ -474,15 +1022,43 @@
         <td>${dayLabel}</td>
         <td>${e.overtimeHours || 0} sa</td>
         <td class="num adv">${e.advance ? e.advance + ' ₺' : '-'}</td>
-        <td><button class="del-btn" onclick="deleteEntry('${e.key}')">✕</button></td>
+        <td>
+          <button class="edit-btn" onclick="editEntry('${e.key}')">✎</button>
+          <button class="del-btn" onclick="deleteEntry('${e.key}')">✕</button>
+        </td>
       </tr>`;
     });
     html += '</tbody></table>';
     wrap.innerHTML = html;
   }
 
+  function renderExpenses(){
+    const wrap = document.getElementById('expensesWrap');
+    const list = getFilteredExpenses();
+
+    if(list.length === 0){
+      wrap.innerHTML = '<div class="empty">Henüz harcama yok.</div>';
+    } else {
+      let html = '';
+      list.forEach(e => {
+        html += `<div class="exp-item">
+          <div>${escapeHtml(e.date)}${e.note ? '<div class="desc">' + escapeHtml(e.note) + '</div>' : ''}</div>
+          <div style="display:flex; align-items:center; gap:6px;">
+            <span class="exp-amt">${(e.amount || 0).toLocaleString('tr-TR')} ₺</span>
+            <button class="edit-btn" onclick="editExpense('${e.key}')">✎</button>
+            <button class="del-btn" onclick="deleteExpense('${e.key}')">✕</button>
+          </div>
+        </div>`;
+      });
+      wrap.innerHTML = html;
+    }
+
+    const totalExpense = list.reduce((sum, e) => sum + (e.amount || 0), 0);
+    document.getElementById('sumExpense').textContent = totalExpense.toLocaleString('tr-TR') + ' ₺';
+  }
+
   function renderSummary(){
-    const list = Object.values(entries);
+    const list = getFilteredEntries();
     const totalDays = list.reduce((sum, e) => sum + (e.daysWorked || 0), 0);
     const totalOvertime = list.reduce((sum, e) => sum + (e.overtimeHours || 0), 0);
     const totalAdvance = list.reduce((sum, e) => sum + (e.advance || 0), 0);
@@ -494,6 +1070,84 @@
     document.getElementById('sumEarned').textContent = totalEarned.toLocaleString('tr-TR') + ' ₺';
     document.getElementById('sumAdvance').textContent = totalAdvance.toLocaleString('tr-TR') + ' ₺';
     document.getElementById('sumNet').textContent = net.toLocaleString('tr-TR') + ' ₺';
+  }
+
+  function renderDayList(){
+    const list = getFilteredEntries();
+    const workedCount = list.filter(e => (e.daysWorked || 0) > 0).length;
+    const offCount = list.filter(e => (e.daysWorked || 0) === 0).length;
+    document.getElementById('sumWorkedDays').textContent = workedCount;
+    document.getElementById('sumOffDays').textContent = offCount;
+
+    const wrap = document.getElementById('dayListWrap');
+    if(list.length === 0){
+      wrap.innerHTML = '<div class="empty">Henüz kayıt yok.</div>';
+      return;
+    }
+    let html = '';
+    list.forEach(e => {
+      const worked = (e.daysWorked || 0) > 0;
+      const label = e.daysWorked === 1 ? 'Çalıştım (tam gün)' : (e.daysWorked === 0.5 ? 'Çalıştım (yarım gün)' : 'Çalışmadım');
+      html += `<div class="day-row ${worked ? 'worked' : 'off'}">
+        <span>${escapeHtml(e.date)}</span>
+        <span>${worked ? '✔ ' : '✕ '}${label}</span>
+      </div>`;
+    });
+    wrap.innerHTML = html;
+  }
+
+  function shareDayList(){
+    const list = getFilteredEntries().slice().sort((a,b) => (a.date || '').localeCompare(b.date || ''));
+    if(list.length === 0){ alert('Paylaşılacak kayıt yok.'); return; }
+    const workedCount = list.filter(e => (e.daysWorked || 0) > 0).length;
+    const offCount = list.filter(e => (e.daysWorked || 0) === 0).length;
+    let text = `ÇALIŞMA GÜNLERİ\nÇalıştığım gün: ${workedCount}\nÇalışmadığım gün: ${offCount}\n\n`;
+    list.forEach(e => {
+      const worked = (e.daysWorked || 0) > 0;
+      const label = e.daysWorked === 1 ? 'Tam gün' : (e.daysWorked === 0.5 ? 'Yarım gün' : 'Çalışmadım');
+      text += `${e.date} - ${worked ? '✔' : '✕'} ${label}${e.note ? ' (' + e.note + ')' : ''}\n`;
+    });
+
+    if(navigator.share){
+      navigator.share({ title: 'Çalışma Günleri', text }).catch(() => {});
+    } else if(navigator.clipboard){
+      navigator.clipboard.writeText(text)
+        .then(() => alert('Liste panoya kopyalandı, istediğin yere yapıştırabilirsin.'))
+        .catch(() => promptFallbackShare(text));
+    } else {
+      promptFallbackShare(text);
+    }
+  }
+
+  function promptFallbackShare(text){
+    window.prompt('Kopyalamak için Ctrl+C / Cmd+C bas:', text);
+  }
+
+  function exportCSV(){
+    const entryList = getFilteredEntries().slice().sort((a,b) => (a.date || '').localeCompare(b.date || ''));
+    const expenseList = getFilteredExpenses().slice().sort((a,b) => (a.date || '').localeCompare(b.date || ''));
+
+    let csv = 'KAYITLAR\n';
+    csv += 'Tarih,Durum,Mesai Saati,Avans,Not\n';
+    entryList.forEach(e => {
+      const dayLabel = e.daysWorked === 1 ? 'Tam gün' : (e.daysWorked === 0.5 ? 'Yarım gün' : 'Çalışmadım');
+      csv += `${e.date},${dayLabel},${e.overtimeHours || 0},${e.advance || 0},"${(e.note || '').replace(/"/g,'""')}"\n`;
+    });
+    csv += '\nCEPTEN HARCAMALAR\n';
+    csv += 'Tarih,Tutar,Açıklama\n';
+    expenseList.forEach(e => {
+      csv += `${e.date},${e.amount || 0},"${(e.note || '').replace(/"/g,'""')}"\n`;
+    });
+
+    const blob = new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'yevmiye-raporu.csv';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
   }
 
   function escapeHtml(str){
