@@ -1,0 +1,451 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1" />
+<title>Puantaj — Yevmiye Takip</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link
+  href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800&family=Inter:wght@400;500;600;700&family=Roboto+Mono:wght@500;700&display=swap"
+  rel="stylesheet"
+/>
+
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+  tailwind.config = {
+    theme: {
+      extend: {
+        colors: {
+          asfalt: '#1C1F22',
+          beton: '#2A2E33',
+          betonAcik: '#383D44',
+          sari: '#F2B705',
+          sariKoyu: '#C99304',
+          celik: '#3E6D9C',
+          tehlike: '#E85D04',
+          kagit: '#F5F3EE',
+        },
+        fontFamily: {
+          display: ['"Barlow Condensed"', 'sans-serif'],
+          body: ['Inter', 'sans-serif'],
+          mono: ['"Roboto Mono"', 'monospace'],
+        },
+      },
+    },
+  }
+</script>
+
+<style>
+  html, body, #root { height: 100%; }
+  body { font-family: 'Inter', sans-serif; -webkit-tap-highlight-color: transparent; }
+  .hazard-strip {
+    height: 8px;
+    background: repeating-linear-gradient(-45deg, #F2B705, #F2B705 14px, #1C1F22 14px, #1C1F22 28px);
+  }
+  .tabular { font-family: 'Roboto Mono', monospace; font-variant-numeric: tabular-nums; }
+  :focus-visible { outline: 3px solid #F2B705; outline-offset: 2px; }
+  @media (prefers-reduced-motion: reduce) {
+    * { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
+  }
+</style>
+
+<!-- React -->
+<script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js" crossorigin></script>
+
+<!-- Firebase (compat sürümü — script etiketiyle kullanımı en kolay olan) -->
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+</head>
+
+<body class="bg-asfalt">
+<div id="root"></div>
+
+<script>
+  // ============================================================
+  // BURAYI KENDİ FIREBASE PROJENDEN ALDIĞIN BİLGİLERLE DOLDUR
+  // Firebase Console > Proje Ayarları > Genel > Uygulamalarınız
+  // ============================================================
+  const firebaseConfig = {
+    apiKey: "BURAYA_YAZ",
+    authDomain: "BURAYA_YAZ.firebaseapp.com",
+    projectId: "BURAYA_YAZ",
+    storageBucket: "BURAYA_YAZ.appspot.com",
+    messagingSenderId: "BURAYA_YAZ",
+    appId: "BURAYA_YAZ",
+  };
+
+  firebase.initializeApp(firebaseConfig);
+  const auth = firebase.auth();
+  const db = firebase.firestore();
+</script>
+
+<script type="text/babel" data-presets="react">
+const { useState, useEffect, useMemo } = React;
+
+function tarihId(d) { return d.toISOString().slice(0, 10); }
+
+const AYLAR = ['Ocak','Şubat','Mart','Nisan','Mayıs','Haziran','Temmuz','Ağustos','Eylül','Ekim','Kasım','Aralık'];
+const GUNLER = ['Paz','Pzt','Sal','Çar','Per','Cum','Cmt'];
+
+function mesajCevir(kod) {
+  const map = {
+    'auth/invalid-email': 'Geçersiz e-posta adresi.',
+    'auth/user-not-found': 'Bu e-posta ile kayıtlı kullanıcı yok.',
+    'auth/wrong-password': 'Şifre hatalı.',
+    'auth/email-already-in-use': 'Bu e-posta zaten kayıtlı.',
+    'auth/weak-password': 'Şifre en az 6 karakter olmalı.',
+    'auth/invalid-credential': 'E-posta veya şifre hatalı.',
+  };
+  return map[kod] || 'Bir hata oluştu, tekrar dene.';
+}
+
+function Login() {
+  const [mode, setMode] = useState('giris');
+  const [email, setEmail] = useState('');
+  const [sifre, setSifre] = useState('');
+  const [hata, setHata] = useState('');
+  const [yukleniyor, setYukleniyor] = useState(false);
+
+  async function gonder(e) {
+    e.preventDefault();
+    setHata(''); setYukleniyor(true);
+    try {
+      if (mode === 'giris') {
+        await auth.signInWithEmailAndPassword(email, sifre);
+      } else {
+        await auth.createUserWithEmailAndPassword(email, sifre);
+      }
+    } catch (err) {
+      setHata(mesajCevir(err.code));
+    } finally {
+      setYukleniyor(false);
+    }
+  }
+
+  return (
+    <div className="min-h-screen bg-asfalt flex flex-col justify-center px-6">
+      <div className="hazard-strip -mx-6 mb-10" />
+      <h1 className="font-display text-5xl font-extrabold text-kagit tracking-tight uppercase">Puantaj</h1>
+      <p className="text-kagit/60 text-sm mb-8">Yevmiye ve mesai takibin cebinde.</p>
+
+      <form onSubmit={gonder} className="space-y-4">
+        <div>
+          <label className="block text-kagit/80 text-sm font-medium mb-1">E-posta</label>
+          <input type="email" required value={email} onChange={e => setEmail(e.target.value)}
+            className="w-full rounded-lg bg-beton border border-white/10 px-4 py-3 text-kagit placeholder-kagit/30 text-base"
+            placeholder="ornek@eposta.com" />
+        </div>
+        <div>
+          <label className="block text-kagit/80 text-sm font-medium mb-1">Şifre</label>
+          <input type="password" required minLength={6} value={sifre} onChange={e => setSifre(e.target.value)}
+            className="w-full rounded-lg bg-beton border border-white/10 px-4 py-3 text-kagit placeholder-kagit/30 text-base"
+            placeholder="En az 6 karakter" />
+        </div>
+
+        {hata && <p className="text-tehlike text-sm font-medium" role="alert">{hata}</p>}
+
+        <button type="submit" disabled={yukleniyor}
+          className="w-full bg-sari hover:bg-sariKoyu active:scale-[0.98] transition text-asfalt font-display font-bold text-xl uppercase tracking-wide py-4 rounded-lg disabled:opacity-60">
+          {yukleniyor ? 'Bekle...' : (mode === 'giris' ? 'Giriş Yap' : 'Hesap Oluştur')}
+        </button>
+      </form>
+
+      <button onClick={() => setMode(mode === 'giris' ? 'kayit' : 'giris')}
+        className="mt-6 text-celik text-sm font-medium underline underline-offset-4">
+        {mode === 'giris' ? 'Hesabın yok mu? Kayıt ol' : 'Zaten hesabın var mı? Giriş yap'}
+      </button>
+    </div>
+  );
+}
+
+function Header({ yil, ay, ayDegistir, ayarAc }) {
+  return (
+    <header className="sticky top-0 z-10 bg-asfalt">
+      <div className="flex items-center justify-between px-5 pt-5 pb-3">
+        <h1 className="font-display text-3xl font-extrabold text-kagit uppercase leading-none">Puantaj</h1>
+        <div className="flex items-center gap-2">
+          <button onClick={ayarAc} className="text-kagit/70 text-sm border border-white/15 rounded-full px-3 py-1.5">Ayarlar</button>
+          <button onClick={() => auth.signOut()} className="text-kagit/70 text-sm border border-white/15 rounded-full px-3 py-1.5">Çıkış</button>
+        </div>
+      </div>
+      <div className="flex items-center justify-between px-5 pb-3">
+        <button onClick={() => ayDegistir(-1)} className="text-sari text-2xl font-bold px-3 py-1" aria-label="Önceki ay">‹</button>
+        <span className="font-display text-xl font-bold text-kagit uppercase tracking-wide">{AYLAR[ay]} {yil}</span>
+        <button onClick={() => ayDegistir(1)} className="text-sari text-2xl font-bold px-3 py-1" aria-label="Sonraki ay">›</button>
+      </div>
+      <div className="hazard-strip" />
+    </header>
+  );
+}
+
+function DailyCheckIn({ bugunKaydi, geldiToggle, duzenle }) {
+  const geldi = bugunKaydi && bugunKaydi.geldi;
+  return (
+    <div className="mx-5 mt-5 rounded-2xl bg-beton border border-white/10 p-5">
+      <p className="text-kagit/60 text-xs uppercase tracking-widest font-medium mb-3">Bugün</p>
+      <div className="flex items-center gap-3">
+        <button onClick={geldiToggle}
+          className={`flex-1 py-5 rounded-xl font-display font-bold text-2xl uppercase tracking-wide transition ${geldi ? 'bg-sari text-asfalt' : 'bg-betonAcik text-kagit/70 border border-white/10'}`}>
+          {geldi ? '✓ Geldim' : 'Geldim İşaretle'}
+        </button>
+        <button onClick={duzenle} className="py-5 px-4 rounded-xl bg-betonAcik border border-white/10 text-kagit/80 font-medium text-sm">
+          Detay<br />Ekle
+        </button>
+      </div>
+      {geldi && (bugunKaydi.fazlaMesai > 0 || bugunKaydi.avans > 0) && (
+        <p className="text-kagit/50 text-xs mt-3 tabular">
+          {bugunKaydi.fazlaMesai > 0 && `+${bugunKaydi.fazlaMesai} sa. fazla mesai`}
+          {bugunKaydi.fazlaMesai > 0 && bugunKaydi.avans > 0 && ' · '}
+          {bugunKaydi.avans > 0 && `${bugunKaydi.avans}₺ avans`}
+        </p>
+      )}
+    </div>
+  );
+}
+
+function MonthSummary({ ozet }) {
+  const kartlar = [
+    { etiket: 'Çalışılan Gün', deger: ozet.gunSayisi, birim: '' },
+    { etiket: 'Fazla Mesai', deger: ozet.fazlaMesai, birim: 'sa' },
+    { etiket: 'Hakediş', deger: ozet.hakedis.toLocaleString('tr-TR'), birim: '₺' },
+    { etiket: 'Avans', deger: ozet.avans.toLocaleString('tr-TR'), birim: '₺' },
+  ];
+  return (
+    <div className="mx-5 mt-5">
+      <div className="grid grid-cols-2 gap-3">
+        {kartlar.map(k => (
+          <div key={k.etiket} className="rounded-xl bg-beton border border-white/10 p-4">
+            <p className="text-kagit/50 text-xs uppercase tracking-wide">{k.etiket}</p>
+            <p className="tabular text-2xl font-bold text-kagit mt-1">{k.deger} <span className="text-sm text-kagit/40">{k.birim}</span></p>
+          </div>
+        ))}
+      </div>
+      <div className="mt-3 rounded-xl bg-sari p-4 flex items-center justify-between">
+        <span className="font-display font-bold uppercase text-asfalt tracking-wide">Net Alacak</span>
+        <span className="tabular text-2xl font-extrabold text-asfalt">{ozet.net.toLocaleString('tr-TR')} ₺</span>
+      </div>
+    </div>
+  );
+}
+
+function EntryList({ kayitlar, ayacKayitAc }) {
+  const siraliTarihler = Object.keys(kayitlar).sort().reverse();
+  if (siraliTarihler.length === 0) {
+    return <div className="mx-5 mt-8 text-center text-kagit/40 text-sm py-10">Bu ay için henüz kayıt yok. Yukarıdan "Geldim İşaretle" ile başla.</div>;
+  }
+  return (
+    <div className="mx-5 mt-6 mb-10">
+      <p className="text-kagit/50 text-xs uppercase tracking-widest font-medium mb-2">Günlük Kayıtlar</p>
+      <div className="space-y-2">
+        {siraliTarihler.map(tarih => {
+          const k = kayitlar[tarih];
+          const d = new Date(tarih);
+          return (
+            <button key={tarih} onClick={() => ayacKayitAc(tarih)}
+              className="w-full flex items-center justify-between rounded-xl bg-beton border border-white/10 px-4 py-3 text-left">
+              <div className="flex items-center gap-3">
+                <div className="w-11 h-11 rounded-lg bg-betonAcik flex flex-col items-center justify-center leading-none">
+                  <span className="text-kagit font-bold tabular text-sm">{d.getDate()}</span>
+                  <span className="text-kagit/40 text-[10px] uppercase">{GUNLER[d.getDay()]}</span>
+                </div>
+                <div>
+                  <p className="text-kagit text-sm font-medium">
+                    {k.geldi ? 'Geldi' : 'Gelmedi'}{k.fazlaMesai > 0 && ` · +${k.fazlaMesai} sa. FM`}
+                  </p>
+                  {k.avans > 0 && <p className="text-tehlike text-xs tabular">-{k.avans}₺ avans</p>}
+                </div>
+              </div>
+              <span className="tabular text-kagit font-semibold">{k.geldi ? `+${Math.round(k.tutar)}₺` : ''}</span>
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+function EntryModal({ tarih, mevcutKayit, kaydet, kapat, sil }) {
+  const [geldi, setGeldi] = useState(mevcutKayit ? mevcutKayit.geldi : true);
+  const [fazlaMesai, setFazlaMesai] = useState(mevcutKayit ? mevcutKayit.fazlaMesai : 0);
+  const [avans, setAvans] = useState(mevcutKayit ? mevcutKayit.avans : 0);
+  const [aciklama, setAciklama] = useState(mevcutKayit ? mevcutKayit.aciklama : '');
+
+  const d = new Date(tarih);
+  const baslik = d.toLocaleDateString('tr-TR', { day: 'numeric', month: 'long', weekday: 'long' });
+
+  function gonder(e) {
+    e.preventDefault();
+    kaydet(tarih, { geldi, fazlaMesai: Number(fazlaMesai) || 0, avans: Number(avans) || 0, aciklama });
+  }
+
+  return (
+    <div className="fixed inset-0 z-20 bg-black/60 flex items-end sm:items-center justify-center">
+      <div className="w-full sm:max-w-md bg-beton rounded-t-2xl sm:rounded-2xl border border-white/10 p-6 max-h-[90vh] overflow-y-auto">
+        <p className="font-display text-2xl font-bold text-kagit uppercase">{baslik}</p>
+        <form onSubmit={gonder} className="mt-5 space-y-4">
+          <div className="flex gap-3">
+            <button type="button" onClick={() => setGeldi(true)}
+              className={`flex-1 py-3 rounded-lg font-bold uppercase text-sm ${geldi ? 'bg-sari text-asfalt' : 'bg-betonAcik text-kagit/60'}`}>Geldi</button>
+            <button type="button" onClick={() => setGeldi(false)}
+              className={`flex-1 py-3 rounded-lg font-bold uppercase text-sm ${!geldi ? 'bg-tehlike text-kagit' : 'bg-betonAcik text-kagit/60'}`}>Gelmedi</button>
+          </div>
+          <div>
+            <label className="block text-kagit/70 text-sm mb-1">Fazla Mesai (saat)</label>
+            <input type="number" min="0" step="0.5" value={fazlaMesai} onChange={e => setFazlaMesai(e.target.value)}
+              className="w-full rounded-lg bg-asfalt border border-white/10 px-4 py-3 text-kagit tabular" />
+          </div>
+          <div>
+            <label className="block text-kagit/70 text-sm mb-1">Avans (₺)</label>
+            <input type="number" min="0" step="10" value={avans} onChange={e => setAvans(e.target.value)}
+              className="w-full rounded-lg bg-asfalt border border-white/10 px-4 py-3 text-kagit tabular" />
+          </div>
+          <div>
+            <label className="block text-kagit/70 text-sm mb-1">Not (opsiyonel)</label>
+            <input type="text" value={aciklama} onChange={e => setAciklama(e.target.value)}
+              placeholder="ör. yarım gün, izinli..."
+              className="w-full rounded-lg bg-asfalt border border-white/10 px-4 py-3 text-kagit placeholder-kagit/30" />
+          </div>
+          <div className="flex gap-3 pt-2">
+            <button type="button" onClick={kapat} className="flex-1 py-3 rounded-lg border border-white/15 text-kagit/70 font-medium">Vazgeç</button>
+            <button type="submit" className="flex-1 py-3 rounded-lg bg-sari text-asfalt font-bold uppercase">Kaydet</button>
+          </div>
+          {mevcutKayit && (
+            <button type="button" onClick={() => sil(tarih)} className="w-full text-tehlike text-sm font-medium pt-2">Bu kaydı sil</button>
+          )}
+        </form>
+      </div>
+    </div>
+  );
+}
+
+function SettingsModal({ gunlukYevmiye, kaydet, kapat }) {
+  const [deger, setDeger] = useState(gunlukYevmiye);
+  function gonder(e) { e.preventDefault(); kaydet(Number(deger) || 0); }
+  return (
+    <div className="fixed inset-0 z-20 bg-black/60 flex items-end sm:items-center justify-center">
+      <div className="w-full sm:max-w-md bg-beton rounded-t-2xl sm:rounded-2xl border border-white/10 p-6">
+        <p className="font-display text-2xl font-bold text-kagit uppercase">Ayarlar</p>
+        <form onSubmit={gonder} className="mt-5 space-y-4">
+          <div>
+            <label className="block text-kagit/70 text-sm mb-1">Günlük Yevmiye (₺)</label>
+            <input type="number" min="0" step="50" autoFocus value={deger} onChange={e => setDeger(e.target.value)}
+              className="w-full rounded-lg bg-asfalt border border-white/10 px-4 py-3 text-kagit tabular text-lg" />
+            <p className="text-kagit/40 text-xs mt-2">Fazla mesai saat ücreti otomatik olarak yevmiye/8 üzerinden hesaplanır.</p>
+          </div>
+          <div className="flex gap-3 pt-2">
+            <button type="button" onClick={kapat} className="flex-1 py-3 rounded-lg border border-white/15 text-kagit/70 font-medium">Vazgeç</button>
+            <button type="submit" className="flex-1 py-3 rounded-lg bg-sari text-asfalt font-bold uppercase">Kaydet</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
+
+function App() {
+  const [kullanici, setKullanici] = useState(undefined);
+  const [gunlukYevmiye, setGunlukYevmiye] = useState(1500);
+  const [kayitlarHam, setKayitlarHam] = useState({});
+  const [tarihGoruntu, setTarihGoruntu] = useState(new Date());
+  const [acikTarih, setAcikTarih] = useState(null);
+  const [ayarAcik, setAyarAcik] = useState(false);
+
+  const bugunId = tarihId(new Date());
+  const yil = tarihGoruntu.getFullYear();
+  const ay = tarihGoruntu.getMonth();
+
+  useEffect(() => auth.onAuthStateChanged(setKullanici), []);
+
+  useEffect(() => {
+    if (!kullanici) return;
+    db.collection('kullanicilar').doc(kullanici.uid).get().then(snap => {
+      if (snap.exists && snap.data().gunlukYevmiye != null) setGunlukYevmiye(snap.data().gunlukYevmiye);
+    });
+  }, [kullanici]);
+
+  useEffect(() => {
+    if (!kullanici) return;
+    const unsub = db.collection('kullanicilar').doc(kullanici.uid).collection('kayitlar')
+      .onSnapshot(snap => {
+        const veri = {};
+        snap.forEach(d => { veri[d.id] = d.data(); });
+        setKayitlarHam(veri);
+      });
+    return unsub;
+  }, [kullanici]);
+
+  const ayKayitlari = useMemo(() => {
+    const prefix = `${yil}-${String(ay + 1).padStart(2, '0')}`;
+    const sonuc = {};
+    for (const [tarih, veri] of Object.entries(kayitlarHam)) {
+      if (tarih.startsWith(prefix)) {
+        const saatUcreti = gunlukYevmiye / 8;
+        const tutar = veri.geldi ? gunlukYevmiye + (veri.fazlaMesai || 0) * saatUcreti : 0;
+        sonuc[tarih] = { ...veri, tutar };
+      }
+    }
+    return sonuc;
+  }, [kayitlarHam, yil, ay, gunlukYevmiye]);
+
+  const ozet = useMemo(() => {
+    let gunSayisi = 0, fazlaMesai = 0, hakedis = 0, avans = 0;
+    for (const k of Object.values(ayKayitlari)) {
+      if (k.geldi) gunSayisi++;
+      fazlaMesai += k.fazlaMesai || 0;
+      hakedis += k.tutar || 0;
+      avans += k.avans || 0;
+    }
+    return { gunSayisi, fazlaMesai, hakedis, avans, net: hakedis - avans };
+  }, [ayKayitlari]);
+
+  if (kullanici === undefined) return <div className="min-h-screen bg-asfalt" />;
+  if (kullanici === null) return <Login />;
+
+  async function kayitKaydet(tarih, veri) {
+    await db.collection('kullanicilar').doc(kullanici.uid).collection('kayitlar').doc(tarih).set(veri);
+    setAcikTarih(null);
+  }
+  async function kayitSil(tarih) {
+    await db.collection('kullanicilar').doc(kullanici.uid).collection('kayitlar').doc(tarih).delete();
+    setAcikTarih(null);
+  }
+  async function yevmiyeKaydet(deger) {
+    setGunlukYevmiye(deger);
+    await db.collection('kullanicilar').doc(kullanici.uid).set({ gunlukYevmiye: deger }, { merge: true });
+    setAyarAcik(false);
+  }
+  function bugunToggle() {
+    const mevcut = kayitlarHam[bugunId];
+    kayitKaydet(bugunId, {
+      geldi: !(mevcut && mevcut.geldi),
+      fazlaMesai: (mevcut && mevcut.fazlaMesai) || 0,
+      avans: (mevcut && mevcut.avans) || 0,
+      aciklama: (mevcut && mevcut.aciklama) || '',
+    });
+  }
+  function ayDegistir(delta) { setTarihGoruntu(new Date(yil, ay + delta, 1)); }
+
+  return (
+    <div className="min-h-screen bg-asfalt pb-6">
+      <Header yil={yil} ay={ay} ayDegistir={ayDegistir} ayarAc={() => setAyarAcik(true)} />
+      <DailyCheckIn bugunKaydi={kayitlarHam[bugunId]} geldiToggle={bugunToggle} duzenle={() => setAcikTarih(bugunId)} />
+      <MonthSummary ozet={ozet} />
+      <EntryList kayitlar={ayKayitlari} ayacKayitAc={setAcikTarih} />
+      {acikTarih && (
+        <EntryModal tarih={acikTarih} mevcutKayit={kayitlarHam[acikTarih]} kaydet={kayitKaydet} sil={kayitSil} kapat={() => setAcikTarih(null)} />
+      )}
+      {ayarAcik && (
+        <SettingsModal gunlukYevmiye={gunlukYevmiye} kaydet={yevmiyeKaydet} kapat={() => setAyarAcik(false)} />
+      )}
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+</script>
+</body>
+</html>
