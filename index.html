@@ -437,6 +437,58 @@ html[data-tema="acik"] .alt-nav{background:rgba(255,255,255,.94)}
 .kurulum-kutu code{background:#F1EFE9;padding:2px 6px;border-radius:6px;font-size:13px}
 .kurulum-kutu ol{padding-left:20px;line-height:1.7;font-size:14px}
 
+
+/* ---------- NAV ROZETİ ---------- */
+.alt-nav button{position:relative}
+.rozet-nav{
+  position:absolute;top:2px;right:calc(50% - 26px);
+  min-width:18px;height:18px;border-radius:9px;background:var(--gelmedi);color:#fff;
+  font-size:11px;font-weight:700;display:none;align-items:center;justify-content:center;padding:0 4px;
+}
+.rozet-nav.goster{display:flex}
+
+/* ---------- RENK SEÇİMİ ---------- */
+.renk-sec{display:flex;gap:12px;margin-top:6px}
+.renk-sec button{width:44px;height:44px;border-radius:50%;border:3px solid transparent}
+.renk-sec button.secili{border-color:var(--metin)}
+
+/* ---------- PIN EKRANI ---------- */
+#pin-ekran{
+  position:fixed;inset:0;z-index:9000;background:var(--asfalt);
+  display:none;flex-direction:column;align-items:center;justify-content:center;gap:16px;padding:24px;
+}
+#pin-ekran.acik{display:flex}
+#pin-ekran .kilit-ikon{font-size:52px}
+#pin-ekran input{
+  width:190px;text-align:center;font-size:34px;letter-spacing:14px;font-weight:700;
+  padding:12px;border-radius:14px;border:2px solid var(--cizgi);background:var(--kart);color:var(--metin);outline:none;
+}
+#pin-ekran input:focus{border-color:var(--sari)}
+
+/* ---------- TAKVİM PARA MODU ---------- */
+.hucre .para-yazi{font-size:8.5px;font-weight:700;line-height:1;opacity:.95}
+
+
+/* ---------- ROZETLER / SEVİYE ---------- */
+.rozet-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
+.rozet-kut{background:var(--girdi);border:1.5px solid var(--cizgi);border-radius:14px;padding:14px;text-align:center}
+.rozet-kut .rikon{font-size:34px;display:block;margin-bottom:6px}
+.rozet-kut .rad{font-weight:700;font-size:13.5px}
+.rozet-kut .rsart{font-size:11.5px;color:var(--soluk);margin-top:3px}
+.rozet-kut.kilitli{opacity:.35;filter:grayscale(1)}
+.rozet-kut.acildi{border-color:var(--sari)}
+.seviye-satir{display:flex;align-items:center;gap:14px}
+.seviye-satir .buyuk-rozet{
+  width:62px;height:62px;border-radius:16px;background:var(--sari);color:#111;
+  display:flex;align-items:center;justify-content:center;font-size:32px;flex:0 0 62px;
+}
+
+/* ---------- ISI HARİTASI ---------- */
+.isi-ay{display:flex;align-items:center;gap:6px;margin-bottom:3px}
+.isi-ay .ay-et{width:30px;font-size:10px;color:var(--soluk);font-weight:600;flex:0 0 30px}
+.isi-gunler{display:flex;gap:2px;flex:1}
+.isi-gunler i{flex:1;height:11px;border-radius:2.5px;background:var(--girdi)}
+
 @media (prefers-reduced-motion: reduce){
   *{transition:none!important;animation:none!important}
 }
@@ -450,6 +502,15 @@ html[data-tema="acik"] .alt-nav{background:rgba(255,255,255,.94)}
   <h1>Puantaj<br>Defterim</h1>
   <div class="serit-mini"></div>
   <div class="gelistiren">Alın terinin hesabı şaşmasın<b>SERKAN KARAKAŞ</b>tarafından geliştirilmiştir</div>
+</div>
+
+<!-- ============ PIN KİLİDİ ============ -->
+<div id="pin-ekran">
+  <div class="kilit-ikon">🔒</div>
+  <h1 style="font-size:26px;color:var(--sari)">PIN Kodu</h1>
+  <input type="password" id="pin-girdi" inputmode="numeric" maxlength="4" placeholder="····" autocomplete="off">
+  <button class="btn btn-sari" id="btn-pin-gir" style="width:190px">Gir</button>
+  <p style="font-size:12px;color:var(--soluk);max-width:280px;text-align:center">PIN'i unutursan tarayıcının site verilerini temizle; kayıtların hesabında güvende, şifrenle tekrar girersin.</p>
 </div>
 
 <!-- ============ YÜKLENİYOR ============ -->
@@ -535,6 +596,7 @@ html[data-tema="acik"] .alt-nav{background:rgba(255,255,255,.94)}
       <li><button data-goruntu="ozet"><span class="ikon">🧮</span> Hesap özeti</button></li>
       <li><button data-goruntu="yil"><span class="ikon">📊</span> Yıl özeti</button></li>
       <li><button data-goruntu="notlar"><span class="ikon">📝</span> Not defterim</button></li>
+      <li><button data-goruntu="rozet"><span class="ikon">🏆</span> Başarımlarım</button></li>
       <li><button data-goruntu="ayarlar"><span class="ikon">⚙️</span> Ayarlar</button></li>
       <li><button id="btn-geribildirim"><span class="ikon">💬</span> Geri bildirim gönder</button></li>
     </ul>
@@ -571,6 +633,19 @@ html[data-tema="acik"] .alt-nav{background:rgba(255,255,255,.94)}
       <div class="selam-blok">
         <div class="buyuk" id="selam">Merhaba 👋</div>
         <div class="alt" id="selam-alt">—</div>
+        <div class="alt" id="gunun-soz" style="margin-top:6px;color:var(--sari);font-style:italic"></div>
+      </div>
+      <div class="kart" id="hava-kart" style="display:none;padding:12px 14px;font-size:14px;font-weight:600"></div>
+      <div class="kart gizli" id="yenilik-kart" style="border-color:var(--sari)">
+        <h2>🎁 Neler yeni?</h2>
+        <ul style="padding-left:18px;font-size:13.5px;line-height:1.9">
+          <li><b>Yarım ay paylaşımı:</b> Paylaş ve PDF artık 1–15 / 16–ay sonu dönemi seçtiriyor</li>
+          <li><b>Canlı kazanç:</b> gün işlerken o günün parası anında görünüyor</li>
+          <li>Avans ve cüzdanda <b>hızlı tutar butonları</b></li>
+          <li>Hesap özetinde <b>çalışma serisi 🔥</b> ve pazar mesaisi</li>
+          <li>Patron tablosunda çalışılmayan günler <b>temizlendi</b></li>
+        </ul>
+        <button class="btn btn-cizgili" id="btn-yenilik-kapat">Süper, kapat</button>
       </div>
       <div style="display:flex;gap:8px;margin-bottom:14px">
         <button class="btn btn-sari" id="btn-ana-bugun" style="flex:1;padding:12px 4px;font-size:13px">✚ Bugünü işle</button>
@@ -590,6 +665,24 @@ html[data-tema="acik"] .alt-nav{background:rgba(255,255,255,.94)}
         </div>
         <div class="hafta-serit" id="hafta-serit"></div>
       </div>
+      <div class="kart gizli" id="seviye-kart">
+        <div class="seviye-satir">
+          <div class="buyuk-rozet" id="seviye-ikon">👷</div>
+          <div style="flex:1">
+            <div style="display:flex;justify-content:space-between;align-items:center">
+              <b style="font-family:'Saira Condensed';font-size:20px;text-transform:uppercase" id="seviye-ad">—</b>
+              <button id="btn-rozetler" style="color:var(--sari);font-weight:600;font-size:13px">🏆 Rozetlerim ›</button>
+            </div>
+            <div class="hedef-bar" style="height:12px;margin-top:8px"><div class="dolu" id="seviye-dolu" style="width:0%"></div></div>
+            <div style="font-size:12px;color:var(--soluk);margin-top:6px" id="seviye-alt"></div>
+          </div>
+        </div>
+      </div>
+      <div class="kart gizli" id="sgk-kart">
+        <h2>🏖️ Emeklilik yolculuğu</h2>
+        <div class="hedef-bar" style="height:14px"><div class="dolu" id="sgk-dolu" style="width:0%"></div></div>
+        <div style="font-size:13px;color:var(--soluk);margin-top:8px" id="sgk-yazi"></div>
+      </div>
       <div class="kart">
         <h2>🏢 Şirket hesap hareketleri</h2>
         <ul class="liste hareket-liste" id="liste-sirket-hareket"></ul>
@@ -606,7 +699,19 @@ html[data-tema="acik"] .alt-nav{background:rgba(255,255,255,.94)}
           <div class="alan" style="flex:1">
             <label>Tutar (TL)</label>
             <input type="number" id="cuzdan-tutar" inputmode="decimal" placeholder="500">
+            <div style="display:flex;gap:6px;margin-top:8px;flex-wrap:wrap">
+              <button class="eksik-cip tutar-cip" data-hedef="cuzdan-tutar" data-deger="100" style="font-size:12px;padding:7px 11px">100</button>
+              <button class="eksik-cip tutar-cip" data-hedef="cuzdan-tutar" data-deger="250" style="font-size:12px;padding:7px 11px">250</button>
+              <button class="eksik-cip tutar-cip" data-hedef="cuzdan-tutar" data-deger="500" style="font-size:12px;padding:7px 11px">500</button>
+              <button class="eksik-cip tutar-cip" data-hedef="cuzdan-tutar" data-deger="1000" style="font-size:12px;padding:7px 11px">1.000</button>
+            </div>
           </div>
+          <div class="alan" style="flex:1">
+            <label>Tarih</label>
+            <input type="date" id="cuzdan-tarih">
+          </div>
+        </div>
+        <div style="display:flex;gap:10px">
           <div class="alan" style="flex:1">
             <label>Ne oldu?</label>
             <select id="cuzdan-tip">
@@ -644,10 +749,13 @@ html[data-tema="acik"] .alt-nav{background:rgba(255,255,255,.94)}
         <div id="eksik-icerik" style="display:flex;flex-wrap:wrap;gap:8px"></div>
       </div>
       <div class="kart gizli" id="hafta-kart">
-        <h2>📆 Bu hafta</h2>
+        <h2>📆 Bu hafta <button id="btn-hafta-paylas" style="margin-left:auto;color:var(--sari);font-size:14px;font-family:Rubik;text-transform:none;font-weight:600">📤 Paylaş</button></h2>
         <div class="hafta-satir" id="hafta-icerik"></div>
       </div>
       <div class="kart">
+        <div style="display:flex;justify-content:flex-end;margin-bottom:8px">
+          <button class="eksik-cip" id="btn-takvim-mod" style="font-size:12px;padding:7px 12px">₺ Kazançları göster</button>
+        </div>
         <div class="takvim" id="takvim"></div>
         <div class="lejant">
           <span><i style="background:var(--tam)"></i> Tam yevmiye</span>
@@ -677,6 +785,12 @@ html[data-tema="acik"] .alt-nav{background:rgba(255,255,255,.94)}
         <div class="alan">
           <label>Tutar (TL)</label>
           <input type="number" id="odeme-tutar" inputmode="decimal" placeholder="Örn: 5000">
+          <div style="display:flex;gap:6px;margin-top:8px;flex-wrap:wrap">
+            <button class="eksik-cip tutar-cip" data-hedef="odeme-tutar" data-deger="1000" style="font-size:12px;padding:7px 11px">1.000</button>
+            <button class="eksik-cip tutar-cip" data-hedef="odeme-tutar" data-deger="2000" style="font-size:12px;padding:7px 11px">2.000</button>
+            <button class="eksik-cip tutar-cip" data-hedef="odeme-tutar" data-deger="5000" style="font-size:12px;padding:7px 11px">5.000</button>
+            <button class="eksik-cip tutar-cip" data-hedef="odeme-tutar" data-deger="10000" style="font-size:12px;padding:7px 11px">10.000</button>
+          </div>
         </div>
         <div class="alan">
           <label>Tür</label>
@@ -695,8 +809,16 @@ html[data-tema="acik"] .alt-nav{background:rgba(255,255,255,.94)}
           <input type="checkbox" id="odeme-cuzdan" checked style="width:20px;height:20px;accent-color:var(--sari)"> Cüzdanıma da ekle (elime geçti)
         </label>
         <button class="btn btn-sari" id="btn-odeme-ekle">Kaydet</button>
+        <button class="btn btn-cizgili gizli" id="btn-odeme-vazgec" style="margin-top:10px">Vazgeç (düzenlemeyi iptal et)</button>
       </div>
       <div class="kart">
+        <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px" id="odeme-filtre">
+          <button class="eksik-cip secili-f" data-f="" style="font-size:12px;padding:7px 11px;border-color:var(--sari)">Tümü</button>
+          <button class="eksik-cip" data-f="avans" style="font-size:12px;padding:7px 11px">Avans</button>
+          <button class="eksik-cip" data-f="hakedis" style="font-size:12px;padding:7px 11px">Hakediş</button>
+          <button class="eksik-cip" data-f="kesinti" style="font-size:12px;padding:7px 11px">Kesinti</button>
+          <button class="eksik-cip" data-f="diger" style="font-size:12px;padding:7px 11px">Diğer</button>
+        </div>
         <h2>💵 Bu ay aldıkların <span id="odeme-toplam" style="margin-left:auto;font-size:14px;color:var(--soluk);font-family:Rubik;text-transform:none"></span></h2>
         <ul class="liste" id="liste-odemeler"></ul>
       </div>
@@ -742,6 +864,24 @@ html[data-tema="acik"] .alt-nav{background:rgba(255,255,255,.94)}
 
     <!-- ===== GÖRÜNÜM: ÖZET ===== -->
     <section id="goruntu-ozet" class="gizli">
+      <div class="kart">
+        <h2>🧮 Kazanç simülatörü</h2>
+        <p style="font-size:13px;color:var(--soluk);margin-bottom:12px">"Şu kadar çalışırsam ne kazanırım?" — dene bak:</p>
+        <div style="display:flex;gap:10px">
+          <div class="alan" style="flex:1">
+            <label>Gün</label>
+            <input type="number" id="sim-gun" inputmode="decimal" value="26" min="0">
+          </div>
+          <div class="alan" style="flex:1">
+            <label>Toplam mesai (saat)</label>
+            <input type="number" id="sim-mesai" inputmode="decimal" value="0" min="0">
+          </div>
+        </div>
+        <div style="background:var(--girdi);border:1.5px solid var(--cizgi);border-radius:12px;padding:12px 14px;display:flex;justify-content:space-between;align-items:center">
+          <span style="font-weight:600;font-size:14px">Tahmini kazanç</span>
+          <span id="sim-sonuc" style="color:var(--sari);font-family:'Saira Condensed';font-size:24px;font-weight:800">—</span>
+        </div>
+      </div>
       <div class="kart gizli" id="hedef-kart">
         <h2>🎯 Aylık hedef</h2>
         <div id="hedef-icerik"></div>
@@ -783,6 +923,7 @@ html[data-tema="acik"] .alt-nav{background:rgba(255,255,255,.94)}
     <section id="goruntu-yil" class="gizli">
       <div class="kart">
         <h2>📊 <span id="yil-baslik">Yıl</span> dökümü</h2>
+        <div id="isi-harita" style="margin-bottom:14px"></div>
         <div id="yil-icerik"><div class="bos-mesaj">Yükleniyor...</div></div>
         <button class="btn btn-cizgili" id="btn-yil-paylas" style="margin-top:14px">📤 Yıl raporunu paylaş</button>
         <button class="btn btn-cizgili" id="btn-csv" style="margin-top:10px">⬇️ Excel için CSV indir</button>
@@ -800,7 +941,18 @@ html[data-tema="acik"] .alt-nav{background:rgba(255,255,255,.94)}
       </div>
       <div class="kart">
         <h2>🗒️ Notlarım</h2>
+        <div class="alan" style="margin-bottom:10px">
+          <input type="text" id="not-ara" placeholder="🔎 Notlarda ara...">
+        </div>
         <ul class="liste" id="liste-notlar"></ul>
+      </div>
+    </section>
+
+    <!-- ===== GÖRÜNÜM: BAŞARIMLAR ===== -->
+    <section id="goruntu-rozet" class="gizli">
+      <div class="kart">
+        <h2>🏆 Başarımlarım <span id="rozet-sayac" style="margin-left:auto;font-size:14px;color:var(--soluk);font-family:Rubik;text-transform:none"></span></h2>
+        <div class="rozet-grid" id="rozet-grid"><div class="bos-mesaj">Yükleniyor...</div></div>
       </div>
     </section>
 
@@ -883,6 +1035,43 @@ html[data-tema="acik"] .alt-nav{background:rgba(255,255,255,.94)}
         <label style="display:flex;align-items:center;gap:10px;font-size:14px">
           <input type="checkbox" id="ayar-titresim" checked style="width:20px;height:20px;accent-color:var(--sari)"> Basılı tutunca titreşim
         </label>
+        <div class="alan" style="margin-top:14px;margin-bottom:0">
+          <label>Vurgu rengi</label>
+          <div class="renk-sec">
+            <button data-renk="sari" style="background:#FFC400" class="secili"></button>
+            <button data-renk="turuncu" style="background:#FF8A3C"></button>
+            <button data-renk="yesil" style="background:#35D07F"></button>
+            <button data-renk="mavi" style="background:#4C9AFF"></button>
+          </div>
+        </div>
+      </div>
+      <div class="kart">
+        <h2>🏖️ SGK / Emeklilik</h2>
+        <p style="font-size:13px;color:var(--soluk);margin-bottom:12px;line-height:1.6">
+          Şu ana kadarki SGK prim gününü yaz; uygulamada işlediğin günler üstüne eklenir, ana ekranda emekliliğe ne kaldığını görürsün.
+        </p>
+        <div style="display:flex;gap:10px">
+          <div class="alan" style="flex:1">
+            <label>Mevcut prim günün</label>
+            <input type="number" id="ayar-sgk" inputmode="numeric" placeholder="Örn: 2400">
+          </div>
+          <div class="alan" style="flex:1">
+            <label>Hedef (gün)</label>
+            <input type="number" id="ayar-sgk-hedef" inputmode="numeric" placeholder="7200">
+          </div>
+        </div>
+        <button class="btn btn-cizgili" id="btn-sgk-kaydet">Kaydet</button>
+      </div>
+      <div class="kart">
+        <h2>🔒 PIN kilidi</h2>
+        <p style="font-size:13px;color:var(--soluk);margin-bottom:12px;line-height:1.6">
+          Uygulama her açıldığında 4 haneli PIN sorsun. Telefonunu eline alan yevmiyeni göremesin.
+        </p>
+        <div class="alan">
+          <label>4 haneli PIN</label>
+          <input type="password" id="ayar-pin" inputmode="numeric" maxlength="4" placeholder="····">
+        </div>
+        <button class="btn btn-cizgili" id="btn-pin-kaydet">PIN'i etkinleştir</button>
       </div>
       <div class="kart">
         <h2>💾 Yedek</h2>
@@ -909,7 +1098,7 @@ html[data-tema="acik"] .alt-nav{background:rgba(255,255,255,.94)}
 
   <nav class="alt-nav">
     <button data-nav="ana" class="aktif">🏠<span>Ana</span></button>
-    <button data-nav="puantaj">📅<span>Puantaj</span></button>
+    <button data-nav="puantaj">📅<span>Puantaj</span><span class="rozet-nav" id="nav-rozet"></span></button>
     <button class="nav-arti" id="nav-arti" aria-label="Bugünü işle">＋</button>
     <button data-nav="odemeler">💵<span>Paralar</span></button>
     <button data-nav="ozet">🧮<span>Hesap</span></button>
@@ -923,6 +1112,10 @@ html[data-tema="acik"] .alt-nav{background:rgba(255,255,255,.94)}
   <h3 id="modal-baslik">Gün kaydı</h3>
   <div class="tarih-yazi" id="modal-tarih">—</div>
   <button class="eksik-cip" id="btn-dun-kopya" style="margin-bottom:14px">📋 Dünü kopyala</button>
+  <div id="gun-kazanc" style="background:var(--girdi);border:1.5px solid var(--cizgi);border-radius:12px;padding:11px 14px;margin-bottom:14px;font-weight:700;display:flex;justify-content:space-between;align-items:center">
+    <span style="font-size:13.5px">💰 Bu günün kazancı</span>
+    <span id="gun-kazanc-tutar" style="color:var(--sari);font-family:'Saira Condensed';font-size:22px">—</span>
+  </div>
 
   <div class="durum-secim" id="durum-secim">
     <button data-durum="tam"><span class="buyuk-ikon">✅</span>Tam<br>yevmiye</button>
@@ -984,6 +1177,29 @@ html[data-tema="acik"] .alt-nav{background:rgba(255,255,255,.94)}
 </div>
 
 <div class="toast" id="toast"></div>
+
+<!-- ============ DÖNEM SEÇİMİ MODALI ============ -->
+<div class="alt-sayfa" id="donem-modal">
+  <div class="tutamak"></div>
+  <h3 id="donem-baslik">Dönem seç</h3>
+  <div class="tarih-yazi">Hangi dönemin çizelgesini istiyorsun? (Yarım ay hakedişi alanlar için 1–15 ve 16–ay sonu seçenekleri var)</div>
+  <button class="btn btn-cizgili" id="donem-tum" style="margin-bottom:10px">📅 Tüm ay</button>
+  <button class="btn btn-cizgili" id="donem-ilk" style="margin-bottom:10px">🌓 İlk yarı (1 – 15)</button>
+  <button class="btn btn-cizgili" id="donem-ikinci">🌗 İkinci yarı (16 – ay sonu)</button>
+</div>
+
+<!-- ============ AY SEÇİCİ ============ -->
+<div class="alt-sayfa" id="ay-modal">
+  <div class="tutamak"></div>
+  <h3>📅 Ay seç</h3>
+  <div class="ay-bar" style="margin:10px 0 14px">
+    <button id="sec-onceki-yil">‹</button>
+    <div class="ay-ad" id="sec-yil">2026</div>
+    <button id="sec-sonraki-yil">›</button>
+  </div>
+  <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px" id="sec-aylar"></div>
+  <button class="btn btn-sari" id="btn-sec-bugun" style="margin-top:14px">📍 Bugüne dön</button>
+</div>
 
 <!-- ============ TOPLU İŞLEME MODALI ============ -->
 <div class="alt-sayfa" id="toplu-modal">
@@ -1100,6 +1316,11 @@ let borclar = [];                      // tüm borç kayıtları
 let cuzdan = [];                       // cüzdan hareketleri
 let notlar = [];                       // not defteri
 let gizliMod = false;                  // bakiye gizleme
+let odemeFiltre = "";                  // ödeme tür filtresi
+let duzenlenenOdeme = null;            // düzenlenen ödeme kaydı
+let duzenlenenSantiyeId = null;        // düzenlenen şantiye
+let takvimPara = false;                // takvimde kazanç göster
+let seciciYil = null;                  // ay seçici yılı
 let yilSon = null;                     // son yüklenen yıl özeti (paylaşım için)
 let sirketOzet = null;                 // tüm zamanlar {hakedis, alinan}
 let dinleyiciGirdi=null, dinleyiciOdeme=null, dinleyiciAyar=null, dinleyiciBorc=null, dinleyiciCuzdan=null, dinleyiciNot=null;
@@ -1136,6 +1357,7 @@ function basla(){
       cuzdaniDinle();
       notlariDinle();
       anaYukle();
+      havaYukle();
       const anaBtn = document.querySelector('[data-goruntu="ana"]');
       if(anaBtn) anaBtn.click();
     }else{
@@ -1178,6 +1400,8 @@ function ayarlariDinle(){
     ayarlar.calismaTipi = d.calismaTipi==="saatlik" ? "saatlik" : "yevmiye";
     ayarlar.hedef     = Number(d.hedef)||0;
     ayarlar.kapali    = Array.isArray(d.kapali) ? d.kapali : [];
+    ayarlar.sgkGun    = Number(d.sgkGun)||0;
+    ayarlar.sgkHedef  = Number(d.sgkHedef)||0;
     ayarlar.santiye   = d.santiye||"";
     ayarlar.santiyeler= Array.isArray(d.santiyeler) ? d.santiyeler : [];
     $("#ayar-yevmiye").value = ayarlar.yevmiye||"";
@@ -1188,6 +1412,9 @@ function ayarlariDinle(){
     $("#ayar-tip").value     = ayarlar.calismaTipi;
     $("#ayar-hedef").value   = ayarlar.hedef||"";
     $("#ayar-santiye").value = ayarlar.santiye;
+    $("#ayar-sgk").value = ayarlar.sgkGun||"";
+    $("#ayar-sgk-hedef").value = ayarlar.sgkHedef||"";
+    sgkCiz();
     santiyeListCiz();
     hepsiniCiz();
   }, hataGoster);
@@ -1234,14 +1461,25 @@ function borcCiz(){
       '<div class="orta"><div class="baslik">'+(b.kisi||"?")+(b.odendi?" ✔ kapandı":"")+'</div>'+
       '<div class="alt-yazi">'+(b.yon==="verdim"?"Ona verdim":"Ondan aldım")+(b.not?" — "+b.not:"")+'</div></div>'+
       '<div class="tutar">'+paraFmt(b.tutar)+'</div>'+
+      '<button class="sil" aria-label="Paylaş" style="color:var(--mesai)">📤</button>'+
       '<button class="sil" aria-label="Kapat" style="color:var(--tam)">'+(b.odendi?"↩️":"✔")+'</button>'+
       '<button class="sil" aria-label="Sil">🗑️</button>';
     const btnler = li.querySelectorAll(".sil");
-    btnler[0].addEventListener("click", ()=>{
+    btnler[0].addEventListener("click", async ()=>{
+      const t2 = new Date(b.tarih+"T12:00:00");
+      const metin = b.yon==="verdim"
+        ? "Selam "+(b.kisi||"")+" 👋 "+t2.getDate()+" "+AYLAR[t2.getMonth()]+"'de sana "+paraFmt(b.tutar)+" vermiştim, hatırlatayım dedim 🙏"+(b.not?" ("+b.not+")":"")
+        : "Selam "+(b.kisi||"")+" 👋 "+t2.getDate()+" "+AYLAR[t2.getMonth()]+"'de senden "+paraFmt(b.tutar)+" almıştım, unutmadım, en kısa zamanda ödeyeceğim 🤝"+(b.not?" ("+b.not+")":"");
+      try{
+        if(navigator.share) await navigator.share({text:metin});
+        else{ await navigator.clipboard.writeText(metin); toast("Mesaj kopyalandı 📋"); }
+      }catch(e){}
+    });
+    btnler[1].addEventListener("click", ()=>{
       kokRef().collection("borclar").doc(b.id).update({odendi: !b.odendi})
         .then(()=> toast(b.odendi ? "Borç tekrar açıldı" : "Borç kapandı ✔")).catch(hataGoster);
     });
-    btnler[1].addEventListener("click", ()=>{
+    btnler[2].addEventListener("click", ()=>{
       if(confirm("Bu borç kaydını tamamen silmek istiyor musun?"))
         kokRef().collection("borclar").doc(b.id).delete().then(()=>toast("Silindi")).catch(hataGoster);
     });
@@ -1260,9 +1498,17 @@ function santiyeListCiz(){
     const li = document.createElement("li");
     li.innerHTML =
       '<div class="rozet" style="background:var(--mesai)">🏗️</div>'+
-      '<div class="orta"><div class="baslik">'+s.ad+'</div>'+
+      '<div class="orta" style="cursor:pointer"><div class="baslik">'+s.ad+' <span style="font-size:11px;color:var(--soluk)">✏️</span></div>'+
       '<div class="alt-yazi">Yevmiye '+paraFmt(s.yevmiye)+' · Mesai '+paraFmt(s.mesaiUcret)+'/saat</div></div>'+
       '<button class="sil" aria-label="Sil">🗑️</button>';
+    li.querySelector(".orta").addEventListener("click", ()=>{
+      duzenlenenSantiyeId = s.id;
+      $("#yeni-santiye-ad").value = s.ad;
+      $("#yeni-santiye-yevmiye").value = s.yevmiye;
+      $("#yeni-santiye-mesai").value = s.mesaiUcret;
+      $("#btn-santiye-ekle").textContent = "✏️ Şantiyeyi güncelle";
+      toast("Düzenleme modu: ücreti değiştir, güncelle'ye bas");
+    });
     li.querySelector(".sil").addEventListener("click", async ()=>{
       if(!confirm('"'+s.ad+'" silinsin mi? (Eski günlerin hesabı bozulmaz, ücretler günlere işlendi)')) return;
       try{
@@ -1372,25 +1618,177 @@ function notlariDinle(){
 }
 function notCiz(){
   const ul = $("#liste-notlar");
-  if(!notlar.length){
-    ul.innerHTML = '<div class="bos-mesaj"><span class="buyuk">📝</span>Henüz not yok.</div>';
+  const ara = (($("#not-ara")&&$("#not-ara").value)||"").toLowerCase().trim();
+  let liste = [...notlar];
+  liste.sort((a,b)=>{
+    if(!!b.sabit !== !!a.sabit) return b.sabit ? 1 : -1;
+    return a.tarih < b.tarih ? 1 : -1;
+  });
+  if(ara) liste = liste.filter(n=> String(n.metin||"").toLowerCase().includes(ara));
+  if(!liste.length){
+    ul.innerHTML = '<div class="bos-mesaj"><span class="buyuk">📝</span>'+(ara?'Eşleşen not yok.':'Henüz not yok.')+'</div>';
     return;
   }
   ul.innerHTML = "";
-  notlar.forEach(n=>{
+  liste.forEach(n=>{
     const t = new Date((n.tarih||"2000-01-01")+"T12:00:00");
     const li = document.createElement("li");
     li.innerHTML =
-      '<div class="rozet" style="background:var(--asfalt)">'+t.getDate()+'<small>'+AYLAR[t.getMonth()].slice(0,3)+'</small></div>'+
-      '<div class="orta"><div class="baslik" style="white-space:pre-wrap;font-weight:500">'+
+      '<div class="rozet" style="background:'+(n.sabit?'var(--sari)':'var(--asfalt2)')+';color:'+(n.sabit?'#111':'#fff')+'">'+t.getDate()+'<small>'+AYLAR[t.getMonth()].slice(0,3)+'</small></div>'+
+      '<div class="orta"><div class="baslik" style="white-space:pre-wrap;font-weight:500">'+(n.sabit?'📌 ':'')+
       String(n.metin||"").replace(/</g,"&lt;")+'</div></div>'+
+      '<button class="sil" aria-label="Sabitle" style="color:var(--sari)">📌</button>'+
       '<button class="sil" aria-label="Sil">🗑️</button>';
-    li.querySelector(".sil").addEventListener("click", ()=>{
+    const btnler = li.querySelectorAll(".sil");
+    btnler[0].addEventListener("click", ()=>{
+      kokRef().collection("notlar").doc(n.id).update({sabit: !n.sabit})
+        .then(()=> toast(n.sabit ? "Sabitleme kaldırıldı" : "Not sabitlendi 📌")).catch(hataGoster);
+    });
+    btnler[1].addEventListener("click", ()=>{
       if(confirm("Bu notu silmek istiyor musun?"))
         kokRef().collection("notlar").doc(n.id).delete().then(()=>toast("Not silindi")).catch(hataGoster);
     });
     ul.appendChild(li);
   });
+}
+
+/* ---------- Günün sözü ---------- */
+const SOZLER = [
+  "Alın teri yalan söylemez.",
+  "Bugün döktüğün ter, yarın cebindeki paradır.",
+  "İyi usta, hesabını da sağlam tutar.",
+  "Duvar tuğla tuğla, servet gün gün örülür.",
+  "Beton bekler, hesap beklemez.",
+  "En sağlam temel, dürüst kazanılan paradır.",
+  "İskele kurulur, iş biter; emek asla boşa gitmez.",
+  "Mesai saati değil, alın teri konuşur.",
+  "Çalışan demir pas tutmaz.",
+  "Küçük birikim, büyük temelin ilk harcıdır.",
+  "Sabır ve mala, ikisi de düz duvar örer.",
+  "Bugünkü yorgunluk, yarınki rahatlıktır.",
+  "Hesabını bilen işçinin sırtı yere gelmez.",
+  "Vinç yükü kaldırır, azim adamı kaldırır.",
+  "Erken kalkan yol alır, puantaj tutan hakkını alır.",
+  "Her X işareti, bir tuğla daha demektir."
+];
+function gununSozCiz(){
+  const g = Math.floor(Date.now()/86400000);
+  const el = $("#gunun-soz");
+  if(el) el.textContent = "“" + SOZLER[g % SOZLER.length] + "”";
+}
+
+/* ---------- Usta seviyesi ---------- */
+const SEVIYELER = [
+  {ad:"Çırak",    ikon:"🧹", min:0},
+  {ad:"Kalfa",    ikon:"🔨", min:50},
+  {ad:"Usta",     ikon:"👷", min:150},
+  {ad:"Ustabaşı", ikon:"⛑️", min:400},
+  {ad:"Duayen",   ikon:"👑", min:800}
+];
+function seviyeBul(gun){
+  let s = SEVIYELER[0], sonraki = null;
+  for(let i=0;i<SEVIYELER.length;i++){
+    if(gun >= SEVIYELER[i].min){ s = SEVIYELER[i]; sonraki = SEVIYELER[i+1]||null; }
+  }
+  return {s, sonraki};
+}
+let tumIstatistik = null; // anaYukle doldurur
+
+function seviyeCiz(){
+  if(!tumIstatistik) return;
+  const gun = Math.floor(tumIstatistik.gunToplam);
+  const {s, sonraki} = seviyeBul(gun);
+  $("#seviye-kart").classList.remove("gizli");
+  $("#seviye-ikon").textContent = s.ikon;
+  $("#seviye-ad").textContent = s.ad + " · " + gun + " gün";
+  if(sonraki){
+    const onceki = s.min;
+    const yuzde = Math.min(100, Math.round((gun-onceki)/(sonraki.min-onceki)*100));
+    $("#seviye-dolu").style.width = yuzde+"%";
+    $("#seviye-alt").textContent = sonraki.ad + " seviyesine " + (sonraki.min-gun) + " gün kaldı 💪";
+  }else{
+    $("#seviye-dolu").style.width = "100%";
+    $("#seviye-alt").textContent = "Zirvedesin usta, senden büyüğü yok 👑";
+  }
+}
+
+/* ---------- Başarım rozetleri ---------- */
+const ROZETLER = [
+  {ikon:"🥇", ad:"İlk Adım",          sart:"İlk gününü işle",           t: i=> i.gunToplam>=1},
+  {ikon:"🔟", ad:"Onluk",             sart:"10 gün çalış",              t: i=> i.gunToplam>=10},
+  {ikon:"💪", ad:"Ellilik",           sart:"50 gün çalış",              t: i=> i.gunToplam>=50},
+  {ikon:"💯", ad:"Yüzler Kulübü",     sart:"100 gün çalış",             t: i=> i.gunToplam>=100},
+  {ikon:"🏗️", ad:"Demirbaş",          sart:"250 gün çalış",             t: i=> i.gunToplam>=250},
+  {ikon:"🗿", ad:"Şantiyenin Direği", sart:"500 gün çalış",             t: i=> i.gunToplam>=500},
+  {ikon:"⏰", ad:"İlk Mesai",         sart:"İlk mesaini yap",           t: i=> i.mesaiToplam>=1},
+  {ikon:"🌙", ad:"Gece Kuşu",         sart:"50 saat mesai",             t: i=> i.mesaiToplam>=50},
+  {ikon:"🔥", ad:"Mesai Canavarı",    sart:"150 saat mesai",            t: i=> i.mesaiToplam>=150},
+  {ikon:"➕", ad:"Artı Avcısı",       sart:"Toplam 5 gün içi artı",     t: i=> i.artiToplam>=5},
+  {ikon:"🛐", ad:"Pazar Fedaisi",     sart:"1 pazar günü çalış",        t: i=> i.pazarToplam>=1},
+  {ikon:"🦸", ad:"Pazar Kahramanı",   sart:"10 pazar günü çalış",       t: i=> i.pazarToplam>=10},
+  {ikon:"💵", ad:"İlk Hakediş",       sart:"İlk para girişini kaydet",  t: i=> i.odemeSayisi>=1},
+  {ikon:"💰", ad:"Çeyrek Milyon",     sart:"250.000 ₺ hakediş",         t: i=> i.hakedisToplam>=250000},
+  {ikon:"🏆", ad:"Milyoner Usta",     sart:"1.000.000 ₺ hakediş",       t: i=> i.hakedisToplam>=1000000}
+];
+async function rozetYukle(){
+  if(!tumIstatistik) await anaYukle();
+  if(!tumIstatistik) return;
+  const kap = $("#rozet-grid");
+  kap.innerHTML = "";
+  let acilan = 0;
+  ROZETLER.forEach(r=>{
+    const acik = r.t(tumIstatistik);
+    if(acik) acilan++;
+    const d = document.createElement("div");
+    d.className = "rozet-kut " + (acik ? "acildi" : "kilitli");
+    d.innerHTML = '<span class="rikon">'+r.ikon+'</span><div class="rad">'+r.ad+'</div><div class="rsart">'+r.sart+'</div>';
+    kap.appendChild(d);
+  });
+  $("#rozet-sayac").textContent = acilan + "/" + ROZETLER.length + " açıldı";
+}
+
+/* ---------- SGK emeklilik sayacı ---------- */
+function sgkCiz(){
+  if(!tumIstatistik) return;
+  const kart = $("#sgk-kart");
+  const hedef = ayarlar.sgkHedef||0;
+  if(!(hedef>0)){ kart.classList.add("gizli"); return; }
+  const prim = (ayarlar.sgkGun||0) + Math.floor(tumIstatistik.gunToplam);
+  const yuzde = Math.min(100, Math.round(prim/hedef*100));
+  kart.classList.remove("gizli");
+  const dolu = $("#sgk-dolu");
+  dolu.style.width = yuzde+"%";
+  dolu.classList.toggle("tamamlandi", yuzde>=100);
+  const kalan = Math.max(0, hedef - prim);
+  $("#sgk-yazi").innerHTML = "<b>"+prim.toLocaleString("tr-TR")+"</b> / "+hedef.toLocaleString("tr-TR")+" prim günü (%"+yuzde+")"+
+    (kalan>0 ? " · Emekliliğe ~"+kalan.toLocaleString("tr-TR")+" gün (yaklaşık "+Math.ceil(kalan/300)+" yıl çalışma) 🏖️" : " · Hayırlı olsun usta, gün doldu! 🎉");
+}
+
+/* ---------- Hava durumu (yarın yağmur var mı?) ---------- */
+function havaYukle(){
+  if(!navigator.geolocation) return;
+  try{
+    navigator.geolocation.getCurrentPosition(async p=>{
+      try{
+        const u = "https://api.open-meteo.com/v1/forecast?latitude="+p.coords.latitude.toFixed(3)+
+          "&longitude="+p.coords.longitude.toFixed(3)+
+          "&daily=precipitation_probability_max,temperature_2m_max&timezone=auto&forecast_days=2";
+        const r = await fetch(u);
+        const d = await r.json();
+        const yagmur = d.daily && d.daily.precipitation_probability_max ? d.daily.precipitation_probability_max[1] : null;
+        const sicak = d.daily && d.daily.temperature_2m_max ? Math.round(d.daily.temperature_2m_max[1]) : null;
+        if(yagmur==null) return;
+        const el = $("#hava-kart");
+        el.style.display = "block";
+        if(yagmur>=50){
+          el.innerHTML = "🌧️ Yarın <b>%"+yagmur+" yağmur ihtimali</b> var"+(sicak!=null?" ("+sicak+"°C)":"")+" — şantiye belli olmaz, ustaya sor.";
+          el.style.borderColor = "var(--mesai)";
+        }else{
+          el.innerHTML = "☀️ Yarın hava iş için uygun görünüyor"+(sicak!=null?" — "+sicak+"°C":"")+", yağmur ihtimali %"+yagmur+".";
+        }
+      }catch(e){}
+    }, ()=>{}, {timeout:8000, maximumAge:3600000});
+  }catch(e){}
 }
 
 /* ---------- Ana ekran: şirket hesap kartı ---------- */
@@ -1402,10 +1800,15 @@ async function anaYukle(){
     ]);
     let hakedis=0, alinan=0;
     const hareketler = [];
+    let gunToplam=0, mesaiToplam=0, artiToplam=0, pazarToplam=0;
     gSnap.forEach(doc=>{
       const v = doc.data();
       const k = girdiKazanc(v);
       hakedis += k;
+      gunToplam += girdiGun(v);
+      mesaiToplam += Number(v.mesai)||0;
+      artiToplam += Number(v.arti)||0;
+      if(girdiGun(v)>0 && new Date(doc.id+"T12:00:00").getDay()===0) pazarToplam++;
       if(k>0) hareketler.push({tarih:doc.id, tutar:k, tip:"+", baslik:girisEtiket(v)+(v.santiye?" · "+v.santiye:"")});
     });
     oSnap.forEach(doc=>{
@@ -1414,6 +1817,8 @@ async function anaYukle(){
       hareketler.push({tarih:v.tarih, tutar:Number(v.tutar)||0, tip:"-", baslik:odemeTurEtiket(v.tur)+" aldın"+(v.not?" · "+v.not:"")});
     });
     sirketOzet = {hakedis, alinan};
+    tumIstatistik = {gunToplam, mesaiToplam, artiToplam, pazarToplam, hakedisToplam:hakedis, odemeSayisi:oSnap.size};
+    seviyeCiz(); sgkCiz();
     $("#sirket-bakiye").textContent = gizliPara(hakedis - alinan);
     $("#sirket-alt").textContent = gizliMod ? "Toplam hakediş •••• · Alınan ••••"
       : "Toplam hakediş "+paraFmt(hakedis)+" · Alınan "+paraFmt(alinan);
@@ -1504,6 +1909,7 @@ function anaSelamCiz(){
     b.getFullYear()===aktifYil && b.getMonth()===aktifAy ? !!girdiler[tarihId(b)] : !!girdiler[tarihId(b)];
   $("#selam-alt").textContent = b.getDate()+" "+AYLAR[b.getMonth()]+" "+GUNLER[b.getDay()]+
     (girdiler[tarihId(b)] ? " · Bugünü işledin ✅" : " · Bugünü henüz işlemedin");
+  gununSozCiz();
 }
 
 function anaHaftaCiz(){
@@ -1559,13 +1965,20 @@ function eksikCiz(){
   dolu.classList.toggle("tamamlandi", yuzde>=100);
 
   if(!buAyMi || b.getDate()===1){
-    kart.classList.add("gizli"); return;
+    kart.classList.add("gizli");
+    const r0=$("#nav-rozet"); if(r0) r0.classList.remove("goster");
+    return;
   }
   const eksik = [];
   for(let g=1; g<b.getDate(); g++){
     if(new Date(aktifYil, aktifAy, g).getDay()===0) continue;
     const id = aktifYil+"-"+pad(aktifAy+1)+"-"+pad(g);
     if(!girdiler[id]) eksik.push({g, id});
+  }
+  const rozet = $("#nav-rozet");
+  if(rozet){
+    rozet.textContent = eksik.length>9 ? "9+" : eksik.length;
+    rozet.classList.toggle("goster", eksik.length>0);
   }
   if(!eksik.length){ kart.classList.add("gizli"); return; }
   kart.classList.remove("gizli");
@@ -1676,6 +2089,15 @@ function takvimCiz(){
       s.className="nokta"; s.textContent=veri.saat+"s";
       el.appendChild(s);
     }
+    if(takvimPara && veri){
+      const k = girdiKazanc(veri);
+      if(k>0){
+        const p=document.createElement("span");
+        p.className="para-yazi";
+        p.textContent = k>=1000 ? (Math.round(k/100)/10)+"K" : Math.round(k);
+        el.appendChild(p);
+      }
+    }
     if(veri && Number(veri.mesai)>0){
       const r=document.createElement("span");
       r.className="mesai-rozet"; r.textContent="+"+veri.mesai+"s";
@@ -1748,30 +2170,65 @@ function odemeTurEtiket(t){
 
 function odemeListesiCiz(){
   const ul = $("#liste-odemeler");
+  const gorunen = odemeFiltre ? odemeler.filter(o=> (o.tur||"diger")===odemeFiltre) : odemeler;
   const toplamEl = $("#odeme-toplam");
-  if(toplamEl) toplamEl.textContent = odemeler.length ? "Toplam: "+paraFmt(odemeler.reduce((s,o)=>s+(Number(o.tutar)||0),0)) : "";
-  if(!odemeler.length){
-    ul.innerHTML = '<div class="bos-mesaj"><span class="buyuk">💸</span>Bu ay para girişi yok.</div>';
+  if(toplamEl) toplamEl.textContent = gorunen.length ? "Toplam: "+paraFmt(gorunen.reduce((s,o)=>s+(Number(o.tutar)||0),0)) : "";
+  if(!gorunen.length){
+    ul.innerHTML = '<div class="bos-mesaj"><span class="buyuk">💸</span>'+(odemeFiltre ? 'Bu türde kayıt yok.' : 'Bu ay para girişi yok.')+'</div>';
     return;
   }
   ul.innerHTML = "";
-  odemeler.forEach(o=>{
+  gorunen.forEach(o=>{
     const t = new Date(o.tarih+"T12:00:00");
     const li = document.createElement("li");
     li.innerHTML =
-      '<div class="rozet" style="background:var(--asfalt)">'+t.getDate()+'<small>'+AYLAR[t.getMonth()].slice(0,3)+'</small></div>'+
-      '<div class="orta"><div class="baslik">'+odemeTurEtiket(o.tur)+'</div>'+
+      '<div class="rozet" style="background:var(--asfalt2)">'+t.getDate()+'<small>'+AYLAR[t.getMonth()].slice(0,3)+'</small></div>'+
+      '<div class="orta" style="cursor:pointer"><div class="baslik">'+odemeTurEtiket(o.tur)+' <span style="font-size:11px;color:var(--soluk)">✏️ düzenle</span></div>'+
       '<div class="alt-yazi">'+(o.not||"—")+'</div></div>'+
       '<div class="tutar">'+paraFmt(o.tutar)+'</div>'+
       '<button class="sil" aria-label="Sil">🗑️</button>';
-    li.querySelector(".sil").addEventListener("click", ()=>{
+    li.querySelector(".orta").addEventListener("click", ()=>{
       if(ayKilitli(o.tarih)){ toast("Bu ay kilitli 🔒 Hesap özetinden açabilirsin"); return; }
-      if(confirm("Bu para kaydını silmek istiyor musun?")){
-        kokRef().collection("odemeler").doc(o.id).delete().then(()=>toast("Kayıt silindi")).catch(hataGoster);
-      }
+      duzenlenenOdeme = o;
+      $("#odeme-tarih").value = o.tarih;
+      $("#odeme-tutar").value = o.tutar;
+      $("#odeme-tur").value = o.tur||"diger";
+      $("#odeme-not").value = o.not||"";
+      $("#btn-odeme-ekle").textContent = "✏️ Güncelle";
+      $("#btn-odeme-vazgec").classList.remove("gizli");
+      window.scrollTo({top:0, behavior:"smooth"});
+      toast("Düzenleme modu: bilgileri değiştir, Güncelle'ye bas");
+    });
+    li.querySelector(".sil").addEventListener("click", async ()=>{
+      if(ayKilitli(o.tarih)){ toast("Bu ay kilitli 🔒 Hesap özetinden açabilirsin"); return; }
+      const kopya = {...o}; delete kopya.id;
+      try{
+        await kokRef().collection("odemeler").doc(o.id).delete();
+        toastGeriAlVeri("Ödeme silindi", "odemeler", o.id, kopya);
+      }catch(e){ hataGoster(e); }
     });
     ul.appendChild(li);
   });
+}
+
+/* Koleksiyon kaydı için geri al */
+function toastGeriAlVeri(mesaj, koleksiyon, id, veri){
+  const t = $("#toast");
+  t.innerHTML = "";
+  t.appendChild(document.createTextNode(mesaj + " "));
+  const b = document.createElement("button");
+  b.textContent = "GERİ AL";
+  b.style.cssText = "margin-left:10px;color:var(--sari);font-weight:800;font-size:14px";
+  b.addEventListener("click", async ()=>{
+    try{
+      await kokRef().collection(koleksiyon).doc(id).set(veri);
+      toast("Geri alındı ↩️");
+    }catch(e){ hataGoster(e); }
+  });
+  t.appendChild(b);
+  t.classList.add("goster");
+  clearTimeout(toastZaman);
+  toastZaman = setTimeout(()=> t.classList.remove("goster"), 5500);
 }
 
 function hesapla(){
@@ -1800,13 +2257,52 @@ function hesapla(){
            kalan: hakedis - alinan };
 }
 
+/* ---------- Çalışma serisi (üst üste gün, pazar seriyi bozmaz) ---------- */
+function seriHesapla(){
+  const sonGun = new Date(aktifYil, aktifAy+1, 0).getDate();
+  let seri=0, maksSeri=0, pazarCalisma=0;
+  for(let g=1; g<=sonGun; g++){
+    const d = new Date(aktifYil, aktifAy, g);
+    const v = girdiler[aktifYil+"-"+pad(aktifAy+1)+"-"+pad(g)];
+    const calisti = v && girdiGun(v)>0;
+    if(d.getDay()===0){
+      if(calisti){ pazarCalisma++; seri++; }
+      /* pazar boşsa seri bozulmaz */
+    }else{
+      if(calisti) seri++; else seri=0;
+    }
+    if(seri>maksSeri) maksSeri=seri;
+  }
+  return {maksSeri, pazarCalisma};
+}
+
+/* ---------- Gün modalında canlı kazanç ---------- */
+function modalKazancGuncelle(){
+  try{
+    const saatlikMod = ayarlar.calismaTipi==="saatlik";
+    const secId = $("#gun-santiye-sec").value || "";
+    const temp = {
+      durum: saatlikMod ? "saatlik" : modalDurum,
+      mesai: Number($("#mesai-saat").value)||0,
+      arti: Number($("#gun-arti").value)||0,
+      santiyeId: secId,
+      ...guncelOranlar(secId)
+    };
+    if(saatlikMod) temp.saat = Number($("#gun-saat").value)||0;
+    $("#gun-kazanc-tutar").textContent = paraFmt(girdiKazanc(temp));
+  }catch(e){}
+}
+
 function ozetCiz(){
   const t = hesapla();
+  const seri = seriHesapla();
   $("#ozet-grid").innerHTML =
     kut("Tam yevmiye", t.tam + " gün", "tam-r") +
     kut("Yarım yevmiye", t.yarim + " gün", "") +
     (t.saatToplam>0 ? kut("Normal çalışma", t.saatToplam + " saat", "tam-r") : "") +
     kut("Toplam mesai", t.mesaiToplam + " saat", "mesai-r") +
+    (seri.maksSeri>=2 ? kut("🔥 En uzun seri", seri.maksSeri + " gün", "tam-r") : "") +
+    (seri.pazarCalisma>0 ? kut("Pazar çalışması", seri.pazarCalisma + " gün", "mesai-r") : "") +
     kut("Gelmediğim gün", t.gelmedi + " gün", t.gelmedi>0?"eksi":"") +
     kut("Yevmiye kazancı", paraFmt(t.yevmiyeKazanc), "") +
     kut("Mesai kazancı", paraFmt(t.mesaiKazanc), "mesai-r") +
@@ -2008,6 +2504,33 @@ async function yedekGeriYukle(dosya){
   }catch(e){ hataGoster(e); }
 }
 
+/* ---------- Yıllık ısı haritası ---------- */
+function isiHaritaCiz(gunKazanc){
+  const kap = $("#isi-harita");
+  if(!kap) return;
+  const degerler = Object.values(gunKazanc);
+  if(!degerler.length){ kap.innerHTML = ""; return; }
+  const maks = Math.max(...degerler);
+  let html = '<div style="font-size:12px;color:var(--soluk);margin-bottom:8px">🗓️ Yılın haritası — koyu sarı = çok kazandığın gün</div>';
+  for(let ay=0; ay<12; ay++){
+    const gunSayi = new Date(aktifYil, ay+1, 0).getDate();
+    let hucre = "";
+    for(let g=1; g<=31; g++){
+      if(g>gunSayi){ hucre += '<i style="opacity:0"></i>'; continue; }
+      const id = aktifYil+"-"+pad(ay+1)+"-"+pad(g);
+      const k = gunKazanc[id]||0;
+      if(k>0){
+        const alfa = 0.25 + 0.75*(k/maks);
+        hucre += '<i style="background:rgba(255,196,0,'+alfa.toFixed(2)+')"></i>';
+      }else{
+        hucre += '<i></i>';
+      }
+    }
+    html += '<div class="isi-ay"><span class="ay-et">'+AYLAR[ay].slice(0,3)+'</span><div class="isi-gunler">'+hucre+'</div></div>';
+  }
+  kap.innerHTML = html;
+}
+
 /* ---------- Yıl özeti ---------- */async function yilYukle(){
   $("#yil-baslik").textContent = aktifYil;
   $("#yil-icerik").innerHTML = '<div class="bos-mesaj">Yükleniyor...</div>';
@@ -2021,12 +2544,16 @@ async function yedekGeriYukle(dosya){
         .where("tarih", ">=", bas).where("tarih", "<=", son).get()
     ]);
     const aylik = Array.from({length:12}, ()=>({gun:0,mesai:0,hak:0,alinan:0}));
+    const gunKazanc = {};
     gSnap.forEach(doc=>{
       const ay = Number(doc.id.slice(5,7))-1, v=doc.data();
       aylik[ay].gun += girdiGun(v);
       aylik[ay].mesai += Number(v.mesai)||0;
-      aylik[ay].hak += girdiKazanc(v);
+      const kz = girdiKazanc(v);
+      aylik[ay].hak += kz;
+      if(kz>0) gunKazanc[doc.id] = kz;
     });
+    isiHaritaCiz(gunKazanc);
     oSnap.forEach(doc=>{
       const v=doc.data(), ay=Number(String(v.tarih).slice(5,7))-1;
       if(ay>=0 && ay<12) aylik[ay].alinan += Number(v.tutar)||0;
@@ -2056,52 +2583,76 @@ async function yedekGeriYukle(dosya){
 }
 
 /* ---------- Patron raporu (WhatsApp) ----------
-   Klasik puantaj işareti: X = tam, / = yarım, 0 = yok
-   YEVMİYE: X tam · / yarım · 0 çalışmadı · (saatlikte Ns)
+   Çalışılmayan gün: yevmiye 0, artı ve mesai BOMBOŞ.
+   Çalışılan gün → YEVMİYE: X tam · / yarım · Ns saatlik
    ARTI: X tam artı · / yarım artı · 0 yok
    MESAİ: varsa saat (örn 3s) · yoksa 0 */
 function gunIsaret(v){
-  let yev = "0";
-  if(v){
-    if(v.durum==="tam") yev = "X";
-    else if(v.durum==="yarim") yev = "/";
-    else if(v.durum==="saatlik" && (Number(v.saat)||0)>0) yev = v.saat+"s";
+  const calisti = v && (v.durum==="tam" || v.durum==="yarim" ||
+    (v.durum==="saatlik" && (Number(v.saat)||0)>0));
+  if(!calisti){
+    const m0 = v ? (Number(v.mesai)||0) : 0;
+    return {yev:"0", arti:"", mesai: m0>0 ? m0+"s" : ""};
   }
-  const a = v ? (Number(v.arti)||0) : 0;
+  let yev = "X";
+  if(v.durum==="yarim") yev = "/";
+  else if(v.durum==="saatlik") yev = v.saat+"s";
+  const a = Number(v.arti)||0;
   let arti = "0";
   if(a>0){
     const tamA = Math.floor(a), bucuk = (a - tamA) >= 0.5;
     arti = "X".repeat(Math.min(tamA,3)) + (bucuk ? "/" : "");
     if(!arti) arti = "/";
   }
-  const m = v ? (Number(v.mesai)||0) : 0;
+  const m = Number(v.mesai)||0;
   const mesai = m>0 ? m+"s" : "0";
   return {yev, arti, mesai};
 }
 
-async function raporPaylas(){
-  const t = hesapla();
+/* ---------- Dönem hesabı (1–15, 16–son, tüm ay) ---------- */
+function hesaplaAralik(gBas, gSon){
+  const aySonu = new Date(aktifYil, aktifAy+1, 0).getDate();
+  if(gBas==null) gBas = 1;
+  if(gSon==null) gSon = aySonu;
+  gSon = Math.min(gSon, aySonu);
+  let gunSayisi=0, mesaiToplam=0, saatToplam=0, artiToplam=0, hakedis=0;
+  Object.entries(girdiler).forEach(([id, v])=>{
+    const g = Number(id.slice(8,10));
+    if(g<gBas || g>gSon) return;
+    gunSayisi += girdiGun(v);
+    mesaiToplam += Number(v.mesai)||0;
+    if(v.durum==="saatlik") saatToplam += Number(v.saat)||0;
+    artiToplam += Number(v.arti)||0;
+    hakedis += girdiKazanc(v);
+  });
+  const bId = aktifYil+"-"+pad(aktifAy+1)+"-"+pad(gBas);
+  const sId = aktifYil+"-"+pad(aktifAy+1)+"-"+pad(gSon);
+  const alinan = odemeler.filter(o=> o.tarih>=bId && o.tarih<=sId)
+                         .reduce((s,o)=> s+(Number(o.tutar)||0), 0);
+  return {gBas, gSon, gunSayisi, mesaiToplam, saatToplam, artiToplam,
+          hakedis, alinan, kalan: hakedis-alinan,
+          etiket: (gBas===1 && gSon===aySonu) ? "" : " ("+gBas+"–"+gSon+")"};
+}
+
+async function raporPaylas(gBas, gSon){
+  const t = hesaplaAralik(gBas, gSon);
   const ad = (kullanici && kullanici.displayName) || "";
-  const gunSayisi = new Date(aktifYil, aktifAy+1, 0).getDate();
   const kolon = (s,n) => String(s).padEnd(n," ");
   let satirlar = "TARİH     YEVMİYE  ARTI  MESAİ\n";
-  let artiToplam = 0;
-  for(let g=1; g<=gunSayisi; g++){
+  for(let g=t.gBas; g<=t.gSon; g++){
     const id = aktifYil+"-"+pad(aktifAy+1)+"-"+pad(g);
     const d = new Date(aktifYil, aktifAy, g);
-    const v = girdiler[id];
-    if(v) artiToplam += Number(v.arti)||0;
-    const i = gunIsaret(v);
+    const i = gunIsaret(girdiler[id]);
     satirlar += kolon(pad(g)+"."+pad(aktifAy+1)+" "+GUNLER[d.getDay()].slice(0,2), 10)
               + kolon(i.yev,9) + kolon(i.arti,6) + i.mesai + "\n";
   }
   const metin =
-    "📋 *PUANTAJ — " + AYLAR[aktifAy] + " " + aktifYil + "*\n" +
+    "📋 *PUANTAJ — " + AYLAR[aktifAy] + " " + aktifYil + t.etiket + "*\n" +
     (ad ? "👷 " + ad + "\n" : "") +
     "```\n" + satirlar + "```\n" +
     "✅ Çalışılan: " + t.gunSayisi + " gün" +
     (t.saatToplam>0 ? " ("+t.saatToplam+" saat)" : "") + "\n" +
-    (artiToplam>0 ? "➕ Gün içi artı: " + artiToplam + "\n" : "") +
+    (t.artiToplam>0 ? "➕ Gün içi artı: " + t.artiToplam + "\n" : "") +
     "⏱ Mesai: " + t.mesaiToplam + " saat\n" +
     "────────────\n" +
     "💰 Hakediş: " + paraFmt(t.hakedis) + "\n" +
@@ -2159,22 +2710,21 @@ function toastGeriAl(mesaj, islem){
   toastZaman = setTimeout(()=> t.classList.remove("goster"), 5500);
 }
 
-/* ---------- PDF hakediş raporu (patron formatı) ---------- */
-function pdfYazdir(){
-  const t = hesapla();
+/* ---------- PDF hakediş raporu (patron formatı, dönem destekli) ---------- */
+function pdfYazdir(gBas, gSon){
+  const t = hesaplaAralik(gBas, gSon);
   const ad = (kullanici && kullanici.displayName) || "";
-  const gunSayisi = new Date(aktifYil, aktifAy+1, 0).getDate();
-  let satirlar = "", artiToplam = 0;
-  for(let g=1; g<=gunSayisi; g++){
+  let satirlar = "";
+  for(let g=t.gBas; g<=t.gSon; g++){
     const id = aktifYil+"-"+pad(aktifAy+1)+"-"+pad(g);
     const d = new Date(aktifYil, aktifAy, g);
     const v = girdiler[id];
-    if(v) artiToplam += Number(v.arti)||0;
     const i = gunIsaret(v);
+    const kazancVar = i.yev!=="0" || (v && Number(v.mesai)>0);
     const pazar = d.getDay()===0 ? " style='background:#F4F4F4;color:#999'" : "";
     satirlar += "<tr"+pazar+"><td>"+pad(g)+" / "+pad(aktifAy+1)+" / "+aktifYil+" — "+GUNLER[d.getDay()]+
       "</td><td class='orta-h'>"+i.yev+"</td><td class='orta-h'>"+i.arti+"</td><td class='orta-h'>"+i.mesai+
-      "</td><td class='sag'>"+(v ? paraFmt(girdiKazanc(v)) : "0")+"</td></tr>";
+      "</td><td class='sag'>"+(kazancVar ? paraFmt(girdiKazanc(v)) : "")+"</td></tr>";
   }
   const w = window.open("", "_blank");
   if(!w){ toast("Tarayıcı yeni pencereyi engelledi, izin ver"); return; }
@@ -2187,11 +2737,11 @@ function pdfYazdir(){
     '.ozet td{font-weight:bold;background:#FFF7DC}'+
     '.imza{display:flex;justify-content:space-between;margin-top:55px}'+
     '.imza div{width:40%;border-top:1.5px solid #111;padding-top:6px;text-align:center;font-size:12px}</style></head><body>'+
-    '<h1>PUANTAJ ÇİZELGESİ — '+AYLAR[aktifAy]+' '+aktifYil+'</h1>'+
+    '<h1>PUANTAJ ÇİZELGESİ — '+AYLAR[aktifAy]+' '+aktifYil+t.etiket+'</h1>'+
     (ad ? '<p><b>İşçi:</b> '+ad+(ayarlar.santiye?' &nbsp;·&nbsp; <b>Şantiye:</b> '+ayarlar.santiye:'')+'</p>' : '')+
     '<table><tr><th>TARİH</th><th style="text-align:center">YEVMİYE</th><th style="text-align:center">GÜN İÇİ ARTI</th><th style="text-align:center">MESAİ</th><th class="sag">KAZANÇ</th></tr>'+
     satirlar+
-    '<tr class="ozet"><td>TOPLAM: '+t.gunSayisi+' gün'+(artiToplam>0?' · '+artiToplam+' artı':'')+' · '+t.mesaiToplam+' saat mesai</td><td colspan="3">HAKEDİŞ</td><td class="sag">'+paraFmt(t.hakedis)+'</td></tr>'+
+    '<tr class="ozet"><td>TOPLAM: '+t.gunSayisi+' gün'+(t.artiToplam>0?' · '+t.artiToplam+' artı':'')+' · '+t.mesaiToplam+' saat mesai</td><td colspan="3">HAKEDİŞ</td><td class="sag">'+paraFmt(t.hakedis)+'</td></tr>'+
     '<tr class="ozet"><td></td><td colspan="3">ALINAN (avans/ödeme)</td><td class="sag">'+paraFmt(t.alinan)+'</td></tr>'+
     '<tr class="ozet"><td></td><td colspan="3">KALAN</td><td class="sag">'+paraFmt(t.kalan)+'</td></tr></table>'+
     '<div class="imza"><div>İşçi<br>Ad Soyad / İmza</div><div>İşveren<br>Ad Soyad / İmza</div></div>'+
@@ -2235,6 +2785,7 @@ function modalAc(id){
   }
   $("#btn-gun-sil").style.display = girdiler[id] ? "block" : "none";
   durumButonYenile();
+  modalKazancGuncelle();
   $("#modal-perde").classList.add("acik");
   $("#gun-modal").classList.add("acik");
 }
@@ -2333,6 +2884,7 @@ document.addEventListener("DOMContentLoaded", ()=>{
     ozet:["Hesap","Ay sonu özeti"],
     yil:["Yıl özeti","12 ayın dökümü"],
     notlar:["Notlar","Aklında kalmasın, yaz"],
+    rozet:["Başarımlar","Rozetlerini topla"],
     ayarlar:["Ayarlar","Ücret ve hesap"]
   };
   $$("[data-goruntu]").forEach(b=>{
@@ -2340,10 +2892,10 @@ document.addEventListener("DOMContentLoaded", ()=>{
       const g = b.dataset.goruntu;
       aktifGoruntu = g;
       $$("[data-goruntu]").forEach(x=>x.classList.toggle("aktif", x===b));
-      ["ana","puantaj","odemeler","borc","ozet","yil","notlar","ayarlar"].forEach(x=>{
+      ["ana","puantaj","odemeler","borc","ozet","yil","notlar","rozet","ayarlar"].forEach(x=>{
         $("#goruntu-"+x).classList.toggle("gizli", x!==g);
       });
-      $("#ay-bar").style.display = (g==="ayarlar"||g==="borc"||g==="ana"||g==="notlar") ? "none" : "flex";
+      $("#ay-bar").style.display = (g==="ayarlar"||g==="borc"||g==="ana"||g==="notlar"||g==="rozet") ? "none" : "flex";
       $("#topbar-baslik").firstChild.textContent = basliklar[g][0];
       $("#topbar-alt").textContent = basliklar[g][1];
       $("#btn-bugun").style.display = g==="puantaj" ? "flex" : "none";
@@ -2357,6 +2909,7 @@ document.addEventListener("DOMContentLoaded", ()=>{
       }
       if(g==="ozet") ozetDetayYukle();
       if(g==="ana") anaYukle();
+      if(g==="rozet") rozetYukle();
       cekmeceAc(false);
       window.scrollTo({top:0});
     });
@@ -2392,6 +2945,8 @@ document.addEventListener("DOMContentLoaded", ()=>{
     modalKapat();
     $("#toplu-modal").classList.remove("acik");
     $("#kur-modal").classList.remove("acik");
+    $("#donem-modal").classList.remove("acik");
+    $("#ay-modal").classList.remove("acik");
     $("#modal-perde").classList.remove("acik");
   });
   $$(".durum-secim button").forEach(b=>{
@@ -2489,6 +3044,228 @@ document.addEventListener("DOMContentLoaded", ()=>{
     }catch(e){ hataGoster(e); }
   });
 
+  /* Dönem seçimli paylaşım (Paylaş / PDF) */
+  let donemMod = "paylas";
+  const donemAc = mod=>{
+    donemMod = mod;
+    $("#donem-baslik").textContent = mod==="pdf" ? "🖨️ PDF dönemi" : "📤 Paylaşım dönemi";
+    $("#modal-perde").classList.add("acik");
+    $("#donem-modal").classList.add("acik");
+  };
+  const donemSec = (b,s)=>{
+    $("#modal-perde").classList.remove("acik");
+    $("#donem-modal").classList.remove("acik");
+    $("#ay-modal").classList.remove("acik");
+    if(donemMod==="pdf") pdfYazdir(b,s); else raporPaylas(b,s);
+  };
+  $("#donem-tum").addEventListener("click", ()=> donemSec(null,null));
+  $("#donem-ilk").addEventListener("click", ()=> donemSec(1,15));
+  $("#donem-ikinci").addEventListener("click", ()=> donemSec(16,null));
+
+  /* Canlı kazanç güncelleme kancaları */
+  ["mesai-saat","gun-saat","gun-arti"].forEach(id=>
+    $("#"+id).addEventListener("input", modalKazancGuncelle));
+  ["mesai-arti","mesai-eksi","saat-arti","saat-eksi","arti-arti","arti-eksi"].forEach(id=>
+    $("#"+id).addEventListener("click", modalKazancGuncelle));
+  $("#gun-santiye-sec").addEventListener("change", modalKazancGuncelle);
+  $$(".durum-secim button").forEach(b=> b.addEventListener("click", modalKazancGuncelle));
+
+  /* Hızlı tutar çipleri */
+  $$(".tutar-cip").forEach(c=>{
+    c.addEventListener("click", ()=>{
+      $("#"+c.dataset.hedef).value = c.dataset.deger;
+    });
+  });
+
+  /* Neler yeni kartı */
+  const YENILIK_SURUM = "v11";
+  try{
+    if(localStorage.getItem("yenilik")!==YENILIK_SURUM) $("#yenilik-kart").classList.remove("gizli");
+  }catch(e){ $("#yenilik-kart").classList.remove("gizli"); }
+  $("#btn-yenilik-kapat").addEventListener("click", ()=>{
+    $("#yenilik-kart").classList.add("gizli");
+    try{ localStorage.setItem("yenilik", YENILIK_SURUM); }catch(e){}
+  });
+
+  /* ---- Ay seçici ---- */
+  const ayModalAc = ()=>{
+    seciciYil = aktifYil;
+    $("#sec-yil").textContent = seciciYil;
+    const kap = $("#sec-aylar");
+    kap.innerHTML = "";
+    AYLAR.forEach((ad,i)=>{
+      const b = document.createElement("button");
+      b.className = "btn btn-cizgili";
+      b.style.cssText = "padding:12px 4px;font-size:13.5px" +
+        (i===aktifAy && seciciYil===aktifYil ? ";border-color:var(--sari);color:var(--sari)" : "");
+      b.textContent = ad.slice(0,3);
+      b.addEventListener("click", ()=>{
+        aktifYil = seciciYil; aktifAy = i;
+        $("#modal-perde").classList.remove("acik");
+        $("#ay-modal").classList.remove("acik");
+        if(aktifGoruntu==="yil"){ $("#ay-ad").firstChild.textContent = aktifYil; yilYukle(); }
+        else { ayiYukle(); ayBarCiz(); }
+      });
+      kap.appendChild(b);
+    });
+    $("#modal-perde").classList.add("acik");
+    $("#ay-modal").classList.add("acik");
+  };
+  $("#sec-onceki-yil").addEventListener("click", ()=>{ seciciYil--; $("#sec-yil").textContent = seciciYil; });
+  $("#sec-sonraki-yil").addEventListener("click", ()=>{ seciciYil++; $("#sec-yil").textContent = seciciYil; });
+  $("#btn-sec-bugun").addEventListener("click", ()=>{
+    const b = new Date();
+    aktifYil = b.getFullYear(); aktifAy = b.getMonth();
+    $("#modal-perde").classList.remove("acik");
+    $("#ay-modal").classList.remove("acik");
+    ayiYukle(); ayBarCiz();
+    toast("Bugüne dönüldü 📅");
+  });
+
+  /* ---- Ödeme filtre çipleri ---- */
+  $$("#odeme-filtre button").forEach(b=>{
+    b.addEventListener("click", ()=>{
+      odemeFiltre = b.dataset.f;
+      $$("#odeme-filtre button").forEach(x=>{
+        x.style.borderColor = x===b ? "var(--sari)" : "var(--cizgi)";
+      });
+      odemeListesiCiz();
+    });
+  });
+
+  /* ---- Kazanç simülatörü ---- */
+  const simGuncelle = ()=>{
+    const gun = Number($("#sim-gun").value)||0;
+    const mesai = Number($("#sim-mesai").value)||0;
+    let kazanc;
+    if(ayarlar.calismaTipi==="saatlik"){
+      kazanc = gun*(ayarlar.gunlukSaat||8)*(ayarlar.saatUcret||0) + mesai*ayarlar.mesaiUcret + gun*(ayarlar.ekGunluk||0);
+    }else{
+      kazanc = gun*ayarlar.yevmiye + mesai*ayarlar.mesaiUcret + gun*(ayarlar.ekGunluk||0);
+    }
+    $("#sim-sonuc").textContent = paraFmt(kazanc);
+  };
+  $("#sim-gun").addEventListener("input", simGuncelle);
+  $("#sim-mesai").addEventListener("input", simGuncelle);
+  setTimeout(simGuncelle, 1500);
+
+  /* ---- Takvim para modu ---- */
+  try{ takvimPara = localStorage.getItem("takvimPara")==="1"; }catch(e){}
+  const takvimModYaz = ()=>{
+    $("#btn-takvim-mod").textContent = takvimPara ? "✓ İşaretleri göster" : "₺ Kazançları göster";
+  };
+  takvimModYaz();
+  $("#btn-takvim-mod").addEventListener("click", ()=>{
+    takvimPara = !takvimPara;
+    try{ localStorage.setItem("takvimPara", takvimPara?"1":"0"); }catch(e){}
+    takvimModYaz();
+    takvimCiz();
+  });
+
+  /* ---- Bu haftayı paylaş ---- */
+  $("#btn-hafta-paylas").addEventListener("click", async ()=>{
+    const b = new Date();
+    const pzt = new Date(b); pzt.setDate(b.getDate() - ((b.getDay()+6)%7));
+    let satir = "", gun=0, mesai=0, kazanc=0;
+    for(let i=0;i<7;i++){
+      const d = new Date(pzt); d.setDate(pzt.getDate()+i);
+      const v = girdiler[tarihId(d)];
+      const isr = gunIsaret(v);
+      satir += GUNLER_KISA[i]+" "+pad(d.getDate())+": "+(isr.yev||"0")+(isr.mesai&&isr.mesai!=="0"?" +"+isr.mesai+" mesai":"")+"\n";
+      if(v){ gun += girdiGun(v); mesai += Number(v.mesai)||0; kazanc += girdiKazanc(v); }
+    }
+    const metin = "📆 *BU HAFTA* — "+((kullanici&&kullanici.displayName)||"")+"\n```\n"+satir+"```\n"+
+      "✅ "+gun+" gün · ⏱ "+mesai+" saat mesai\n💰 Kazanç: "+paraFmt(kazanc);
+    try{
+      if(navigator.share) await navigator.share({text:metin});
+      else{ await navigator.clipboard.writeText(metin); toast("Hafta raporu kopyalandı 📋"); }
+    }catch(e){}
+  });
+
+  /* ---- Vurgu rengi ---- */
+  const RENKLER = {
+    sari:["#FFC400","#E5AF00"], turuncu:["#FF8A3C","#E0702A"],
+    yesil:["#35D07F","#27AE60"], mavi:["#4C9AFF","#3B7FD9"]
+  };
+  const renkUygula = ad=>{
+    const r = RENKLER[ad]||RENKLER.sari;
+    document.documentElement.style.setProperty("--sari", r[0]);
+    document.documentElement.style.setProperty("--sari-koyu", r[1]);
+    $$(".renk-sec button").forEach(b=> b.classList.toggle("secili", b.dataset.renk===ad));
+  };
+  try{ renkUygula(localStorage.getItem("vurgu")||"sari"); }catch(e){}
+  $$(".renk-sec button").forEach(b=>{
+    b.addEventListener("click", ()=>{
+      renkUygula(b.dataset.renk);
+      try{ localStorage.setItem("vurgu", b.dataset.renk); }catch(e){}
+      toast("Renk değişti 🎨");
+    });
+  });
+
+  /* ---- PIN kilidi ---- */
+  const pinKontrol = ()=>{
+    let pin = null;
+    try{ pin = localStorage.getItem("pin"); }catch(e){}
+    if(pin && pin.length===4){
+      $("#pin-ekran").classList.add("acik");
+      $("#ayar-pin").value = pin;
+      $("#btn-pin-kaydet").textContent = "PIN'i kaldır";
+    }
+  };
+  pinKontrol();
+  const pinDene = ()=>{
+    let pin = null;
+    try{ pin = localStorage.getItem("pin"); }catch(e){}
+    if($("#pin-girdi").value===pin){
+      $("#pin-ekran").classList.remove("acik");
+      $("#pin-girdi").value = "";
+    }else{
+      $("#pin-girdi").value = "";
+      toast("PIN yanlış, tekrar dene");
+    }
+  };
+  $("#btn-pin-gir").addEventListener("click", pinDene);
+  $("#pin-girdi").addEventListener("input", ()=>{ if($("#pin-girdi").value.length===4) pinDene(); });
+  $("#btn-pin-kaydet").addEventListener("click", ()=>{
+    let mevcut = null;
+    try{ mevcut = localStorage.getItem("pin"); }catch(e){}
+    if(mevcut){
+      try{ localStorage.removeItem("pin"); }catch(e){}
+      $("#ayar-pin").value = "";
+      $("#btn-pin-kaydet").textContent = "PIN'i etkinleştir";
+      toast("PIN kaldırıldı 🔓");
+      return;
+    }
+    const p = $("#ayar-pin").value.trim();
+    if(!/^\d{4}$/.test(p)){ toast("4 haneli rakam gir kanka"); return; }
+    try{ localStorage.setItem("pin", p); }catch(e){ toast("Bu tarayıcıda kaydedilemedi"); return; }
+    $("#btn-pin-kaydet").textContent = "PIN'i kaldır";
+    toast("PIN aktif 🔒 Uygulama her açılışta soracak");
+  });
+
+  /* ---- Cüzdan tarihi varsayılanı ---- */
+  $("#cuzdan-tarih").value = tarihId(new Date());
+
+  /* ---- Not arama ---- */
+  $("#not-ara").addEventListener("input", notCiz);
+
+  /* SGK kaydet */
+  $("#btn-sgk-kaydet").addEventListener("click", async ()=>{
+    try{
+      await kokRef().set({
+        sgkGun: Number($("#ayar-sgk").value)||0,
+        sgkHedef: Number($("#ayar-sgk-hedef").value)||0
+      },{merge:true});
+      toast("SGK bilgileri kaydedildi 🏖️");
+      anaYukle();
+    }catch(e){ hataGoster(e); }
+  });
+
+  /* Rozetler kısayolu */
+  $("#btn-rozetler").addEventListener("click", ()=>{
+    document.querySelector('[data-goruntu="rozet"]').click();
+  });
+
   /* Alt navigasyon */
   $$(".alt-nav [data-nav]").forEach(n=>{
     n.addEventListener("click", ()=>{
@@ -2509,7 +3286,7 @@ document.addEventListener("DOMContentLoaded", ()=>{
   $("#btn-ana-avans").addEventListener("click", ()=>{
     document.querySelector('[data-goruntu="odemeler"]').click();
   });
-  $("#btn-ana-paylas").addEventListener("click", raporPaylas);
+  $("#btn-ana-paylas").addEventListener("click", ()=> donemAc("paylas"));
   $("#btn-ana-not").addEventListener("click", ()=>{
     document.querySelector('[data-goruntu="notlar"]').click();
   });
@@ -2590,14 +3367,7 @@ document.addEventListener("DOMContentLoaded", ()=>{
   });
 
   /* Ay adına dokununca bugüne dön */
-  $("#ay-ad").addEventListener("click", ()=>{
-    if(aktifGoruntu==="yil") return;
-    const b = new Date();
-    if(b.getFullYear()===aktifYil && b.getMonth()===aktifAy) return;
-    aktifYil = b.getFullYear(); aktifAy = b.getMonth();
-    ayiYukle(); ayBarCiz();
-    toast("Bugüne dönüldü 📅");
-  });
+  $("#ay-ad").addEventListener("click", ()=> ayModalAc());
 
   /* Yazı boyutu */
   try{
@@ -2623,7 +3393,7 @@ document.addEventListener("DOMContentLoaded", ()=>{
     if(!tutar || tutar<=0){ toast("Tutarı yaz kanka"); return; }
     try{
       await kokRef().collection("cuzdan").add({
-        tarih: tarihId(new Date()),
+        tarih: $("#cuzdan-tarih").value || tarihId(new Date()),
         tutar,
         tip: $("#cuzdan-tip").value,
         not: $("#cuzdan-not").value.trim(),
@@ -2634,14 +3404,32 @@ document.addEventListener("DOMContentLoaded", ()=>{
     }catch(e){ hataGoster(e); }
   });
 
-  /* Ödeme ekle */
+  /* Ödeme ekle / güncelle */
   $("#odeme-tarih").value = tarihId(new Date());
+  const odemeFormSifirla = ()=>{
+    duzenlenenOdeme = null;
+    $("#odeme-tutar").value=""; $("#odeme-not").value="";
+    $("#btn-odeme-ekle").textContent = "Kaydet";
+    $("#btn-odeme-vazgec").classList.add("gizli");
+  };
+  $("#btn-odeme-vazgec").addEventListener("click", ()=>{ odemeFormSifirla(); toast("Düzenleme iptal edildi"); });
   $("#btn-odeme-ekle").addEventListener("click", async ()=>{
     const tarih = $("#odeme-tarih").value;
     const tutar = Number($("#odeme-tutar").value);
     if(!tarih || !tutar || tutar<=0){ toast("Tarih ve tutarı doldur kanka"); return; }
     if(ayKilitli(tarih)){ toast("O ay kilitli 🔒 Önce hesap özetinden kilidini aç"); return; }
     try{
+      if(duzenlenenOdeme){
+        if(ayKilitli(duzenlenenOdeme.tarih)){ toast("Kaydın eski ayı kilitli 🔒"); return; }
+        await kokRef().collection("odemeler").doc(duzenlenenOdeme.id).update({
+          tarih, tutar,
+          tur: $("#odeme-tur").value,
+          not: $("#odeme-not").value.trim()
+        });
+        odemeFormSifirla();
+        toast("Ödeme güncellendi ✏️");
+        return;
+      }
       await kokRef().collection("odemeler").add({
         tarih, tutar,
         tur: $("#odeme-tur").value,
@@ -2663,6 +3451,7 @@ document.addEventListener("DOMContentLoaded", ()=>{
       }
     }catch(e){ hataGoster(e); }
   });
+
 
   /* Ayarlar */
   $("#btn-ayar-kaydet").addEventListener("click", async ()=>{
@@ -2691,23 +3480,30 @@ document.addEventListener("DOMContentLoaded", ()=>{
   });
 
   /* Rapor paylaş & PDF */
-  $("#btn-rapor").addEventListener("click", raporPaylas);
-  $("#btn-pdf").addEventListener("click", pdfYazdir);
+  $("#btn-rapor").addEventListener("click", ()=> donemAc("paylas"));
+  $("#btn-pdf").addEventListener("click", ()=> donemAc("pdf"));
 
   /* Kayıt arama */
   $("#kayit-ara").addEventListener("input", gunListesiCiz);
 
-  /* Şantiye ekle */
+  /* Şantiye ekle / güncelle */
   $("#btn-santiye-ekle").addEventListener("click", async ()=>{
     const ad = $("#yeni-santiye-ad").value.trim();
     const yevmiye = Number($("#yeni-santiye-yevmiye").value)||0;
     const mesaiUcret = Number($("#yeni-santiye-mesai").value)||0;
     if(!ad || !yevmiye){ toast("Şantiye adı ve yevmiyesini yaz kanka"); return; }
     try{
-      const yeni = [...ayarlar.santiyeler, {id: Date.now().toString(36), ad, yevmiye, mesaiUcret}];
+      let yeni;
+      if(duzenlenenSantiyeId){
+        yeni = ayarlar.santiyeler.map(x=> x.id===duzenlenenSantiyeId ? {...x, ad, yevmiye, mesaiUcret} : x);
+      }else{
+        yeni = [...ayarlar.santiyeler, {id: Date.now().toString(36), ad, yevmiye, mesaiUcret}];
+      }
       await kokRef().set({santiyeler: yeni},{merge:true});
+      toast(duzenlenenSantiyeId ? "Şantiye güncellendi ✏️ (yeni günler yeni ücretten)" : "Şantiye eklendi 🏗️");
+      duzenlenenSantiyeId = null;
+      $("#btn-santiye-ekle").textContent = "➕ Şantiye ekle";
       $("#yeni-santiye-ad").value=""; $("#yeni-santiye-yevmiye").value=""; $("#yeni-santiye-mesai").value="";
-      toast("Şantiye eklendi 🏗️");
     }catch(e){ hataGoster(e); }
   });
 
@@ -2798,6 +3594,8 @@ document.addEventListener("DOMContentLoaded", ()=>{
       try{
         $("#modal-perde").classList.remove("acik");
         $("#kur-modal").classList.remove("acik");
+    $("#donem-modal").classList.remove("acik");
+    $("#ay-modal").classList.remove("acik");
       }catch(e){}
     });
   }
