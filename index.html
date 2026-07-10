@@ -527,6 +527,7 @@ html[data-tema="acik"] .alt-nav{background:rgba(255,255,255,.94)}
     </div>
     <div class="serit"></div>
     <ul>
+      <li class="gizli" id="li-anaekran-ekle"><button id="btn-anaekran-ekle"><span class="ikon">📲</span> Ana ekrana ekle</button></li>
       <li><button data-goruntu="ana" class="aktif"><span class="ikon">🏠</span> Ana ekran</button></li>
       <li><button data-goruntu="puantaj"><span class="ikon">📅</span> Puantaj çizelgesi</button></li>
       <li><button data-goruntu="odemeler"><span class="ikon">💵</span> Aldığım paralar</button></li>
@@ -1021,6 +1022,38 @@ html[data-tema="acik"] .alt-nav{background:rgba(255,255,255,.94)}
   <div class="modal-butonlar">
     <button class="btn btn-cizgili" id="btn-toplu-iptal">Vazgeç</button>
     <button class="btn btn-sari" id="btn-toplu-kaydet">Hepsini işle</button>
+  </div>
+</div>
+
+<div class="alt-sayfa" id="kur-modal">
+  <div class="tutamak"></div>
+  <h3>📲 Ana ekrana ekle</h3>
+  <div class="tarih-yazi">Uygulamayı telefonunun ana ekranına ekleyip tam ekran, uygulama gibi açabilirsin. Mağazadan indirme gerekmez, tamamen ücretsiz ve saniyeler sürer.</div>
+
+  <div id="kur-ios-adim">
+    <div class="alan" style="margin-bottom:10px">
+      <ol style="padding-left:18px;line-height:1.9;font-size:14.5px;color:var(--metin)">
+        <li>Aşağıdaki <b>Paylaş</b> ikonuna dokun <span style="display:inline-block;padding:2px 8px;border-radius:6px;background:var(--girdi);border:1px solid var(--cizgi);font-weight:600">⬆️ Paylaş</span></li>
+        <li>Açılan listeyi aşağı kaydır</li>
+        <li><b>"Ana Ekrana Ekle"</b> seçeneğine dokun</li>
+        <li>Sağ üstteki <b>"Ekle"</b> yazısına dokun</li>
+      </ol>
+    </div>
+    <div class="tarih-yazi" style="font-size:12.5px">Not: Bu adımlar Safari tarayıcısında çalışır. Chrome kullanıyorsan önce Safari'de açman gerekir.</div>
+  </div>
+
+  <div id="kur-android-adim" class="gizli">
+    <div class="alan" style="margin-bottom:10px">
+      <ol style="padding-left:18px;line-height:1.9;font-size:14.5px;color:var(--metin)">
+        <li>Sağ üstteki <b>⋮</b> (üç nokta) menüsüne dokun</li>
+        <li><b>"Ana ekrana ekle"</b> ya da <b>"Uygulama yükle"</b> seçeneğine dokun</li>
+        <li>Onay için <b>"Ekle"</b> ya da <b>"Yükle"</b> yazısına dokun</li>
+      </ol>
+    </div>
+  </div>
+
+  <div class="modal-butonlar">
+    <button class="btn btn-sari" id="btn-kur-tamam" style="width:100%">Anladım</button>
   </div>
 </div>
 
@@ -2358,6 +2391,7 @@ document.addEventListener("DOMContentLoaded", ()=>{
   $("#modal-perde").addEventListener("click", ()=>{
     modalKapat();
     $("#toplu-modal").classList.remove("acik");
+    $("#kur-modal").classList.remove("acik");
     $("#modal-perde").classList.remove("acik");
   });
   $$(".durum-secim button").forEach(b=>{
@@ -2689,6 +2723,84 @@ document.addEventListener("DOMContentLoaded", ()=>{
     };
     $("#manifest-link").href = URL.createObjectURL(new Blob([JSON.stringify(man)],{type:"application/manifest+json"}));
   }catch(e){}
+
+  /* PWA: "Ana ekrana ekle" butonu — iOS'ta otomatik kurulum sorusu çıkmadığı için
+     elle rehber gösteriyoruz, Android/Chrome'da varsa gerçek kurulum penceresini açıyoruz. */
+  let ertelenmisKurulum = null;
+  try{
+    const zatenKurulu = ()=>{
+      try{
+        return window.matchMedia && window.matchMedia('(display-mode: standalone)').matches
+          || window.navigator.standalone === true;
+      }catch(e){ return false; }
+    };
+    const kurSatiri = document.getElementById("li-anaekran-ekle");
+    if(kurSatiri){
+      if(zatenKurulu()){
+        kurSatiri.classList.add("gizli");
+      }else{
+        kurSatiri.classList.remove("gizli");
+      }
+    }
+    window.addEventListener('beforeinstallprompt', (e)=>{
+      try{
+        e.preventDefault();
+        ertelenmisKurulum = e;
+        if(kurSatiri) kurSatiri.classList.remove("gizli");
+      }catch(err){}
+    });
+    window.addEventListener('appinstalled', ()=>{
+      try{
+        ertelenmisKurulum = null;
+        if(kurSatiri) kurSatiri.classList.add("gizli");
+        toast("Uygulama ana ekrana eklendi 📲");
+      }catch(err){}
+    });
+  }catch(e){}
+
+  const kurRehberiAc = ()=>{
+    try{
+      const ua = (navigator.userAgent || navigator.vendor || "").toLowerCase();
+      const iosMu = /iphone|ipad|ipod/.test(ua) || (ua.includes("mac") && navigator.maxTouchPoints > 1);
+      const iosAdim = document.getElementById("kur-ios-adim");
+      const androidAdim = document.getElementById("kur-android-adim");
+      if(iosAdim) iosAdim.classList.toggle("gizli", !iosMu);
+      if(androidAdim) androidAdim.classList.toggle("gizli", iosMu);
+      $("#modal-perde").classList.add("acik");
+      $("#kur-modal").classList.add("acik");
+    }catch(e){}
+  };
+  const btnKurElem = document.getElementById("btn-anaekran-ekle");
+  if(btnKurElem){
+    btnKurElem.addEventListener("click", async ()=>{
+      try{
+        try{
+          document.getElementById("cekmece")?.classList.remove("acik");
+          document.getElementById("perde")?.classList.remove("acik");
+        }catch(e){}
+        if(ertelenmisKurulum){
+          try{
+            ertelenmisKurulum.prompt();
+            await ertelenmisKurulum.userChoice;
+          }catch(e){}
+          ertelenmisKurulum = null;
+        }else{
+          kurRehberiAc();
+        }
+      }catch(e){
+        kurRehberiAc();
+      }
+    });
+  }
+  const btnKurTamam = document.getElementById("btn-kur-tamam");
+  if(btnKurTamam){
+    btnKurTamam.addEventListener("click", ()=>{
+      try{
+        $("#modal-perde").classList.remove("acik");
+        $("#kur-modal").classList.remove("acik");
+      }catch(e){}
+    });
+  }
 
   /* Toplu işleme */
   const topluAc = ac=>{
