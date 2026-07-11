@@ -593,10 +593,14 @@ html[data-tema="acik"] .alt-nav{background:rgba(255,255,255,.94)}
       <li><button data-goruntu="puantaj"><span class="ikon">📅</span> Puantaj çizelgesi</button></li>
       <li><button data-goruntu="odemeler"><span class="ikon">💵</span> Aldığım paralar</button></li>
       <li><button data-goruntu="borc"><span class="ikon">🤝</span> Borç defteri</button></li>
+      <li><button data-goruntu="masraf"><span class="ikon">🧾</span> İş masrafları</button></li>
       <li><button data-goruntu="ozet"><span class="ikon">🧮</span> Hesap özeti</button></li>
       <li><button data-goruntu="yil"><span class="ikon">📊</span> Yıl özeti</button></li>
       <li><button data-goruntu="notlar"><span class="ikon">📝</span> Not defterim</button></li>
       <li><button data-goruntu="rozet"><span class="ikon">🏆</span> Başarımlarım</button></li>
+      <li><button data-goruntu="ekip"><span class="ikon">👥</span> Ekibim</button></li>
+      <li><button data-goruntu="kisiler"><span class="ikon">🌍</span> Herkes (puantajlar)</button></li>
+      <li><button data-goruntu="arac"><span class="ikon">🛠️</span> Araçlar & Bilgi</button></li>
       <li><button data-goruntu="ayarlar"><span class="ikon">⚙️</span> Ayarlar</button></li>
       <li><button id="btn-geribildirim"><span class="ikon">💬</span> Geri bildirim gönder</button></li>
     </ul>
@@ -956,6 +960,128 @@ html[data-tema="acik"] .alt-nav{background:rgba(255,255,255,.94)}
       </div>
     </section>
 
+    <!-- ===== GÖRÜNÜM: İŞ MASRAFLARI ===== -->
+    <section id="goruntu-masraf" class="gizli">
+      <div class="kart">
+        <h2>➕ Masraf ekle</h2>
+        <p style="font-size:13px;color:var(--soluk);margin-bottom:12px;line-height:1.6">
+          Cebinden ödediğin, patronun karşılayacağı masraflar (malzeme, yol, nalbur...). Hesapta alacağına eklenir.
+        </p>
+        <div style="display:flex;gap:10px">
+          <div class="alan" style="flex:1">
+            <label>Tutar (TL)</label>
+            <input type="number" id="masraf-tutar" inputmode="decimal" placeholder="350">
+          </div>
+          <div class="alan" style="flex:1">
+            <label>Tarih</label>
+            <input type="date" id="masraf-tarih">
+          </div>
+        </div>
+        <div class="alan">
+          <label>Ne aldın / ne ödedin?</label>
+          <input type="text" id="masraf-aciklama" placeholder="Örn: Nalburdan vida + silikon">
+        </div>
+        <button class="btn btn-sari" id="btn-masraf-ekle">Kaydet</button>
+      </div>
+      <div class="kart">
+        <h2>🧾 Bu ayın masrafları <span id="masraf-toplam" style="margin-left:auto;font-size:14px;color:var(--soluk);font-family:Rubik;text-transform:none"></span></h2>
+        <ul class="liste" id="liste-masraflar"></ul>
+      </div>
+    </section>
+
+    <!-- ===== GÖRÜNÜM: EKİP ===== -->
+    <section id="goruntu-ekip" class="gizli">
+      <div class="kart">
+        <h2>📋 Günlük yoklama</h2>
+        <div class="alan">
+          <label>Tarih</label>
+          <input type="date" id="ekip-tarih">
+        </div>
+        <div id="ekip-yoklama"></div>
+        <button class="btn btn-sari gizli" id="btn-yoklama-kaydet" style="margin-top:6px">Yoklamayı kaydet</button>
+      </div>
+      <div class="kart">
+        <h2>🧮 Bu ayın ekip özeti</h2>
+        <ul class="liste" id="liste-ekip-ozet"><div class="bos-mesaj">Yükleniyor...</div></ul>
+      </div>
+      <div class="kart">
+        <h2>👥 İşçi ekle</h2>
+        <div class="alan">
+          <label>Adı</label>
+          <input type="text" id="isci-ad" placeholder="Örn: Ramazan">
+        </div>
+        <div style="display:flex;gap:10px">
+          <div class="alan" style="flex:1">
+            <label>Yevmiyesi (TL)</label>
+            <input type="number" id="isci-yevmiye" inputmode="decimal" placeholder="1800">
+          </div>
+          <div class="alan" style="flex:1">
+            <label>Mesai (TL/saat)</label>
+            <input type="number" id="isci-mesai" inputmode="decimal" placeholder="250">
+          </div>
+        </div>
+        <button class="btn btn-cizgili" id="btn-isci-ekle">➕ İşçi ekle</button>
+        <ul class="liste" id="liste-isciler" style="margin-top:10px"></ul>
+      </div>
+    </section>
+
+    <!-- ===== GÖRÜNÜM: HERKES ===== -->
+    <section id="goruntu-kisiler" class="gizli">
+      <div class="kart">
+        <h2>🌍 Kayıtlı kişiler <button id="btn-kisiler-yenile" style="margin-left:auto;color:var(--sari);font-size:14px;font-family:Rubik;text-transform:none;font-weight:600">🔄 Yenile</button></h2>
+        <p style="font-size:12.5px;color:var(--soluk);margin-bottom:12px;line-height:1.6">
+          Herkes herkesin puantajını GÖREBİLİR ama kimse kimseninkine yazamaz. Bir kişiye dokun, ayını incele. (Ay değiştirmek için üstteki oklar.)
+        </p>
+        <div id="kisiler-liste" style="display:flex;flex-wrap:wrap;gap:8px"><div class="bos-mesaj" style="width:100%">Yükleniyor...</div></div>
+      </div>
+      <div class="kart gizli" id="kisi-detay">
+        <h2 id="kisi-baslik">👤 —</h2>
+        <div class="ozet-grid" id="kisi-ozet" style="margin-bottom:14px"></div>
+        <h2 style="font-size:16px">📋 Günleri</h2>
+        <ul class="liste" id="kisi-gunler"></ul>
+        <h2 style="font-size:16px;margin-top:14px">💵 Aldığı paralar</h2>
+        <ul class="liste" id="kisi-odemeler"></ul>
+      </div>
+    </section>
+
+    <!-- ===== GÖRÜNÜM: ARAÇLAR & BİLGİ ===== -->
+    <section id="goruntu-arac" class="gizli">
+      <div class="kart">
+        <h2>⚖️ Kıdem tazminatı hesaplayıcı</h2>
+        <div style="display:flex;gap:10px">
+          <div class="alan" style="flex:1">
+            <label>İşe giriş tarihin</label>
+            <input type="date" id="kidem-giris">
+          </div>
+          <div class="alan" style="flex:1">
+            <label>Günlük brüt ücret (TL)</label>
+            <input type="number" id="kidem-ucret" inputmode="decimal" placeholder="2000">
+          </div>
+        </div>
+        <div id="kidem-sonuc" style="background:var(--girdi);border:1.5px solid var(--cizgi);border-radius:12px;padding:12px 14px;font-size:13.5px;line-height:1.8">Tarih ve ücreti gir, hesaplayayım.</div>
+        <p style="font-size:11.5px;color:var(--soluk);margin-top:8px">⚠️ Kaba tahmindir (yıl × 30 günlük brüt). Tavan, vergi ve şartlar için uzmana danış.</p>
+      </div>
+      <div class="kart">
+        <h2>⏱️ Mesai ücreti kontrolü</h2>
+        <div class="alan">
+          <label>Normal saatlik ücretin (TL)</label>
+          <input type="number" id="mesai-kontrol" inputmode="decimal" placeholder="Örn: 200">
+        </div>
+        <div id="mesai-kontrol-sonuc" style="background:var(--girdi);border:1.5px solid var(--cizgi);border-radius:12px;padding:12px 14px;font-size:13.5px;line-height:1.8">Saat ücretini gir, yasal mesai ücretini göstereyim.</div>
+      </div>
+      <div class="kart">
+        <h2>📚 İşçi hakları — bilgi köşesi</h2>
+        <div style="font-size:13.5px;line-height:1.7">
+          <details style="margin-bottom:10px"><summary style="font-weight:700;cursor:pointer">⏱️ Fazla mesai ücreti</summary><p style="color:var(--soluk);margin-top:6px">Genel kural olarak fazla çalışma saat ücreti, normal saat ücretinin %50 zamlısıdır (1,5 katı). Hafta 45 saati aşan çalışmalar fazla mesai sayılır.</p></details>
+          <details style="margin-bottom:10px"><summary style="font-weight:700;cursor:pointer">🛌 Hafta tatili</summary><p style="color:var(--soluk);margin-top:6px">Haftada en az 24 saat kesintisiz dinlenme (hafta tatili) hakkın vardır. Hafta tatilinde çalışırsan ücretin zamlı ödenmesi gerekir.</p></details>
+          <details style="margin-bottom:10px"><summary style="font-weight:700;cursor:pointer">🏖️ Yıllık ücretli izin</summary><p style="color:var(--soluk);margin-top:6px">Aynı işverende 1 yılı dolduran işçi izne hak kazanır: 1–5 yıl arası en az 14 gün, 5–15 yıl arası en az 20 gün, 15 yıl ve üzeri en az 26 gün.</p></details>
+          <details style="margin-bottom:10px"><summary style="font-weight:700;cursor:pointer">💼 Kıdem tazminatı şartı</summary><p style="color:var(--soluk);margin-top:6px">Genel kural: aynı işverende en az 1 yıl çalışmış olmak ve işin uygun şekilde sona ermesi (haksız fesih, emeklilik, askerlik, kadınlarda evlilik vb. haller). Her tam yıl için ~30 günlük brüt ücret.</p></details>
+          <details><summary style="font-weight:700;cursor:pointer">🪪 Sigortasız çalıştırma</summary><p style="color:var(--soluk);margin-top:6px">Sigortan ilk günden yatmak zorundadır. Yatmıyorsa ALO 170'i arayarak bildirimde bulunabilirsin; geriye dönük hizmet tespiti davası da mümkündür.</p></details>
+        </div>
+        <p style="font-size:11.5px;color:var(--soluk);margin-top:10px">⚠️ Bunlar genel bilgidir, hukuki tavsiye değildir. Kendi durumun için uzmana ya da sendikaya danış.</p>
+      </div>
+    </section>
+
     <!-- ===== GÖRÜNÜM: AYARLAR ===== -->
     <section id="goruntu-ayarlar" class="gizli">
       <div class="kart">
@@ -1160,6 +1286,11 @@ html[data-tema="acik"] .alt-nav{background:rgba(255,255,255,.94)}
     <input type="text" id="gun-santiye" placeholder="Boş bırakırsan ayarlardaki şantiye yazılır">
   </div>
   <div class="alan">
+    <label>Konum damgası (isteğe bağlı, "buradaydım" kanıtı)</label>
+    <button class="eksik-cip" id="btn-konum" style="width:100%">📍 Şu anki konumu damgala</button>
+    <div id="gun-konum-yazi" style="font-size:12.5px;color:var(--soluk);margin-top:6px"></div>
+  </div>
+  <div class="alan">
     <label>Not (isteğe bağlı)</label>
     <textarea id="gun-not" rows="2" placeholder="Örn: Kalıp söküm yaptık, yağmur yüzünden erken bıraktık"></textarea>
     <div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:8px">
@@ -1314,6 +1445,12 @@ let girdiler = {};                     // { "2026-07-08": {...} }
 let odemeler = [];                     // bu ayın ödemeleri
 let borclar = [];                      // tüm borç kayıtları
 let cuzdan = [];                       // cüzdan hareketleri
+let masraflar = [];                    // bu ayın iş masrafları
+let ekipListe = [];                    // ekipteki işçiler
+let yoklama = {};                      // seçili günün yoklaması {iscId:{durum,mesai}}
+let gunKonum = null;                   // modaldaki konum damgası
+let seciliKisi = null;                 // Herkes sayfasında seçilen kişi
+let kisiAyarlar = null;                // seçilen kişinin ücret ayarları
 let notlar = [];                       // not defteri
 let gizliMod = false;                  // bakiye gizleme
 let odemeFiltre = "";                  // ödeme tür filtresi
@@ -1323,7 +1460,7 @@ let takvimPara = false;                // takvimde kazanç göster
 let seciciYil = null;                  // ay seçici yılı
 let yilSon = null;                     // son yüklenen yıl özeti (paylaşım için)
 let sirketOzet = null;                 // tüm zamanlar {hakedis, alinan}
-let dinleyiciGirdi=null, dinleyiciOdeme=null, dinleyiciAyar=null, dinleyiciBorc=null, dinleyiciCuzdan=null, dinleyiciNot=null;
+let dinleyiciGirdi=null, dinleyiciOdeme=null, dinleyiciAyar=null, dinleyiciBorc=null, dinleyiciCuzdan=null, dinleyiciNot=null, dinleyiciMasraf=null, dinleyiciEkip=null;
 let modalTarih=null, modalDurum=null;
 let aktifGoruntu="puantaj";
 
@@ -1350,12 +1487,14 @@ function basla(){
       $("#ekran-giris").classList.add("gizli");
       $("#ekran-uygulama").classList.remove("gizli");
       kullaniciBilgiYaz();
+      kokRef().set({ad: u.displayName||""},{merge:true}).catch(()=>{});
       hepsiniCiz();        /* takvim hemen çizilsin, veri sonra dolar */
       ayarlariDinle();
       ayiYukle();
       borclariDinle();
       cuzdaniDinle();
       notlariDinle();
+      ekipDinle();
       anaYukle();
       havaYukle();
       const anaBtn = document.querySelector('[data-goruntu="ana"]');
@@ -1375,7 +1514,9 @@ function dinleyicileriKapat(){
   if(dinleyiciBorc) dinleyiciBorc();
   if(dinleyiciCuzdan) dinleyiciCuzdan();
   if(dinleyiciNot) dinleyiciNot();
-  dinleyiciGirdi=dinleyiciOdeme=dinleyiciAyar=dinleyiciBorc=dinleyiciCuzdan=dinleyiciNot=null;
+  if(dinleyiciMasraf) dinleyiciMasraf();
+  if(dinleyiciEkip) dinleyiciEkip();
+  dinleyiciGirdi=dinleyiciOdeme=dinleyiciAyar=dinleyiciBorc=dinleyiciCuzdan=dinleyiciNot=dinleyiciMasraf=dinleyiciEkip=null;
 }
 
 function kullaniciBilgiYaz(){
@@ -1536,6 +1677,20 @@ function ayiYukle(){
       $("#izin-uyari").classList.add("gizli");
       hepsiniCiz();
     }, hataGoster);
+
+  if(dinleyiciMasraf) dinleyiciMasraf();
+  dinleyiciMasraf = kokRef().collection("masraflar")
+    .where("tarih", ">=", bas).where("tarih", "<=", son)
+    .onSnapshot(qs=>{
+      masraflar = [];
+      qs.forEach(doc=> masraflar.push({id:doc.id, ...doc.data()}));
+      masraflar.sort((a,b)=> a.tarih < b.tarih ? 1 : -1);
+      masrafCiz();
+      hepsiniCiz();
+    }, hataGoster);
+
+  if(aktifGoruntu==="ekip") ekipOzetYukle();
+  if(aktifGoruntu==="kisiler" && seciliKisi) kisiVeriYukle();
 
   dinleyiciOdeme = kokRef().collection("odemeler")
     .where("tarih", ">=", bas).where("tarih", "<=", son)
@@ -1789,6 +1944,308 @@ function havaYukle(){
       }catch(e){}
     }, ()=>{}, {timeout:8000, maximumAge:3600000});
   }catch(e){}
+}
+
+/* ---------- İş masrafları ---------- */
+function masrafCiz(){
+  const ul = $("#liste-masraflar");
+  if(!ul) return;
+  const bekleyen = masraflar.filter(m=>!m.odendi).reduce((s,m)=> s+(Number(m.tutar)||0), 0);
+  const tEl = $("#masraf-toplam");
+  if(tEl) tEl.textContent = masraflar.length ? "Bekleyen: "+paraFmt(bekleyen) : "";
+  if(!masraflar.length){
+    ul.innerHTML = '<div class="bos-mesaj"><span class="buyuk">🧾</span>Bu ay masraf yok.</div>';
+    return;
+  }
+  ul.innerHTML = "";
+  masraflar.forEach(m=>{
+    const t = new Date(m.tarih+"T12:00:00");
+    const li = document.createElement("li");
+    if(m.odendi) li.style.opacity = ".45";
+    li.innerHTML =
+      '<div class="rozet" style="background:var(--yarim)">'+t.getDate()+'<small>'+AYLAR[t.getMonth()].slice(0,3)+'</small></div>'+
+      '<div class="orta"><div class="baslik">'+(m.aciklama||"Masraf")+(m.odendi?" ✔ ödendi":"")+'</div>'+
+      '<div class="alt-yazi">'+t.getDate()+' '+AYLAR[t.getMonth()]+'</div></div>'+
+      '<div class="tutar">'+paraFmt(m.tutar)+'</div>'+
+      '<button class="sil" aria-label="Ödendi" style="color:var(--tam)">'+(m.odendi?"↩️":"✔")+'</button>'+
+      '<button class="sil" aria-label="Sil">🗑️</button>';
+    const btnler = li.querySelectorAll(".sil");
+    btnler[0].addEventListener("click", ()=>{
+      kokRef().collection("masraflar").doc(m.id).update({odendi: !m.odendi})
+        .then(()=> toast(m.odendi ? "Masraf tekrar açıldı" : "Masraf ödendi olarak işaretlendi ✔")).catch(hataGoster);
+    });
+    btnler[1].addEventListener("click", async ()=>{
+      const kopya = {...m}; delete kopya.id;
+      try{
+        await kokRef().collection("masraflar").doc(m.id).delete();
+        toastGeriAlVeri("Masraf silindi", "masraflar", m.id, kopya);
+      }catch(e){ hataGoster(e); }
+    });
+    ul.appendChild(li);
+  });
+}
+
+/* ---------- Ekip modu ---------- */
+function ekipDinle(){
+  dinleyiciEkip = kokRef().collection("ekip").onSnapshot(qs=>{
+    ekipListe = [];
+    qs.forEach(d=> ekipListe.push({id:d.id, ...d.data()}));
+    ekipListe.sort((a,b)=> String(a.ad).localeCompare(String(b.ad),"tr"));
+    isciListeCiz();
+    ekipYoklamaCiz();
+  }, hataGoster);
+}
+
+function isciListeCiz(){
+  const ul = $("#liste-isciler");
+  if(!ul) return;
+  if(!ekipListe.length){ ul.innerHTML = ""; return; }
+  ul.innerHTML = "";
+  ekipListe.forEach(i=>{
+    const li = document.createElement("li");
+    li.innerHTML =
+      '<div class="rozet" style="background:var(--mesai)">'+String(i.ad||"?").charAt(0).toUpperCase()+'</div>'+
+      '<div class="orta"><div class="baslik">'+i.ad+'</div>'+
+      '<div class="alt-yazi">Yevmiye '+paraFmt(i.yevmiye)+' · Mesai '+paraFmt(i.mesaiUcret)+'/saat</div></div>'+
+      '<button class="sil" aria-label="Sil">🗑️</button>';
+    li.querySelector(".sil").addEventListener("click", ()=>{
+      if(confirm(i.ad+" ekipten silinsin mi? (Geçmiş gün kayıtları durur, hesabı bozulmaz)"))
+        kokRef().collection("ekip").doc(i.id).delete().then(()=>toast("İşçi silindi")).catch(hataGoster);
+    });
+    ul.appendChild(li);
+  });
+}
+
+function ekipYoklamaCiz(){
+  const kap = $("#ekip-yoklama");
+  if(!kap) return;
+  if(!ekipListe.length){
+    kap.innerHTML = '<div class="bos-mesaj">Önce aşağıdan işçi ekle 👇</div>';
+    $("#btn-yoklama-kaydet").classList.add("gizli");
+    return;
+  }
+  $("#btn-yoklama-kaydet").classList.remove("gizli");
+  kap.innerHTML = "";
+  ekipListe.forEach(i=>{
+    const y = yoklama[i.id] || {durum:"yok", mesai:0};
+    const sat = document.createElement("div");
+    sat.style.cssText = "display:flex;align-items:center;gap:8px;padding:9px 0;border-bottom:1px solid var(--cizgi)";
+    sat.innerHTML =
+      '<div style="flex:1;font-weight:600;font-size:14px;min-width:0;overflow:hidden;text-overflow:ellipsis">'+i.ad+'</div>'+
+      '<div style="display:flex;gap:5px">'+
+        ['tam|T','yarim|Y','yok|0'].map(x=>{
+          const [d,et]=x.split("|");
+          const aktif = y.durum===d;
+          const renk = d==="tam"?"var(--tam)":d==="yarim"?"var(--yarim)":"var(--gelmedi)";
+          return '<button class="yok-btn" data-isc="'+i.id+'" data-d="'+d+'" style="width:38px;height:38px;border-radius:10px;font-weight:800;border:2px solid '+(aktif?renk:"var(--cizgi)")+';background:'+(aktif?renk:"var(--kart)")+';color:'+(aktif?"#fff":"var(--soluk)")+'">'+et+'</button>';
+        }).join("")+
+      '</div>'+
+      '<input type="number" class="yok-mesai" data-isc="'+i.id+'" value="'+(y.mesai||0)+'" min="0" step="0.5" inputmode="decimal" '+
+      'style="width:56px;padding:9px 4px;text-align:center;border-radius:10px;border:1.5px solid var(--cizgi);background:var(--girdi);color:var(--metin);font-weight:700" title="Mesai saat">';
+    kap.appendChild(sat);
+  });
+  $(".yok-btn").forEach(b=>{
+    b.addEventListener("click", ()=>{
+      const id = b.dataset.isc;
+      if(!yoklama[id]) yoklama[id] = {durum:"yok", mesai:0};
+      yoklama[id].durum = b.dataset.d;
+      const mesaiEl = document.querySelector('.yok-mesai[data-isc="'+id+'"]');
+      if(mesaiEl) yoklama[id].mesai = Number(mesaiEl.value)||0;
+      ekipYoklamaCiz();
+    });
+  });
+  $(".yok-mesai").forEach(inp=>{
+    inp.addEventListener("input", ()=>{
+      const id = inp.dataset.isc;
+      if(!yoklama[id]) yoklama[id] = {durum:"yok", mesai:0};
+      yoklama[id].mesai = Number(inp.value)||0;
+    });
+  });
+}
+
+async function ekipYoklamaYukle(){
+  const inp = $("#ekip-tarih");
+  if(!inp) return;
+  if(!inp.value) inp.value = tarihId(new Date());
+  try{
+    const qs = await kokRef().collection("ekipGun").where("tarih","==",inp.value).get();
+    yoklama = {};
+    qs.forEach(d=>{ const v=d.data(); yoklama[v.iscId] = {durum:v.durum, mesai:Number(v.mesai)||0}; });
+  }catch(e){ hataGoster(e); }
+  ekipYoklamaCiz();
+}
+
+async function ekipOzetYukle(){
+  const ul = $("#liste-ekip-ozet");
+  if(!ul) return;
+  const bas = aktifYil+"-"+pad(aktifAy+1)+"-01";
+  const son = aktifYil+"-"+pad(aktifAy+1)+"-31";
+  try{
+    const qs = await kokRef().collection("ekipGun")
+      .where("tarih",">=",bas).where("tarih","<=",son).get();
+    const grup = {};
+    qs.forEach(d=>{
+      const v = d.data();
+      if(!grup[v.iscId]) grup[v.iscId] = {gun:0, mesai:0, hak:0, gunler:[]};
+      const g = grup[v.iscId];
+      const yev = Number(v.uYevmiye)||0, mesU = Number(v.uMesai)||0;
+      if(v.durum==="tam"){ g.gun+=1; g.hak+=yev; }
+      else if(v.durum==="yarim"){ g.gun+=0.5; g.hak+=yev/2; }
+      const m = Number(v.mesai)||0;
+      g.mesai += m; g.hak += m*mesU;
+      if(v.durum!=="yok" || m>0) g.gunler.push(Number(v.tarih.slice(8,10)));
+    });
+    const idler = Object.keys(grup);
+    if(!idler.length){
+      ul.innerHTML = '<div class="bos-mesaj">Bu ay ekip kaydı yok. Yukarıdan yoklama al 👆</div>';
+      return;
+    }
+    ul.innerHTML = "";
+    idler.forEach(id=>{
+      const isc = ekipListe.find(x=>x.id===id) || {ad:"(silinmiş işçi)"};
+      const g = grup[id];
+      g.gunler.sort((a,b)=>a-b);
+      const li = document.createElement("li");
+      li.innerHTML =
+        '<div class="rozet" style="background:var(--asfalt2)">'+String(isc.ad||"?").charAt(0).toUpperCase()+'</div>'+
+        '<div class="orta"><div class="baslik">'+isc.ad+'</div>'+
+        '<div class="alt-yazi">'+g.gun+' gün · '+g.mesai+' saat mesai</div></div>'+
+        '<div class="tutar">'+paraFmt(g.hak)+'</div>'+
+        '<button class="sil" aria-label="Paylaş" style="color:var(--mesai)">📤</button>';
+      li.querySelector(".sil").addEventListener("click", async ()=>{
+        const metin = "📋 *"+isc.ad+" — "+AYLAR[aktifAy]+" "+aktifYil+"*\n"+
+          "✅ "+g.gun+" gün · ⏱ "+g.mesai+" saat mesai\n"+
+          "📅 Çalıştığı günler: "+g.gunler.join(", ")+"\n"+
+          "💰 Hakediş: "+paraFmt(g.hak);
+        try{
+          if(navigator.share) await navigator.share({text:metin});
+          else{ await navigator.clipboard.writeText(metin); toast("Kopyalandı 📋"); }
+        }catch(e){}
+      });
+      ul.appendChild(li);
+    });
+  }catch(e){ hataGoster(e); }
+}
+
+/* ---------- Herkes sayfası (salt okunur) ---------- */
+async function kisilerYukle(){
+  const kap = $("#kisiler-liste");
+  kap.innerHTML = '<div class="bos-mesaj" style="width:100%">Yükleniyor...</div>';
+  try{
+    const qs = await db.collection("kullanicilar").get();
+    kap.innerHTML = "";
+    let sayi = 0;
+    qs.forEach(doc=>{
+      const d = doc.data()||{};
+      const ad = (d.ad||"").trim() || "İsimsiz kullanıcı";
+      const ben = doc.id===kullanici.uid;
+      const b = document.createElement("button");
+      b.className = "eksik-cip";
+      b.textContent = "👤 " + ad + (ben ? " (sen)" : "");
+      if(ben) b.style.borderColor = "var(--sari)";
+      b.addEventListener("click", ()=> kisiSec(doc.id, ad));
+      kap.appendChild(b);
+      sayi++;
+    });
+    if(!sayi) kap.innerHTML = '<div class="bos-mesaj" style="width:100%">Henüz kimse yok.</div>';
+  }catch(e){
+    kap.innerHTML = '<div class="bos-mesaj" style="width:100%">Liste alınamadı. Firestore kurallarını yeni <b>firestore.rules</b> ile güncellemen gerekiyor (zip\'te).</div>';
+    hataGoster(e);
+  }
+}
+
+async function kisiSec(uid, ad){
+  seciliKisi = {uid, ad};
+  $("#kisi-baslik").textContent = "👤 " + ad;
+  $("#kisi-detay").classList.remove("gizli");
+  try{
+    const doc = await db.collection("kullanicilar").doc(uid).get();
+    kisiAyarlar = doc.data()||{};
+  }catch(e){ kisiAyarlar = {}; }
+  kisiVeriYukle();
+}
+
+function kisiKazanc(v){
+  const ka = kisiAyarlar||{};
+  let yev = Number(ka.yevmiye)||0, mes = Number(ka.mesaiUcret)||0,
+      ek = Number(ka.ekGunluk)||0, sa = Number(ka.saatUcret)||0;
+  if(v.santiyeId && Array.isArray(ka.santiyeler)){
+    const s = ka.santiyeler.find(x=>x.id===v.santiyeId);
+    if(s){ yev = Number(s.yevmiye)||yev; mes = Number(s.mesaiUcret)||mes; }
+  }
+  if(v.uYevmiye!=null) yev = Number(v.uYevmiye)||0;
+  if(v.uMesai!=null)   mes = Number(v.uMesai)||0;
+  if(v.uEk!=null)      ek  = Number(v.uEk)||0;
+  if(v.uSaatU!=null)   sa  = Number(v.uSaatU)||0;
+  const m = Number(v.mesai)||0;
+  let k = m*mes;
+  if(v.durum==="tam") k += yev + ek;
+  else if(v.durum==="yarim") k += (yev + ek)/2;
+  else if(v.durum==="saatlik"){ const st = Number(v.saat)||0; k += st*sa + (st>0?ek:0); }
+  return k;
+}
+
+async function kisiVeriYukle(){
+  if(!seciliKisi) return;
+  const ref = db.collection("kullanicilar").doc(seciliKisi.uid);
+  const bas = aktifYil + "-" + pad(aktifAy+1) + "-01";
+  const son = aktifYil + "-" + pad(aktifAy+1) + "-31";
+  $("#kisi-ozet").innerHTML = '<div class="bos-mesaj" style="grid-column:1/-1">Yükleniyor...</div>';
+  try{
+    const [gSnap, oSnap] = await Promise.all([
+      ref.collection("girdiler")
+        .where(firebase.firestore.FieldPath.documentId(), ">=", bas)
+        .where(firebase.firestore.FieldPath.documentId(), "<=", son).get(),
+      ref.collection("odemeler")
+        .where("tarih", ">=", bas).where("tarih", "<=", son).get()
+    ]);
+    let gun=0, mesai=0, hak=0;
+    const gunUl = $("#kisi-gunler"); gunUl.innerHTML = "";
+    const kayitlar = [];
+    gSnap.forEach(doc=> kayitlar.push({id:doc.id, ...doc.data()}));
+    kayitlar.sort((a,b)=> a.id<b.id?1:-1);
+    kayitlar.forEach(v=>{
+      gun += girdiGun(v);
+      mesai += Number(v.mesai)||0;
+      hak += kisiKazanc(v);
+      const t = new Date(v.id+"T12:00:00");
+      const li = document.createElement("li");
+      li.innerHTML =
+        '<div class="rozet" style="background:'+durumRenk(v.durum)+'">'+t.getDate()+'<small>'+AYLAR[t.getMonth()].slice(0,3)+'</small></div>'+
+        '<div class="orta"><div class="baslik">'+GUNLER[t.getDay()]+' · '+girisEtiket(v)+
+        (Number(v.mesai)>0 ? " · +"+v.mesai+" saat mesai" : "")+'</div>'+
+        '<div class="alt-yazi">'+([v.santiye, v.not].filter(Boolean).join(" — ")||"—")+'</div></div>'+
+        '<div class="tutar">'+paraFmt(kisiKazanc(v))+'</div>';
+      gunUl.appendChild(li);
+    });
+    if(!kayitlar.length) gunUl.innerHTML = '<div class="bos-mesaj">Bu ay kaydı yok.</div>';
+    let alinan = 0;
+    const odUl = $("#kisi-odemeler"); odUl.innerHTML = "";
+    const odListe = [];
+    oSnap.forEach(doc=> odListe.push(doc.data()));
+    odListe.sort((a,b)=> a.tarih<b.tarih?1:-1);
+    odListe.forEach(o=>{
+      alinan += Number(o.tutar)||0;
+      const t = new Date(o.tarih+"T12:00:00");
+      const li = document.createElement("li");
+      li.innerHTML =
+        '<div class="rozet" style="background:var(--asfalt2)">'+t.getDate()+'<small>'+AYLAR[t.getMonth()].slice(0,3)+'</small></div>'+
+        '<div class="orta"><div class="baslik">'+odemeTurEtiket(o.tur)+'</div>'+
+        '<div class="alt-yazi">'+(o.not||"—")+'</div></div>'+
+        '<div class="tutar">'+paraFmt(o.tutar)+'</div>';
+      odUl.appendChild(li);
+    });
+    if(!odListe.length) odUl.innerHTML = '<div class="bos-mesaj">Bu ay para girişi yok.</div>';
+    $("#kisi-ozet").innerHTML =
+      '<div class="ozet-kut tam-r"><div class="et">Gün</div><div class="deger">'+gun+'</div></div>'+
+      '<div class="ozet-kut mesai-r"><div class="et">Mesai</div><div class="deger">'+mesai+' saat</div></div>'+
+      '<div class="ozet-kut vurgu"><div class="et">Hakediş</div><div class="deger">'+paraFmt(hak)+'</div></div>'+
+      '<div class="ozet-kut"><div class="et">Alınan</div><div class="deger">'+paraFmt(alinan)+'</div></div>'+
+      '<div class="ozet-kut '+(hak-alinan>=0?'vurgu':'eksi')+'" style="grid-column:1/-1"><div class="et">Kalan</div><div class="deger">'+paraFmt(hak-alinan)+'</div></div>';
+  }catch(e){
+    $("#kisi-ozet").innerHTML = '<div class="bos-mesaj" style="grid-column:1/-1">Veri okunamadı — firestore.rules güncel mi?</div>';
+    hataGoster(e);
+  }
 }
 
 /* ---------- Ana ekran: şirket hesap kartı ---------- */
@@ -2153,7 +2610,7 @@ function gunListesiCiz(){
     const t = new Date(id+"T12:00:00");
     const li = document.createElement("li");
     const mesaiYazi = (Number(v.mesai)>0 ? " · +"+v.mesai+" saat mesai" : "") + (Number(v.arti)>0 ? " · "+v.arti+" artı" : "");
-    const notYazi = [v.santiye, v.not].filter(Boolean).join(" — ");
+    const notYazi = [v.santiye, v.not, (v.konum&&v.konum.adres ? "📍 "+v.konum.adres : "")].filter(Boolean).join(" — ");
     li.innerHTML =
       '<div class="rozet" style="background:'+durumRenk(v.durum)+'">'+t.getDate()+'<small>'+AYLAR[t.getMonth()].slice(0,3)+'</small></div>'+
       '<div class="orta"><div class="baslik">'+GUNLER[t.getDay()]+' · '+girisEtiket(v)+mesaiYazi+'</div>'+
@@ -2252,9 +2709,10 @@ function hesapla(){
   });
   const hakedis = yevmiyeKazanc + mesaiKazanc + ekKazanc;
   const alinan = odemeler.reduce((s,o)=> s + (Number(o.tutar)||0), 0);
+  const masrafToplam = masraflar.filter(m=>!m.odendi).reduce((s,m)=> s + (Number(m.tutar)||0), 0);
   return { tam, yarim, gelmedi, mesaiToplam, saatToplam, gunSayisi,
-           yevmiyeKazanc, mesaiKazanc, ekKazanc, hakedis, alinan,
-           kalan: hakedis - alinan };
+           yevmiyeKazanc, mesaiKazanc, ekKazanc, hakedis, alinan, masrafToplam,
+           kalan: hakedis + masrafToplam - alinan };
 }
 
 /* ---------- Çalışma serisi (üst üste gün, pazar seriyi bozmaz) ---------- */
@@ -2310,6 +2768,7 @@ function ozetCiz(){
     (t.gunSayisi>0 ? kut("Gün başı ortalama", paraFmt(t.hakedis/t.gunSayisi), "") : "") +
     kut("Toplam hakediş", paraFmt(t.hakedis), "vurgu") +
     kut("Aldığım para", paraFmt(t.alinan), "") +
+    (t.masrafToplam>0 ? kut("🧾 Masraf alacağı", paraFmt(t.masrafToplam), "") : "") +
     kut("Kalan alacağım", paraFmt(t.kalan), t.kalan>=0?"vurgu":"eksi");
   function kut(et,deger,cls){
     return '<div class="ozet-kut '+cls+'"><div class="et">'+et+'</div><div class="deger">'+deger+'</div></div>';
@@ -2444,13 +2903,16 @@ async function csvIndir(){
 async function yedekAl(){
   toast("Yedek hazırlanıyor...");
   try{
-    const [ayarDoc, gSnap, oSnap, bSnap, cSnap, nSnap] = await Promise.all([
+    const [ayarDoc, gSnap, oSnap, bSnap, cSnap, nSnap, mSnap, eSnap, egSnap] = await Promise.all([
       kokRef().get(),
       kokRef().collection("girdiler").get(),
       kokRef().collection("odemeler").get(),
       kokRef().collection("borclar").get(),
       kokRef().collection("cuzdan").get(),
-      kokRef().collection("notlar").get()
+      kokRef().collection("notlar").get(),
+      kokRef().collection("masraflar").get(),
+      kokRef().collection("ekip").get(),
+      kokRef().collection("ekipGun").get()
     ]);
     const yedek = {
       uygulama: "Puantaj Defterim",
@@ -2458,13 +2920,16 @@ async function yedekAl(){
       tarih: new Date().toISOString(),
       eposta: kullanici.email,
       ayarlar: ayarDoc.data()||{},
-      girdiler: {}, odemeler: {}, borclar: {}, cuzdan: {}, notlar: {}
+      girdiler: {}, odemeler: {}, borclar: {}, cuzdan: {}, notlar: {}, masraflar: {}, ekip: {}, ekipGun: {}
     };
     gSnap.forEach(doc=> yedek.girdiler[doc.id] = doc.data());
     oSnap.forEach(doc=> yedek.odemeler[doc.id] = doc.data());
     bSnap.forEach(doc=> yedek.borclar[doc.id] = doc.data());
     cSnap.forEach(doc=> yedek.cuzdan[doc.id] = doc.data());
     nSnap.forEach(doc=> yedek.notlar[doc.id] = doc.data());
+    mSnap.forEach(doc=> yedek.masraflar[doc.id] = doc.data());
+    eSnap.forEach(doc=> yedek.ekip[doc.id] = doc.data());
+    egSnap.forEach(doc=> yedek.ekipGun[doc.id] = doc.data());
     dosyaIndir("puantaj-yedek-"+tarihId(new Date())+".json", JSON.stringify(yedek,null,2), "application/json");
     toast("Yedek indirildi 💾");
   }catch(e){ hataGoster(e); }
@@ -2499,6 +2964,9 @@ async function yedekGeriYukle(dosya){
     Object.entries(y.borclar||{}).forEach(([id, v])=> ekle(kokRef().collection("borclar").doc(id), v));
     Object.entries(y.cuzdan||{}).forEach(([id, v])=> ekle(kokRef().collection("cuzdan").doc(id), v));
     Object.entries(y.notlar||{}).forEach(([id, v])=> ekle(kokRef().collection("notlar").doc(id), v));
+    Object.entries(y.masraflar||{}).forEach(([id, v])=> ekle(kokRef().collection("masraflar").doc(id), v));
+    Object.entries(y.ekip||{}).forEach(([id, v])=> ekle(kokRef().collection("ekip").doc(id), v));
+    Object.entries(y.ekipGun||{}).forEach(([id, v])=> ekle(kokRef().collection("ekipGun").doc(id), v));
     for(const bt of batches) await bt.commit();
     toast("Yedek geri yüklendi ✅ ("+gSayi+" gün)");
   }catch(e){ hataGoster(e); }
@@ -2629,8 +3097,10 @@ function hesaplaAralik(gBas, gSon){
   const sId = aktifYil+"-"+pad(aktifAy+1)+"-"+pad(gSon);
   const alinan = odemeler.filter(o=> o.tarih>=bId && o.tarih<=sId)
                          .reduce((s,o)=> s+(Number(o.tutar)||0), 0);
-  return {gBas, gSon, gunSayisi, mesaiToplam, saatToplam, artiToplam,
-          hakedis, alinan, kalan: hakedis-alinan,
+  const masrafToplam = masraflar.filter(m=> !m.odendi && m.tarih>=bId && m.tarih<=sId)
+                                .reduce((s,m)=> s+(Number(m.tutar)||0), 0);
+  return {gBas, gSon, gunSayisi, mesaiToplam, saatToplam, artiToplam, bId, sId,
+          hakedis, alinan, masrafToplam, kalan: hakedis + masrafToplam - alinan,
           etiket: (gBas===1 && gSon===aySonu) ? "" : " ("+gBas+"–"+gSon+")"};
 }
 
@@ -2657,6 +3127,7 @@ async function raporPaylas(gBas, gSon){
     "────────────\n" +
     "💰 Hakediş: " + paraFmt(t.hakedis) + "\n" +
     "💵 Alınan: " + paraFmt(t.alinan) + "\n" +
+    (t.masrafToplam>0 ? "🧾 Masraf alacağı: " + paraFmt(t.masrafToplam) + "\n" : "") +
     "🔴 KALAN: " + paraFmt(t.kalan);
   try{
     if(navigator.share){
@@ -2726,6 +3197,23 @@ function pdfYazdir(gBas, gSon){
       "</td><td class='orta-h'>"+i.yev+"</td><td class='orta-h'>"+i.arti+"</td><td class='orta-h'>"+i.mesai+
       "</td><td class='sag'>"+(kazancVar ? paraFmt(girdiKazanc(v)) : "")+"</td></tr>";
   }
+  /* Dönem içindeki para girişleri (avans/ödeme) tablosu */
+  const donemOdeme = odemeler.filter(o=> o.tarih>=t.bId && o.tarih<=t.sId)
+                             .sort((a,b)=> a.tarih<b.tarih?-1:1);
+  let odemeHtml = "";
+  if(donemOdeme.length){
+    let oSat = "";
+    donemOdeme.forEach(o=>{
+      const d2 = new Date(o.tarih+"T12:00:00");
+      oSat += "<tr><td>"+pad(d2.getDate())+" / "+pad(d2.getMonth()+1)+" / "+d2.getFullYear()+
+        "</td><td>"+odemeTurEtiket(o.tur)+"</td><td>"+(o.not||"")+
+        "</td><td class='sag'>"+paraFmt(o.tutar)+"</td></tr>";
+    });
+    odemeHtml = '<h2 style="font-size:15px;margin-top:22px;border-bottom:3px solid #FFC400;padding-bottom:5px">ALINAN PARALAR (AVANS / ÖDEME)</h2>'+
+      '<table><tr><th>TARİH</th><th>TÜR</th><th>NOT</th><th class="sag">TUTAR</th></tr>'+oSat+
+      '<tr class="ozet"><td colspan="3">TOPLAM ALINAN</td><td class="sag">'+paraFmt(t.alinan)+'</td></tr></table>';
+  }
+
   const w = window.open("", "_blank");
   if(!w){ toast("Tarayıcı yeni pencereyi engelledi, izin ver"); return; }
   w.document.write('<html><head><meta charset="UTF-8"><title>Puantaj - '+AYLAR[aktifAy]+' '+aktifYil+'</title>'+
@@ -2743,7 +3231,9 @@ function pdfYazdir(gBas, gSon){
     satirlar+
     '<tr class="ozet"><td>TOPLAM: '+t.gunSayisi+' gün'+(t.artiToplam>0?' · '+t.artiToplam+' artı':'')+' · '+t.mesaiToplam+' saat mesai</td><td colspan="3">HAKEDİŞ</td><td class="sag">'+paraFmt(t.hakedis)+'</td></tr>'+
     '<tr class="ozet"><td></td><td colspan="3">ALINAN (avans/ödeme)</td><td class="sag">'+paraFmt(t.alinan)+'</td></tr>'+
+    (t.masrafToplam>0 ? '<tr class="ozet"><td></td><td colspan="3">MASRAF ALACAĞI</td><td class="sag">'+paraFmt(t.masrafToplam)+'</td></tr>' : '')+
     '<tr class="ozet"><td></td><td colspan="3">KALAN</td><td class="sag">'+paraFmt(t.kalan)+'</td></tr></table>'+
+    odemeHtml+
     '<div class="imza"><div>İşçi<br>Ad Soyad / İmza</div><div>İşveren<br>Ad Soyad / İmza</div></div>'+
     '</body></html>');
   w.document.close(); w.focus();
@@ -2769,6 +3259,8 @@ function modalAc(id){
   }
   $("#mesai-saat").value = v.mesai || 0;
   $("#gun-arti").value = Number(v.arti)||0;
+  gunKonum = v.konum || null;
+  $("#gun-konum-yazi").textContent = gunKonum && gunKonum.adres ? "📍 "+gunKonum.adres : "";
   $("#gun-santiye").value = v.santiye || "";
   $("#gun-not").value = v.not || "";
   /* Şantiye seçici */
@@ -2885,6 +3377,10 @@ document.addEventListener("DOMContentLoaded", ()=>{
     yil:["Yıl özeti","12 ayın dökümü"],
     notlar:["Notlar","Aklında kalmasın, yaz"],
     rozet:["Başarımlar","Rozetlerini topla"],
+    masraf:["Masraflar","Patrondan alacakların"],
+    ekip:["Ekibim","Yanındakilerin puantajı"],
+    arac:["Araçlar","Hesap ve haklar"],
+    kisiler:["Herkes","Kim ne çalışmış gör"],
     ayarlar:["Ayarlar","Ücret ve hesap"]
   };
   $$("[data-goruntu]").forEach(b=>{
@@ -2892,10 +3388,10 @@ document.addEventListener("DOMContentLoaded", ()=>{
       const g = b.dataset.goruntu;
       aktifGoruntu = g;
       $$("[data-goruntu]").forEach(x=>x.classList.toggle("aktif", x===b));
-      ["ana","puantaj","odemeler","borc","ozet","yil","notlar","rozet","ayarlar"].forEach(x=>{
+      ["ana","puantaj","odemeler","masraf","borc","ozet","yil","notlar","rozet","ekip","kisiler","arac","ayarlar"].forEach(x=>{
         $("#goruntu-"+x).classList.toggle("gizli", x!==g);
       });
-      $("#ay-bar").style.display = (g==="ayarlar"||g==="borc"||g==="ana"||g==="notlar"||g==="rozet") ? "none" : "flex";
+      $("#ay-bar").style.display = (g==="ayarlar"||g==="borc"||g==="ana"||g==="notlar"||g==="rozet"||g==="arac") ? "none" : "flex";
       $("#topbar-baslik").firstChild.textContent = basliklar[g][0];
       $("#topbar-alt").textContent = basliklar[g][1];
       $("#btn-bugun").style.display = g==="puantaj" ? "flex" : "none";
@@ -2910,6 +3406,8 @@ document.addEventListener("DOMContentLoaded", ()=>{
       if(g==="ozet") ozetDetayYukle();
       if(g==="ana") anaYukle();
       if(g==="rozet") rozetYukle();
+      if(g==="ekip"){ ekipYoklamaCiz(); ekipYoklamaYukle(); ekipOzetYukle(); }
+      if(g==="kisiler") kisilerYukle();
       cekmeceAc(false);
       window.scrollTo({top:0});
     });
@@ -3028,6 +3526,7 @@ document.addEventListener("DOMContentLoaded", ()=>{
       guncelleme: firebase.firestore.FieldValue.serverTimestamp()
     };
     if(saatlikMod) veri.saat = Number($("#gun-saat").value)||0;
+    if(gunKonum) veri.konum = gunKonum;
     try{
       await kokRef().collection("girdiler").doc(modalTarih).set(veri);
       modalKapat(); toastGeriAl("Gün kaydedildi ✅", {id:modalTarih, onceki});
@@ -3266,6 +3765,117 @@ document.addEventListener("DOMContentLoaded", ()=>{
     document.querySelector('[data-goruntu="rozet"]').click();
   });
 
+  /* ---- İş masrafları ---- */
+  $("#masraf-tarih").value = tarihId(new Date());
+  $("#btn-masraf-ekle").addEventListener("click", async ()=>{
+    const tutar = Number($("#masraf-tutar").value);
+    const tarih = $("#masraf-tarih").value || tarihId(new Date());
+    if(!tutar || tutar<=0){ toast("Tutarı yaz kanka"); return; }
+    if(ayKilitli(tarih)){ toast("O ay kilitli 🔒"); return; }
+    try{
+      await kokRef().collection("masraflar").add({
+        tarih, tutar,
+        aciklama: $("#masraf-aciklama").value.trim(),
+        odendi: false,
+        olusturma: firebase.firestore.FieldValue.serverTimestamp()
+      });
+      $("#masraf-tutar").value=""; $("#masraf-aciklama").value="";
+      toast("Masraf kaydedildi 🧾 Hesabına alacak olarak eklendi");
+    }catch(e){ hataGoster(e); }
+  });
+
+  /* ---- Ekip ---- */
+  $("#ekip-tarih").value = tarihId(new Date());
+  $("#ekip-tarih").addEventListener("change", ekipYoklamaYukle);
+  $("#btn-isci-ekle").addEventListener("click", async ()=>{
+    const ad = $("#isci-ad").value.trim();
+    const yevmiye = Number($("#isci-yevmiye").value)||0;
+    const mesaiUcret = Number($("#isci-mesai").value)||0;
+    if(!ad || !yevmiye){ toast("İşçinin adını ve yevmiyesini yaz"); return; }
+    try{
+      await kokRef().collection("ekip").add({ad, yevmiye, mesaiUcret});
+      $("#isci-ad").value=""; $("#isci-yevmiye").value=""; $("#isci-mesai").value="";
+      toast(ad+" ekibe eklendi 👥");
+    }catch(e){ hataGoster(e); }
+  });
+  $("#btn-yoklama-kaydet").addEventListener("click", async ()=>{
+    const tarih = $("#ekip-tarih").value;
+    if(!tarih){ toast("Tarih seç"); return; }
+    try{
+      const batch = db.batch();
+      ekipListe.forEach(i=>{
+        const y = yoklama[i.id] || {durum:"yok", mesai:0};
+        const ref = kokRef().collection("ekipGun").doc(i.id+"_"+tarih);
+        if(y.durum==="yok" && !(Number(y.mesai)>0)){
+          batch.delete(ref);
+        }else{
+          batch.set(ref, {
+            iscId: i.id, tarih,
+            durum: y.durum, mesai: Number(y.mesai)||0,
+            uYevmiye: Number(i.yevmiye)||0, uMesai: Number(i.mesaiUcret)||0
+          });
+        }
+      });
+      await batch.commit();
+      toast("Yoklama kaydedildi ✅");
+      ekipOzetYukle();
+    }catch(e){ hataGoster(e); }
+  });
+
+  /* ---- Konum damgası ---- */
+  $("#btn-konum").addEventListener("click", ()=>{
+    if(!navigator.geolocation){ toast("Bu tarayıcı konum desteklemiyor"); return; }
+    $("#gun-konum-yazi").textContent = "📡 Konum alınıyor...";
+    navigator.geolocation.getCurrentPosition(async p=>{
+      let adres = p.coords.latitude.toFixed(4)+", "+p.coords.longitude.toFixed(4);
+      try{
+        const r = await fetch("https://api.bigdatacloud.net/data/reverse-geocode-client?latitude="+
+          p.coords.latitude+"&longitude="+p.coords.longitude+"&localityLanguage=tr");
+        const d = await r.json();
+        const parca = [d.locality, d.principalSubdivision].filter(Boolean);
+        if(parca.length) adres = parca.join(", ");
+      }catch(e){}
+      gunKonum = {adres, lat: Number(p.coords.latitude.toFixed(5)), lng: Number(p.coords.longitude.toFixed(5))};
+      $("#gun-konum-yazi").textContent = "📍 " + adres + " damgalandı (kaydetmeyi unutma)";
+    }, ()=>{
+      $("#gun-konum-yazi").textContent = "";
+      toast("Konum alınamadı, izin verdiğinden emin ol");
+    }, {timeout:10000, enableHighAccuracy:true});
+  });
+
+  /* ---- Kıdem hesaplayıcı ---- */
+  const kidemHesapla = ()=>{
+    const giris = $("#kidem-giris").value;
+    const ucret = Number($("#kidem-ucret").value)||0;
+    if(!giris || !ucret){ return; }
+    const yilF = (Date.now() - new Date(giris+"T12:00:00").getTime()) / (365.25*86400000);
+    if(yilF < 0){ $("#kidem-sonuc").textContent = "Giriş tarihi gelecekte olamaz 😄"; return; }
+    const yil = Math.floor(yilF), ayK = Math.floor((yilF-yil)*12);
+    const izin = yilF<1 ? 0 : (yilF<5 ? 14 : (yilF<15 ? 20 : 26));
+    let m = "⏳ Kıdemin: <b>"+yil+" yıl "+ayK+" ay</b><br>";
+    if(yilF>=1){
+      m += "💼 Tahmini kıdem tazminatı: <b>"+paraFmt(yilF*30*ucret)+"</b><br>";
+      m += "🏖️ Yıllık izin hakkın: <b>en az "+izin+" gün</b>";
+    }else{
+      m += "💼 Kıdem tazminatına <b>1 yılı doldurunca</b> hak kazanırsın ("+(12-ayK)+" ay kaldı).";
+    }
+    $("#kidem-sonuc").innerHTML = m;
+  };
+  $("#kidem-giris").addEventListener("change", kidemHesapla);
+  $("#kidem-ucret").addEventListener("input", kidemHesapla);
+
+  /* ---- Mesai ücreti kontrolü ---- */
+  $("#mesai-kontrol").addEventListener("input", ()=>{
+    const u = Number($("#mesai-kontrol").value)||0;
+    if(!u){ return; }
+    $("#mesai-kontrol-sonuc").innerHTML =
+      "Yasal fazla mesai saat ücretin (%50 zamlı): <b>"+paraFmt(u*1.5)+"/saat</b><br>"+
+      "<span style='color:var(--soluk);font-size:12px'>Sana bundan azı ödeniyorsa hakkın yeniyor demektir.</span>";
+  });
+
+  /* Herkes: yenile */
+  $("#btn-kisiler-yenile").addEventListener("click", kisilerYukle);
+
   /* Alt navigasyon */
   $$(".alt-nav [data-nav]").forEach(n=>{
     n.addEventListener("click", ()=>{
@@ -3475,6 +4085,7 @@ document.addEventListener("DOMContentLoaded", ()=>{
     try{
       await auth.currentUser.updateProfile({displayName:ad});
       kullanici = auth.currentUser; kullaniciBilgiYaz();
+      kokRef().set({ad},{merge:true}).catch(()=>{});
       toast("Adın güncellendi 👍");
     }catch(e){ hataGoster(e); }
   });
