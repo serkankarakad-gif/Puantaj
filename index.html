@@ -678,7 +678,8 @@ nav.cekmece{
       <div class="kart gizli" id="yenilik-kart" style="border-color:var(--sari)">
         <h2>🎁 Neler yeni?</h2>
         <ul style="padding-left:18px;font-size:13.5px;line-height:1.9">
-          <li><b>iPhone tutar hatası düzeldi:</b> "5.000" yazınca artık 5 TL değil, 5.000 TL olarak anlaşılıyor. Avans ve yevmiyeler doğru hesaplanıyor 🎉</li>
+          <li><b>0 ₺ günler düzeldi:</b> Yevmiye girmeden işlenen günler artık ayarlardaki güncel ücretinle hesaplanıyor — "hakediş 0 görünüyor" derdi bitti 🎉</li>
+          <li><b>iPhone tutar hatası düzeldi:</b> "5.000" yazınca artık 5 TL değil, 5.000 TL olarak anlaşılıyor</li>
           <li><b>🩹 Tutar onarımı:</b> Eskiden yanlış kaydedilmiş avans/yevmiye varsa Ayarlar → Tutar onarımı ile tek dokunuşla düzelt</li>
           <li>Rakamların yanına ₺ veya TL yazsan da artık sorun çıkmıyor</li>
         </ul>
@@ -1295,7 +1296,7 @@ nav.cekmece{
         <p style="font-size:13px;color:var(--soluk);margin-bottom:12px">Hata mı gördün, fikrin mi var? Direkt geliştiriciye ulaş:</p>
         <a class="btn btn-cizgili" style="display:block;text-align:center;text-decoration:none;margin-bottom:10px" href="https://wa.me/905051252339?text=Puantaj%20Defterim%20hakkında:" target="_blank">💬 WhatsApp'tan yaz</a>
         <a class="btn btn-cizgili" style="display:block;text-align:center;text-decoration:none" href="tel:05051252339">📞 0505 125 23 39</a>
-        <p style="font-size:11px;color:var(--soluk);margin-top:12px;text-align:center">Sürüm: v23 · Serkan Karakaş</p>
+        <p style="font-size:11px;color:var(--soluk);margin-top:12px;text-align:center">Sürüm: v24 · Serkan Karakaş</p>
       </div>
       <div class="kart">
         <h2>🔒 PIN kilidi</h2>
@@ -2395,10 +2396,10 @@ function kisiKazanc(v){
     const s = ka.santiyeler.find(x=>x.id===v.santiyeId);
     if(s){ yev = Number(s.yevmiye)||yev; mes = Number(s.mesaiUcret)||mes; }
   }
-  if(v.uYevmiye!=null) yev = Number(v.uYevmiye)||0;
-  if(v.uMesai!=null)   mes = Number(v.uMesai)||0;
+  if(v.uYevmiye!=null) yev = Number(v.uYevmiye)||yev;
+  if(v.uMesai!=null)   mes = Number(v.uMesai)||mes;
   if(v.uEk!=null)      ek  = Number(v.uEk)||0;
-  if(v.uSaatU!=null)   sa  = Number(v.uSaatU)||0;
+  if(v.uSaatU!=null)   sa  = Number(v.uSaatU)||sa;
   const m = Number(v.mesai)||0;
   let k = m*mes;
   if(v.durum==="tam") k += yev + ek;
@@ -2704,8 +2705,12 @@ async function anaYukle(){
       }else esikEl.classList.add("gizli");
     }
     sayacAnim($("#sirket-bakiye"), hakedis - alinan);
-    $("#sirket-alt").textContent = gizliMod ? "Toplam hakediş •••• · Alınan ••••"
-      : "Toplam hakediş "+paraFmt(hakedis)+" · Alınan "+paraFmt(alinan);
+    if(gunToplam>0 && hakedis<=0 && !(ayarlar.yevmiye>0) && !(ayarlar.saatUcret>0)){
+      $("#sirket-alt").innerHTML = "⚠️ <b>"+gunToplam+" günün işli ama yevmiyen girili değil!</b> Ayarlar → Ücret ayarları'ndan günlük yevmiyeni yaz, paraların hemen görünsün.";
+    }else{
+      $("#sirket-alt").textContent = gizliMod ? "Toplam hakediş •••• · Alınan ••••"
+        : "Toplam hakediş "+paraFmt(hakedis)+" · Alınan "+paraFmt(alinan);
+    }
     hareketler.sort((a,b)=> a.tarih < b.tarih ? 1 : -1);
     const ul = $("#liste-sirket-hareket");
     if(!hareketler.length){
@@ -2736,10 +2741,12 @@ function oranBul(v){
     const s = (ayarlar.santiyeler||[]).find(x=>x.id===v.santiyeId);
     if(s){ yev = Number(s.yevmiye)||yev; mes = Number(s.mesaiUcret)||mes; }
   }
-  if(v.uYevmiye!=null) yev = Number(v.uYevmiye)||0;
-  if(v.uMesai!=null)   mes = Number(v.uMesai)||0;
+  /* Güne mühürlenmiş ücret 0 ise (yevmiye girilmeden gün işlenmiş) ayarlardaki
+     güncel ücrete geri düş — kimse 0 liraya çalışmaz. uEk için 0 geçerli değerdir. */
+  if(v.uYevmiye!=null) yev = Number(v.uYevmiye)||yev;
+  if(v.uMesai!=null)   mes = Number(v.uMesai)||mes;
   if(v.uEk!=null)      ek  = Number(v.uEk)||0;
-  if(v.uSaatU!=null)   sa  = Number(v.uSaatU)||0;
+  if(v.uSaatU!=null)   sa  = Number(v.uSaatU)||sa;
   return {yev, mes, ek, sa};
 }
 function girdiKazanc(v){
@@ -4125,7 +4132,7 @@ document.addEventListener("DOMContentLoaded", ()=>{
   });
 
   /* Neler yeni kartı */
-  const YENILIK_SURUM = "v23";
+  const YENILIK_SURUM = "v24";
   try{
     if(localStorage.getItem("yenilik")!==YENILIK_SURUM) $("#yenilik-kart").classList.remove("gizli");
   }catch(e){ $("#yenilik-kart").classList.remove("gizli"); }
@@ -4787,13 +4794,18 @@ document.addEventListener("DOMContentLoaded", ()=>{
         supheli.push({ref:kokRef(), veri:{yevmiye:Math.round(a.yevmiye*1000)},
                       ac:"Ayarlar — yevmiye: "+kFmt(a.yevmiye)+" → "+kFmt(Math.round(a.yevmiye*1000))});
       /* 2) Gün kayıtlarına işlenmiş yevmiyeler */
+      const duzgunYev = (a.yevmiye>0 && a.yevmiye<100) ? Math.round(a.yevmiye*1000) : (Number(a.yevmiye)||0);
       const gSnap = await kokRef().collection("girdiler").get();
       gSnap.forEach(doc=>{
         const v = doc.data();
-        const u = Number(v.uYevmiye);
+        if(v.uYevmiye==null) return;
+        const u = Number(v.uYevmiye)||0;
         if(u>0 && u<100)
           supheli.push({ref:doc.ref, veri:{uYevmiye:Math.round(u*1000)},
                         ac:doc.id+" — yevmiye: "+kFmt(u)+" → "+kFmt(Math.round(u*1000))});
+        else if(u===0 && duzgunYev>=100)
+          supheli.push({ref:doc.ref, veri:{uYevmiye:duzgunYev},
+                        ac:doc.id+" — yevmiye: 0 ₺ → "+kFmt(duzgunYev)+" (ayarlardaki ücret)"});
       });
       /* 3) Ödemeler (avans vb.) */
       const oSnap = await kokRef().collection("odemeler").get();
