@@ -678,11 +678,9 @@ nav.cekmece{
       <div class="kart gizli" id="yenilik-kart" style="border-color:var(--sari)">
         <h2>🎁 Neler yeni?</h2>
         <ul style="padding-left:18px;font-size:13.5px;line-height:1.9">
-          <li><b>Artı yevmiye düzeldi:</b> gün içi artılar artık toplam güne ve paraya sayılıyor (5 tam + yarım artı = 5,5)</li>
-          <li><b>iPhone düzeltmeleri:</b> virgüllü sayılar ve eski Safari çökmesi giderildi</li>
-          <li>Raporda ve PDF'te <b>avans dökümü</b>: hangi gün, ne için, ne kadar</li>
-          <li><b>Yedek hatırlatması:</b> 30 gündür yedek almadıysan uyarır</li>
-          <li>Gece 12'yi geçince ekran <b>kendiliğinden yeni güne</b> geçer</li>
+          <li><b>iPhone tutar hatası düzeldi:</b> "5.000" yazınca artık 5 TL değil, 5.000 TL olarak anlaşılıyor. Avans ve yevmiyeler doğru hesaplanıyor 🎉</li>
+          <li><b>🩹 Tutar onarımı:</b> Eskiden yanlış kaydedilmiş avans/yevmiye varsa Ayarlar → Tutar onarımı ile tek dokunuşla düzelt</li>
+          <li>Rakamların yanına ₺ veya TL yazsan da artık sorun çıkmıyor</li>
         </ul>
         <button class="btn btn-cizgili" id="btn-yenilik-kapat">Süper, kapat</button>
       </div>
@@ -1285,11 +1283,19 @@ nav.cekmece{
         <button class="btn btn-cizgili" id="btn-sgk-kaydet">Kaydet</button>
       </div>
       <div class="kart">
+        <h2>🩹 Tutar onarımı</h2>
+        <p style="font-size:13px;color:var(--soluk);margin-bottom:12px;line-height:1.6">
+          Eskiden "5.000" gibi noktayla yazılan tutarlar yanlışlıkla "5 TL" kaydediliyordu (özellikle iPhone'da).
+          Bu araç öyle görünen kayıtları bulur, sana listeyi gösterir, onaylarsan düzeltir.
+        </p>
+        <button class="btn btn-cizgili" id="btn-onarim">🩹 Bozuk tutarları tara ve düzelt</button>
+      </div>
+      <div class="kart">
         <h2>🐞 Sorun bildir</h2>
         <p style="font-size:13px;color:var(--soluk);margin-bottom:12px">Hata mı gördün, fikrin mi var? Direkt geliştiriciye ulaş:</p>
         <a class="btn btn-cizgili" style="display:block;text-align:center;text-decoration:none;margin-bottom:10px" href="https://wa.me/905051252339?text=Puantaj%20Defterim%20hakkında:" target="_blank">💬 WhatsApp'tan yaz</a>
         <a class="btn btn-cizgili" style="display:block;text-align:center;text-decoration:none" href="tel:05051252339">📞 0505 125 23 39</a>
-        <p style="font-size:11px;color:var(--soluk);margin-top:12px;text-align:center">Sürüm: v22 · Serkan Karakaş</p>
+        <p style="font-size:11px;color:var(--soluk);margin-top:12px;text-align:center">Sürüm: v23 · Serkan Karakaş</p>
       </div>
       <div class="kart">
         <h2>🔒 PIN kilidi</h2>
@@ -1530,11 +1536,31 @@ const GUNLER = ["Pazar","Pazartesi","Salı","Çarşamba","Perşembe","Cuma","Cum
 const paraFmt = n => new Intl.NumberFormat("tr-TR",{maximumFractionDigits:0}).format(n||0) + " ₺";
 const pad = n => String(n).padStart(2,"0");
 
-/* iOS/Türkçe klavye dostu sayı okuma: "2,5" → 2.5, "1.250,75" → 1250.75 */
+/* iOS/Türkçe klavye dostu sayı okuma:
+   "2,5" → 2.5 · "1.250,75" → 1250.75 · "5.000" → 5000 (binlik nokta!)
+   "1.234.567" → 1234567 · "2.5" → 2.5 · "5.000 TL" → 5000
+   iPhone klavyesinde nokta olduğu için işçiler "2.500" diye binlik yazıyor;
+   eskiden bu 2,5 TL sanılıyordu. Artık: nokta + tam 3 hane = binlik ayraç. */
 function sayi(v){
   let s = String(v==null ? "" : v).trim();
   if(!s) return 0;
-  if(s.indexOf(",") > -1) s = s.split(".").join("").replace(",", ".");
+  s = s.replace(/[^0-9.,-]/g, "");                 /* ₺, TL, boşluk vb. temizle */
+  if(!s) return 0;
+  if(s.indexOf(",") > -1){
+    const vParca = s.split(",");
+    if(s.indexOf(".") === -1 && vParca.length === 2 && vParca[1].length === 3 && vParca[0] !== "0" && vParca[0] !== ""){
+      s = vParca.join("");                         /* "1,000" → 1000 (İngilizce binlik alışkanlığı) */
+    }else{
+      s = s.split(".").join("").replace(",", "."); /* virgül = ondalık, nokta = binlik */
+    }
+  }else{
+    const parcalar = s.split(".");
+    if(parcalar.length > 2){
+      s = parcalar.join("");                       /* 1.234.567 → binlik */
+    }else if(parcalar.length === 2 && parcalar[1].length === 3 && parcalar[0] !== "0" && parcalar[0] !== ""){
+      s = parcalar.join("");                       /* 5.000 → 5000 (0.500 gibi gerçek ondalıklar korunur) */
+    }
+  }
   const n = Number(s);
   return isFinite(n) ? n : 0;
 }
@@ -4099,7 +4125,7 @@ document.addEventListener("DOMContentLoaded", ()=>{
   });
 
   /* Neler yeni kartı */
-  const YENILIK_SURUM = "v22";
+  const YENILIK_SURUM = "v23";
   try{
     if(localStorage.getItem("yenilik")!==YENILIK_SURUM) $("#yenilik-kart").classList.remove("gizli");
   }catch(e){ $("#yenilik-kart").classList.remove("gizli"); }
@@ -4745,6 +4771,52 @@ document.addEventListener("DOMContentLoaded", ()=>{
         toast("Kaydedildi ama başka bir aya ait, o aya geçince görürsün");
       }
     }catch(e){ hataGoster(e); }
+  });
+
+  /* ---------- Tutar onarımı: "5.000" → 5 TL kaydedilmiş kayıtları düzelt ---------- */
+  $("#btn-onarim").addEventListener("click", async ()=>{
+    const btn = $("#btn-onarim");
+    const kFmt = n => String(n).replace(".", ",") + " ₺";
+    btn.disabled = true; btn.textContent = "Taranıyor...";
+    try{
+      const supheli = [];   /* {ref, veri, ac} */
+      /* 1) Ayarlardaki yevmiye */
+      const kokDoc = await kokRef().get();
+      const a = kokDoc.exists ? kokDoc.data() : {};
+      if(a.yevmiye>0 && a.yevmiye<100)
+        supheli.push({ref:kokRef(), veri:{yevmiye:Math.round(a.yevmiye*1000)},
+                      ac:"Ayarlar — yevmiye: "+kFmt(a.yevmiye)+" → "+kFmt(Math.round(a.yevmiye*1000))});
+      /* 2) Gün kayıtlarına işlenmiş yevmiyeler */
+      const gSnap = await kokRef().collection("girdiler").get();
+      gSnap.forEach(doc=>{
+        const v = doc.data();
+        const u = Number(v.uYevmiye);
+        if(u>0 && u<100)
+          supheli.push({ref:doc.ref, veri:{uYevmiye:Math.round(u*1000)},
+                        ac:doc.id+" — yevmiye: "+kFmt(u)+" → "+kFmt(Math.round(u*1000))});
+      });
+      /* 3) Ödemeler (avans vb.) */
+      const oSnap = await kokRef().collection("odemeler").get();
+      oSnap.forEach(doc=>{
+        const v = doc.data();
+        const t2 = Number(v.tutar)||0;
+        if(t2>0 && t2<100)
+          supheli.push({ref:doc.ref, veri:{tutar:Math.round(t2*1000)},
+                        ac:(v.tarih||"?")+" — "+odemeTurEtiket(v.tur)+": "+kFmt(t2)+" → "+kFmt(Math.round(t2*1000))});
+      });
+      if(!supheli.length){ toast("Her şey yolunda, bozuk tutar bulamadım ✅"); return; }
+      const onizle = supheli.slice(0,8).map(s=>"• "+s.ac).join("\n")
+                   + (supheli.length>8 ? "\n… ve "+(supheli.length-8)+" kayıt daha" : "");
+      if(!confirm("Nokta yüzünden 1000 kat küçük kaydedilmiş görünen "+supheli.length+" kayıt buldum:\n\n"+onizle+"\n\nHepsini 1000 ile çarpıp düzelteyim mi?\n(100 ₺ altındaki tutar gerçekse düzeltme yapma, bana yaz.)")) return;
+      for(let i=0; i<supheli.length; i+=400){
+        const batch = db.batch();
+        supheli.slice(i, i+400).forEach(s=> batch.set(s.ref, s.veri, {merge:true}));
+        await batch.commit();
+      }
+      toast(supheli.length+" kayıt düzeltildi 🩹 Rakamlar birazdan yenilenir");
+      anaYukle();
+    }catch(e){ hataGoster(e); }
+    finally{ btn.disabled=false; btn.textContent="🩹 Bozuk tutarları tara ve düzelt"; }
   });
 
 
