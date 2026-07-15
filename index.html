@@ -57,6 +57,18 @@ const firebaseConfig = {
   --cizgi:#262933;
   --radius:18px;
 }
+/* 🎨 Temalar — vurgu rengi ve zemin değişir, düzen aynı kalır */
+body[data-tema="mavi"]{   --sari:#4FA8FF; --sari-koyu:#2E8BE6; --vurgu-zemin:#0F2035 }
+body[data-tema="yesil"]{  --sari:#2EE59D; --sari-koyu:#1DC985; --vurgu-zemin:#0E2A1E }
+body[data-tema="turuncu"]{--sari:#FF8A3D; --sari-koyu:#F0762A; --vurgu-zemin:#2E1A0C }
+body[data-tema="amoled"]{
+  --asfalt:#000; --asfalt2:#0A0A0C; --beton:#000; --kart:#0D0D10;
+  --girdi:#15151A; --pazar:#050507; --cizgi:#1B1B21; --sekme:#15151A;
+}
+#tema-secim button{
+  width:44px;height:44px;border-radius:50%;border:3px solid transparent;flex-shrink:0;
+}
+#tema-secim button.secili{border-color:#fff;transform:scale(1.1)}
 html[data-tema="acik"]{
   --beton:#F3F2EE;
   --kart:#FFFFFF;
@@ -213,6 +225,7 @@ main{padding:14px 14px 150px;max-width:560px;margin:0 auto}
 .hucre.d-tam{background:var(--tam);border-color:var(--tam);color:#fff}
 .hucre.d-yarim{background:var(--yarim);border-color:var(--yarim);color:#fff}
 .hucre.d-gelmedi{background:var(--gelmedi);border-color:var(--gelmedi);color:#fff}
+.hucre .foto-nokta{position:absolute;left:2px;bottom:1px;font-size:9px;pointer-events:none}
 .hucre .mesai-rozet{
   position:absolute;top:-5px;right:-5px;background:var(--mesai);color:#fff;
   font-size:9px;font-weight:700;padding:2px 4px;border-radius:6px;
@@ -294,6 +307,16 @@ main{padding:14px 14px 150px;max-width:560px;margin:0 auto}
 .banka-kart .kart-ust{display:flex;justify-content:space-between;align-items:center;font-size:12px;letter-spacing:.1em;text-transform:uppercase;color:rgba(255,255,255,.75)}
 .banka-kart .bakiye{font-family:'Saira Condensed';font-size:46px;font-weight:800;margin:10px 0 4px;color:var(--sari)}
 .banka-kart.cuzdan-k .bakiye{color:#B9F6CA}
+/* Profesyonel para animasyonları */
+.bakiye,.ozet-kut .deger{font-variant-numeric:tabular-nums}
+@keyframes paraPop{0%{transform:scale(1)}40%{transform:scale(1.07)}100%{transform:scale(1)}}
+.para-pop{display:inline-block;animation:paraPop .35s ease-out}
+@keyframes kartParla{from{transform:translateX(-160%) skewX(-20deg)}to{transform:translateX(320%) skewX(-20deg)}}
+.kart-parla::after{
+  content:"";position:absolute;top:0;left:0;width:45%;height:100%;pointer-events:none;
+  background:linear-gradient(105deg,transparent,rgba(255,255,255,.16),transparent);
+  animation:kartParla 1.1s ease-out .35s both;
+}
 .banka-kart .kart-alt{font-size:12px;color:rgba(255,255,255,.65)}
 .hareket-liste li .rozet{min-width:40px;height:40px;font-size:15px}
 
@@ -678,6 +701,13 @@ nav.cekmece{
       <div class="kart gizli" id="yenilik-kart" style="border-color:var(--sari)">
         <h2>🎁 Neler yeni?</h2>
         <ul style="padding-left:18px;font-size:13.5px;line-height:1.9">
+          <li><b>🔮 Ay sonu tahmini:</b> Ana ekranda "bu tempoyla ay sonunda şu kadar yaparsın" diyor, hedefin varsa onunla kıyaslıyor</li>
+          <li><b>🎨 Tema seçici:</b> Ayarlar'dan uygulamanın rengini seç — sarı, mavi, yeşil, turuncu veya pil dostu tam siyah</li>
+          <li><b>📸 Güne fotoğraf ekle:</b> Gün kaydına iş fotoğrafı koy (kanıt!) — takvimde 📸 işareti çıkar, dokununca büyük görürsün. Fotoğraf otomatik küçültülür, internetini yemez</li>
+          <li><b>🏖️ Yıllık izin sayacı:</b> Ayarlar'a işe giriş tarihini yaz, Araçlar'da kıdemine göre kaç gün iznin olduğunu ve kaç gün kaldığını gör</li>
+          <li><b>💰 Dolar/Altın karşılığı:</b> Şirket kartında alacağının kaç dolar ve kaç gram altın ettiği yazıyor (kurlar canlı, çevrimdışıyken son bilinen kur)</li>
+          <li><b>📈 Zam geçmişi:</b> Hesap özeti → tüm zamanlar bölümünde yevmiyenin nasıl arttığını ve toplam zam yüzdeni gör</li>
+          <li><b>✨ Canlı para sayacı:</b> Uygulamayı açınca alacağın 0'dan yükselerek sayılıyor, kartlarda parlama efekti — banka uygulaması gibi</li>
           <li><b>0 ₺ günler düzeldi:</b> Yevmiye girmeden işlenen günler artık ayarlardaki güncel ücretinle hesaplanıyor — "hakediş 0 görünüyor" derdi bitti 🎉</li>
           <li><b>iPhone tutar hatası düzeldi:</b> "5.000" yazınca artık 5 TL değil, 5.000 TL olarak anlaşılıyor</li>
           <li><b>🩹 Tutar onarımı:</b> Eskiden yanlış kaydedilmiş avans/yevmiye varsa Ayarlar → Tutar onarımı ile tek dokunuşla düzelt</li>
@@ -704,6 +734,7 @@ nav.cekmece{
         <div class="kart-ust"><span>🏢 Şirket Hesap Kartı</span><button id="btn-goz" style="color:#fff;font-size:17px">👁️</button></div>
         <div class="bakiye" id="sirket-bakiye">—</div>
         <div class="kart-alt" id="sirket-alt">Çalıştıkça artar, avans aldıkça azalır</div>
+        <div class="kart-alt" id="kur-satir" style="margin-top:6px;font-weight:700"></div>
       </div>
       <div class="kart" style="padding:13px 14px">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
@@ -711,6 +742,7 @@ nav.cekmece{
           <button id="btn-takvim-ac" style="color:var(--sari);font-weight:600;font-size:13px">Takvimi aç ›</button>
         </div>
         <div class="hafta-serit" id="hafta-serit"></div>
+        <div id="tahmin-kart" class="gizli" style="margin-top:12px;background:var(--girdi);border:1.5px solid var(--cizgi);border-radius:12px;padding:11px 14px;font-size:13.5px;line-height:1.6"></div>
       </div>
       <div class="kart gizli" id="seviye-kart">
         <div class="seviye-satir">
@@ -968,6 +1000,7 @@ nav.cekmece{
       <div class="kart">
         <h2>♾️ Tüm zamanlar</h2>
         <div class="ozet-grid" id="genel-grid"><div class="bos-mesaj">Yükleniyor...</div></div>
+        <div id="zam-gecmisi" style="font-size:13.5px;color:var(--soluk);line-height:1.7;margin-top:12px"></div>
       </div>
       <div class="kart">
         <h2>📌 Nasıl hesaplanıyor?</h2>
@@ -1123,6 +1156,16 @@ nav.cekmece{
         <p style="font-size:11.5px;color:var(--soluk);margin-top:8px">⚠️ Kaba tahmindir (yıl × 30 günlük brüt). Tavan, vergi ve şartlar için uzmana danış.</p>
       </div>
       <div class="kart">
+        <h2>🏖️ Yıllık izin hakkın</h2>
+        <div id="izin-sonuc" style="background:var(--girdi);border:1.5px solid var(--cizgi);border-radius:12px;padding:12px 14px;font-size:13.5px;line-height:1.8">
+          Hesaplamam için Ayarlar → işe giriş tarihini doldur.
+        </div>
+        <p style="font-size:11.5px;color:var(--soluk);margin-top:8px">
+          Kanuna göre: 1–5 yıl kıdem 14 gün, 5–15 yıl 20 gün, 15+ yıl 26 gün ücretli izin.
+          18 yaş altı ve 50 yaş üstü için en az 20 gündür. Takvimde "izinli/raporlu" işlediğin günler kullanılan sayılır (raporlu günler aslında yıllık izinden düşmez, kabaca fikir verir).
+        </p>
+      </div>
+      <div class="kart">
         <h2>⏱️ Mesai ücreti kontrolü</h2>
         <div class="alan">
           <label>Normal saatlik ücretin (TL)</label>
@@ -1215,6 +1258,10 @@ nav.cekmece{
           <label>Çalıştığın şantiye / firma</label>
           <input type="text" id="ayar-santiye" placeholder="Örn: Konut projesi - Ali usta">
         </div>
+        <div class="alan">
+          <label>İşe giriş tarihin (yıllık izin ve kıdem hesabı için)</label>
+          <input type="date" id="ayar-giris">
+        </div>
         <button class="btn btn-sari" id="btn-ayar-kaydet">Ayarları kaydet</button>
       </div>
       <div class="kart">
@@ -1284,6 +1331,17 @@ nav.cekmece{
         <button class="btn btn-cizgili" id="btn-sgk-kaydet">Kaydet</button>
       </div>
       <div class="kart">
+        <h2>🎨 Uygulama teması</h2>
+        <p style="font-size:13px;color:var(--soluk);margin-bottom:12px">Rengini seç, anında değişir. Amoled (tam siyah) pil de az yer.</p>
+        <div id="tema-secim" style="display:flex;gap:12px;align-items:center">
+          <button data-tema="" style="background:#FFC400" aria-label="Şantiye sarısı"></button>
+          <button data-tema="mavi" style="background:#4FA8FF" aria-label="Gece mavisi"></button>
+          <button data-tema="yesil" style="background:#2EE59D" aria-label="Çimen yeşili"></button>
+          <button data-tema="turuncu" style="background:#FF8A3D" aria-label="Baret turuncusu"></button>
+          <button data-tema="amoled" style="background:#000;border:3px solid #333" aria-label="Tam siyah">🌑</button>
+        </div>
+      </div>
+      <div class="kart">
         <h2>🩹 Tutar onarımı</h2>
         <p style="font-size:13px;color:var(--soluk);margin-bottom:12px;line-height:1.6">
           Eskiden "5.000" gibi noktayla yazılan tutarlar yanlışlıkla "5 TL" kaydediliyordu (özellikle iPhone'da).
@@ -1296,7 +1354,7 @@ nav.cekmece{
         <p style="font-size:13px;color:var(--soluk);margin-bottom:12px">Hata mı gördün, fikrin mi var? Direkt geliştiriciye ulaş:</p>
         <a class="btn btn-cizgili" style="display:block;text-align:center;text-decoration:none;margin-bottom:10px" href="https://wa.me/905051252339?text=Puantaj%20Defterim%20hakkında:" target="_blank">💬 WhatsApp'tan yaz</a>
         <a class="btn btn-cizgili" style="display:block;text-align:center;text-decoration:none" href="tel:05051252339">📞 0505 125 23 39</a>
-        <p style="font-size:11px;color:var(--soluk);margin-top:12px;text-align:center">Sürüm: v24 · Serkan Karakaş</p>
+        <p style="font-size:11px;color:var(--soluk);margin-top:12px;text-align:center">Sürüm: v29 · Serkan Karakaş</p>
       </div>
       <div class="kart">
         <h2>🔒 PIN kilidi</h2>
@@ -1412,6 +1470,16 @@ nav.cekmece{
     <div id="gun-konum-yazi" style="font-size:12.5px;color:var(--soluk);margin-top:6px"></div>
   </div>
   <div class="alan">
+    <label>İş fotoğrafı (isteğe bağlı — yaptığın işin kanıtı)</label>
+    <input type="file" id="gun-foto-sec" accept="image/*" style="display:none">
+    <div style="display:flex;gap:8px">
+      <button class="eksik-cip" id="btn-foto-ekle" style="flex:1">📸 Fotoğraf çek / seç</button>
+      <button class="eksik-cip gizli" id="btn-foto-sil" style="color:var(--gelmedi)">🗑️ Kaldır</button>
+    </div>
+    <img id="gun-foto-onizle" class="gizli" style="width:100%;border-radius:12px;margin-top:8px;border:1.5px solid var(--cizgi)" alt="İş fotoğrafı">
+    <div id="gun-foto-durum" style="font-size:12.5px;color:var(--soluk);margin-top:6px"></div>
+  </div>
+  <div class="alan">
     <label>Not (isteğe bağlı) <button id="btn-sesli-not" style="float:right;color:var(--sari);font-size:16px">🎤 Konuş</button></label>
     <textarea id="gun-not" rows="2" placeholder="Örn: Kalıp söküm yaptık, yağmur yüzünden erken bıraktık"></textarea>
     <div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:8px" id="not-cipler"></div>
@@ -1421,6 +1489,10 @@ nav.cekmece{
     <button class="btn btn-sil-kucuk" id="btn-gun-sil">Kaydı sil</button>
     <button class="btn btn-sari" id="btn-gun-kaydet">Kaydet</button>
   </div>
+</div>
+
+<div id="foto-buyuk" style="display:none;position:fixed;inset:0;z-index:9000;background:rgba(0,0,0,.93);align-items:center;justify-content:center;padding:16px">
+  <img style="max-width:100%;max-height:100%;border-radius:12px" alt="İş fotoğrafı büyük görünüm">
 </div>
 
 <div class="toast" id="toast"></div>
@@ -1728,6 +1800,8 @@ function ayarlariDinle(){
     $("#ayar-tip").value     = ayarlar.calismaTipi;
     $("#ayar-hedef").value   = ayarlar.hedef||"";
     $("#ayar-santiye").value = ayarlar.santiye;
+    $("#ayar-giris").value   = ayarlar.iseGiris||"";
+    if(ayarlar.iseGiris && !$("#kidem-giris").value) $("#kidem-giris").value = ayarlar.iseGiris;
     $("#ayar-sgk").value = ayarlar.sgkGun||"";
     $("#ayar-sgk-hedef").value = ayarlar.sgkHedef||"";
     $("#ayar-esik").value = ayarlar.uyariEsik||"";
@@ -1906,6 +1980,8 @@ const gizliPara = n => gizliMod ? "•••• ₺" : paraFmt(n);
 
 function cuzdanCiz(){
   const bakiye = cuzdan.reduce((s,h)=> s + (h.tip==="giris" ? 1 : -1)*(Number(h.tutar)||0), 0);
+  const cuzdanKart = $("#cuzdan-bakiye").closest(".banka-kart");
+  if(cuzdanKart) cuzdanKart.classList.add("kart-parla");
   sayacAnim($("#cuzdan-bakiye"), bakiye);
   const kumEl = $("#kumbara-bar");
   if(kumEl){
@@ -2642,17 +2718,151 @@ async function kronoDurdur(bas){
 }
 
 /* ---------- Bakiye sayaç animasyonu ---------- */
-function sayacAnim(el, hedef){
-  if(gizliMod){ el.textContent = "•••• ₺"; return; }
+const AZ_HAREKET = !!(window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches);
+function sayacAnim(el, hedef, ozelSure){
+  if(gizliMod){ el.textContent = "•••• ₺"; el.dataset.deger = hedef; return; }
+  const ilkSefer = el.dataset.deger === undefined;   /* uygulama yeni açıldı → 0'dan say */
   const eski = Number(el.dataset.deger)||0;
   el.dataset.deger = hedef;
-  const bas = performance.now(), sure = 600;
+  if(AZ_HAREKET || Math.abs(hedef-eski) < 0.5){ el.textContent = paraFmt(hedef); return; }
+  const bas = performance.now();
+  const sure = ozelSure || (ilkSefer ? 1300 : 600);  /* ilk açılışta daha uzun, keyifli sayım */
   function adim(t){
     const k = Math.min(1, (t-bas)/sure);
     el.textContent = paraFmt(eski + (hedef-eski)*(1-Math.pow(1-k,3)));
     if(k<1) requestAnimationFrame(adim);
+    else{ el.classList.remove("para-pop"); void el.offsetWidth; el.classList.add("para-pop"); }
   }
   requestAnimationFrame(adim);
+}
+/* Özet kutularındaki paraları sırayla (kademeli) 0'dan saydır */
+function paraKutulariCanlandir(kokSel){
+  if(gizliMod) return;
+  document.querySelectorAll(kokSel+" .deger[data-para]").forEach((el,i)=>{
+    const hedef = Number(el.dataset.para)||0;
+    if(AZ_HAREKET){ el.textContent = paraFmt(hedef); return; }
+    setTimeout(()=> sayacAnim(el, hedef, 800), 60*i);
+  });
+}
+
+/* ---------- Döviz/altın kurları (6 saatte bir yenilenir, çevrimdışı son bilineni kullanır) ---------- */
+let kurVeri = null;
+async function kurGetir(){
+  try{
+    const sakli = JSON.parse(localStorage.getItem("kurlar")||"null");
+    if(sakli && sakli.t && Date.now()-sakli.t < 6*60*60*1000){ kurVeri = sakli; return sakli; }
+    if(sakli) kurVeri = sakli;  /* süresi geçse de elde bulunsun (çevrimdışı yedek) */
+  }catch(e){}
+  /* 1. kaynak: truncgil (dolar + gram altın, Türkiye piyasası) */
+  try{
+    const r = await fetch("https://finans.truncgil.com/today.json");
+    const j = await r.json();
+    const al = o => o ? sayi(o["Alış"]||o["Satış"]||o["Buying"]||o["Selling"]) : 0;
+    const usd = al(j["USD"]), gram = al(j["gram-altin"]||j["GRA"]);
+    if(usd>0 || gram>0){
+      kurVeri = {t:Date.now(), usd, gram};
+      try{ localStorage.setItem("kurlar", JSON.stringify(kurVeri)); }catch(e){}
+      return kurVeri;
+    }
+  }catch(e){}
+  /* 2. kaynak: yalnız dolar (yedek) */
+  try{
+    const r = await fetch("https://open.er-api.com/v6/latest/USD");
+    const j = await r.json();
+    const usd = Number(j && j.rates && j.rates.TRY)||0;
+    if(usd>0){
+      kurVeri = {t:Date.now(), usd, gram:(kurVeri&&kurVeri.gram)||0};
+      try{ localStorage.setItem("kurlar", JSON.stringify(kurVeri)); }catch(e){}
+    }
+  }catch(e){}
+  return kurVeri;
+}
+async function kurSatirYaz(kalan){
+  const el = $("#kur-satir"); if(!el) return;
+  if(gizliMod || !(kalan>0)){ el.textContent = ""; return; }
+  const k = await kurGetir();
+  if(!k || !(k.usd>0 || k.gram>0)){ el.textContent = ""; return; }
+  /* kur beklerken kart değişmiş olabilir; güncel değeri esas al */
+  const simdiki = Number($("#sirket-bakiye").dataset.deger);
+  if(isFinite(simdiki)) kalan = simdiki;
+  if(gizliMod || !(kalan>0)){ el.textContent = ""; return; }
+  const parca = [];
+  if(k.usd>0)  parca.push("≈ " + (kalan/k.usd).toLocaleString("tr-TR",{maximumFractionDigits:0}) + " dolar");
+  if(k.gram>0) parca.push((kalan/k.gram).toLocaleString("tr-TR",{maximumFractionDigits:1}) + " gram altın");
+  el.textContent = parca.length ? "💰 Alacağın " + parca.join(" · ") + " ediyor" : "";
+}
+
+/* ---------- 🏖️ Yıllık izin sayacı ---------- */
+async function yillikIzinCiz(){
+  const el = $("#izin-sonuc"); if(!el) return;
+  const giris = ayarlar.iseGiris;
+  if(!giris){ el.innerHTML = 'Hesaplamam için <b>Ayarlar → İşe giriş tarihin</b> alanını doldur, buraya gel.'; return; }
+  const gT = new Date(giris+"T12:00:00");
+  if(!isFinite(gT)){ el.textContent = "İşe giriş tarihi anlaşılamadı, Ayarlar'dan düzelt."; return; }
+  const yilF = (Date.now() - gT.getTime()) / (365.25*24*3600*1000);
+  if(yilF < 0){ el.textContent = "İşe giriş tarihi gelecekte olamaz 😄"; return; }
+  if(yilF < 1){
+    const kalanGun = Math.ceil((1-yilF)*365.25);
+    el.innerHTML = "Kıdemin henüz <b>1 yılı doldurmadı</b>. Yıllık izin hakkı 1 yıl dolunca doğar — buna <b>"+kalanGun+" gün</b> kaldı, ondan sonra yılda <b>14 gün</b> ücretli iznin olacak. 🏖️";
+    return;
+  }
+  const hak = yilF >= 15 ? 26 : (yilF > 5 ? 20 : 14);
+  el.innerHTML = "⏳ Hesaplanıyor...";
+  let kullanilan = 0;
+  try{
+    const yil = new Date().getFullYear();
+    const snap = await kokRef().collection("girdiler")
+      .where(firebase.firestore.FieldPath.documentId(), ">=", yil+"-01-01")
+      .where(firebase.firestore.FieldPath.documentId(), "<=", yil+"-12-31").get();
+    snap.forEach(d=>{ if(d.data().durum==="izinli") kullanilan++; });
+  }catch(e){ /* sayamazsak sadece hakkı gösteririz */ }
+  const kidemYil = Math.floor(yilF);
+  const kalan = hak - kullanilan;
+  el.innerHTML =
+    "Kıdemin: <b>"+kidemYil+" yıl</b><br>"+
+    "Yıllık iznin: <b>"+hak+" gün</b><br>"+
+    "Bu yıl işlediğin izinli/raporlu gün: <b>"+kullanilan+"</b><br>"+
+    (kalan>=0
+      ? "Kalan iznin: <b style='color:var(--sari)'>"+kalan+" gün</b> 🏖️"
+      : "⚠️ Bu yıl hakkından <b>"+Math.abs(kalan)+" gün fazla</b> izin görünüyor (raporlu günler dahil olduğu için normal olabilir).");
+}
+
+/* ---------- 📸 İş fotoğrafı ---------- */
+let modalFoto;   /* undefined: değişmedi · "": silinecek · dataURL: yeni foto */
+function fotoOnizleGoster(url){
+  const im = $("#gun-foto-onizle");
+  im.src = url; im.classList.remove("gizli");
+  $("#btn-foto-sil").classList.remove("gizli");
+}
+/* Fotoğrafı küçültüp JPEG dataURL yapar (uzun kenar 1000px, ~500KB altı) */
+function fotoSikistir(dosya){
+  return new Promise((cozul, reddet)=>{
+    const okuyucu = new FileReader();
+    okuyucu.onerror = ()=> reddet(new Error("dosya okunamadı"));
+    okuyucu.onload = ()=>{
+      const img = new Image();
+      img.onerror = ()=> reddet(new Error("resim açılamadı"));
+      img.onload = ()=>{
+        try{
+          let olcek = 1000 / Math.max(img.width, img.height);
+          if(olcek > 1) olcek = 1;
+          const c = document.createElement("canvas");
+          c.width = Math.max(1, Math.round(img.width*olcek));
+          c.height = Math.max(1, Math.round(img.height*olcek));
+          c.getContext("2d").drawImage(img, 0, 0, c.width, c.height);
+          let kalite = 0.72, url = c.toDataURL("image/jpeg", kalite);
+          while(url.length > 500000 && kalite > 0.3){
+            kalite -= 0.12;
+            url = c.toDataURL("image/jpeg", kalite);
+          }
+          if(url.length > 900000) reddet(new Error("fotoğraf çok büyük"));
+          else cozul(url);
+        }catch(e){ reddet(e); }
+      };
+      img.src = okuyucu.result;
+    };
+    okuyucu.readAsDataURL(dosya);
+  });
 }
 
 /* ---------- Tık sesi ---------- */
@@ -2677,10 +2887,14 @@ async function anaYukle(){
     let hakedis=0, alinan=0;
     const hareketler = [];
     let gunToplam=0, mesaiToplam=0, artiToplam=0, pazarToplam=0;
+    const simdi = new Date();
+    const buAyOnEk = simdi.getFullYear()+"-"+pad(simdi.getMonth()+1);
+    let buAyHak = 0;
     gSnap.forEach(doc=>{
       const v = doc.data();
       const k = girdiKazanc(v);
       hakedis += k;
+      if(doc.id.slice(0,7)===buAyOnEk) buAyHak += k;
       gunToplam += girdiGun(v);
       mesaiToplam += Number(v.mesai)||0;
       artiToplam += Number(v.arti)||0;
@@ -2704,7 +2918,27 @@ async function anaYukle(){
         esikEl.innerHTML = "💰 Şirkette <b>"+paraFmt(kalanTum)+"</b> biriktin (eşiğin: "+paraFmt(ayarlar.uyariEsik)+"). Hakedişini istemenin vakti gelmiş olabilir 😉";
       }else esikEl.classList.add("gizli");
     }
+    const sirketKart = $("#sirket-bakiye").closest(".banka-kart");
+    if(sirketKart) sirketKart.classList.add("kart-parla");
     sayacAnim($("#sirket-bakiye"), hakedis - alinan);
+    kurSatirYaz(hakedis - alinan);
+    /* 🔮 Ay sonu tahmini: bu tempoyla ay bitince ne kadar yaparsın */
+    const tKart = $("#tahmin-kart");
+    if(tKart){
+      const gecenGun = simdi.getDate();
+      const ayGunSay = new Date(simdi.getFullYear(), simdi.getMonth()+1, 0).getDate();
+      if(!gizliMod && gecenGun>=5 && gecenGun<ayGunSay && buAyHak>0){
+        const tahmin = buAyHak/gecenGun*ayGunSay;
+        let m = "🔮 <b>Ay sonu tahmini:</b> Bu tempoyla "+AYLAR[simdi.getMonth()]+" bitince ≈ <b style='color:var(--sari)'>"+paraFmt(tahmin)+"</b> hakediş yaparsın";
+        if(ayarlar.hedef>0){
+          m += tahmin>=ayarlar.hedef
+            ? " — <b>"+paraFmt(ayarlar.hedef)+" hedefini geçiyorsun</b> 🎉"
+            : " (hedefin "+paraFmt(ayarlar.hedef)+", biraz gaz lazım 💪)";
+        }
+        tKart.innerHTML = m;
+        tKart.classList.remove("gizli");
+      }else tKart.classList.add("gizli");
+    }
     if(gunToplam>0 && hakedis<=0 && !(ayarlar.yevmiye>0) && !(ayarlar.saatUcret>0)){
       $("#sirket-alt").innerHTML = "⚠️ <b>"+gunToplam+" günün işli ama yevmiyen girili değil!</b> Ayarlar → Ücret ayarları'ndan günlük yevmiyeni yaz, paraların hemen görünsün.";
     }else{
@@ -3018,6 +3252,11 @@ function takvimCiz(){
       r.className="mesai-rozet"; r.textContent="+"+veri.mesai+"s";
       el.appendChild(r);
     }
+    if(veri && veri.foto){
+      const f=document.createElement("span");
+      f.className="foto-nokta"; f.textContent="📸";
+      el.appendChild(f);
+    }
     /* Kısa dokunuş: modal aç. Basılı tut: anında tam yevmiye işle. */
     let lpZaman=null, lpAtesledi=false;
     el.addEventListener("contextmenu", e=> e.preventDefault());
@@ -3225,17 +3464,18 @@ function ozetCiz(){
     (seri.pazarCalisma>0 ? kut("Pazar çalışması", seri.pazarCalisma + " gün", "mesai-r") : "") +
     kut("Gelmediğim gün", t.gelmedi + " gün", t.gelmedi>0?"eksi":"") +
     (t.izinli>0 ? kut("İzinli / raporlu", t.izinli + " gün", "mesai-r") : "") +
-    kut("Yevmiye kazancı", paraFmt(t.yevmiyeKazanc), "") +
-    kut("Mesai kazancı", paraFmt(t.mesaiKazanc), "mesai-r") +
-    (t.ekKazanc>0 ? kut("Yol + yemek", paraFmt(t.ekKazanc), "") : "") +
-    (t.gunSayisi>0 ? kut("Gün başı ortalama", paraFmt(t.hakedis/t.gunSayisi), "") : "") +
-    kut("Toplam hakediş", paraFmt(t.hakedis), "vurgu") +
-    kut("Aldığım para", paraFmt(t.alinan), "") +
-    (t.masrafToplam>0 ? kut("🧾 Masraf alacağı", paraFmt(t.masrafToplam), "") : "") +
-    kut("Kalan alacağım", paraFmt(t.kalan), t.kalan>=0?"vurgu":"eksi");
-  function kut(et,deger,cls){
-    return '<div class="ozet-kut '+cls+'"><div class="et">'+et+'</div><div class="deger">'+deger+'</div></div>';
+    kut("Yevmiye kazancı", paraFmt(t.yevmiyeKazanc), "", t.yevmiyeKazanc) +
+    kut("Mesai kazancı", paraFmt(t.mesaiKazanc), "mesai-r", t.mesaiKazanc) +
+    (t.ekKazanc>0 ? kut("Yol + yemek", paraFmt(t.ekKazanc), "", t.ekKazanc) : "") +
+    (t.gunSayisi>0 ? kut("Gün başı ortalama", paraFmt(t.hakedis/t.gunSayisi), "", t.hakedis/t.gunSayisi) : "") +
+    kut("Toplam hakediş", paraFmt(t.hakedis), "vurgu", t.hakedis) +
+    kut("Aldığım para", paraFmt(t.alinan), "", t.alinan) +
+    (t.masrafToplam>0 ? kut("🧾 Masraf alacağı", paraFmt(t.masrafToplam), "", t.masrafToplam) : "") +
+    kut("Kalan alacağım", paraFmt(t.kalan), t.kalan>=0?"vurgu":"eksi", t.kalan);
+  function kut(et,deger,cls,para){
+    return '<div class="ozet-kut '+cls+'"><div class="et">'+et+'</div><div class="deger"'+(para!=null ? ' data-para="'+para+'"' : '')+'>'+deger+'</div></div>';
   }
+  paraKutulariCanlandir("#ozet-grid");
   hedefCiz(t);
   kilitYenile();
   /* Ödeme türü dağılımı */
@@ -3291,21 +3531,47 @@ async function ozetDetayYukle(){
     /* Tüm zamanlar */
     let gun=0, mesai=0, alinan=0, hakedis=0;
     const ayHak = {}; // "2026-07" -> hakediş
+    const yevGecmis = []; // {id:"2026-07-15", yev:2500} — zam geçmişi için
     gSnap.forEach(doc=>{
       const v = doc.data(), ayKey = doc.id.slice(0,7);
       gun += girdiGun(v);
       mesai += Number(v.mesai)||0;
       const h = girdiKazanc(v);
       hakedis += h;
+      const uy = Number(v.uYevmiye)||0;
+      if(uy>0) yevGecmis.push({id:doc.id, yev:uy});
       ayHak[ayKey] = (ayHak[ayKey]||0) + h;
     });
     oSnap.forEach(doc=> alinan += Number(doc.data().tutar)||0);
     $("#genel-grid").innerHTML =
       '<div class="ozet-kut tam-r"><div class="et">Toplam gün</div><div class="deger">'+gun+'</div></div>'+
       '<div class="ozet-kut mesai-r"><div class="et">Toplam mesai</div><div class="deger">'+mesai+' saat</div></div>'+
-      '<div class="ozet-kut"><div class="et">Toplam hakediş</div><div class="deger">'+paraFmt(hakedis)+'</div></div>'+
-      '<div class="ozet-kut"><div class="et">Toplam alınan</div><div class="deger">'+paraFmt(alinan)+'</div></div>'+
-      '<div class="ozet-kut '+(hakedis-alinan>=0?'vurgu':'eksi')+'" style="grid-column:1/-1"><div class="et">Genel kalan alacağım</div><div class="deger">'+paraFmt(hakedis-alinan)+'</div></div>';
+      '<div class="ozet-kut"><div class="et">Toplam hakediş</div><div class="deger" data-para="'+hakedis+'">'+paraFmt(hakedis)+'</div></div>'+
+      '<div class="ozet-kut"><div class="et">Toplam alınan</div><div class="deger" data-para="'+alinan+'">'+paraFmt(alinan)+'</div></div>'+
+      '<div class="ozet-kut '+(hakedis-alinan>=0?'vurgu':'eksi')+'" style="grid-column:1/-1"><div class="et">Genel kalan alacağım</div><div class="deger" data-para="'+(hakedis-alinan)+'">'+paraFmt(hakedis-alinan)+'</div></div>';
+    paraKutulariCanlandir("#genel-grid");
+
+    /* 📈 Zam geçmişi: günlere mühürlenen yevmiyelerden çıkarılır */
+    const zamEl = $("#zam-gecmisi");
+    if(zamEl){
+      yevGecmis.sort((a,b)=> a.id < b.id ? -1 : a.id > b.id ? 1 : 0);
+      const adimlar = [];
+      yevGecmis.forEach(x=>{
+        if(!adimlar.length || adimlar[adimlar.length-1].yev !== x.yev)
+          adimlar.push({id:x.id, yev:x.yev});
+      });
+      if(adimlar.length >= 2){
+        const etiket = x => {
+          const t = new Date(x.id+"T12:00:00");
+          return paraFmt(x.yev)+" <span style='opacity:.7'>("+AYLAR[t.getMonth()].slice(0,3)+" "+t.getFullYear()+")</span>";
+        };
+        const ilk = adimlar[0].yev, son = adimlar[adimlar.length-1].yev;
+        const oran = ilk>0 ? Math.round((son/ilk - 1)*100) : 0;
+        zamEl.innerHTML = "📈 <b>Yevmiye geçmişin:</b> " + adimlar.map(etiket).join(" → ")
+          + (oran>0 ? " · başladığından beri <b>%"+oran+" zam</b> almışsın 💪"
+             : oran<0 ? " · başladığından beri %"+Math.abs(oran)+" düşmüş görünüyor" : "");
+      }else{ zamEl.textContent = ""; }
+    }
 
     /* Son 6 ay grafiği */
     const aylarDizi = [];
@@ -3774,6 +4040,20 @@ function modalAc(id){
   }else kEl2.textContent = "";
   $("#gun-santiye").value = v.santiye || "";
   $("#gun-not").value = v.not || "";
+  /* Fotoğraf */
+  modalFoto = undefined;   /* undefined: değişmedi · "": silinecek · dataURL: yeni */
+  $("#gun-foto-onizle").classList.add("gizli");
+  $("#btn-foto-sil").classList.add("gizli");
+  $("#gun-foto-durum").textContent = "";
+  if(v.foto){
+    $("#gun-foto-durum").textContent = "Fotoğraf yükleniyor...";
+    kokRef().collection("fotolar").doc(id).get().then(d=>{
+      if(modalTarih !== id) return;   /* bu arada başka gün açıldıysa dokunma */
+      const f = d.exists ? d.data().veri : null;
+      $("#gun-foto-durum").textContent = "";
+      if(f) fotoOnizleGoster(f);
+    }).catch(()=>{ if(modalTarih===id) $("#gun-foto-durum").textContent = "Fotoğraf yüklenemedi (internet?)"; });
+  }
   /* Şantiye seçici */
   const secAlan = $("#alan-santiye-sec"), sec = $("#gun-santiye-sec");
   if(ayarlar.santiyeler.length){
@@ -3955,6 +4235,7 @@ document.addEventListener("DOMContentLoaded", ()=>{
       if(g==="rozet") rozetYukle();
       if(g==="ekip"){ ekipYoklamaCiz(); ekipYoklamaYukle(); ekipOzetYukle(); }
       if(g==="kisiler") kisilerYukle();
+      if(g==="arac") yillikIzinCiz();
       cekmeceAc(false);
       window.scrollTo({top:0});
     });
@@ -4077,8 +4358,17 @@ document.addEventListener("DOMContentLoaded", ()=>{
     const bs = $("#gun-bas-saat").value, bts = $("#gun-bit-saat").value;
     if(bs) veri.basSaat = bs;
     if(bts) veri.bitSaat = bts;
+    /* foto bayrağı: yeni foto varsa veya eskisi korunuyorsa true */
+    const fotoVar = modalFoto===undefined ? !!(onceki && onceki.foto) : !!modalFoto;
+    if(fotoVar) veri.foto = true;
     try{
       await kokRef().collection("girdiler").doc(modalTarih).set(veri);
+      if(typeof modalFoto === "string" && modalFoto){
+        try{ await kokRef().collection("fotolar").doc(modalTarih).set({veri: modalFoto, guncelleme: firebase.firestore.FieldValue.serverTimestamp()}); }
+        catch(fe){ toast("Gün kaydedildi ama fotoğraf kaydedilemedi 😕"); }
+      }else if(modalFoto === ""){
+        kokRef().collection("fotolar").doc(modalTarih).delete().catch(()=>{});
+      }
       try{ localStorage.setItem("sonSantiye", secId); }catch(e){}
       tik();
       modalKapat(); toastGeriAl("Gün kaydedildi ✅", {id:modalTarih, onceki});
@@ -4091,9 +4381,51 @@ document.addEventListener("DOMContentLoaded", ()=>{
     const onceki = girdiler[modalTarih] ? {...girdiler[modalTarih]} : null;
     try{
       await kokRef().collection("girdiler").doc(modalTarih).delete();
+      kokRef().collection("fotolar").doc(modalTarih).delete().catch(()=>{});
       modalKapat(); toastGeriAl("Kayıt silindi", {id:modalTarih, onceki});
     }catch(e){ hataGoster(e); }
   });
+
+  /* 🎨 Tema */
+  function temaUygula(ad){
+    if(ad) document.body.dataset.tema = ad;
+    else delete document.body.dataset.tema;
+    try{ localStorage.setItem("tema", ad||""); }catch(e){}
+    document.querySelectorAll("#tema-secim button").forEach(b=>
+      b.classList.toggle("secili", (b.dataset.tema||"")===(ad||"")));
+  }
+  try{ temaUygula(localStorage.getItem("tema")||""); }catch(e){ temaUygula(""); }
+  document.querySelectorAll("#tema-secim button").forEach(b=>
+    b.addEventListener("click", ()=>{ temaUygula(b.dataset.tema||""); tik(); }));
+
+  /* İş fotoğrafı olayları */
+  $("#btn-foto-ekle").addEventListener("click", ()=> $("#gun-foto-sec").click());
+  $("#gun-foto-sec").addEventListener("change", async e=>{
+    const dosya = e.target.files && e.target.files[0];
+    e.target.value = "";
+    if(!dosya) return;
+    $("#gun-foto-durum").textContent = "Fotoğraf küçültülüyor...";
+    try{
+      const url = await fotoSikistir(dosya);
+      modalFoto = url;
+      fotoOnizleGoster(url);
+      $("#gun-foto-durum").textContent = "👍 Kaydet'e basınca fotoğraf da kaydedilir";
+    }catch(err){
+      $("#gun-foto-durum").textContent = "Fotoğraf eklenemedi" + (err && err.message ? " ("+err.message+")" : "") + ", başka fotoğraf dene";
+    }
+  });
+  $("#btn-foto-sil").addEventListener("click", ()=>{
+    modalFoto = "";
+    $("#gun-foto-onizle").classList.add("gizli");
+    $("#btn-foto-sil").classList.add("gizli");
+    $("#gun-foto-durum").textContent = "Kaydet'e basınca fotoğraf silinecek";
+  });
+  $("#gun-foto-onizle").addEventListener("click", ()=>{
+    const b = $("#foto-buyuk");
+    b.querySelector("img").src = $("#gun-foto-onizle").src;
+    b.style.display = "flex";
+  });
+  $("#foto-buyuk").addEventListener("click", ()=>{ $("#foto-buyuk").style.display = "none"; });
 
   /* Dönem seçimli paylaşım (Paylaş / PDF) */
   let donemMod = "paylas";
@@ -4132,7 +4464,7 @@ document.addEventListener("DOMContentLoaded", ()=>{
   });
 
   /* Neler yeni kartı */
-  const YENILIK_SURUM = "v24";
+  const YENILIK_SURUM = "v29";
   try{
     if(localStorage.getItem("yenilik")!==YENILIK_SURUM) $("#yenilik-kart").classList.remove("gizli");
   }catch(e){ $("#yenilik-kart").classList.remove("gizli"); }
@@ -4846,7 +5178,8 @@ document.addEventListener("DOMContentLoaded", ()=>{
         uyariEsik: sayi($("#ayar-esik").value)||0,
         kumbara: sayi($("#ayar-kumbara").value)||0,
         notCipler: $("#ayar-cipler").value.split(",").map(x=>x.trim()).filter(Boolean).slice(0,8),
-        santiye: $("#ayar-santiye").value.trim()
+        santiye: $("#ayar-santiye").value.trim(),
+        iseGiris: $("#ayar-giris").value || ""
       },{merge:true});
       toast("Ayarlar kaydedildi ⚙️");
     }catch(e){ hataGoster(e); }
