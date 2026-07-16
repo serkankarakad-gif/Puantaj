@@ -70,6 +70,37 @@ body[data-tema="amoled"]{
 }
 #tema-secim button.secili{border-color:#fff;transform:scale(1.1)}
 .cekmece .menu-grup{font-size:10.5px;letter-spacing:1.5px;font-weight:800;color:var(--soluk);padding:12px 16px 4px;list-style:none}
+/* ---------- 📺 CANLI TV ---------- */
+.tv-grup{font-size:11px;letter-spacing:1.5px;font-weight:800;color:var(--soluk);margin:16px 4px 8px}
+.tv-izgara{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.tv-kanal{
+  background:var(--kart);border:1.5px solid var(--cizgi);border-radius:14px;
+  padding:14px 6px 10px;display:flex;flex-direction:column;align-items:center;gap:8px;
+  color:var(--metin);
+}
+.tv-kanal:active{transform:scale(.96)}
+.tv-logo{
+  width:52px;height:52px;border-radius:14px;display:flex;align-items:center;justify-content:center;
+  font-family:'Saira Condensed';font-weight:800;font-size:16px;color:#fff;letter-spacing:.5px;
+}
+.tv-kanal .tv-ad{font-size:12px;font-weight:700;text-align:center;line-height:1.3}
+.tv-canli{font-size:9.5px;color:#FF5B52;font-weight:800;letter-spacing:1px}
+
+/* ---------- 📰 GAZETE ---------- */
+.gazete{background:#F4EFE3;color:#1B1B18;border-radius:14px;padding:16px 14px;border:1px solid #D8D0BC}
+body[data-tema="amoled"] .gazete{background:#F4EFE3}
+.gazete .gz-ust{border-top:3px double #1B1B18;border-bottom:3px double #1B1B18;text-align:center;padding:8px 0;margin-bottom:4px}
+.gazete .gz-logo{font-family:Georgia,'Times New Roman',serif;font-size:26px;font-weight:800;letter-spacing:1px}
+.gazete .gz-tarih{font-size:11px;letter-spacing:2px;text-transform:uppercase;color:#5A5646;margin-top:2px}
+.gazete .gz-manset{padding:14px 2px 12px;border-bottom:1px solid #C9C1AB;cursor:pointer}
+.gazete .gz-manset .gz-baslik{font-family:Georgia,'Times New Roman',serif;font-size:21px;line-height:1.3;font-weight:800}
+.gazete .gz-haber{padding:11px 2px;border-bottom:1px solid #DDD6C2;cursor:pointer;display:flex;gap:8px}
+.gazete .gz-haber .gz-no{font-family:Georgia,serif;font-size:15px;font-weight:800;color:#8A8368;flex-shrink:0;width:20px}
+.gazete .gz-haber .gz-baslik{font-family:Georgia,'Times New Roman',serif;font-size:15.5px;line-height:1.45;font-weight:600}
+.gazete .gz-kaynak{font-size:11px;color:#7A745E;margin-top:4px;letter-spacing:.3px}
+.gazete .gz-haber:active, .gazete .gz-manset:active{background:#EAE3D0}
+#haber-sekmeler button{flex:0 0 auto;padding-left:14px;padding-right:14px;background:var(--girdi);border:1.5px solid var(--cizgi);border-radius:12px;padding:10px 6px;color:var(--metin);font-weight:700;font-size:13px}
+#haber-sekmeler button.aktif{background:var(--sari);color:#14151A;border-color:var(--sari)}
 .rz-bar{height:5px;background:var(--girdi);border-radius:3px;margin-top:7px;overflow:hidden}
 .rz-dolu{height:100%;background:var(--sari);border-radius:3px;transition:width .6s ease}
 .rz-sayi{font-size:10.5px;color:var(--soluk);margin-top:3px;font-weight:700}
@@ -710,6 +741,8 @@ nav.cekmece{
       <li><button data-goruntu="ozet"><span class="ikon">🧮</span> Hesap özeti</button></li>
       <li><button data-goruntu="yil"><span class="ikon">📊</span> Yıl özeti</button></li>
       <li class="menu-grup">DİĞER</li>
+      <li><button data-goruntu="haber"><span class="ikon">📰</span> Gündem</button></li>
+      <li><button data-goruntu="tv"><span class="ikon">📺</span> Canlı TV</button></li>
       <li><button data-goruntu="notlar"><span class="ikon">📝</span> Not defterim</button></li>
       <li><button data-goruntu="rozet"><span class="ikon">🏆</span> Başarımlarım</button></li>
       <li><button data-goruntu="ekip"><span class="ikon">👥</span> Ekibim</button></li>
@@ -770,6 +803,12 @@ nav.cekmece{
       <div class="kart gizli" id="yenilik-kart" style="border-color:var(--sari)">
         <h2>🎁 Neler yeni?</h2>
         <ul style="padding-left:18px;font-size:13.5px;line-height:1.9">
+          <li><b>📺 TV sayfası temizlendi:</b> Artık dışarı yönlendiren kanal yok — listedeki HER kanal uygulamanın içinde oynuyor: Habertürk, CNN Türk, TRT Haber ve ⚽ A Spor</li>
+          <li><b>📺 TV artık UYGULAMANIN İÇİNDE:</b> Habertürk, CNN Türk ve TRT Haber'in resmî canlı yayınları uygulamadan çıkmadan oynuyor — tam ekran yapabilirsin. "▶ UYGULAMADA" rozetli kanallar içeride, diğerleri resmi sitede açılır</li>
+          <li><b>📺 Canlı TV rehberi:</b> Menüde artık televizyon var — TRT 1, Kanal D, ATV, Show, Star, NOW, TV8, haber ve spor kanalları. Kanala dokun, canlı yayın kanalın resmi sitesinde açılır (yasal ve ücretsiz)</li>
+          <li><b>📰 Gündem büyüdü:</b> Habere dokun → detay sayfası açılır: büyük başlık, aynı haberi diğer gazetelerin nasıl verdiği, 📖 kaynağında okuma ve 📤 WhatsApp'a paylaşma. Üstüne ⚽ Spor sekmesi ve 🔎 haber arama geldi</li>
+          <li><b>📰 GÜNDEM geldi!</b> Menüde artık gazete var: Türkiye, dünya ve ekonomi haberleri gazete kağıdı görünümünde, canlı. 5 dakikada bir kendini yeniler, habere dokun kaynağında oku, internetsizken son gündem elinde</li>
+          <li><b>🚀 Performans:</b> Uygulama artık veriyi bir kez indirip canlı takip ediyor — açılış ve kayıt sonrası yenilenme belirgin hızlandı, internet paketine ve Firebase kotasına dokunuş azaldı. Hesap özeti açıkken kayıt girersen o da anında güncelleniyor</li>
           <li><b>🔧 Denetim turu:</b> Yıllık izin sayacındaki sayım hatası düzeldi (izinli günler artık doğru sayılıyor), başka aya girilen kayıtlarda ana kart güncellenmeme sorunu bitti, geri tuşu artık Usta'nın sohbetini ve büyük fotoğrafı da kapatıyor</li>
           <li><b>📥 "Uygulamayı indir":</b> Menüdeki kurulum artık bu adla — iPhone'da adım adım rehber, Android'de tek tuş kurulum</li>
           <li><b>📝 Notlar renklendi:</b> Nota renk etiketi ver (önemliyse kırmızı, para işiyse yeşil...), dokunup düzenle — sabitleme ve arama zaten vardı</li>
@@ -1246,6 +1285,47 @@ nav.cekmece{
       </div>
     </section>
 
+    <!-- ===== GÖRÜNÜM: GÜNDEM ===== -->
+    <section id="goruntu-haber" class="gizli">
+      <div style="display:flex;gap:8px;margin-bottom:12px;overflow-x:auto;padding-bottom:2px" id="haber-sekmeler">
+        <button data-kat="gundem" class="aktif">🇹🇷 Türkiye</button>
+        <button data-kat="dunya">🌍 Dünya</button>
+        <button data-kat="ekonomi">💰 Ekonomi</button>
+        <button data-kat="spor">⚽ Spor</button>
+      </div>
+      <div class="alan" style="margin-bottom:10px">
+        <input type="text" id="haber-ara" placeholder="🔎 Haberlerde ara... (örn: asgari ücret)">
+      </div>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+        <span id="haber-zaman" style="font-size:12px;color:var(--soluk)"></span>
+        <button class="eksik-cip" id="btn-haber-yenile">🔄 Yenile</button>
+      </div>
+      <div class="gazete" id="haber-gazete">
+        <div class="gz-ust">
+          <div class="gz-logo">GÜNLÜK GÜNDEM</div>
+          <div class="gz-tarih" id="haber-tarih"></div>
+        </div>
+        <div id="haber-liste"><div class="bos-mesaj" style="color:#5A5646">Haberler yükleniyor...</div></div>
+      </div>
+      <p style="font-size:11.5px;color:var(--soluk);margin-top:10px;line-height:1.6">
+        Kaynak: Google Haberler (canlı). Sayfa açıkken 5 dakikada bir kendini yeniler; habere dokununca kaynağında açılır. İnternet yokken en son indirilen gündem gösterilir.
+      </p>
+    </section>
+
+    <!-- ===== GÖRÜNÜM: CANLI TV ===== -->
+    <section id="goruntu-tv" class="gizli">
+      <div class="kart">
+        <h2>📺 Canlı TV rehberi</h2>
+        <p style="font-size:12.5px;color:var(--soluk);line-height:1.6;margin-bottom:6px">
+          Buradaki <b>her kanal uygulamanın içinde oynar</b> — dışarı yönlendirme yok, dokun ve izle.
+          Yayınlar kanalların resmî 7/24 yayınlarıdır (yasal ve ücretsiz).
+          Kanal D, ATV gibi dizi kanalları yayınlarını internete tamamen kapattığı için burada yok;
+          korsan yayın koymuyoruz — açılan kanal doğrulandıkça listeye eklenecek.
+        </p>
+      </div>
+      <div id="tv-liste"></div>
+    </section>
+
     <!-- ===== GÖRÜNÜM: ARAÇLAR & BİLGİ ===== -->
     <section id="goruntu-arac" class="gizli">
       <div class="kart">
@@ -1466,7 +1546,7 @@ nav.cekmece{
         <p style="font-size:13px;color:var(--soluk);margin-bottom:12px">Hata mı gördün, fikrin mi var? Direkt geliştiriciye ulaş:</p>
         <a class="btn btn-cizgili" style="display:block;text-align:center;text-decoration:none;margin-bottom:10px" href="https://wa.me/905051252339?text=Puantaj%20Defterim%20hakkında:" target="_blank">💬 WhatsApp'tan yaz</a>
         <a class="btn btn-cizgili" style="display:block;text-align:center;text-decoration:none" href="tel:05051252339">📞 0505 125 23 39</a>
-        <p style="font-size:11px;color:var(--soluk);margin-top:12px;text-align:center">Sürüm: v37 · Serkan Karakaş</p>
+        <p style="font-size:11px;color:var(--soluk);margin-top:12px;text-align:center">Sürüm: v44 · Serkan Karakaş</p>
       </div>
       <div class="kart">
         <h2>🔒 PIN kilidi</h2>
@@ -1603,6 +1683,42 @@ nav.cekmece{
   <div class="modal-butonlar">
     <button class="btn btn-sil-kucuk" id="btn-gun-sil">Kaydı sil</button>
     <button class="btn btn-sari" id="btn-gun-kaydet">Kaydet</button>
+  </div>
+</div>
+
+<div id="tv-oynatici" class="gizli" style="position:fixed;inset:0;z-index:8700;background:rgba(8,9,12,.97);display:flex;flex-direction:column">
+  <div style="display:flex;align-items:center;gap:10px;padding:14px 16px;padding-top:calc(14px + env(safe-area-inset-top))">
+    <div id="tvo-logo" class="tv-logo" style="width:36px;height:36px;font-size:12px"></div>
+    <div style="flex:1;color:#fff">
+      <b id="tvo-ad"></b>
+      <div style="font-size:11px;color:#FF5B52;font-weight:800;letter-spacing:1px">● CANLI YAYIN</div>
+    </div>
+    <button id="btn-tvo-kapat" style="color:#fff;font-size:24px;padding:6px 10px">✕</button>
+  </div>
+  <div style="width:100%;aspect-ratio:16/9;background:#000;position:relative">
+    <iframe id="tvo-iframe" style="width:100%;height:100%;border:0" allow="autoplay; fullscreen; encrypted-media; picture-in-picture" allowfullscreen></iframe>
+    <div id="tvo-durum" style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:#8B8E99;font-size:14px;pointer-events:none">📡 Yayın aranıyor...</div>
+  </div>
+  <div style="padding:14px 16px;display:flex;flex-direction:column;gap:8px">
+    <div style="font-size:12px;color:#8B8E99;line-height:1.5">Görüntü açılmazsa oynatıcıdaki ▶ tuşuna bas. Hâlâ olmuyorsa yayın o an YouTube'da kapalıdır, alttan devam et:</div>
+    <div style="display:flex;gap:8px">
+      <button class="btn btn-cizgili" id="btn-tvo-youtube" style="flex:1">▶️ YouTube'da aç</button>
+      <button class="btn btn-cizgili" id="btn-tvo-site" style="flex:1">🌐 Resmi sitede aç</button>
+    </div>
+  </div>
+</div>
+
+<div id="haber-detay" class="gizli" style="position:fixed;left:10px;right:10px;bottom:calc(10px + env(safe-area-inset-bottom));z-index:8600;max-height:78vh;overflow-y:auto;background:#F4EFE3;color:#1B1B18;border:1px solid #D8D0BC;border-radius:20px;box-shadow:0 -8px 30px rgba(0,0,0,.5);padding:18px 16px">
+  <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px">
+    <div style="font-size:10px;letter-spacing:2px;color:#A33;font-weight:800">HABER DETAYI</div>
+    <button id="btn-haber-detay-kapat" style="font-size:20px;color:#5A5646;padding:0 4px">✕</button>
+  </div>
+  <div id="hd-baslik" style="font-family:Georgia,'Times New Roman',serif;font-size:22px;line-height:1.35;font-weight:800;margin-top:8px"></div>
+  <div id="hd-kaynak" style="font-size:12px;color:#7A745E;margin-top:8px;letter-spacing:.3px;border-bottom:1px solid #DDD6C2;padding-bottom:12px"></div>
+  <div id="hd-ilgili"></div>
+  <div style="display:flex;gap:8px;margin-top:16px">
+    <button class="btn btn-sari" id="btn-hd-oku" style="flex:1">📖 Haberi kaynağında oku</button>
+    <button class="btn btn-cizgili" id="btn-hd-paylas" style="flex:0 0 auto;padding-left:16px;padding-right:16px">📤</button>
   </div>
 </div>
 
@@ -1838,6 +1954,7 @@ function basla(){
   aktifAy = bugun.getMonth();
 
   auth.onAuthStateChanged(u=>{
+    if(!u || (kullanici && kullanici.uid !== u.uid)) tumVeriBirak();
     kullanici = u;
     $("#ekran-yukleniyor").classList.add("gizli");
     if(u){
@@ -2164,7 +2281,10 @@ function maasKacGun(maasGunu, simdi){
 let anaTazeleZ = null;
 function anaTazele(){
   clearTimeout(anaTazeleZ);
-  anaTazeleZ = setTimeout(()=>{ if(aktifGoruntu==="ana") anaYukle(); }, 300);
+  anaTazeleZ = setTimeout(()=>{
+    if(aktifGoruntu==="ana") anaYukle();
+    else if(aktifGoruntu==="ozet") ozetDetayYukle();
+  }, 300);
 }
 
 function hataGoster(e){
@@ -3035,6 +3155,229 @@ async function kurSatirYaz(kalan){
   el.textContent = parca.length ? "💰 Alacağın " + parca.join(" · ") + " ediyor" : "";
 }
 
+/* ---------- 📺 CANLI TV: yalnızca resmi yayın sayfaları ---------- */
+const TV_KANALLAR = [
+  {grup:"HABER KANALLARI", liste:[
+    {ad:"Habertürk", kisa:"HT",    renk:"#0D47A1", url:"https://www.haberturk.com/canliyayin", ytId:"UCn6dNfiRE_Xunu7iMyvD7AA"},
+    {ad:"CNN Türk",  kisa:"CNN",   renk:"#B71C1C", url:"https://www.cnnturk.com/canli-yayin",  ytId:"UCV6zcRug6Hqp1UX_FdyUeBg"},
+    {ad:"TRT Haber", kisa:"TRT H", renk:"#1565C0", url:"https://www.trthaber.com/canli-yayin", ytLive:"https://www.youtube.com/user/trthaber/live"}
+  ]},
+  {grup:"SPOR", liste:[
+    {ad:"A Spor",    kisa:"A S",   renk:"#1B5E20", url:"https://www.aspor.com.tr/webtv/canli-yayin", ytId:"UCJElRTCNEmLemgirqvsW63Q"}
+  ]}
+];
+/* Uygulama içi oynatma: kanalın RESMÎ YouTube canlı yayını gömülür (izinli embed).
+   Yayın kimliği köprü üzerinden bulunur, 30 dk önbellenir. Bulunamazsa kanal kimliğiyle
+   canlı-akış gömme denenir; o da olmazsa kullanıcı resmi kaynaklara yönlendirilir. */
+let tvAcikKanal = null;
+async function tvVideoBul(k){
+  try{
+    const c = JSON.parse(localStorage.getItem("tvvid:"+k.ad)||"null");
+    if(c && c.v && Date.now()-c.t < 30*60*1000) return c.v;
+  }catch(e){}
+  const canliUrl = k.ytLive || (k.ytId ? "https://www.youtube.com/channel/"+k.ytId+"/live" : null);
+  if(!canliUrl) return null;
+  const koprular = [
+    "https://api.allorigins.win/raw?url=" + encodeURIComponent(canliUrl),
+    "https://corsproxy.io/?url=" + encodeURIComponent(canliUrl)
+  ];
+  for(const url of koprular){
+    try{
+      const r = await fetch(url);
+      if(!r.ok) continue;
+      const m = (await r.text()).match(/"videoId":"([\w-]{11})"/);
+      if(m){
+        try{ localStorage.setItem("tvvid:"+k.ad, JSON.stringify({t:Date.now(), v:m[1]})); }catch(e){}
+        return m[1];
+      }
+    }catch(e){}
+  }
+  return null;
+}
+async function tvOynat(k){
+  tvAcikKanal = k;
+  geriKaydet();
+  $("#tvo-ad").textContent = k.ad;
+  const lg = $("#tvo-logo"); lg.textContent = k.kisa; lg.style.background = k.renk;
+  $("#tvo-iframe").src = "about:blank";
+  $("#tvo-durum").style.display = "flex";
+  $("#tvo-durum").textContent = "📡 Yayın aranıyor...";
+  $("#tv-oynatici").classList.remove("gizli");
+  const vid = await tvVideoBul(k);
+  if(tvAcikKanal !== k || $("#tv-oynatici").classList.contains("gizli")) return; /* bu arada kapatıldı */
+  let src = null;
+  if(vid) src = "https://www.youtube.com/embed/"+vid+"?autoplay=1&playsinline=1";
+  else if(k.ytId) src = "https://www.youtube.com/embed/live_stream?channel="+k.ytId+"&autoplay=1&playsinline=1";
+  if(src){
+    $("#tvo-iframe").src = src;
+    $("#tvo-durum").style.display = "none";
+  }else{
+    $("#tvo-durum").textContent = "Yayına içeriden ulaşılamadı — alttaki butonları kullan 👇";
+  }
+}
+function tvKapat(){
+  $("#tvo-iframe").src = "about:blank";  /* ses arkada kalmasın */
+  $("#tv-oynatici").classList.add("gizli");
+  tvAcikKanal = null;
+}
+let tvCizildi = false;
+function tvCiz(){
+  if(tvCizildi) return;
+  const kap = $("#tv-liste"); if(!kap) return;
+  tvCizildi = true;
+  TV_KANALLAR.forEach(g=>{
+    const baslik = document.createElement("div");
+    baslik.className = "tv-grup";
+    baslik.textContent = g.grup;
+    kap.appendChild(baslik);
+    const izgara = document.createElement("div");
+    izgara.className = "tv-izgara";
+    g.liste.forEach(k=>{
+      const b = document.createElement("button");
+      b.className = "tv-kanal";
+      b.innerHTML = '<div class="tv-logo" style="background:'+k.renk+'">'+k.kisa+'</div>'+
+        '<div class="tv-ad">'+k.ad+'</div>'+
+        '<div class="tv-canli">● CANLI</div>';
+      b.addEventListener("click", ()=> tvOynat(k));
+      izgara.appendChild(b);
+    });
+    kap.appendChild(izgara);
+  });
+}
+
+/* ---------- 📰 GÜNDEM: Google Haberler RSS (canlı, önbellekli) ---------- */
+const HABER_KAYNAK = {
+  gundem:  "https://news.google.com/rss?hl=tr&gl=TR&ceid=TR:tr",
+  dunya:   "https://news.google.com/rss/headlines/section/topic/WORLD?hl=tr&gl=TR&ceid=TR:tr",
+  ekonomi: "https://news.google.com/rss/headlines/section/topic/BUSINESS?hl=tr&gl=TR&ceid=TR:tr",
+  spor:    "https://news.google.com/rss/headlines/section/topic/SPORTS?hl=tr&gl=TR&ceid=TR:tr"
+};
+let haberKat = "gundem", haberSayac = null;
+function habercik(t){ /* göreli zaman */
+  const dk = Math.floor((Date.now()-t)/60000);
+  if(dk < 1) return "az önce";
+  if(dk < 60) return dk+" dk önce";
+  const sa = Math.floor(dk/60);
+  return sa < 24 ? sa+" saat önce" : Math.floor(sa/24)+" gün önce";
+}
+function rssAyristir(xmlMetin){
+  const dom = new DOMParser().parseFromString(xmlMetin, "text/xml");
+  const liste = [];
+  dom.querySelectorAll("item").forEach(it=>{
+    const al = ad => { const e = it.querySelector(ad); return e ? e.textContent : ""; };
+    let baslik = al("title");
+    const kaynakEl = it.querySelector("source");
+    const kaynak = kaynakEl ? kaynakEl.textContent : "";
+    /* Google başlığa " - Kaynak" ekler, temizle */
+    if(kaynak && baslik.endsWith(" - "+kaynak)) baslik = baslik.slice(0, -(" - "+kaynak).length);
+    const z = new Date(al("pubDate"));
+    /* Google, description içinde aynı haberi veren diğer kaynakları listeler */
+    const ilgili = [];
+    try{
+      const dHtml = new DOMParser().parseFromString(al("description"), "text/html");
+      dHtml.querySelectorAll("a").forEach(a=>{
+        const ab = (a.textContent||"").trim();
+        if(ab && ab !== baslik && ab.length > 15 && ilgili.length < 4 && a.href)
+          ilgili.push({b: ab, l: a.href});
+      });
+    }catch(e){}
+    liste.push({b: baslik, l: al("link"), k: kaynak, z: isFinite(z) ? z.getTime() : Date.now(), i: ilgili});
+  });
+  return liste.slice(0, 15);
+}
+async function haberCek(kat){
+  const hedef = encodeURIComponent(HABER_KAYNAK[kat]);
+  /* CORS köprüleri: biri düşerse diğeri dener */
+  const koprular = [
+    "https://api.allorigins.win/raw?url=" + hedef,
+    "https://corsproxy.io/?url=" + hedef
+  ];
+  for(const url of koprular){
+    try{
+      const r = await fetch(url, {signal: AbortSignal.timeout ? AbortSignal.timeout(9000) : undefined});
+      if(!r.ok) continue;
+      const liste = rssAyristir(await r.text());
+      if(liste.length) return liste;
+    }catch(e){}
+  }
+  return null;
+}
+function haberBas(liste, kaynakZamani){
+  const kap = $("#haber-liste"); if(!kap) return;
+  const simdi = new Date();
+  $("#haber-tarih").textContent = simdi.getDate()+" "+AYLAR[simdi.getMonth()]+" "+simdi.getFullYear()+" "+GUNLER[simdi.getDay()];
+  if(!liste || !liste.length){
+    kap.innerHTML = '<div class="bos-mesaj" style="color:#5A5646">Haberlere şu an ulaşılamadı 📡 İnternetini kontrol edip 🔄 Yenile\'ye bas.</div>';
+    return;
+  }
+  kap.innerHTML = "";
+  /* 🔎 Arama filtresi */
+  const aramaEl = $("#haber-ara");
+  const arama = aramaEl ? aramaEl.value.trim().toLocaleLowerCase("tr") : "";
+  const suzgec = arama ? liste.filter(h=> h.b.toLocaleLowerCase("tr").includes(arama)) : liste;
+  if(!suzgec.length){
+    kap.innerHTML = '<div class="bos-mesaj" style="color:#5A5646">"'+arama.replace(/</g,"&lt;")+'" ile ilgili haber yok. Başka kelime dene.</div>';
+    return;
+  }
+  suzgec.forEach((h, i)=>{
+    const d = document.createElement("div");
+    d.className = i===0 ? "gz-manset" : "gz-haber";
+    const kaynakSatir = '<div class="gz-kaynak">'+
+      (h.k ? h.k.replace(/</g,"&lt;")+" · " : "")+habercik(h.z)+'</div>';
+    d.innerHTML = i===0
+      ? '<div style="font-size:10px;letter-spacing:2px;color:#A33;font-weight:800">MANŞET</div>'+
+        '<div class="gz-baslik">'+h.b.replace(/</g,"&lt;")+'</div>'+kaynakSatir
+      : '<div class="gz-no">'+(i+1)+'</div><div><div class="gz-baslik">'+h.b.replace(/</g,"&lt;")+'</div>'+kaynakSatir+'</div>';
+    d.addEventListener("click", ()=> haberDetayAc(h));
+    kap.appendChild(d);
+  });
+  $("#haber-zaman").textContent = "Son güncelleme: " + (kaynakZamani ? habercik(kaynakZamani) : "az önce");
+}
+let acikHaber = null;
+function haberDetayAc(h){
+  acikHaber = h;
+  geriKaydet();
+  $("#hd-baslik").textContent = h.b;
+  $("#hd-kaynak").textContent = (h.k ? h.k+" · " : "") + habercik(h.z);
+  const ilgiliKap = $("#hd-ilgili");
+  if(h.i && h.i.length){
+    ilgiliKap.innerHTML = '<div style="font-size:11px;letter-spacing:1.5px;color:#7A745E;font-weight:800;margin-top:12px">DİĞER GAZETELER NE DİYOR</div>'+
+      h.i.map(x=> '<div class="gz-haber" data-link="'+x.l.replace(/"/g,"&quot;")+'" style="padding:9px 2px">'+
+        '<div class="gz-no">›</div><div class="gz-baslik" style="font-size:14px">'+x.b.replace(/</g,"&lt;")+'</div></div>').join("");
+    ilgiliKap.querySelectorAll("[data-link]").forEach(el=>
+      el.addEventListener("click", ()=>{ try{ window.open(el.dataset.link, "_blank"); }catch(e){} }));
+  }else{
+    ilgiliKap.innerHTML = "";
+  }
+  $("#haber-detay").classList.remove("gizli");
+}
+async function haberYukle(zorla){
+  const kap = $("#haber-liste"); if(!kap) return;
+  /* Önbellek: 5 dk taze, internetsizken de son gündem */
+  let sakli = null;
+  try{ sakli = JSON.parse(localStorage.getItem("haber:"+haberKat)||"null"); }catch(e){}
+  if(sakli && sakli.liste && sakli.liste.length && !zorla && Date.now()-sakli.t < 5*60*1000){
+    haberBas(sakli.liste, sakli.t);
+  }else{
+    if(!(sakli && sakli.liste && sakli.liste.length))
+      kap.innerHTML = '<div class="bos-mesaj" style="color:#5A5646">Haberler yükleniyor...</div>';
+    else haberBas(sakli.liste, sakli.t);  /* eskiyi göster, arkada tazele */
+    const liste = await haberCek(haberKat);
+    if(liste){
+      try{ localStorage.setItem("haber:"+haberKat, JSON.stringify({t: Date.now(), liste})); }catch(e){}
+      haberBas(liste, Date.now());
+    }else if(!(sakli && sakli.liste && sakli.liste.length)){
+      haberBas(null);
+    }
+  }
+  /* Sayfa açık kaldıkça 5 dk'da bir kendini yeniler */
+  clearInterval(haberSayac);
+  haberSayac = setInterval(()=>{
+    if(aktifGoruntu === "haber") haberYukle(true);
+    else clearInterval(haberSayac);
+  }, 5*60*1000);
+}
+
 /* ---------- 📊 Gelir-Gider grafiği (kütüphanesiz, tema uyumlu) ---------- */
 function paraKisa(n){
   if(n>=1000000) return (n/1000000).toLocaleString("tr-TR",{maximumFractionDigits:1})+"M";
@@ -3174,13 +3517,40 @@ function tik(){
   }catch(e){}
 }
 
+/* ---------- Tam veri önbelleği ----------
+   Eskiden her kayıtta TÜM geçmiş sunucudan baştan okunuyordu (yavaş + kota yer).
+   Artık iki canlı dinleyici bir kez kurulur; Firestore sonrasında sadece
+   DEĞİŞENLERİ gönderir. Ana kart ve özet bu önbellekten beslenir. */
+let tumGirdilerQS = null, tumOdemelerQS = null;
+let dinleyiciTumG = null, dinleyiciTumO = null;
+function tumVeriDinle(){
+  if(dinleyiciTumG || !kullanici) return;
+  dinleyiciTumG = kokRef().collection("girdiler").onSnapshot(qs=>{
+    tumGirdilerQS = qs; anaTazele();
+  }, ()=>{ /* dinleme düşerse get() yedeği devrede */ });
+  dinleyiciTumO = kokRef().collection("odemeler").onSnapshot(qs=>{
+    tumOdemelerQS = qs; anaTazele();
+  }, ()=>{});
+}
+function tumVeriBirak(){
+  if(dinleyiciTumG){ dinleyiciTumG(); dinleyiciTumG = null; }
+  if(dinleyiciTumO){ dinleyiciTumO(); dinleyiciTumO = null; }
+  tumGirdilerQS = null; tumOdemelerQS = null;
+}
+
 /* ---------- Ana ekran: şirket hesap kartı ---------- */
 async function anaYukle(){
   try{
-    const [gSnap, oSnap] = await Promise.all([
-      kokRef().collection("girdiler").get(),
-      kokRef().collection("odemeler").get()
-    ]);
+    tumVeriDinle();
+    let gSnap = tumGirdilerQS, oSnap = tumOdemelerQS;
+    if(!gSnap || !oSnap){
+      const r = await Promise.all([
+        kokRef().collection("girdiler").get(),
+        kokRef().collection("odemeler").get()
+      ]);
+      gSnap = tumGirdilerQS || r[0];
+      oSnap = tumOdemelerQS || r[1];
+    }
     let hakedis=0, alinan=0;
     const hareketler = [];
     let gunToplam=0, mesaiToplam=0, artiToplam=0, pazarToplam=0;
@@ -3916,10 +4286,16 @@ function dosyaIndir(ad, icerik, tip){
 /* ---------- Özet detayı: grafik + tüm zamanlar ---------- */
 async function ozetDetayYukle(){
   try{
-    const [gSnap, oSnap] = await Promise.all([
-      kokRef().collection("girdiler").get(),
-      kokRef().collection("odemeler").get()
-    ]);
+    tumVeriDinle();
+    let gSnap = tumGirdilerQS, oSnap = tumOdemelerQS;
+    if(!gSnap || !oSnap){
+      const r = await Promise.all([
+        kokRef().collection("girdiler").get(),
+        kokRef().collection("odemeler").get()
+      ]);
+      gSnap = tumGirdilerQS || r[0];
+      oSnap = tumOdemelerQS || r[1];
+    }
     /* Tüm zamanlar */
     let gun=0, mesai=0, alinan=0, hakedis=0;
     const ayHak = {}; // "2026-07" -> hakediş
@@ -4526,6 +4902,18 @@ function geriKaydet(){
 }
 function acikPencereKapat(){
   let kapandi = false;
+  /* TV oynatıcı açıksa önce onu kapat (ses de kesilsin) */
+  const tvo = document.getElementById("tv-oynatici");
+  if(tvo && !tvo.classList.contains("gizli")){
+    tvKapat();
+    return true;
+  }
+  /* Haber detayı açıksa önce onu kapat */
+  const hDetay = document.getElementById("haber-detay");
+  if(hDetay && !hDetay.classList.contains("gizli")){
+    hDetay.classList.add("gizli");
+    return true;
+  }
   /* Asistan sohbeti açıksa önce onu kapat */
   const asPanel = document.getElementById("asistan-panel");
   if(asPanel && !asPanel.classList.contains("gizli")){
@@ -4652,7 +5040,9 @@ document.addEventListener("DOMContentLoaded", ()=>{
     ekip:["Ekibim","Yanındakilerin puantajı"],
     arac:["Araçlar","Hesap ve haklar"],
     kisiler:["Herkes","Kim ne çalışmış gör"],
-    ayarlar:["Ayarlar","Ücret ve hesap"]
+    ayarlar:["Ayarlar","Ücret ve hesap"],
+    haber:["Gündem","Türkiye ve dünya haberleri"],
+    tv:["Canlı TV","Kanalların resmi yayınları"]
   };
   $$("[data-goruntu]").forEach(b=>{
     b.addEventListener("click", ()=>{
@@ -4661,10 +5051,10 @@ document.addEventListener("DOMContentLoaded", ()=>{
       aktifGoruntu = g;
       $("#btn-geri").classList.toggle("gizli", g==="ana");
       $$("[data-goruntu]").forEach(x=>x.classList.toggle("aktif", x===b));
-      ["ana","puantaj","odemeler","masraf","borc","ozet","yil","notlar","rozet","ekip","kisiler","arac","ayarlar"].forEach(x=>{
+      ["ana","puantaj","odemeler","masraf","borc","ozet","yil","notlar","rozet","ekip","kisiler","arac","ayarlar","haber","tv"].forEach(x=>{
         $("#goruntu-"+x).classList.toggle("gizli", x!==g);
       });
-      $("#ay-bar").style.display = (g==="ayarlar"||g==="borc"||g==="ana"||g==="notlar"||g==="rozet"||g==="arac") ? "none" : "flex";
+      $("#ay-bar").style.display = (g==="ayarlar"||g==="borc"||g==="ana"||g==="notlar"||g==="rozet"||g==="arac"||g==="haber"||g==="tv") ? "none" : "flex";
       $("#topbar-baslik").firstChild.textContent = basliklar[g][0];
       $("#topbar-alt").textContent = basliklar[g][1];
       $("#btn-bugun").style.display = g==="puantaj" ? "flex" : "none";
@@ -4682,6 +5072,8 @@ document.addEventListener("DOMContentLoaded", ()=>{
       if(g==="ekip"){ ekipYoklamaCiz(); ekipYoklamaYukle(); ekipOzetYukle(); }
       if(g==="kisiler") kisilerYukle();
       if(g==="arac") yillikIzinCiz();
+      if(g==="haber") haberYukle(false);
+      if(g==="tv") tvCiz();
       $("#asistan").style.display = g==="ana" ? "flex" : "none";
       if(g!=="ana") $("#asistan-panel").classList.add("gizli");
       cekmeceAc(false);
@@ -4690,6 +5082,44 @@ document.addEventListener("DOMContentLoaded", ()=>{
   });
 
   $("#btn-geri").addEventListener("click", ()=> gorunumSec("ana"));
+
+  /* 📰 Gündem olayları */
+  document.querySelectorAll("#haber-sekmeler button").forEach(b=>{
+    b.addEventListener("click", ()=>{
+      document.querySelectorAll("#haber-sekmeler button").forEach(x=> x.classList.remove("aktif"));
+      b.classList.add("aktif");
+      haberKat = b.dataset.kat;
+      haberYukle(false);
+    });
+  });
+  $("#btn-haber-yenile").addEventListener("click", ()=> haberYukle(true));
+  $("#haber-ara").addEventListener("input", ()=>{
+    try{
+      const sakli = JSON.parse(localStorage.getItem("haber:"+haberKat)||"null");
+      if(sakli && sakli.liste) haberBas(sakli.liste, sakli.t);
+    }catch(e){}
+  });
+  $("#btn-haber-detay-kapat").addEventListener("click", ()=> $("#haber-detay").classList.add("gizli"));
+  $("#btn-tvo-kapat").addEventListener("click", tvKapat);
+  $("#btn-tvo-youtube").addEventListener("click", ()=>{
+    if(!tvAcikKanal) return;
+    const u = tvAcikKanal.ytLive || "https://www.youtube.com/channel/"+tvAcikKanal.ytId+"/live";
+    try{ window.open(u, "_blank"); }catch(e){ location.href = u; }
+  });
+  $("#btn-tvo-site").addEventListener("click", ()=>{
+    if(tvAcikKanal) try{ window.open(tvAcikKanal.url, "_blank"); }catch(e){ location.href = tvAcikKanal.url; }
+  });
+  $("#btn-hd-oku").addEventListener("click", ()=>{
+    if(acikHaber) try{ window.open(acikHaber.l, "_blank"); }catch(e){ location.href = acikHaber.l; }
+  });
+  $("#btn-hd-paylas").addEventListener("click", async ()=>{
+    if(!acikHaber) return;
+    const metin = "📰 " + acikHaber.b + (acikHaber.k ? " ("+acikHaber.k+")" : "") + "\n" + acikHaber.l;
+    try{
+      if(navigator.share) await navigator.share({text: metin});
+      else{ await navigator.clipboard.writeText(metin); toast("Haber kopyalandı, istediğin yere yapıştır 📋"); }
+    }catch(e){}
+  });
   $("#borc-uyari").addEventListener("click", ()=> gorunumSec("borc"));
 
   /* Başlangıç rehberi olayları */
@@ -4950,6 +5380,10 @@ document.addEventListener("DOMContentLoaded", ()=>{
       if(kg===0) return "🎉 Bugün maaş günü " + ad + "! Hayırlı olsun. Parayı alınca Paralar bölümüne işlemeyi unutma 💸";
       return "Maaş gününe " + kg + " gün var " + ad + " 💸 Sabır, geliyor!";
     }
+    if(ic("televizyon"," tv ","kanal aç","maç hangi kanal","canlı yayın","canli yayin"))
+      return "Menüde 📺 Canlı TV var " + ad + " — kanala dokun, yayın resmi sitesinde açılır. Maç için Spor bölümüne bak ⚽";
+    if(ic("haber","gündem","gundem","son dakika"))
+      return "Gündemi menüdeki 📰 Gündem sayfasına koydum " + ad + " — Türkiye, dünya ve ekonomi haberleri gazete gibi orada, canlı geliyor 🗞️";
     if(ic("saat kaç")) return "Saat " + simdi.getHours() + ":" + String(simdi.getMinutes()).padStart(2,"0") + " ⌚";
     if(ic("bugün günlerden","hangi gün","tarih ne"))
       return "Bugün " + simdi.getDate() + " " + AYLAR[simdi.getMonth()] + " " + simdi.getFullYear() + ", " + GUNLER[simdi.getDay()] + " 📅";
@@ -5090,7 +5524,7 @@ document.addEventListener("DOMContentLoaded", ()=>{
   });
 
   /* Neler yeni kartı */
-  const YENILIK_SURUM = "v37";
+  const YENILIK_SURUM = "v44";
   try{
     if(localStorage.getItem("yenilik")!==YENILIK_SURUM) $("#yenilik-kart").classList.remove("gizli");
   }catch(e){ $("#yenilik-kart").classList.remove("gizli"); }
