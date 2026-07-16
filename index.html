@@ -86,6 +86,21 @@ body[data-tema="amoled"]{
 .tv-kanal .tv-ad{font-size:12px;font-weight:700;text-align:center;line-height:1.3}
 .tv-canli{font-size:9.5px;color:#FF5B52;font-weight:800;letter-spacing:1px}
 
+/* ---------- ▶️ VİDEO ---------- */
+.vid-kart{display:flex;gap:10px;background:var(--kart);border:1.5px solid var(--cizgi);
+  border-radius:14px;padding:8px;margin-bottom:10px;width:100%;text-align:left;color:var(--metin)}
+.vid-kart:active{transform:scale(.98)}
+.vid-kapak{width:126px;height:71px;border-radius:9px;object-fit:cover;flex-shrink:0;background:#000;position:relative}
+.vid-kapak-kap{position:relative;flex-shrink:0}
+.vid-sure{position:absolute;right:4px;bottom:4px;background:rgba(0,0,0,.85);color:#fff;
+  font-size:10.5px;font-weight:700;padding:1px 5px;border-radius:5px}
+.vid-bilgi{min-width:0;display:flex;flex-direction:column;justify-content:center;gap:4px}
+.vid-baslik{font-size:13.5px;font-weight:700;line-height:1.35;display:-webkit-box;
+  -webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.vid-kanal{font-size:11.5px;color:var(--soluk)}
+#video-cipler button{flex:0 0 auto;background:var(--girdi);border:1.5px solid var(--cizgi);
+  border-radius:20px;padding:8px 13px;font-size:12.5px;color:var(--metin);font-weight:600}
+
 /* ---------- 📰 GAZETE ---------- */
 .gazete{background:#F4EFE3;color:#1B1B18;border-radius:14px;padding:16px 14px;border:1px solid #D8D0BC}
 body[data-tema="amoled"] .gazete{background:#F4EFE3}
@@ -743,6 +758,7 @@ nav.cekmece{
       <li class="menu-grup">DİĞER</li>
       <li><button data-goruntu="haber"><span class="ikon">📰</span> Gündem</button></li>
       <li><button data-goruntu="tv"><span class="ikon">📺</span> Canlı TV</button></li>
+      <li><button data-goruntu="video"><span class="ikon">▶️</span> Video</button></li>
       <li><button data-goruntu="notlar"><span class="ikon">📝</span> Not defterim</button></li>
       <li><button data-goruntu="rozet"><span class="ikon">🏆</span> Başarımlarım</button></li>
       <li><button data-goruntu="ekip"><span class="ikon">👥</span> Ekibim</button></li>
@@ -803,6 +819,9 @@ nav.cekmece{
       <div class="kart gizli" id="yenilik-kart" style="border-color:var(--sari)">
         <h2>🎁 Neler yeni?</h2>
         <ul style="padding-left:18px;font-size:13.5px;line-height:1.9">
+          <li><b>🤝 Zam isteme asistanı:</b> Araçlar'da — kaç aydır zam almadığını, son zammını hesaplar; istediğin yevmiyeyi yaz, patrona atılacak pazarlık mesajını (kibar/net) hazır yazar 💪</li>
+          <li><b>📸 Ay karnesi:</b> Hesap özetinde tek tuşla story boyutunda şık karne görseli — "24 gün, 61.000 ₺" — WhatsApp durumuna at, herkes sorsun 😎 (gizli moddayken para koymaz)</li>
+          <li><b>▶️ VİDEO geldi!</b> Menüde YouTube araması var: film, maç özeti, müzik, belgesel... ara, kapaklı listeden seç, video UYGULAMANIN İÇİNDE oynasın. Hazır konu düğmeleri de cabası</li>
           <li><b>📺 TV sayfası temizlendi:</b> Artık dışarı yönlendiren kanal yok — listedeki HER kanal uygulamanın içinde oynuyor: Habertürk, CNN Türk, TRT Haber ve ⚽ A Spor</li>
           <li><b>📺 TV artık UYGULAMANIN İÇİNDE:</b> Habertürk, CNN Türk ve TRT Haber'in resmî canlı yayınları uygulamadan çıkmadan oynuyor — tam ekran yapabilirsin. "▶ UYGULAMADA" rozetli kanallar içeride, diğerleri resmi sitede açılır</li>
           <li><b>📺 Canlı TV rehberi:</b> Menüde artık televizyon var — TRT 1, Kanal D, ATV, Show, Star, NOW, TV8, haber ve spor kanalları. Kanala dokun, canlı yayın kanalın resmi sitesinde açılır (yasal ve ücretsiz)</li>
@@ -1107,6 +1126,7 @@ nav.cekmece{
       <div class="kart">
         <h2>🧮 Bu ayın hesabı</h2>
         <div class="ozet-grid" id="ozet-grid"></div>
+        <button class="btn btn-cizgili" id="btn-karne" style="margin-top:12px">📸 Ay karnesi oluştur (paylaşılır görsel)</button>
         <div id="odeme-dagilim" style="font-size:12.5px;color:var(--soluk);margin-top:10px;text-align:center"></div>
       </div>
       <div class="kart">
@@ -1326,6 +1346,18 @@ nav.cekmece{
       <div id="tv-liste"></div>
     </section>
 
+    <!-- ===== GÖRÜNÜM: VİDEO ===== -->
+    <section id="goruntu-video" class="gizli">
+      <div style="display:flex;gap:8px;margin-bottom:10px">
+        <div class="alan" style="flex:1;margin:0">
+          <input type="text" id="video-ara" placeholder="🔎 Video ara... (film, maç özeti, müzik)" enterkeyhint="search">
+        </div>
+        <button class="btn btn-sari" id="btn-video-ara" style="width:auto;padding:0 18px;margin:0">Ara</button>
+      </div>
+      <div id="video-cipler" style="display:flex;gap:6px;overflow-x:auto;margin-bottom:12px;padding-bottom:2px"></div>
+      <div id="video-sonuclar"><div class="bos-mesaj">Ne izlemek istersin? Yukarıdan ara ya da hazır konulardan seç 👆<br><br>Videolar uygulamanın içinde oynar, dışarı yönlendirme yok.</div></div>
+    </section>
+
     <!-- ===== GÖRÜNÜM: ARAÇLAR & BİLGİ ===== -->
     <section id="goruntu-arac" class="gizli">
       <div class="kart">
@@ -1352,6 +1384,23 @@ nav.cekmece{
           Kanuna göre: 1–5 yıl kıdem 14 gün, 5–15 yıl 20 gün, 15+ yıl 26 gün ücretli izin.
           18 yaş altı ve 50 yaş üstü için en az 20 gündür. Takvimde "izinli/raporlu" işlediğin günler kullanılan sayılır (raporlu günler aslında yıllık izinden düşmez, kabaca fikir verir).
         </p>
+      </div>
+      <div class="kart">
+        <h2>🤝 Zam isteme asistanı</h2>
+        <div id="zam-analiz" style="background:var(--girdi);border:1.5px solid var(--cizgi);border-radius:12px;padding:12px 14px;font-size:13.5px;line-height:1.7;margin-bottom:12px">
+          Analiz için birkaç gün işlenmiş olması yeter — sayfayı açınca hesaplarım.
+        </div>
+        <div class="alan">
+          <label>İstediğin yeni yevmiye (TL)</label>
+          <input type="text" id="zam-hedef" inputmode="decimal" placeholder="Örn: 3000">
+        </div>
+        <div style="display:flex;gap:8px;margin-bottom:10px">
+          <button class="btn btn-cizgili" id="btn-zam-kibar" style="flex:1">🙏 Kibar mesaj</button>
+          <button class="btn btn-cizgili" id="btn-zam-net" style="flex:1">💪 Net mesaj</button>
+        </div>
+        <textarea id="zam-mesaj" rows="6" class="gizli" style="width:100%;font-size:13.5px" readonly></textarea>
+        <button class="btn btn-sari gizli" id="btn-zam-paylas" style="margin-top:8px">📤 Patrona gönder</button>
+        <p style="font-size:11.5px;color:var(--soluk);margin-top:8px">Mesajı istediğin gibi düzenleyip gönderebilirsin. Pazarlık senin, veri bizden 😉</p>
       </div>
       <div class="kart">
         <h2>⏱️ Mesai ücreti kontrolü</h2>
@@ -1546,7 +1595,7 @@ nav.cekmece{
         <p style="font-size:13px;color:var(--soluk);margin-bottom:12px">Hata mı gördün, fikrin mi var? Direkt geliştiriciye ulaş:</p>
         <a class="btn btn-cizgili" style="display:block;text-align:center;text-decoration:none;margin-bottom:10px" href="https://wa.me/905051252339?text=Puantaj%20Defterim%20hakkında:" target="_blank">💬 WhatsApp'tan yaz</a>
         <a class="btn btn-cizgili" style="display:block;text-align:center;text-decoration:none" href="tel:05051252339">📞 0505 125 23 39</a>
-        <p style="font-size:11px;color:var(--soluk);margin-top:12px;text-align:center">Sürüm: v44 · Serkan Karakaş</p>
+        <p style="font-size:11px;color:var(--soluk);margin-top:12px;text-align:center">Sürüm: v46 · Serkan Karakaş</p>
       </div>
       <div class="kart">
         <h2>🔒 PIN kilidi</h2>
@@ -3158,14 +3207,123 @@ async function kurSatirYaz(kalan){
 /* ---------- 📺 CANLI TV: yalnızca resmi yayın sayfaları ---------- */
 const TV_KANALLAR = [
   {grup:"HABER KANALLARI", liste:[
-    {ad:"Habertürk", kisa:"HT",    renk:"#0D47A1", url:"https://www.haberturk.com/canliyayin", ytId:"UCn6dNfiRE_Xunu7iMyvD7AA"},
-    {ad:"CNN Türk",  kisa:"CNN",   renk:"#B71C1C", url:"https://www.cnnturk.com/canli-yayin",  ytId:"UCV6zcRug6Hqp1UX_FdyUeBg"},
-    {ad:"TRT Haber", kisa:"TRT H", renk:"#1565C0", url:"https://www.trthaber.com/canli-yayin", ytLive:"https://www.youtube.com/user/trthaber/live"}
+    {ad:"Habertürk", kisa:"HT",    renk:"#0D47A1", url:"https://www.haberturk.com/canliyayin", ytId:"UCn6dNfiRE_Xunu7iMyvD7AA", ytVid:"RNVNlJSUFoE"},
+    {ad:"CNN Türk",  kisa:"CNN",   renk:"#B71C1C", url:"https://www.cnnturk.com/canli-yayin",  ytId:"UCV6zcRug6Hqp1UX_FdyUeBg", ytVid:"6N8_r2uwLEc"},
+    {ad:"TRT Haber", kisa:"TRT H", renk:"#1565C0", url:"https://www.trthaber.com/canli-yayin", ytLive:"https://www.youtube.com/user/trthaber/live", ytVid:"TNax9QRxK40"}
   ]},
   {grup:"SPOR", liste:[
     {ad:"A Spor",    kisa:"A S",   renk:"#1B5E20", url:"https://www.aspor.com.tr/webtv/canli-yayin", ytId:"UCJElRTCNEmLemgirqvsW63Q"}
   ]}
 ];
+/* ---------- 🌉 KÖPRÜ: dış kaynaklara 3 yedekli erişim ---------- */
+async function koprudenGetir(hedefUrl){
+  const kodlu = encodeURIComponent(hedefUrl);
+  const koprular = [
+    "https://api.allorigins.win/raw?url=" + kodlu,
+    "https://corsproxy.io/?url=" + kodlu,
+    "https://api.codetabs.com/v1/proxy?quest=" + kodlu
+  ];
+  for(const url of koprular){
+    try{
+      const r = await fetch(url);
+      if(!r.ok) continue;
+      const metin = await r.text();
+      if(metin && metin.length > 200) return metin;
+    }catch(e){}
+  }
+  return null;
+}
+
+/* ---------- ▶️ VİDEO: uygulama içi YouTube arama + oynatma ---------- */
+function ytSonuclariAyikla(ham){
+  /* Sayfanın içindeki ytInitialData JSON'unu bul, ayrıştır, videoları topla */
+  const bas = ham.indexOf("ytInitialData");
+  if(bas < 0) return [];
+  const kAc = ham.indexOf("{", bas);
+  if(kAc < 0) return [];
+  let son = ham.indexOf("};<" + "/script>", kAc);
+  if(son < 0) son = ham.indexOf("};", kAc);
+  if(son < 0) return [];
+  let kok = null;
+  try{ kok = JSON.parse(ham.slice(kAc, son+1)); }catch(e){ return []; }
+  const liste = [];
+  (function gez(o){
+    if(!o || typeof o !== "object" || liste.length >= 20) return;
+    if(o.videoRenderer && o.videoRenderer.videoId){
+      const v = o.videoRenderer;
+      const al = (x, yol) => { try{ return yol(x) || ""; }catch(e){ return ""; } };
+      liste.push({
+        id: v.videoId,
+        b: al(v, x=> x.title.runs[0].text),
+        k: al(v, x=> x.ownerText.runs[0].text),
+        sure: al(v, x=> x.lengthText.simpleText)
+      });
+      return;
+    }
+    if(Array.isArray(o)){ o.forEach(gez); return; }
+    for(const anahtar in o) gez(o[anahtar]);
+  })(kok);
+  return liste;
+}
+async function videoAra(q){
+  const kap = $("#video-sonuclar");
+  kap.innerHTML = '<div class="bos-mesaj">🔎 "'+q.replace(/</g,"&lt;")+'" aranıyor...</div>';
+  const metin = await koprudenGetir("https://www.youtube.com/results?search_query="+encodeURIComponent(q)+"&hl=tr&gl=TR");
+  let liste = metin ? ytSonuclariAyikla(metin) : [];
+  if(!liste.length){
+    kap.innerHTML = '<div class="bos-mesaj">Aramaya şu an ulaşılamadı 📡 İnternetini kontrol edip tekrar dene.</div>';
+    return;
+  }
+  try{ localStorage.setItem("video:son", JSON.stringify({q, liste, t:Date.now()})); }catch(e){}
+  videoSonucBas(liste);
+}
+function videoSonucBas(liste){
+  const kap = $("#video-sonuclar");
+  kap.innerHTML = "";
+  liste.forEach(v=>{
+    const b = document.createElement("button");
+    b.className = "vid-kart";
+    b.innerHTML =
+      '<span class="vid-kapak-kap"><img class="vid-kapak" loading="lazy" alt="" src="https://i.ytimg.com/vi/'+v.id+'/mqdefault.jpg">'+
+      (v.sure ? '<span class="vid-sure">'+v.sure.replace(/</g,"&lt;")+'</span>' : '<span class="vid-sure" style="background:#C62828">CANLI</span>')+'</span>'+
+      '<span class="vid-bilgi"><span class="vid-baslik">'+v.b.replace(/</g,"&lt;")+'</span>'+
+      '<span class="vid-kanal">'+v.k.replace(/</g,"&lt;")+'</span></span>';
+    b.addEventListener("click", ()=> videoOynat(v));
+    kap.appendChild(b);
+  });
+}
+function videoOynat(v){
+  tvAcikKanal = {ad: v.b.slice(0,60), kisa:"▶", renk:"#CC0000",
+                 url: "https://www.youtube.com/watch?v="+v.id,
+                 ytLive: "https://www.youtube.com/watch?v="+v.id, tur:"video"};
+  geriKaydet();
+  $("#tvo-ad").textContent = v.b.slice(0,60);
+  const lg = $("#tvo-logo"); lg.textContent = "▶"; lg.style.background = "#CC0000";
+  $("#tvo-durum").style.display = "none";
+  $("#btn-tvo-site").style.display = "none";   /* videoda "resmi site" anlamsız */
+  $("#tvo-iframe").src = "https://www.youtube.com/embed/"+v.id+"?autoplay=1&playsinline=1";
+  $("#tv-oynatici").classList.remove("gizli");
+}
+function videoSayfaAc(){
+  /* Hazır konu çipleri bir kez kurulur, son arama geri getirilir */
+  const cipKap = $("#video-cipler");
+  if(cipKap && !cipKap.childElementCount){
+    ["⚽ Maç özetleri","🎵 Müzik","😂 Komik videolar","🎬 Belgesel","🍳 Yemek tarifleri","🔧 Tamir nasıl yapılır"].forEach(c=>{
+      const b = document.createElement("button");
+      b.textContent = c;
+      b.addEventListener("click", ()=>{ $("#video-ara").value = c.slice(c.indexOf(" ")+1); videoAra($("#video-ara").value); });
+      cipKap.appendChild(b);
+    });
+    try{
+      const sakli = JSON.parse(localStorage.getItem("video:son")||"null");
+      if(sakli && sakli.liste && sakli.liste.length){
+        $("#video-ara").value = sakli.q || "";
+        videoSonucBas(sakli.liste);
+      }
+    }catch(e){}
+  }
+}
+
 /* Uygulama içi oynatma: kanalın RESMÎ YouTube canlı yayını gömülür (izinli embed).
    Yayın kimliği köprü üzerinden bulunur, 30 dk önbellenir. Bulunamazsa kanal kimliğiyle
    canlı-akış gömme denenir; o da olmazsa kullanıcı resmi kaynaklara yönlendirilir. */
@@ -3177,20 +3335,13 @@ async function tvVideoBul(k){
   }catch(e){}
   const canliUrl = k.ytLive || (k.ytId ? "https://www.youtube.com/channel/"+k.ytId+"/live" : null);
   if(!canliUrl) return null;
-  const koprular = [
-    "https://api.allorigins.win/raw?url=" + encodeURIComponent(canliUrl),
-    "https://corsproxy.io/?url=" + encodeURIComponent(canliUrl)
-  ];
-  for(const url of koprular){
-    try{
-      const r = await fetch(url);
-      if(!r.ok) continue;
-      const m = (await r.text()).match(/"videoId":"([\w-]{11})"/);
-      if(m){
-        try{ localStorage.setItem("tvvid:"+k.ad, JSON.stringify({t:Date.now(), v:m[1]})); }catch(e){}
-        return m[1];
-      }
-    }catch(e){}
+  const metin = await koprudenGetir(canliUrl);
+  if(metin){
+    const m = metin.match(/"videoId":"([\w-]{11})"/);
+    if(m){
+      try{ localStorage.setItem("tvvid:"+k.ad, JSON.stringify({t:Date.now(), v:m[1]})); }catch(e){}
+      return m[1];
+    }
   }
   return null;
 }
@@ -3200,11 +3351,16 @@ async function tvOynat(k){
   $("#tvo-ad").textContent = k.ad;
   const lg = $("#tvo-logo"); lg.textContent = k.kisa; lg.style.background = k.renk;
   $("#tvo-iframe").src = "about:blank";
+  $("#btn-tvo-site").style.display = "";
   $("#tvo-durum").style.display = "flex";
   $("#tvo-durum").textContent = "📡 Yayın aranıyor...";
   $("#tv-oynatici").classList.remove("gizli");
-  const vid = await tvVideoBul(k);
-  if(tvAcikKanal !== k || $("#tv-oynatici").classList.contains("gizli")) return; /* bu arada kapatıldı */
+  /* Doğrulanmış 7/24 yayın kimliği varsa köprü beklemeden ANINDA oynat */
+  let vid = k.ytVid || null;
+  if(!vid){
+    vid = await tvVideoBul(k);
+    if(tvAcikKanal !== k || $("#tv-oynatici").classList.contains("gizli")) return; /* bu arada kapatıldı */
+  }
   let src = null;
   if(vid) src = "https://www.youtube.com/embed/"+vid+"?autoplay=1&playsinline=1";
   else if(k.ytId) src = "https://www.youtube.com/embed/live_stream?channel="+k.ytId+"&autoplay=1&playsinline=1";
@@ -3286,21 +3442,10 @@ function rssAyristir(xmlMetin){
   return liste.slice(0, 15);
 }
 async function haberCek(kat){
-  const hedef = encodeURIComponent(HABER_KAYNAK[kat]);
-  /* CORS köprüleri: biri düşerse diğeri dener */
-  const koprular = [
-    "https://api.allorigins.win/raw?url=" + hedef,
-    "https://corsproxy.io/?url=" + hedef
-  ];
-  for(const url of koprular){
-    try{
-      const r = await fetch(url, {signal: AbortSignal.timeout ? AbortSignal.timeout(9000) : undefined});
-      if(!r.ok) continue;
-      const liste = rssAyristir(await r.text());
-      if(liste.length) return liste;
-    }catch(e){}
-  }
-  return null;
+  const metin = await koprudenGetir(HABER_KAYNAK[kat]);
+  if(!metin) return null;
+  const liste = rssAyristir(metin);
+  return liste.length ? liste : null;
 }
 function haberBas(liste, kaynakZamani){
   const kap = $("#haber-liste"); if(!kap) return;
@@ -3465,6 +3610,137 @@ async function yillikIzinCiz(){
     (kalan>=0
       ? "Kalan iznin: <b style='color:var(--sari)'>"+kalan+" gün</b> 🏖️"
       : "⚠️ Bu yıl hakkından <b>"+Math.abs(kalan)+" gün fazla</b> izin görünüyor (raporlu günler dahil olduğu için normal olabilir).");
+}
+
+/* ---------- 🤝 Zam isteme asistanı ---------- */
+let zamVeri = null;   /* {sonYev, oncekiYev, sonTarih, ayFark} */
+function zamAnalizMetni(v){
+  if(!v || !v.sonYev) return "Analiz için önce birkaç gün işle, yevmiyen günlere işlensin.";
+  let m = "Şu anki yevmiyen: <b>"+paraFmt(v.sonYev)+"</b>";
+  if(v.oncekiYev && v.sonTarih){
+    const t = new Date(v.sonTarih+"T12:00:00");
+    const oran = Math.round((v.sonYev/v.oncekiYev - 1)*100);
+    m += "<br>Son zammın: <b>"+AYLAR[t.getMonth()]+" "+t.getFullYear()+"</b> ("+paraFmt(v.oncekiYev)+" → "+paraFmt(v.sonYev)+", %"+oran+")";
+    m += "<br>Yani <b>"+v.ayFark+" aydır</b> zam almadın" + (v.ayFark>=6 ? " — konuşma vakti gelmiş 👀" : ".");
+  }else{
+    m += "<br>Kayıtlarında henüz zam görünmüyor — ilk pazarlık için tam zamanı 😉";
+  }
+  return m;
+}
+async function zamAnalizYap(){
+  const el = $("#zam-analiz"); if(!el) return;
+  try{
+    tumVeriDinle();
+    let gSnap = tumGirdilerQS;
+    if(!gSnap) gSnap = await kokRef().collection("girdiler").get();
+    const gecmis = [];
+    gSnap.forEach(d=>{
+      const u = Number(d.data().uYevmiye)||0;
+      if(u>0) gecmis.push({id:d.id, yev:u});
+    });
+    gecmis.sort((a,b)=> a.id<b.id?-1:1);
+    const adim = [];
+    gecmis.forEach(x=>{ if(!adim.length || adim[adim.length-1].yev!==x.yev) adim.push(x); });
+    if(!adim.length){ zamVeri = null; el.innerHTML = zamAnalizMetni(null); return; }
+    const son = adim[adim.length-1];
+    const onceki = adim.length>1 ? adim[adim.length-2] : null;
+    const t = new Date(son.id+"T12:00:00"), simdi = new Date();
+    const ayFark = Math.max(0, (simdi.getFullYear()-t.getFullYear())*12 + (simdi.getMonth()-t.getMonth()));
+    zamVeri = {sonYev: son.yev, oncekiYev: onceki ? onceki.yev : 0, sonTarih: son.id, ayFark};
+    el.innerHTML = zamAnalizMetni(zamVeri);
+    if(!$("#zam-hedef").value && son.yev>0)
+      $("#zam-hedef").placeholder = "Örn: " + Math.round(son.yev*1.2/50)*50;
+  }catch(e){ el.textContent = "Analiz şu an yapılamadı, tekrar dene."; }
+}
+function zamMesajUret(ton){
+  const hedef = sayi($("#zam-hedef").value);
+  if(!(hedef>0)){ toast("Önce istediğin yeni yevmiyeyi yaz kanka"); return; }
+  const v = zamVeri || {};
+  const ad = (kullanici && kullanici.displayName) ? kullanici.displayName.split(" ")[0] : "";
+  const suan = v.sonYev>0 ? v.sonYev : (Number(ayarlar.yevmiye)||0);
+  const sure = v.ayFark>=1 ? v.ayFark+" aydır aynı yevmiyeyle çalışıyorum" : "bir süredir aynı yevmiyeyle çalışıyorum";
+  let m;
+  if(ton==="kibar"){
+    m = "Ustam merhaba 🙏 Müsait bir vaktinde konuşmak istediğim bir konu var. "+sure+
+        (suan>0 ? " ("+paraFmt(suan)+")" : "")+
+        ". İşimi severek ve düzgün yaptığımı düşünüyorum. Yevmiyemin "+paraFmt(hedef)+
+        " olması konusunu değerlendirmeni rica ediyorum. Emeğin karşılığı konusunda anlayışına güveniyorum, teşekkür ederim."+(ad ? " — "+ad : "");
+  }else{
+    m = "Ustam selam. "+sure+(suan>0 ? " ("+paraFmt(suan)+")" : "")+
+        ". Her şey zamlanırken yevmiye yerinde sayınca emek karşılıksız kalıyor. Bundan sonrası için yevmiyemin "+
+        paraFmt(hedef)+" olmasını istiyorum. Uygun görürsen bu haftadan itibaren geçerli olsun, olmazsa oturup konuşalım."+(ad ? " — "+ad : "");
+  }
+  const ta = $("#zam-mesaj");
+  ta.value = m;
+  ta.classList.remove("gizli");
+  $("#btn-zam-paylas").classList.remove("gizli");
+}
+
+/* ---------- 📸 AY KARNESİ: paylaşılır story görseli ---------- */
+async function karneOlustur(){
+  try{
+    const t = hesapla();
+    const c = document.createElement("canvas");
+    c.width = 1080; c.height = 1920;
+    const x = c.getContext("2d");
+    const stil = getComputedStyle(document.body);
+    const sari = (stil.getPropertyValue("--sari")||"#FFC400").trim();
+    /* Zemin */
+    const g = x.createLinearGradient(0,0,0,1920);
+    g.addColorStop(0,"#15161B"); g.addColorStop(1,"#0B0C10");
+    x.fillStyle = g; x.fillRect(0,0,1080,1920);
+    /* Üst şerit */
+    x.fillStyle = sari; x.fillRect(0,0,1080,14);
+    x.textAlign = "center";
+    x.fillStyle = sari;
+    x.font = "800 46px 'Saira Condensed', sans-serif";
+    x.fillText("🏗️ PUANTAJ DEFTERİM", 540, 150);
+    x.fillStyle = "#fff";
+    x.font = "800 110px 'Saira Condensed', sans-serif";
+    x.fillText((AYLAR[aktifAy]||"").toLocaleUpperCase("tr")+" "+aktifYil, 540, 300);
+    x.fillStyle = "#8B8E99";
+    x.font = "600 40px sans-serif";
+    x.fillText("AY KARNEM", 540, 370);
+    /* Kutular */
+    function kutu(y, etiket, deger, renk){
+      x.fillStyle = "rgba(255,255,255,.06)";
+      const r = 28, kx = 90, kg = 900, kh = 210;
+      x.beginPath();
+      x.moveTo(kx+r,y); x.arcTo(kx+kg,y,kx+kg,y+kh,r); x.arcTo(kx+kg,y+kh,kx,y+kh,r);
+      x.arcTo(kx,y+kh,kx,y,r); x.arcTo(kx,y,kx+kg,y,r); x.closePath(); x.fill();
+      x.fillStyle = "#8B8E99"; x.font = "700 38px sans-serif";
+      x.fillText(etiket, 540, y+75);
+      x.fillStyle = renk || "#fff"; x.font = "800 92px 'Saira Condensed', sans-serif";
+      x.fillText(deger, 540, y+170);
+    }
+    let y = 470;
+    kutu(y, "ÇALIŞTIĞIM GÜN", (t.gunSayisi||0)+" gün", sari); y += 250;
+    if((t.mesaiToplam||0) > 0){ kutu(y, "MESAİ", t.mesaiToplam+" saat", "#4C7DFF"); y += 250; }
+    if(!gizliMod){
+      kutu(y, "HAKEDİŞ", paraFmt(t.hakedis), "#35D07F"); y += 250;
+      if(t.kalan > 0){ kutu(y, "KALAN ALACAĞIM", paraFmt(t.kalan), sari); y += 250; }
+    }
+    if((t.izinli||0) > 0){ kutu(y, "İZİNLİ / RAPORLU", t.izinli+" gün", "#8B8E99"); y += 250; }
+    /* Alt imza */
+    x.fillStyle = "#8B8E99"; x.font = "600 36px sans-serif";
+    x.fillText("Alın terinin hesabı: Puantaj Defterim 📲", 540, 1830);
+    /* Paylaş */
+    c.toBlob(async blob=>{
+      if(!blob){ toast("Görsel oluşturulamadı"); return; }
+      const dosya = new File([blob], "ay-karnem.png", {type:"image/png"});
+      try{
+        if(navigator.canShare && navigator.canShare({files:[dosya]})){
+          await navigator.share({files:[dosya]});
+          return;
+        }
+      }catch(e){ if(e && e.name==="AbortError") return; }
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(blob);
+      a.download = "ay-karnem.png";
+      a.click();
+      toast("Karne indirildi 📸 Galeriden paylaşabilirsin");
+    }, "image/png");
+  }catch(e){ hataGoster(e); }
 }
 
 /* ---------- 📸 İş fotoğrafı ---------- */
@@ -5042,7 +5318,8 @@ document.addEventListener("DOMContentLoaded", ()=>{
     kisiler:["Herkes","Kim ne çalışmış gör"],
     ayarlar:["Ayarlar","Ücret ve hesap"],
     haber:["Gündem","Türkiye ve dünya haberleri"],
-    tv:["Canlı TV","Kanalların resmi yayınları"]
+    tv:["Canlı TV","Kanalların resmi yayınları"],
+    video:["Video","Ara, uygulamada izle"]
   };
   $$("[data-goruntu]").forEach(b=>{
     b.addEventListener("click", ()=>{
@@ -5051,10 +5328,10 @@ document.addEventListener("DOMContentLoaded", ()=>{
       aktifGoruntu = g;
       $("#btn-geri").classList.toggle("gizli", g==="ana");
       $$("[data-goruntu]").forEach(x=>x.classList.toggle("aktif", x===b));
-      ["ana","puantaj","odemeler","masraf","borc","ozet","yil","notlar","rozet","ekip","kisiler","arac","ayarlar","haber","tv"].forEach(x=>{
+      ["ana","puantaj","odemeler","masraf","borc","ozet","yil","notlar","rozet","ekip","kisiler","arac","ayarlar","haber","tv","video"].forEach(x=>{
         $("#goruntu-"+x).classList.toggle("gizli", x!==g);
       });
-      $("#ay-bar").style.display = (g==="ayarlar"||g==="borc"||g==="ana"||g==="notlar"||g==="rozet"||g==="arac"||g==="haber"||g==="tv") ? "none" : "flex";
+      $("#ay-bar").style.display = (g==="ayarlar"||g==="borc"||g==="ana"||g==="notlar"||g==="rozet"||g==="arac"||g==="haber"||g==="tv"||g==="video") ? "none" : "flex";
       $("#topbar-baslik").firstChild.textContent = basliklar[g][0];
       $("#topbar-alt").textContent = basliklar[g][1];
       $("#btn-bugun").style.display = g==="puantaj" ? "flex" : "none";
@@ -5071,9 +5348,10 @@ document.addEventListener("DOMContentLoaded", ()=>{
       if(g==="rozet") rozetYukle();
       if(g==="ekip"){ ekipYoklamaCiz(); ekipYoklamaYukle(); ekipOzetYukle(); }
       if(g==="kisiler") kisilerYukle();
-      if(g==="arac") yillikIzinCiz();
+      if(g==="arac"){ yillikIzinCiz(); zamAnalizYap(); }
       if(g==="haber") haberYukle(false);
       if(g==="tv") tvCiz();
+      if(g==="video") videoSayfaAc();
       $("#asistan").style.display = g==="ana" ? "flex" : "none";
       if(g!=="ana") $("#asistan-panel").classList.add("gizli");
       cekmeceAc(false);
@@ -5101,6 +5379,24 @@ document.addEventListener("DOMContentLoaded", ()=>{
   });
   $("#btn-haber-detay-kapat").addEventListener("click", ()=> $("#haber-detay").classList.add("gizli"));
   $("#btn-tvo-kapat").addEventListener("click", tvKapat);
+  $("#btn-zam-kibar").addEventListener("click", ()=> zamMesajUret("kibar"));
+  $("#btn-zam-net").addEventListener("click", ()=> zamMesajUret("net"));
+  $("#btn-zam-paylas").addEventListener("click", async ()=>{
+    const m = $("#zam-mesaj").value;
+    if(!m) return;
+    try{
+      if(navigator.share) await navigator.share({text: m});
+      else{ await navigator.clipboard.writeText(m); toast("Mesaj kopyalandı 📋"); }
+    }catch(e){}
+  });
+  $("#btn-karne").addEventListener("click", karneOlustur);
+  $("#btn-video-ara").addEventListener("click", ()=>{
+    const q = $("#video-ara").value.trim();
+    if(q) videoAra(q); else toast("Ne aramak istediğini yaz kanka 🔎");
+  });
+  $("#video-ara").addEventListener("keydown", e=>{
+    if(e.key === "Enter"){ e.preventDefault(); $("#btn-video-ara").click(); }
+  });
   $("#btn-tvo-youtube").addEventListener("click", ()=>{
     if(!tvAcikKanal) return;
     const u = tvAcikKanal.ytLive || "https://www.youtube.com/channel/"+tvAcikKanal.ytId+"/live";
@@ -5380,6 +5676,8 @@ document.addEventListener("DOMContentLoaded", ()=>{
       if(kg===0) return "🎉 Bugün maaş günü " + ad + "! Hayırlı olsun. Parayı alınca Paralar bölümüne işlemeyi unutma 💸";
       return "Maaş gününe " + kg + " gün var " + ad + " 💸 Sabır, geliyor!";
     }
+    if(ic("youtube","video aç","film izle","video izle"))
+      return "Menüde ▶️ Video var " + ad + " — ara, uygulamanın içinde izle. Dışarı yönlendirme yok 🎬";
     if(ic("televizyon"," tv ","kanal aç","maç hangi kanal","canlı yayın","canli yayin"))
       return "Menüde 📺 Canlı TV var " + ad + " — kanala dokun, yayın resmi sitesinde açılır. Maç için Spor bölümüne bak ⚽";
     if(ic("haber","gündem","gundem","son dakika"))
@@ -5524,7 +5822,7 @@ document.addEventListener("DOMContentLoaded", ()=>{
   });
 
   /* Neler yeni kartı */
-  const YENILIK_SURUM = "v44";
+  const YENILIK_SURUM = "v46";
   try{
     if(localStorage.getItem("yenilik")!==YENILIK_SURUM) $("#yenilik-kart").classList.remove("gizli");
   }catch(e){ $("#yenilik-kart").classList.remove("gizli"); }
