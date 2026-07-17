@@ -770,7 +770,7 @@ nav.cekmece{
     <div class="cekmece-alt">
       <button id="btn-cikis">Çıkış yap</button>
     </div>
-    <div class="surum">Puantaj Defterim v1.0</div>
+    <div class="surum" id="cekmece-surum">Puantaj Defterim</div>
   </nav>
 
   <main>
@@ -797,6 +797,16 @@ nav.cekmece{
 
     <!-- ===== GÖRÜNÜM: ANA EKRAN ===== -->
     <section id="goruntu-ana" class="gizli">
+      <div id="yildonumu-kart" class="kart gizli" style="border:2px solid var(--sari);text-align:center">
+        <div style="font-size:34px">🎉</div>
+        <div id="yildonumu-metin" style="font-size:14.5px;line-height:1.7;font-weight:600;margin-top:6px"></div>
+        <button class="eksik-cip" id="btn-yildonumu-kapat" style="margin-top:10px">Sağ ol! 🙏</button>
+      </div>
+      <div id="hafta-ozet-kart" class="kart gizli">
+        <h2 style="margin-bottom:8px">📅 Haftanın özeti</h2>
+        <div id="hafta-ozet-metin" style="font-size:14px;line-height:1.7"></div>
+        <button class="eksik-cip" id="btn-hafta-paylas" style="margin-top:10px">📤 WhatsApp'ta paylaş</button>
+      </div>
       <div id="rehber-kart" class="kart gizli" style="border:1.5px solid var(--sari)">
         <div style="display:flex;justify-content:space-between;align-items:center">
           <h2 style="margin:0">🚀 Hoş geldin! 3 adımda başla</h2>
@@ -814,11 +824,25 @@ nav.cekmece{
         <div class="alt" id="gunun-soz" style="margin-top:6px;color:var(--sari);font-style:italic"></div>
       </div>
       <div class="kart" id="hava-kart" style="display:none;padding:12px 14px;font-size:14px;font-weight:600"></div>
+      <div class="kart" id="gunun-karti" style="display:none;padding:14px">
+        <div id="gk-selam" style="font-weight:800;font-size:15.5px;margin-bottom:6px"></div>
+        <div id="gk-icerik" style="font-size:13.5px;line-height:1.7;color:var(--soluk)"></div>
+      </div>
+      <div class="kart gizli" id="dun-kart" style="border:1.5px solid var(--mesai);padding:14px">
+        <div style="font-size:14px;line-height:1.6">📌 <b>Dün işlenmemiş görünüyor.</b> Çalıştıysan unutma, iki dokunuşla işle:</div>
+        <button class="eksik-cip" id="btn-dun-isle" style="margin-top:10px">📅 Dünü aç ve işle</button>
+      </div>
       <div class="kart gizli" id="esik-uyari" style="border-color:var(--tam);padding:12px 14px;font-size:14px;font-weight:600"></div>
       <div class="kart gizli" id="kapanis-uyari" style="border-color:#E8C871;padding:12px 14px;font-size:13.5px"></div>
       <div class="kart gizli" id="yenilik-kart" style="border-color:var(--sari)">
         <h2>🎁 Neler yeni?</h2>
         <ul style="padding-left:18px;font-size:13.5px;line-height:1.9">
+          <li><b>🌅 Günün kartı:</b> Ana ekran artık seni saate göre selamlıyor; her gün değişen söz / şantiye fıkrası / hak bilgisi — herkese aynı gün aynı içerik, muhabbet ortak 😄</li>
+          <li><b>📌 Dün hatırlatıcısı:</b> Dünü işlemeyi unuttuysan ana ekran nazikçe dürtüyor, tek dokunuşla dünü açıp işliyorsun</li>
+          <li><b>🧱 İnşaat hesaplayıcıları:</b> Araçlar'da beton m³ (fireli), duvar tuğla/gazbeton adedi ve boya litresi — yazdıkça anında hesaplıyor</li>
+          <li><b>💪 Emek karnem:</b> Araçlar'da toplam emeğinin gurur tablosu — "X yevmiye = Y ay emek, Z saat mesai, N pazar günü" 📜</li>
+          <li><b>🎉 Yıldönümü kutlaması:</b> İşe girişinin yıldönümünde konfeti patlıyor, kaç yıldır bu meslekte olduğun ve toplam biriktirdiğin yazıyor</li>
+          <li><b>📅 Haftanın özeti:</b> Cumartesi-Pazar ana ekranda haftalık karnen çıkıyor — kaç yevmiye, kaç mesai, ne hakediş — tek tuşla WhatsApp'a</li>
           <li><b>📡 Yeni boru hatları:</b> Gazete ve video araması artık köprü beklemeden doğrudan açık servislerden de çekiyor — açılma şansı ciddi arttı, olmazsa eski yollar yedekte</li>
           <li><b>🩺 Bağlantı testi:</b> Ayarlar'da — haber/kur/TV açılmıyorsa bas, hangi hat kopuk tek tek görsün, ekran görüntüsünü geliştiriciye at</li>
           <li><b>🤖 Usta zekâ yükseltmesi:</b> Artık borç/alacaklarını, masraflarını, bugünü işleyip işlemediğini ve rozet durumunu da biliyor — sor bak</li>
@@ -1407,6 +1431,33 @@ nav.cekmece{
         <p style="font-size:11.5px;color:var(--soluk);margin-top:8px">Mesajı istediğin gibi düzenleyip gönderebilirsin. Pazarlık senin, veri bizden 😉</p>
       </div>
       <div class="kart">
+        <h2>🧱 İnşaat hesaplayıcıları</h2>
+        <div class="alan">
+          <label>🏗️ Beton: En × Boy × Yükseklik (metre)</label>
+          <div style="display:flex;gap:8px">
+            <input type="text" id="bet-en" inputmode="decimal" placeholder="En" style="flex:1">
+            <input type="text" id="bet-boy" inputmode="decimal" placeholder="Boy" style="flex:1">
+            <input type="text" id="bet-yuk" inputmode="decimal" placeholder="Yükseklik" style="flex:1">
+          </div>
+          <div id="bet-sonuc" style="font-size:13.5px;margin-top:8px;font-weight:700"></div>
+        </div>
+        <div class="alan">
+          <label>🧱 Duvar: kaç metrekare öreceksin?</label>
+          <input type="text" id="duv-m2" inputmode="decimal" placeholder="Örn: 24">
+          <div id="duv-sonuc" style="font-size:13.5px;margin-top:8px;font-weight:700"></div>
+        </div>
+        <div class="alan" style="margin-bottom:0">
+          <label>🎨 Boya: kaç metrekare duvar/tavan?</label>
+          <input type="text" id="boy-m2" inputmode="decimal" placeholder="Örn: 60">
+          <div id="boy-sonuc" style="font-size:13.5px;margin-top:8px;font-weight:700"></div>
+        </div>
+        <p style="font-size:11px;color:var(--soluk);margin-top:10px">Kaba hesaptır: beton %10 fireli · duvar m²'de ~55 tuğla / ~8,5 gazbeton · boya 2 kat, litrede ~5 m². Malzemeye göre değişir.</p>
+      </div>
+      <div class="kart">
+        <h2>💪 Emek karnem</h2>
+        <div id="emek-karne" style="font-size:13.5px;line-height:1.9">Hesaplanıyor...</div>
+      </div>
+      <div class="kart">
         <h2>⏱️ Mesai ücreti kontrolü</h2>
         <div class="alan">
           <label>Normal saatlik ücretin (TL)</label>
@@ -1605,7 +1656,7 @@ nav.cekmece{
         <p style="font-size:13px;color:var(--soluk);margin-bottom:12px">Hata mı gördün, fikrin mi var? Direkt geliştiriciye ulaş:</p>
         <a class="btn btn-cizgili" style="display:block;text-align:center;text-decoration:none;margin-bottom:10px" href="https://wa.me/905051252339?text=Puantaj%20Defterim%20hakkında:" target="_blank">💬 WhatsApp'tan yaz</a>
         <a class="btn btn-cizgili" style="display:block;text-align:center;text-decoration:none" href="tel:05051252339">📞 0505 125 23 39</a>
-        <p style="font-size:11px;color:var(--soluk);margin-top:12px;text-align:center">Sürüm: v52 · Serkan Karakaş</p>
+        <p style="font-size:11px;color:var(--soluk);margin-top:12px;text-align:center">Sürüm: v55 · Serkan Karakaş</p>
       </div>
       <div class="kart">
         <h2>🔒 PIN kilidi</h2>
@@ -3689,6 +3740,112 @@ async function yillikIzinCiz(){
       : "⚠️ Bu yıl hakkından <b>"+Math.abs(kalan)+" gün fazla</b> izin görünüyor (raporlu günler dahil olduğu için normal olabilir).");
 }
 
+/* ---------- 🧱 İnşaat hesaplayıcıları ---------- */
+function betonHesap(en, boy, yuk){
+  const m3 = en*boy*yuk;
+  return m3 > 0 ? {m3, fireli: m3*1.1} : null;
+}
+function duvarHesap(m2){
+  return m2 > 0 ? {tugla: Math.ceil(m2*55), gazbeton: Math.ceil(m2*8.5)} : null;
+}
+function boyaHesap(m2){
+  return m2 > 0 ? {litre: Math.ceil(m2*2/5)} : null;
+}
+function insaatHesaplaKur(){
+  const bagla = (idler, fn)=> idler.forEach(id=> {
+    const el = $("#"+id); if(el) el.addEventListener("input", fn);
+  });
+  bagla(["bet-en","bet-boy","bet-yuk"], ()=>{
+    const r = betonHesap(sayi($("#bet-en").value), sayi($("#bet-boy").value), sayi($("#bet-yuk").value));
+    $("#bet-sonuc").innerHTML = r
+      ? "≈ <b>"+r.m3.toLocaleString("tr-TR",{maximumFractionDigits:2})+" m³</b> beton · fireli sipariş: <b style='color:var(--sari)'>"+r.fireli.toLocaleString("tr-TR",{maximumFractionDigits:2})+" m³</b>"
+      : "";
+  });
+  bagla(["duv-m2"], ()=>{
+    const r = duvarHesap(sayi($("#duv-m2").value));
+    $("#duv-sonuc").innerHTML = r
+      ? "≈ <b>"+r.tugla.toLocaleString("tr-TR")+" tuğla</b> ya da <b>"+r.gazbeton.toLocaleString("tr-TR")+" gazbeton</b>"
+      : "";
+  });
+  bagla(["boy-m2"], ()=>{
+    const r = boyaHesap(sayi($("#boy-m2").value));
+    $("#boy-sonuc").innerHTML = r ? "2 kat için ≈ <b>"+r.litre+" litre</b> boya" : "";
+  });
+}
+/* ---------- 💪 Emek karnesi ---------- */
+function emekKarneCiz(){
+  const el = $("#emek-karne"); if(!el) return;
+  const i = tumIstatistik;
+  if(!i || !(i.gunToplam > 0)){ el.textContent = "Günlerini işledikçe burada emek karnen oluşacak 🏗️"; return; }
+  const ay = (i.gunToplam/26).toLocaleString("tr-TR",{maximumFractionDigits:1});
+  const mesaiGun = (Number(i.mesaiToplam||0)/9).toLocaleString("tr-TR",{maximumFractionDigits:1});
+  el.innerHTML =
+    "Bu defterde toplam <b>"+i.gunToplam+" yevmiye</b> emeğin var — bu, yaklaşık <b>"+ay+" ay</b> kesintisiz çalışmak demek 🏗️<br>"+
+    (Number(i.mesaiToplam)>0 ? "Üstüne <b>"+i.mesaiToplam+" saat mesai</b> — yani <b>"+mesaiGun+" günlük</b> ekstra emek ⏰<br>" : "")+
+    (Number(i.pazarToplam)>0 ? "<b>"+i.pazarToplam+" pazar günü</b> herkes yatarken sen çalıştın 🛐<br>" : "")+
+    "Helal olsun usta. Bu defter senin emeğinin senedi 📜";
+}
+
+/* ---------- 🌅 Günün kartı: selam + dönen içerik ---------- */
+const GUNUN_ICERIK = [
+  {t:"💬 Günün sözü", m:"Alın teri en helal paradır — döktüğünün hesabını tut, karşılığını sonuna kadar iste."},
+  {t:"😄 Günün fıkrası", m:"Usta çırağa: \"Su terazisini getir.\" Çırak: \"Usta su bitti, kola terazisi olur mu?\" 🧱"},
+  {t:"💡 Günün bilgisi", m:"Resmi tatilde çalışırsan kanunen 1 günlük ücretine ek olarak zamlı ücret hakkın doğar — patronla konuşurken bil."},
+  {t:"💬 Günün sözü", m:"Koca binalar tuğla tuğla, koca birikimler gün gün yükselir. Bugünü de işle 🏗️"},
+  {t:"😄 Günün fıkrası", m:"Patron: \"Bu iş yarına biter mi?\" Usta: \"Biter patron, hangi yarına olduğunu sen seç\" 😅"},
+  {t:"💡 Günün bilgisi", m:"Yıllık izin hakkı 1 yılı doldurunca başlar: 5 yıla kadar 14, 15 yıla kadar 20, sonrası 26 gün. Araçlar'da sayacın var."},
+  {t:"💬 Günün sözü", m:"Mesaiyi yazmayan, emeğini bağışlamış olur. Sen yaz, biz sayarız ⏰"},
+  {t:"😄 Günün fıkrası", m:"Şantiyede en uzun mesafe nedir? Yemek molasıyla iş arasındaki son 5 dakika 🍲"},
+  {t:"💡 Günün bilgisi", m:"Avans alırken tarihi ve tutarı hemen işle — ay sonu hesap tartışmasının ilacı kayıttır 📲"},
+  {t:"💬 Günün sözü", m:"Bugün kimse görmese de sen gördün: emeğini deftere yaz, defter unutmaz."},
+  {t:"😄 Günün fıkrası", m:"Kalfa: \"Bu duvar terazisinde mi?\" Çırak: \"Terazide usta ama kefesi hangisi bilmiyorum\" ⚖️"},
+  {t:"💡 Günün bilgisi", m:"Kıdem tazminatı her tam yıl için yaklaşık 30 günlük brüt ücrettir — Araçlar'daki hesaplayıcıya yıllarını yaz, gör."}
+];
+function gununKartiCiz(){
+  const kart = $("#gunun-karti"); if(!kart) return;
+  const simdi = new Date(), sa = simdi.getHours();
+  const ad = (kullanici && kullanici.displayName) ? kullanici.displayName.split(" ")[0] : "usta";
+  const selam = sa < 6 ? "İyi geceler" : sa < 11 ? "Günaydın ☀️" : sa < 18 ? "Kolay gelsin 💪" : "İyi akşamlar 🌙";
+  $("#gk-selam").textContent = selam + " " + ad + "!";
+  /* Gün numarasına göre herkes aynı gün aynı içeriği görür — muhabbet ortak olsun */
+  const yilBasi = new Date(simdi.getFullYear(), 0, 1);
+  const gunNo = Math.floor((simdi - yilBasi) / 86400000);
+  const ic2 = GUNUN_ICERIK[gunNo % GUNUN_ICERIK.length];
+  $("#gk-icerik").innerHTML = "<b>" + ic2.t + ":</b> " + ic2.m;
+  kart.style.display = "block";
+}
+
+/* ---------- 🎊 Konfeti (kütüphanesiz) ---------- */
+function konfetiPatlat(){
+  if(AZ_HAREKET) return;
+  const c = document.createElement("canvas");
+  c.style.cssText = "position:fixed;inset:0;pointer-events:none;z-index:9500";
+  document.body.appendChild(c);
+  const dpr = window.devicePixelRatio||1;
+  c.width = innerWidth*dpr; c.height = innerHeight*dpr;
+  const x = c.getContext("2d"); x.scale(dpr,dpr);
+  const renkler = ["#FFC400","#35D07F","#4C9AFF","#FF5B52","#B388FF","#FFFFFF"];
+  const parcalar = Array.from({length:120}, ()=>({
+    px: Math.random()*innerWidth, py: -20 - Math.random()*innerHeight*0.4,
+    hy: 2 + Math.random()*3.5, hx: (Math.random()-0.5)*2.2,
+    b: 5 + Math.random()*6, r: renkler[Math.floor(Math.random()*renkler.length)],
+    d: Math.random()*Math.PI*2, dh: (Math.random()-0.5)*0.25
+  }));
+  const bas = performance.now();
+  (function adim(t){
+    const gecen = t - bas;
+    x.clearRect(0,0,innerWidth,innerHeight);
+    parcalar.forEach(p=>{
+      p.py += p.hy; p.px += p.hx; p.d += p.dh;
+      x.save(); x.translate(p.px, p.py); x.rotate(p.d);
+      x.fillStyle = p.r; x.fillRect(-p.b/2, -p.b/3, p.b, p.b*0.66);
+      x.restore();
+    });
+    if(gecen < 3200) requestAnimationFrame(adim);
+    else c.remove();
+  })(bas);
+}
+
 /* ---------- 🩺 Bağlantı testi ---------- */
 function zamanAsimli(soz, ms){
   return Promise.race([soz, new Promise(c=> setTimeout(()=> c(null), ms))]);
@@ -3987,6 +4144,17 @@ async function anaYukle(){
     const simdi = new Date();
     const buAyOnEk = simdi.getFullYear()+"-"+pad(simdi.getMonth()+1);
     let buAyHak = 0, buAyGun = 0, buAyMesai = 0;
+    /* Haftalık özet: bu haftanın Pazartesi'sinden bugüne */
+    const pzt = new Date(simdi); pzt.setDate(simdi.getDate() - ((simdi.getDay()+6)%7));
+    const pztId = tarihId(pzt), bugunId2 = tarihId(simdi);
+    let haftaGun = 0, haftaHak = 0, haftaMesai = 0;
+    /* Dün hatırlatıcısı için son 7 günün kimlikleri */
+    const sonYediGun = [];
+    for(let i2=1; i2<=7; i2++){
+      const d2 = new Date(simdi); d2.setDate(simdi.getDate()-i2);
+      sonYediGun.push(tarihId(d2));
+    }
+    const islenenSon7 = [];
     gSnap.forEach(doc=>{
       const v = doc.data();
       const k = girdiKazanc(v);
@@ -3996,6 +4164,12 @@ async function anaYukle(){
         buAyGun += girdiGun(v);
         buAyMesai += Number(v.mesai)||0;
       }
+      if(doc.id >= pztId && doc.id <= bugunId2){
+        haftaGun += girdiGun(v);
+        haftaHak += k;
+        haftaMesai += Number(v.mesai)||0;
+      }
+      if(sonYediGun.indexOf(doc.id) > -1) islenenSon7.push(doc.id);
       gunToplam += girdiGun(v);
       mesaiToplam += Number(v.mesai)||0;
       artiToplam += Number(v.arti)||0;
@@ -4061,6 +4235,51 @@ async function anaYukle(){
         tKart.innerHTML = m;
         tKart.classList.remove("gizli");
       }else tKart.classList.add("gizli");
+    }
+    /* 🌅 Günün kartı */
+    gununKartiCiz();
+    /* 📌 Dün hatırlatıcısı: aktif kullanıcıysa ve dün boşsa */
+    const dunKart = $("#dun-kart");
+    if(dunKart){
+      const dun = new Date(simdi); dun.setDate(simdi.getDate()-1);
+      const dunId = tarihId(dun);
+      const dunPazar = dun.getDay() === 0;
+      const pazarCalisan = pazarToplam > 0;
+      const aktifKullanici = islenenSon7.length >= 2;
+      const goster = aktifKullanici && islenenSon7.indexOf(dunId) === -1 && (!dunPazar || pazarCalisan);
+      dunKart.classList.toggle("gizli", !goster);
+      dunKart.dataset.dun = dunId;
+    }
+    /* 🎉 İşe giriş yıldönümü */
+    const ydKart = $("#yildonumu-kart");
+    if(ydKart && ayarlar.iseGiris){
+      const g = new Date(ayarlar.iseGiris+"T12:00:00");
+      const yilSayi = simdi.getFullYear() - g.getFullYear();
+      const bugunMu = isFinite(g) && g.getDate()===simdi.getDate() && g.getMonth()===simdi.getMonth() && yilSayi>=1;
+      let kutlandi = false;
+      try{ kutlandi = localStorage.getItem("yildonumu:"+simdi.getFullYear())==="1"; }catch(e){}
+      if(bugunMu && !kutlandi){
+        $("#yildonumu-metin").innerHTML =
+          "Bugün işe girişinin <b>"+yilSayi+". yılı!</b> 🥳<br>"+
+          "Bu defterde <b>"+gunToplam+" gün</b> emek"+
+          (gizliMod ? "" : " ve <b>"+paraFmt(hakedis)+"</b> hakediş")+" biriktirdin.<br>Helal olsun usta, nice yıllara! 💪";
+        ydKart.classList.remove("gizli");
+        konfetiPatlat();
+      }else ydKart.classList.add("gizli");
+    }
+    /* 📅 Haftalık özet (Cumartesi/Pazar görünür) */
+    const hKart = $("#hafta-ozet-kart");
+    if(hKart){
+      const haftaSonu = simdi.getDay()===6 || simdi.getDay()===0;
+      if(haftaSonu && haftaGun > 0){
+        $("#hafta-ozet-metin").innerHTML =
+          "Bu hafta <b>"+haftaGun+" yevmiye</b> çalıştın"+
+          (haftaMesai>0 ? ", <b>"+haftaMesai+" saat mesai</b> yaptın" : "")+
+          (gizliMod ? "." : " — hakedişin <b style='color:var(--sari)'>"+paraFmt(haftaHak)+"</b>.")+
+          " Emeğine sağlık! 💪";
+        hKart.dataset.gun = haftaGun; hKart.dataset.mesai = haftaMesai; hKart.dataset.hak = Math.round(haftaHak);
+        hKart.classList.remove("gizli");
+      }else hKart.classList.add("gizli");
     }
     /* 💸 Maaş günü geri sayımı */
     const mKart = $("#maas-kart");
@@ -5502,7 +5721,7 @@ document.addEventListener("DOMContentLoaded", ()=>{
       if(g==="rozet") rozetYukle();
       if(g==="ekip"){ ekipYoklamaCiz(); ekipYoklamaYukle(); ekipOzetYukle(); }
       if(g==="kisiler") kisilerYukle();
-      if(g==="arac"){ yillikIzinCiz(); zamAnalizYap(); }
+      if(g==="arac"){ yillikIzinCiz(); zamAnalizYap(); emekKarneCiz(); }
       if(g==="haber") haberYukle(false);
       if(g==="tv") tvCiz();
       if(g==="video") videoSayfaAc();
@@ -5534,6 +5753,26 @@ document.addEventListener("DOMContentLoaded", ()=>{
   $("#btn-haber-detay-kapat").addEventListener("click", ()=> $("#haber-detay").classList.add("gizli"));
   $("#btn-tvo-kapat").addEventListener("click", tvKapat);
   $("#btn-saglik").addEventListener("click", saglikTesti);
+  insaatHesaplaKur();
+  $("#btn-dun-isle").addEventListener("click", ()=>{
+    const d = $("#dun-kart").dataset.dun;
+    if(d) modalAc(d);
+  });
+  $("#btn-yildonumu-kapat").addEventListener("click", ()=>{
+    $("#yildonumu-kart").classList.add("gizli");
+    try{ localStorage.setItem("yildonumu:"+new Date().getFullYear(), "1"); }catch(e){}
+  });
+  $("#btn-hafta-paylas").addEventListener("click", async ()=>{
+    const k = $("#hafta-ozet-kart");
+    let m = "💪 Bu hafta " + (k.dataset.gun||0) + " yevmiye çalıştım";
+    if(Number(k.dataset.mesai)>0) m += ", " + k.dataset.mesai + " saat mesai yaptım";
+    if(!gizliMod && Number(k.dataset.hak)>0) m += " — " + paraFmt(Number(k.dataset.hak)) + " hakediş";
+    m += ". Alın terinin hesabı: Puantaj Defterim 📲";
+    try{
+      if(navigator.share) await navigator.share({text: m});
+      else{ await navigator.clipboard.writeText(m); toast("Kopyalandı, WhatsApp'a yapıştır 📋"); }
+    }catch(e){}
+  });
   $("#btn-zam-kibar").addEventListener("click", ()=> zamMesajUret("kibar"));
   $("#btn-zam-net").addEventListener("click", ()=> zamMesajUret("net"));
   $("#btn-zam-paylas").addEventListener("click", async ()=>{
@@ -6007,7 +6246,8 @@ document.addEventListener("DOMContentLoaded", ()=>{
   });
 
   /* Neler yeni kartı */
-  const YENILIK_SURUM = "v52";
+  const YENILIK_SURUM = "v55";
+  try{ $("#cekmece-surum").textContent = "Puantaj Defterim " + YENILIK_SURUM; }catch(e){}
   try{
     if(localStorage.getItem("yenilik")!==YENILIK_SURUM) $("#yenilik-kart").classList.remove("gizli");
   }catch(e){ $("#yenilik-kart").classList.remove("gizli"); }
