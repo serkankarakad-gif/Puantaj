@@ -819,6 +819,10 @@ nav.cekmece{
       <div class="kart gizli" id="yenilik-kart" style="border-color:var(--sari)">
         <h2>🎁 Neler yeni?</h2>
         <ul style="padding-left:18px;font-size:13.5px;line-height:1.9">
+          <li><b>📡 Yeni boru hatları:</b> Gazete ve video araması artık köprü beklemeden doğrudan açık servislerden de çekiyor — açılma şansı ciddi arttı, olmazsa eski yollar yedekte</li>
+          <li><b>🩺 Bağlantı testi:</b> Ayarlar'da — haber/kur/TV açılmıyorsa bas, hangi hat kopuk tek tek görsün, ekran görüntüsünü geliştiriciye at</li>
+          <li><b>🤖 Usta zekâ yükseltmesi:</b> Artık borç/alacaklarını, masraflarını, bugünü işleyip işlemediğini ve rozet durumunu da biliyor — sor bak</li>
+          <li><b>🌉 Sağlamlık güncellemesi:</b> Haber/video/TV'nin takılma sorunu için özel köprü desteği geldi — kurulum 5 dakika, tarif pakette (KOPRU-KURULUM.md)</li>
           <li><b>🤝 Zam isteme asistanı:</b> Araçlar'da — kaç aydır zam almadığını, son zammını hesaplar; istediğin yevmiyeyi yaz, patrona atılacak pazarlık mesajını (kibar/net) hazır yazar 💪</li>
           <li><b>📸 Ay karnesi:</b> Hesap özetinde tek tuşla story boyutunda şık karne görseli — "24 gün, 61.000 ₺" — WhatsApp durumuna at, herkes sorsun 😎 (gizli moddayken para koymaz)</li>
           <li><b>▶️ VİDEO geldi!</b> Menüde YouTube araması var: film, maç özeti, müzik, belgesel... ara, kapaklı listeden seç, video UYGULAMANIN İÇİNDE oynasın. Hazır konu düğmeleri de cabası</li>
@@ -1583,6 +1587,12 @@ nav.cekmece{
         </div>
       </div>
       <div class="kart">
+        <h2>🩺 Bağlantı testi</h2>
+        <p style="font-size:13px;color:var(--soluk);margin-bottom:12px">Haber, kur veya TV açılmıyorsa buna bas — hangi hat kopuk tek tek gösterir. Sonucu ekran görüntüsüyle geliştiriciye at, anında teşhis konur.</p>
+        <button class="btn btn-cizgili" id="btn-saglik">🩺 Hatları test et</button>
+        <div id="saglik-sonuc" style="margin-top:12px;font-size:13.5px;line-height:2"></div>
+      </div>
+      <div class="kart">
         <h2>🩹 Tutar onarımı</h2>
         <p style="font-size:13px;color:var(--soluk);margin-bottom:12px;line-height:1.6">
           Eskiden "5.000" gibi noktayla yazılan tutarlar yanlışlıkla "5 TL" kaydediliyordu (özellikle iPhone'da).
@@ -1595,7 +1605,7 @@ nav.cekmece{
         <p style="font-size:13px;color:var(--soluk);margin-bottom:12px">Hata mı gördün, fikrin mi var? Direkt geliştiriciye ulaş:</p>
         <a class="btn btn-cizgili" style="display:block;text-align:center;text-decoration:none;margin-bottom:10px" href="https://wa.me/905051252339?text=Puantaj%20Defterim%20hakkında:" target="_blank">💬 WhatsApp'tan yaz</a>
         <a class="btn btn-cizgili" style="display:block;text-align:center;text-decoration:none" href="tel:05051252339">📞 0505 125 23 39</a>
-        <p style="font-size:11px;color:var(--soluk);margin-top:12px;text-align:center">Sürüm: v46 · Serkan Karakaş</p>
+        <p style="font-size:11px;color:var(--soluk);margin-top:12px;text-align:center">Sürüm: v52 · Serkan Karakaş</p>
       </div>
       <div class="kart">
         <h2>🔒 PIN kilidi</h2>
@@ -3215,14 +3225,21 @@ const TV_KANALLAR = [
     {ad:"A Spor",    kisa:"A S",   renk:"#1B5E20", url:"https://www.aspor.com.tr/webtv/canli-yayin", ytId:"UCJElRTCNEmLemgirqvsW63Q"}
   ]}
 ];
-/* ---------- 🌉 KÖPRÜ: dış kaynaklara 3 yedekli erişim ---------- */
+/* ---------- 🌉 KÖPRÜ: dış kaynaklara erişim ----------
+   ÖNEMLİ: Haber/video/TV'nin sağlam çalışması için KOPRU-KURULUM.md
+   rehberiyle kendi Cloudflare köprünü kur ve adresini aşağıya yapıştır.
+   Boş bırakılırsa halka açık köprüler denenir (her zaman güvenilir değildir). */
+const OZEL_KOPRU = "";   /* Köprü kurulunca adres buraya (KOPRU-KURULUM.md) */
+
 async function koprudenGetir(hedefUrl){
   const kodlu = encodeURIComponent(hedefUrl);
-  const koprular = [
+  const koprular = [];
+  if(OZEL_KOPRU) koprular.push(OZEL_KOPRU.replace(/\/$/,"") + "/?url=" + kodlu);
+  koprular.push(
     "https://api.allorigins.win/raw?url=" + kodlu,
     "https://corsproxy.io/?url=" + kodlu,
     "https://api.codetabs.com/v1/proxy?quest=" + kodlu
-  ];
+  );
   for(const url of koprular){
     try{
       const r = await fetch(url);
@@ -3265,11 +3282,51 @@ function ytSonuclariAyikla(ham){
   })(kok);
   return liste;
 }
+function sureBicim(sn){
+  sn = Math.max(0, Math.round(Number(sn)||0));
+  const sa = Math.floor(sn/3600), dk = Math.floor((sn%3600)/60), s2 = sn%60;
+  return sa > 0 ? sa+":"+String(dk).padStart(2,"0")+":"+String(s2).padStart(2,"0") : dk+":"+String(s2).padStart(2,"0");
+}
+/* Piped: tarayıcıya doğrudan açık YouTube arama servisi — köprü gerektirmez */
+async function videoAraDogrudan(q){
+  const servisler = [
+    "https://pipedapi.kavin.rocks",
+    "https://api.piped.private.coffee",
+    "https://pipedapi.adminforge.de"
+  ];
+  for(const kok of servisler){
+    try{
+      const r = await zamanAsimli(fetch(kok+"/search?q="+encodeURIComponent(q)+"&filter=videos"), 8000);
+      if(!r || !r.ok) continue;
+      const j = await r.json();
+      const kaynak = Array.isArray(j) ? j : (j && j.items);
+      if(!Array.isArray(kaynak) || !kaynak.length) continue;
+      const liste = [];
+      kaynak.forEach(v=>{
+        if(liste.length >= 20 || !v || !v.url) return;
+        const m = String(v.url).match(/v=([\w-]{11})/);
+        if(!m) return;
+        liste.push({
+          id: m[1],
+          b: String(v.title||""),
+          k: String(v.uploaderName||v.uploader||""),
+          sure: (Number(v.duration)>0) ? sureBicim(v.duration) : ""
+        });
+      });
+      if(liste.length) return liste;
+    }catch(e){}
+  }
+  return null;
+}
 async function videoAra(q){
   const kap = $("#video-sonuclar");
   kap.innerHTML = '<div class="bos-mesaj">🔎 "'+q.replace(/</g,"&lt;")+'" aranıyor...</div>';
-  const metin = await koprudenGetir("https://www.youtube.com/results?search_query="+encodeURIComponent(q)+"&hl=tr&gl=TR");
-  let liste = metin ? ytSonuclariAyikla(metin) : [];
+  /* 1. katman: doğrudan servisler · 2. katman: köprüyle YouTube */
+  let liste = await videoAraDogrudan(q);
+  if(!liste){
+    const metin = await koprudenGetir("https://www.youtube.com/results?search_query="+encodeURIComponent(q)+"&hl=tr&gl=TR");
+    liste = metin ? ytSonuclariAyikla(metin) : [];
+  }
   if(!liste.length){
     kap.innerHTML = '<div class="bos-mesaj">Aramaya şu an ulaşılamadı 📡 İnternetini kontrol edip tekrar dene.</div>';
     return;
@@ -3441,7 +3498,27 @@ function rssAyristir(xmlMetin){
   });
   return liste.slice(0, 15);
 }
+/* rss2json: tarayıcıya doğrudan açık haber servisi — köprü gerektirmez */
+async function haberCekDogrudan(kat){
+  try{
+    const r = await fetch("https://api.rss2json.com/v1/api.json?rss_url=" + encodeURIComponent(HABER_KAYNAK[kat]));
+    if(!r.ok) return null;
+    const j = await r.json();
+    if(!j || j.status !== "ok" || !Array.isArray(j.items) || !j.items.length) return null;
+    return j.items.slice(0, 15).map(it=>{
+      let b = String(it.title||"");
+      let k = "";
+      const tire = b.lastIndexOf(" - ");           /* Google başlık sonuna kaynağı ekler */
+      if(tire > 10){ k = b.slice(tire+3); b = b.slice(0, tire); }
+      const z = new Date(String(it.pubDate||"").replace(" ", "T"));
+      return {b, l: it.link||"", k, z: isFinite(z) ? z.getTime() : Date.now(), i: []};
+    });
+  }catch(e){ return null; }
+}
 async function haberCek(kat){
+  /* 1. katman: doğrudan servis · 2. katman: köprüler */
+  const dogrudan = await haberCekDogrudan(kat);
+  if(dogrudan && dogrudan.length) return dogrudan;
   const metin = await koprudenGetir(HABER_KAYNAK[kat]);
   if(!metin) return null;
   const liste = rssAyristir(metin);
@@ -3610,6 +3687,83 @@ async function yillikIzinCiz(){
     (kalan>=0
       ? "Kalan iznin: <b style='color:var(--sari)'>"+kalan+" gün</b> 🏖️"
       : "⚠️ Bu yıl hakkından <b>"+Math.abs(kalan)+" gün fazla</b> izin görünüyor (raporlu günler dahil olduğu için normal olabilir).");
+}
+
+/* ---------- 🩺 Bağlantı testi ---------- */
+function zamanAsimli(soz, ms){
+  return Promise.race([soz, new Promise(c=> setTimeout(()=> c(null), ms))]);
+}
+async function saglikTesti(){
+  const btn = $("#btn-saglik"), kap = $("#saglik-sonuc");
+  btn.disabled = true; btn.textContent = "Test ediliyor...";
+  const satirlar = [];
+  const yaz = ()=> kap.innerHTML = satirlar.join("<br>");
+  const ok = "<b style='color:var(--tam)'>✓ çalışıyor</b>";
+  const yok = "<b style='color:var(--gelmedi)'>✗ ulaşılamıyor</b>";
+  try{
+    /* 1. İnternet */
+    satirlar.push("📶 İnternet: " + (navigator.onLine ? ok : yok)); yaz();
+    /* 2. Veritabanı (Firebase) */
+    try{
+      const r = await zamanAsimli(kokRef().get(), 7000);
+      satirlar.push("☁️ Hesap verisi (Firebase): " + (r ? ok : yok));
+    }catch(e){ satirlar.push("☁️ Hesap verisi (Firebase): " + yok); }
+    yaz();
+    /* 3. Kur servisi */
+    try{
+      const r = await zamanAsimli(fetch("https://finans.truncgil.com/today.json"), 7000);
+      satirlar.push("💰 Kur servisi (dolar/altın): " + (r && r.ok ? ok : yok));
+    }catch(e){ satirlar.push("💰 Kur servisi (dolar/altın): " + yok); }
+    yaz();
+    /* 4. Özel köprü */
+    if(OZEL_KOPRU){
+      try{
+        const r = await zamanAsimli(fetch(OZEL_KOPRU), 7000);
+        const m = r ? await r.text() : "";
+        satirlar.push("🌉 Senin köprün: " + (m.indexOf("izin yok")>-1 ? ok : "<b style='color:var(--sari)'>△ kurulu ama kod eski</b>"));
+      }catch(e){ satirlar.push("🌉 Senin köprün: " + yok); }
+    }else{
+      satirlar.push("🌉 Senin köprün: <span style='color:var(--soluk)'>kurulmamış (isteğe bağlı)</span>");
+    }
+    yaz();
+    /* 4b. Doğrudan servisler */
+    try{
+      const r = await zamanAsimli(fetch("https://api.rss2json.com/v1/api.json?rss_url=" + encodeURIComponent(HABER_KAYNAK.gundem)), 8000);
+      const j = r && r.ok ? await r.json() : null;
+      satirlar.push("📰 Doğrudan haber hattı: " + (j && j.status==="ok" ? ok : yok));
+    }catch(e){ satirlar.push("📰 Doğrudan haber hattı: " + yok); }
+    yaz();
+    try{
+      const r = await zamanAsimli(fetch("https://pipedapi.kavin.rocks/search?q=deneme&filter=videos"), 8000);
+      satirlar.push("▶️ Doğrudan video hattı: " + (r && r.ok ? ok : yok));
+    }catch(e){ satirlar.push("▶️ Doğrudan video hattı: " + yok); }
+    yaz();
+    /* 5. Halka açık köprüler → haber testi */
+    const rssHedef = encodeURIComponent("https://news.google.com/rss?hl=tr&gl=TR&ceid=TR:tr");
+    const koprular = [
+      ["Köprü 1 (allorigins)", "https://api.allorigins.win/raw?url=" + rssHedef],
+      ["Köprü 2 (corsproxy)", "https://corsproxy.io/?url=" + rssHedef],
+      ["Köprü 3 (codetabs)", "https://api.codetabs.com/v1/proxy?quest=" + rssHedef]
+    ];
+    let haberVar = false;
+    for(const [ad2, url] of koprular){
+      try{
+        const r = await zamanAsimli(fetch(url), 8000);
+        const m = r && r.ok ? await r.text() : "";
+        const iyi = m && m.indexOf("<item") > -1;
+        if(iyi) haberVar = true;
+        satirlar.push("📰 " + ad2 + ": " + (iyi ? ok : yok));
+      }catch(e){ satirlar.push("📰 " + ad2 + ": " + yok); }
+      yaz();
+    }
+    const dogrudanIyi = satirlar.some(x=> x.indexOf("Doğrudan haber hattı: <b")>-1 && x.indexOf("✓")>-1);
+    satirlar.push("<br>" + ((haberVar || dogrudanIyi)
+      ? "📋 Sonuç: Gazete şu an <b>çalışır durumda</b> 👍"
+      : "📋 Sonuç: Tüm hatlar kapalı görünüyor — biraz sonra tekrar dene, düzelmezse bu ekranı geliştiriciye at"));
+    yaz();
+  }finally{
+    btn.disabled = false; btn.textContent = "🩺 Hatları test et";
+  }
 }
 
 /* ---------- 🤝 Zam isteme asistanı ---------- */
@@ -5379,6 +5533,7 @@ document.addEventListener("DOMContentLoaded", ()=>{
   });
   $("#btn-haber-detay-kapat").addEventListener("click", ()=> $("#haber-detay").classList.add("gizli"));
   $("#btn-tvo-kapat").addEventListener("click", tvKapat);
+  $("#btn-saglik").addEventListener("click", saglikTesti);
   $("#btn-zam-kibar").addEventListener("click", ()=> zamMesajUret("kibar"));
   $("#btn-zam-net").addEventListener("click", ()=> zamMesajUret("net"));
   $("#btn-zam-paylas").addEventListener("click", async ()=>{
@@ -5670,6 +5825,36 @@ document.addEventListener("DOMContentLoaded", ()=>{
       return ayarlar.iseGiris
         ? "İzin hesabın Araçlar sayfasında hazır duruyor " + ad + " — kıdemine göre hakkını ve kalanını orada görürsün 🏖️"
         : "İşe giriş tarihini Ayarlar'a girersen yıllık izin hakkını hesaplarım 🏖️";
+    if(ic("borç","borc","kime para","alacaklarım","alacaklarim")){
+      const acikV = borclar.filter(b=> b.yon==="verdim" && !b.odendi);
+      const acikA = borclar.filter(b=> b.yon==="aldim" && !b.odendi);
+      if(!acikV.length && !acikA.length) return "Borç defterin tertemiz " + ad + ", ne borcun var ne alacağın 👏";
+      const tV = acikV.reduce((t2,b)=> t2+borcKalan(b), 0);
+      const tA = acikA.reduce((t2,b)=> t2+borcKalan(b), 0);
+      let m = "";
+      if(acikV.length) m += "Alacağın: " + paraFmt(tV) + " (" + acikV.slice(0,3).map(b=>b.kisi).join(", ") + (acikV.length>3 ? " +"+(acikV.length-3) : "") + ")";
+      if(acikA.length) m += (m?"\n":"") + "Borcun: " + paraFmt(tA) + " (" + acikA.slice(0,3).map(b=>b.kisi).join(", ") + ")";
+      const geciken = acikV.filter(b=> b.vade && b.vade < tarihId(simdi)).length;
+      if(geciken) m += "\n⚠️ " + geciken + " alacağının vadesi geçmiş, hatırlatma zamanı!";
+      return m;
+    }
+    if(ic("masraf")){
+      const acik = masraflar.filter(m2=> !m2.odendi);
+      const top = acik.reduce((t2,m2)=> t2 + (Number(m2.tutar)||0), 0);
+      return acik.length
+        ? "Bu ay patrondan " + paraFmt(top) + " masraf alacağın var (" + acik.length + " kalem) 🧾"
+        : "Bu ay bekleyen masraf alacağın yok " + ad + " ✨";
+    }
+    if(ic("bugünü işledim mi","bugün işledim mi","bugunu isledim","bugün işli")){
+      const v = girdiler[tarihId(simdi)];
+      if(!v) return "Bugün henüz işlenmemiş " + ad + "! Ana ekrandan \"Bugünü işle\"ye bas, unutma 📅";
+      const e = {tam:"tam yevmiye ✅", yarim:"yarım yevmiye 🌗", gelmedi:"gelmedin 🚫", izin:"izinli 🏖️", saatlik:"saatlik ⏱️"};
+      return "Bugün işli: " + (e[v.durum]||v.durum) + (Number(v.mesai)>0 ? " + " + v.mesai + " saat mesai 💪" : "");
+    }
+    if(ic("rozet","başarım","basarim")){
+      const acik = ROZETLER.filter(r=> { try{ return r.t(tumIstatistik||{}); }catch(e){ return false; } }).length;
+      return acik + " / " + ROZETLER.length + " rozet açtın " + ad + " 🏅 Kalanların ne kadar yaklaştığını Başarımlar sayfasında çubuklarda görürsün.";
+    }
     if(ic("maaş","maas")){
       const kg = maasKacGun(ayarlar.maasGunu, simdi);
       if(kg===null) return "Maaş gününü bilmiyorum " + ad + " — Ayarlar'a ayın kaçında maaş aldığını yaz, geri sayayım 💸";
@@ -5696,7 +5881,7 @@ document.addEventListener("DOMContentLoaded", ()=>{
     if(ic("teşekkür","sağol","eyvallah","helal"))
       return rasgeleSec(["Ne demek " + ad + ", her zaman 🤝","Eyvallah usta, iyi çalışmalar! 💪","Rica ederim, ben buradayım 🤖"]);
     if(ic("kimsin","nesin","ne yapabilirsin","yardım","neler bilirsin"))
-      return "Ben Usta 🤖 — bu uygulamanın asistanıyım. Şunları sorabilirsin:\n• Ne kadar alacağım?\n• Bu ay kaç gün çalıştım?\n• Dolar/altın ne kadar?\n• Ay sonu tahminin ne?\n• Hedefime ne kadar kaldı?\n• Beni güldür 😄";
+      return "Ben Usta 🤖 — bu uygulamanın asistanıyım. Şunları sorabilirsin:\n• Ne kadar alacağım?\n• Bu ay kaç gün çalıştım?\n• Bugünü işledim mi?\n• Kime borcum/alacağım var?\n• Masraflarım ne durumda?\n• Dolar/altın ne kadar?\n• Maaşa kaç gün var?\n• Beni güldür 😄";
     return rasgeleSec([
       "Bunu tam çözemedim " + ad + " 😅 Ama hesap sorularında ustayım — mesela \"ne kadar alacağım\" ya da \"bu ay kaç gün çalıştım\" de.",
       "Hmm, bu benim alanın dışında usta. Para, gün, mesai, kur, tahmin... bunları sor, anında söylerim 🤖"
@@ -5822,7 +6007,7 @@ document.addEventListener("DOMContentLoaded", ()=>{
   });
 
   /* Neler yeni kartı */
-  const YENILIK_SURUM = "v46";
+  const YENILIK_SURUM = "v52";
   try{
     if(localStorage.getItem("yenilik")!==YENILIK_SURUM) $("#yenilik-kart").classList.remove("gizli");
   }catch(e){ $("#yenilik-kart").classList.remove("gizli"); }
