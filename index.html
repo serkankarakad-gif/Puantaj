@@ -837,6 +837,12 @@ nav.cekmece{
       <div class="kart gizli" id="yenilik-kart" style="border-color:var(--sari)">
         <h2>🎁 Neler yeni?</h2>
         <ul style="padding-left:18px;font-size:13.5px;line-height:1.9">
+          <li><b>🚑 İş Kazası Defteri:</b> Kaza olursa O GÜN kaydet: ne oldu, tanıklar, rapor, SGK durumu. Tek tuşla düzgün tutanak metni üret, paylaş — SGK ve tazminat sürecinde olay günü tutulan kayıt altındır. Defter sadece sende, sağlık bilgin kimseyle paylaşılmaz</li>
+          <li><b>🆘 Acil Durum Kartı:</b> Kan grubu + acil numara + alerji bilgisi; tek tuşla TAM EKRAN kırmızı kart — şantiyede kaza anında arkadaşların telefonundan baksın, hayat kurtarır</li>
+          <li><b>🪪 İşçi Kimlik Kartın:</b> Araçlar'da — sana özel kimlik numaralı, gerçek kayıtlarından üretilen karne görseli. İş görüşmesinde göster: "267 yevmiye, 84 saat mesai, 3 yıl kıdem" — rakamlar lafdan iyi konuşur. Sadece SEN paylaşırsan görülür, kimse senin hakkında bir şey yazamaz</li>
+          <li><b>📤 Günü paylaş:</b> Gün penceresindeki kazanç kutusunda paylaş düğmesi — "18 Temmuz · Tam yevmiye + 2 saat mesai · 3.250 ₺" hazır mesaj, WhatsApp'a tek dokunuş</li>
+          <li><b>🔠 Büyük yazı modu:</b> Ayarlar → tema kartında — gözü yorulan ustalar için tüm yazılar bir boy büyür, tercih hatırlanır</li>
+          <li><b>💡 Bunu biliyor muydun:</b> Mesai kronometresini durdurunca "bugüne ekleyeyim mi?" diye soruyor — saat ölçüp elle yazmana gerek yok!</li>
           <li><b>🌅 Günün kartı:</b> Ana ekran artık seni saate göre selamlıyor; her gün değişen söz / şantiye fıkrası / hak bilgisi — herkese aynı gün aynı içerik, muhabbet ortak 😄</li>
           <li><b>📌 Dün hatırlatıcısı:</b> Dünü işlemeyi unuttuysan ana ekran nazikçe dürtüyor, tek dokunuşla dünü açıp işliyorsun</li>
           <li><b>🧱 İnşaat hesaplayıcıları:</b> Araçlar'da beton m³ (fireli), duvar tuğla/gazbeton adedi ve boya litresi — yazdıkça anında hesaplıyor</li>
@@ -1454,6 +1460,77 @@ nav.cekmece{
         <p style="font-size:11px;color:var(--soluk);margin-top:10px">Kaba hesaptır: beton %10 fireli · duvar m²'de ~55 tuğla / ~8,5 gazbeton · boya 2 kat, litrede ~5 m². Malzemeye göre değişir.</p>
       </div>
       <div class="kart">
+        <h2>🚑 İş Kazası Defterim</h2>
+        <p style="font-size:12.5px;color:var(--soluk);line-height:1.6;margin-bottom:12px">
+          Kaza olursa O GÜN buraya yaz: tarih, ne olduğu, tanıklar. Olay günü tutulan kayıt,
+          SGK ve tazminat işlemlerinde en güçlü delildir. Bu defter sadece sende — kimseyle paylaşılmaz, sen istersen tutanak gönderirsin.
+        </p>
+        <div class="alan">
+          <label>Kaza tarihi</label>
+          <input type="date" id="kaza-tarih">
+        </div>
+        <div class="alan">
+          <label>Ne oldu? (yer, saat, nasıl olduğu)</label>
+          <textarea id="kaza-aciklama" rows="3" placeholder="Örn: 14:30 gibi 2. katta iskelede kalas kaydı, sol ayak bileğim burkuldu..."></textarea>
+        </div>
+        <div class="alan">
+          <label>Tanıklar (isim isim yaz)</label>
+          <input type="text" id="kaza-tanik" placeholder="Örn: Ali usta, Mehmet kalfa">
+        </div>
+        <div class="alan">
+          <label>Hastane / rapor durumu</label>
+          <input type="text" id="kaza-rapor" placeholder="Örn: Devlet hastanesine gittim, 5 gün rapor verildi">
+        </div>
+        <div class="alan">
+          <label>SGK'ya bildirildi mi?</label>
+          <select id="kaza-sgk">
+            <option value="bilmiyorum">Bilmiyorum</option>
+            <option value="evet">Evet, bildirildi</option>
+            <option value="hayir">Hayır, bildirilmedi</option>
+          </select>
+        </div>
+        <button class="btn btn-sari" id="btn-kaza-kaydet">🚑 Kaydı tut</button>
+        <ul class="liste" id="liste-kaza" style="margin-top:14px"></ul>
+        <p style="font-size:11.5px;color:var(--soluk);margin-top:10px;line-height:1.6">
+          ⚖️ Bil: İş kazasını SGK'ya bildirmek <b>işverenin yasal görevidir (3 iş günü içinde)</b>.
+          Bildirilmediyse sen de ALO 170'i arayabilir veya SGK'ya dilekçe verebilirsin.
+          Bu kayıt resmî belge değildir ama resmî süreçte elini çok güçlendirir.
+        </p>
+      </div>
+      <div class="kart">
+        <h2>🆘 Acil Durum Kartım</h2>
+        <p style="font-size:12.5px;color:var(--soluk);margin-bottom:12px">Şantiyede bir şey olursa arkadaşların telefonundan bu karta baksın — kan grubu ve acil numara hayat kurtarır.</p>
+        <div style="display:flex;gap:8px">
+          <div class="alan" style="flex:1">
+            <label>Kan grubun</label>
+            <select id="acil-kan">
+              <option value="">Seç</option>
+              <option>A Rh+</option><option>A Rh-</option><option>B Rh+</option><option>B Rh-</option>
+              <option>AB Rh+</option><option>AB Rh-</option><option>0 Rh+</option><option>0 Rh-</option>
+            </select>
+          </div>
+          <div class="alan" style="flex:1.6">
+            <label>Acil durumda aranacak kişi + no</label>
+            <input type="text" id="acil-kisi" placeholder="Örn: Eşim Ayşe 05xx xxx xx xx">
+          </div>
+        </div>
+        <div class="alan">
+          <label>Alerji / kronik rahatsızlık / kullandığın ilaç (yoksa boş bırak)</label>
+          <input type="text" id="acil-not" placeholder="Örn: penisilin alerjisi, şeker hastası">
+        </div>
+        <button class="btn btn-cizgili" id="btn-acil-kaydet">💾 Kaydet</button>
+        <button class="btn btn-sari" id="btn-acil-goster" style="margin-top:8px">🆘 Kartı TAM EKRAN göster</button>
+      </div>
+      <div class="kart">
+        <h2>🪪 İşçi Kimlik Kartım</h2>
+        <div id="kimlik-ozet" style="background:var(--girdi);border:1.5px solid var(--cizgi);border-radius:12px;padding:12px 14px;font-size:13.5px;line-height:1.9;margin-bottom:12px">Hesaplanıyor...</div>
+        <button class="btn btn-sari" id="btn-kimlik-kart">📸 Karneyi oluştur ve paylaş</button>
+        <p style="font-size:11.5px;color:var(--soluk);margin-top:8px">
+          Bu karne SENİN kayıtlarından üretilir ve sadece SEN paylaşırsan görülür.
+          İş görüşmesinde göster: rakamlar lafdan iyi konuşur 💪 Kimse senin hakkında buraya bir şey yazamaz — defter işçinindir.
+        </p>
+      </div>
+      <div class="kart">
         <h2>💪 Emek karnem</h2>
         <div id="emek-karne" style="font-size:13.5px;line-height:1.9">Hesaplanıyor...</div>
       </div>
@@ -1629,6 +1706,7 @@ nav.cekmece{
       <div class="kart">
         <h2>🎨 Uygulama teması</h2>
         <p style="font-size:13px;color:var(--soluk);margin-bottom:12px">Rengini seç, anında değişir. Amoled (tam siyah) pil de az yer.</p>
+        <button class="btn btn-cizgili" id="btn-buyuk-yazi" style="margin-bottom:14px">🔠 Büyük yazı: <b id="buyuk-yazi-durum">kapalı</b></button>
         <div id="tema-secim" style="display:flex;gap:12px;align-items:center">
           <button data-tema="" style="background:#FFC400" aria-label="Şantiye sarısı"></button>
           <button data-tema="mavi" style="background:#4FA8FF" aria-label="Gece mavisi"></button>
@@ -1656,7 +1734,7 @@ nav.cekmece{
         <p style="font-size:13px;color:var(--soluk);margin-bottom:12px">Hata mı gördün, fikrin mi var? Direkt geliştiriciye ulaş:</p>
         <a class="btn btn-cizgili" style="display:block;text-align:center;text-decoration:none;margin-bottom:10px" href="https://wa.me/905051252339?text=Puantaj%20Defterim%20hakkında:" target="_blank">💬 WhatsApp'tan yaz</a>
         <a class="btn btn-cizgili" style="display:block;text-align:center;text-decoration:none" href="tel:05051252339">📞 0505 125 23 39</a>
-        <p style="font-size:11px;color:var(--soluk);margin-top:12px;text-align:center">Sürüm: v55 · Serkan Karakaş</p>
+        <p style="font-size:11px;color:var(--soluk);margin-top:12px;text-align:center">Sürüm: v58 · Serkan Karakaş</p>
       </div>
       <div class="kart">
         <h2>🔒 PIN kilidi</h2>
@@ -1710,7 +1788,9 @@ nav.cekmece{
   <button class="eksik-cip" id="btn-dun-kopya" style="margin-bottom:14px">📋 Dünü kopyala</button>
   <div id="gun-kazanc" style="background:var(--girdi);border:1.5px solid var(--cizgi);border-radius:12px;padding:11px 14px;margin-bottom:14px">
     <div style="display:flex;justify-content:space-between;align-items:center;font-weight:700">
-      <span style="font-size:13.5px">💰 Bu günün kazancı</span>
+      <span style="font-size:13.5px">💰 Bu günün kazancı
+        <button id="btn-gun-paylas" aria-label="Günü paylaş" style="font-size:15px;padding:2px 8px;margin-left:4px">📤</button>
+      </span>
       <span id="gun-kazanc-tutar" style="color:var(--sari);font-family:'Saira Condensed';font-size:22px">—</span>
     </div>
     <div id="gun-kazanc-dokum" style="font-size:12.5px;color:var(--soluk);margin-top:6px;line-height:1.7"></div>
@@ -1852,6 +1932,15 @@ nav.cekmece{
     <input type="text" id="asistan-soru" placeholder="Usta'ya sor..." autocomplete="off">
     <button id="asistan-gonder">➤</button>
   </div>
+</div>
+
+<div id="acil-buyuk" style="display:none;position:fixed;inset:0;z-index:9000;background:#B71C1C;color:#fff;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:24px;gap:14px">
+  <div style="font-size:26px;font-weight:800;letter-spacing:2px">🆘 ACİL DURUM KARTI</div>
+  <div id="acil-b-ad" style="font-size:34px;font-weight:800"></div>
+  <div id="acil-b-kan" style="font-size:64px;font-weight:800;background:#fff;color:#B71C1C;padding:10px 30px;border-radius:18px"></div>
+  <div id="acil-b-kisi" style="font-size:26px;font-weight:700;line-height:1.5"></div>
+  <div id="acil-b-not" style="font-size:22px;line-height:1.5;opacity:.95"></div>
+  <div style="font-size:15px;opacity:.8;margin-top:10px">Kapatmak için ekrana dokun</div>
 </div>
 
 <div id="foto-buyuk" style="display:none;position:fixed;inset:0;z-index:9000;background:rgba(0,0,0,.93);align-items:center;justify-content:center;padding:16px">
@@ -3740,6 +3829,27 @@ async function yillikIzinCiz(){
       : "⚠️ Bu yıl hakkından <b>"+Math.abs(kalan)+" gün fazla</b> izin görünüyor (raporlu günler dahil olduğu için normal olabilir).");
 }
 
+/* ---------- 📤 Gün paylaşımı ---------- */
+function gunPaylasMetni(){
+  const t = new Date(modalTarih+"T12:00:00");
+  const tarihYazi = t.getDate()+" "+AYLAR[t.getMonth()]+" "+GUNLER[t.getDay()];
+  const durumAd = {tam:"Tam yevmiye ✅", yarim:"Yarım yevmiye 🌗", gelmedi:"Gelmedim 🚫", izin:"İzinli 🏖️", saatlik:"Saatlik çalışma ⏱️"};
+  const parcalar = [tarihYazi, durumAd[modalDurum] || modalDurum];
+  const mesai = sayi($("#gun-mesai").value);
+  if(mesai > 0) parcalar.push("+ "+mesai+" saat mesai");
+  const arti = sayi($("#gun-arti").value);
+  if(arti > 0) parcalar.push("+ "+arti+" gün içi artı");
+  const santiye = $("#gun-santiye").value.trim();
+  if(santiye) parcalar.push("📍 "+santiye);
+  if(!gizliMod){
+    const kazanc = $("#gun-kazanc-tutar").textContent;
+    if(kazanc && kazanc !== "—") parcalar.push("Kazanç: "+kazanc);
+  }
+  const not = $("#gun-not").value.trim();
+  if(not) parcalar.push("Not: "+not);
+  return "📋 " + parcalar.join(" · ") + "\n— Puantaj Defterim 📲";
+}
+
 /* ---------- 🧱 İnşaat hesaplayıcıları ---------- */
 function betonHesap(en, boy, yuk){
   const m3 = en*boy*yuk;
@@ -3772,6 +3882,155 @@ function insaatHesaplaKur(){
     $("#boy-sonuc").innerHTML = r ? "2 kat için ≈ <b>"+r.litre+" litre</b> boya" : "";
   });
 }
+/* ---------- 🚑 İş Kazası Defteri ---------- */
+function kazaTutanakMetni(k){
+  const t = new Date((k.tarih||"2000-01-01")+"T12:00:00");
+  const kt = k.kayitZamani ? new Date(k.kayitZamani) : null;
+  const sgkYazi = {evet:"SGK'ya bildirildiği söylendi", hayir:"SGK'ya BİLDİRİLMEDİ", bilmiyorum:"SGK bildirimi belirsiz"};
+  return "🚑 İŞ KAZASI KAYDI\n" +
+    "─────────────────\n" +
+    "Kaza tarihi: " + t.getDate() + " " + AYLAR[t.getMonth()] + " " + t.getFullYear() + " " + GUNLER[t.getDay()] + "\n" +
+    "Olay: " + (k.aciklama||"-") + "\n" +
+    (k.tanik ? "Tanıklar: " + k.tanik + "\n" : "") +
+    (k.rapor ? "Hastane/rapor: " + k.rapor + "\n" : "") +
+    "Durum: " + (sgkYazi[k.sgk]||"-") + "\n" +
+    (kt ? "Bu kayıt " + kt.getDate() + " " + AYLAR[kt.getMonth()] + " " + kt.getFullYear() + " tarihinde işçi tarafından tutulmuştur.\n" : "") +
+    "— Puantaj Defterim kayıt sistemi";
+}
+async function kazaListeYukle(){
+  const ul = $("#liste-kaza"); if(!ul) return;
+  try{
+    const snap = await kokRef().collection("kazalar").orderBy("tarih","desc").limit(20).get();
+    ul.innerHTML = "";
+    if(snap.empty){
+      ul.innerHTML = '<li class="bos-mesaj" style="font-size:12.5px">Kayıtlı kaza yok — dileriz hiç olmaz 🙏</li>';
+      return;
+    }
+    snap.forEach(doc=>{
+      const k = doc.data();
+      const t = new Date((k.tarih||"2000-01-01")+"T12:00:00");
+      const li = document.createElement("li");
+      li.innerHTML =
+        '<div class="rozet" style="background:var(--gelmedi)">🚑<small>'+t.getDate()+' '+AYLAR[t.getMonth()].slice(0,3)+'</small></div>'+
+        '<div class="orta"><div class="baslik">'+String(k.aciklama||"").slice(0,60).replace(/</g,"&lt;")+'</div>'+
+        '<div class="alt-yazi">'+(k.tanik ? "Tanık: "+String(k.tanik).replace(/</g,"&lt;") : "Tanık yazılmamış")+
+        (k.sgk==="hayir" ? ' · <b style="color:var(--gelmedi)">SGK bildirilmedi!</b>' : '')+'</div></div>'+
+        '<button class="sil" aria-label="Tutanak" style="color:var(--mesai)">📄</button>'+
+        '<button class="sil" aria-label="Sil">🗑️</button>';
+      li.querySelector('[aria-label="Tutanak"]').addEventListener("click", async ()=>{
+        const m = kazaTutanakMetni(k);
+        try{
+          if(navigator.share) await navigator.share({text:m});
+          else{ await navigator.clipboard.writeText(m); toast("Tutanak kopyalandı 📄"); }
+        }catch(e){}
+      });
+      li.querySelector('[aria-label="Sil"]').addEventListener("click", ()=>{
+        if(!confirm("Bu kaza kaydı silinsin mi? Delil niteliği taşıyabilir, emin misin?")) return;
+        kokRef().collection("kazalar").doc(doc.id).delete().then(kazaListeYukle).catch(hataGoster);
+      });
+      ul.appendChild(li);
+    });
+  }catch(e){ ul.innerHTML = '<li class="bos-mesaj">Liste yüklenemedi, tekrar dene</li>'; }
+}
+/* ---------- 🆘 Acil Durum Kartı ---------- */
+function acilFormDoldur(){
+  const a = ayarlar.acil || {};
+  if($("#acil-kan"))  $("#acil-kan").value  = a.kan||"";
+  if($("#acil-kisi")) $("#acil-kisi").value = a.kisi||"";
+  if($("#acil-not"))  $("#acil-not").value  = a.not||"";
+}
+
+/* ---------- 🪪 İşçi Kimlik Kartı (işçinin kontrolünde) ---------- */
+function kimlikKodu(uid){
+  /* Hesaba özel, değişmeyen, okunaklı kimlik: PD-XXXX-XXXX */
+  const t = String(uid||"").replace(/[^a-zA-Z0-9]/g,"").toUpperCase();
+  if(t.length < 8) return "PD-0000-0000";
+  return "PD-" + t.slice(0,4) + "-" + t.slice(-4);
+}
+function kimlikOzetCiz(){
+  const el = $("#kimlik-ozet"); if(!el) return;
+  const i = tumIstatistik || {};
+  const kod = kimlikKodu(kullanici && kullanici.uid);
+  const ad = (kullanici && kullanici.displayName) || "—";
+  let kidem = "";
+  if(ayarlar.iseGiris){
+    const y = (Date.now() - new Date(ayarlar.iseGiris+"T12:00:00").getTime()) / (365.25*86400000);
+    if(isFinite(y) && y > 0) kidem = y >= 1 ? Math.floor(y) + " yıl" : Math.floor(y*12) + " ay";
+  }
+  el.innerHTML =
+    "👷 <b>" + ad + "</b><br>" +
+    "🪪 Kimlik No: <b>" + kod + "</b><br>" +
+    (kidem ? "📅 Kıdem: <b>" + kidem + "</b><br>" : "") +
+    "🏗️ Toplam: <b>" + (i.gunToplam||0) + " yevmiye</b> · <b>" + (i.mesaiToplam||0) + " saat mesai</b>" +
+    ((i.pazarToplam||0) > 0 ? " · <b>" + i.pazarToplam + " pazar</b>" : "");
+}
+async function kimlikKartOlustur(){
+  try{
+    const i = tumIstatistik || {};
+    const kod = kimlikKodu(kullanici && kullanici.uid);
+    const ad = (kullanici && kullanici.displayName) || "İsimsiz Usta";
+    const c = document.createElement("canvas");
+    c.width = 1200; c.height = 760;
+    const x = c.getContext("2d");
+    const stil = getComputedStyle(document.body);
+    const sari = (stil.getPropertyValue("--sari")||"#FFC400").trim();
+    /* Zemin + şeritler */
+    const g = x.createLinearGradient(0,0,1200,760);
+    g.addColorStop(0,"#1A1B21"); g.addColorStop(1,"#0D0E12");
+    x.fillStyle = g; x.fillRect(0,0,1200,760);
+    x.fillStyle = sari; x.fillRect(0,0,1200,16); x.fillRect(0,744,1200,16);
+    /* Başlık */
+    x.fillStyle = sari; x.font = "800 40px 'Saira Condensed', sans-serif";
+    x.fillText("🪪 İŞÇİ KARNESİ", 60, 96);
+    x.fillStyle = "#8B8E99"; x.font = "600 26px sans-serif";
+    x.textAlign = "right"; x.fillText("Puantaj Defterim", 1140, 96); x.textAlign = "left";
+    /* Ad + kimlik */
+    x.fillStyle = "#fff"; x.font = "800 66px 'Saira Condensed', sans-serif";
+    x.fillText(ad.slice(0,24), 60, 200);
+    x.fillStyle = sari; x.font = "700 34px monospace";
+    x.fillText(kod, 60, 252);
+    let kidem = "";
+    if(ayarlar.iseGiris){
+      const y = (Date.now() - new Date(ayarlar.iseGiris+"T12:00:00").getTime()) / (365.25*86400000);
+      if(isFinite(y) && y > 0) kidem = y >= 1 ? Math.floor(y)+" YIL KIDEM" : Math.floor(y*12)+" AY KIDEM";
+    }
+    if(kidem){ x.fillStyle = "#8B8E99"; x.font = "700 28px sans-serif"; x.fillText(kidem, 60, 300); }
+    /* Rakam kutuları */
+    function kutu(kx, etiket, deger){
+      x.fillStyle = "rgba(255,255,255,.06)";
+      x.fillRect(kx, 360, 340, 200);
+      x.textAlign = "center";
+      x.fillStyle = "#8B8E99"; x.font = "700 26px sans-serif";
+      x.fillText(etiket, kx+170, 415);
+      x.fillStyle = "#fff"; x.font = "800 72px 'Saira Condensed', sans-serif";
+      x.fillText(deger, kx+170, 512);
+      x.textAlign = "left";
+    }
+    kutu(60,  "TOPLAM YEVMİYE", String(i.gunToplam||0));
+    kutu(430, "MESAİ (SAAT)",   String(i.mesaiToplam||0));
+    kutu(800, "PAZAR MESAİSİ",  String(i.pazarToplam||0));
+    /* Dip not */
+    x.fillStyle = "#8B8E99"; x.font = "600 24px sans-serif";
+    x.fillText("Bu karne, işçinin kendi puantaj kayıtlarından üretilmiştir ve işçinin izniyle paylaşılır.", 60, 660);
+    x.fillText("Emeğin belgesi, işçinin cebinde 💪", 60, 700);
+    c.toBlob(async blob=>{
+      if(!blob){ toast("Kart oluşturulamadı"); return; }
+      const dosya = new File([blob], "isci-karnem.png", {type:"image/png"});
+      try{
+        if(navigator.canShare && navigator.canShare({files:[dosya]})){
+          await navigator.share({files:[dosya]});
+          return;
+        }
+      }catch(e){ if(e && e.name==="AbortError") return; }
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(blob);
+      a.download = "isci-karnem.png";
+      a.click();
+      toast("Karnen indirildi 🪪 Galeriden paylaşabilirsin");
+    }, "image/png");
+  }catch(e){ hataGoster(e); }
+}
+
 /* ---------- 💪 Emek karnesi ---------- */
 function emekKarneCiz(){
   const el = $("#emek-karne"); if(!el) return;
@@ -5721,7 +5980,7 @@ document.addEventListener("DOMContentLoaded", ()=>{
       if(g==="rozet") rozetYukle();
       if(g==="ekip"){ ekipYoklamaCiz(); ekipYoklamaYukle(); ekipOzetYukle(); }
       if(g==="kisiler") kisilerYukle();
-      if(g==="arac"){ yillikIzinCiz(); zamAnalizYap(); emekKarneCiz(); }
+      if(g==="arac"){ yillikIzinCiz(); zamAnalizYap(); emekKarneCiz(); kimlikOzetCiz(); kazaListeYukle(); acilFormDoldur(); }
       if(g==="haber") haberYukle(false);
       if(g==="tv") tvCiz();
       if(g==="video") videoSayfaAc();
@@ -5754,6 +6013,53 @@ document.addEventListener("DOMContentLoaded", ()=>{
   $("#btn-tvo-kapat").addEventListener("click", tvKapat);
   $("#btn-saglik").addEventListener("click", saglikTesti);
   insaatHesaplaKur();
+  $("#btn-kimlik-kart").addEventListener("click", kimlikKartOlustur);
+  $("#btn-kaza-kaydet").addEventListener("click", async ()=>{
+    const tarih = $("#kaza-tarih").value;
+    const aciklama = $("#kaza-aciklama").value.trim();
+    if(!tarih){ toast("Kaza tarihini seç kanka"); return; }
+    if(!aciklama){ toast("Ne olduğunu kısaca yaz — ileride en önemli satır bu"); return; }
+    try{
+      await kokRef().collection("kazalar").add({
+        tarih, aciklama,
+        tanik: $("#kaza-tanik").value.trim(),
+        rapor: $("#kaza-rapor").value.trim(),
+        sgk: $("#kaza-sgk").value,
+        kayitZamani: Date.now(),
+        olusturma: firebase.firestore.FieldValue.serverTimestamp()
+      });
+      $("#kaza-aciklama").value=""; $("#kaza-tanik").value=""; $("#kaza-rapor").value="";
+      toast("Kayıt tutuldu 🚑 Geçmiş olsun — 📄 ile tutanak paylaşabilirsin");
+      kazaListeYukle();
+    }catch(e){ hataGoster(e); }
+  });
+  $("#btn-acil-kaydet").addEventListener("click", async ()=>{
+    try{
+      await kokRef().set({acil:{
+        kan: $("#acil-kan").value,
+        kisi: $("#acil-kisi").value.trim(),
+        not: $("#acil-not").value.trim()
+      }},{merge:true});
+      toast("Acil durum bilgilerin kaydedildi 🆘");
+    }catch(e){ hataGoster(e); }
+  });
+  $("#btn-acil-goster").addEventListener("click", ()=>{
+    const a = ayarlar.acil || {};
+    if(!a.kan && !a.kisi){ toast("Önce kan grubunu ve acil kişiyi kaydet"); return; }
+    $("#acil-b-ad").textContent = (kullanici && kullanici.displayName) || "";
+    $("#acil-b-kan").textContent = a.kan || "?";
+    $("#acil-b-kisi").innerHTML = a.kisi ? "📞 " + String(a.kisi).replace(/</g,"&lt;") : "";
+    $("#acil-b-not").innerHTML = a.not ? "⚠️ " + String(a.not).replace(/</g,"&lt;") : "";
+    $("#acil-buyuk").style.display = "flex";
+  });
+  $("#acil-buyuk").addEventListener("click", ()=>{ $("#acil-buyuk").style.display = "none"; });
+  $("#btn-gun-paylas").addEventListener("click", async ()=>{
+    const m = gunPaylasMetni();
+    try{
+      if(navigator.share) await navigator.share({text: m});
+      else{ await navigator.clipboard.writeText(m); toast("Gün kopyalandı, istediğin yere yapıştır 📋"); }
+    }catch(e){}
+  });
   $("#btn-dun-isle").addEventListener("click", ()=>{
     const d = $("#dun-kart").dataset.dun;
     if(d) modalAc(d);
@@ -5978,6 +6284,21 @@ document.addEventListener("DOMContentLoaded", ()=>{
       b.classList.toggle("secili", (b.dataset.tema||"")===(ad||"")));
   }
   try{ temaUygula(localStorage.getItem("tema")||""); }catch(e){ temaUygula(""); }
+  /* 🔠 Büyük yazı modu — gözlüğü unutulan günler için */
+  function buyukYaziUygula(acik){
+    document.documentElement.style.fontSize = acik ? "112%" : "";
+    const d = $("#buyuk-yazi-durum");
+    if(d) d.textContent = acik ? "açık ✓" : "kapalı";
+    try{ localStorage.setItem("buyukYazi", acik ? "1" : "0"); }catch(e){}
+  }
+  let buyukYazi = false;
+  try{ buyukYazi = localStorage.getItem("buyukYazi")==="1"; }catch(e){}
+  buyukYaziUygula(buyukYazi);
+  $("#btn-buyuk-yazi").addEventListener("click", ()=>{
+    buyukYazi = !buyukYazi;
+    buyukYaziUygula(buyukYazi);
+    tik();
+  });
   document.querySelectorAll("#tema-secim button").forEach(b=>
     b.addEventListener("click", ()=>{ temaUygula(b.dataset.tema||""); tik(); }));
 
@@ -6246,7 +6567,7 @@ document.addEventListener("DOMContentLoaded", ()=>{
   });
 
   /* Neler yeni kartı */
-  const YENILIK_SURUM = "v55";
+  const YENILIK_SURUM = "v58";
   try{ $("#cekmece-surum").textContent = "Puantaj Defterim " + YENILIK_SURUM; }catch(e){}
   try{
     if(localStorage.getItem("yenilik")!==YENILIK_SURUM) $("#yenilik-kart").classList.remove("gizli");
