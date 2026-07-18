@@ -752,6 +752,7 @@ nav.cekmece{
       <li class="menu-grup">PARA İŞLERİ</li>
       <li><button data-goruntu="odemeler"><span class="ikon">💵</span> Aldığım paralar</button></li>
       <li><button data-goruntu="borc"><span class="ikon">🤝</span> Borç defteri</button></li>
+      <li><button data-goruntu="kartlar"><span class="ikon">💳</span> Kredi kartlarım</button></li>
       <li><button data-goruntu="masraf"><span class="ikon">🧾</span> İş masrafları</button></li>
       <li><button data-goruntu="ozet"><span class="ikon">🧮</span> Hesap özeti</button></li>
       <li><button data-goruntu="yil"><span class="ikon">📊</span> Yıl özeti</button></li>
@@ -802,11 +803,6 @@ nav.cekmece{
         <div id="yildonumu-metin" style="font-size:14.5px;line-height:1.7;font-weight:600;margin-top:6px"></div>
         <button class="eksik-cip" id="btn-yildonumu-kapat" style="margin-top:10px">Sağ ol! 🙏</button>
       </div>
-      <div id="hafta-ozet-kart" class="kart gizli">
-        <h2 style="margin-bottom:8px">📅 Haftanın özeti</h2>
-        <div id="hafta-ozet-metin" style="font-size:14px;line-height:1.7"></div>
-        <button class="eksik-cip" id="btn-hafta-paylas" style="margin-top:10px">📤 WhatsApp'ta paylaş</button>
-      </div>
       <div id="rehber-kart" class="kart gizli" style="border:1.5px solid var(--sari)">
         <div style="display:flex;justify-content:space-between;align-items:center">
           <h2 style="margin:0">🚀 Hoş geldin! 3 adımda başla</h2>
@@ -837,6 +833,14 @@ nav.cekmece{
       <div class="kart gizli" id="yenilik-kart" style="border-color:var(--sari)">
         <h2>🎁 Neler yeni?</h2>
         <ul style="padding-left:18px;font-size:13.5px;line-height:1.9">
+          <li><b>📐 SU TERAZİSİ:</b> Telefonun sensörüyle gerçek terazi — Araçlar'da başlat, duvara/kalasa daya, baloncuk ortada yeşilse terazide! Cepte terazi taşıma devri bitti</li>
+          <li><b>🕌 NAMAZ VAKİTLERİ:</b> İlini seç (hatırlar), Diyanet usulü 6 vakit + sıradaki vakte geri sayım: "▶ İkindi — 1 sa 12 dk kaldı". İnternetsizken de son vakitler elinde</li>
+          <li><b>🎙️ USTA'YA SESLE KONUŞ:</b> Sohbette mikrofona bas, "ne kadar alacağım" de — yazmadan sor, Usta cevaplasın (destekleyen telefonlarda)</li>
+          <li><b>💳 KREDİ KARTI TAKİBİ (20. özellik! 🎉):</b> Menüde "Kredi kartlarım" — kartlarının borcunu ve son ödeme gününü takip et, günü yaklaşınca ana ekranda alarm: "Bonus'un son ödemesine 2 gün!" Ödedikçe 💰 ile düş, gecikme faizine tek kuruş kaptırma. Kart numarası İSTEMEZ (güvenlik böyle ister); Usta'ya "kart borcum ne" diye de sorabilirsin</li>
+          <li><b>🔧 Büyük temizlik:</b> "Günü paylaş" düğmesindeki sessiz arıza giderildi (v56'dan beri çalışmıyordu!), yanlışlıkla çift eklenen hafta özeti ve kıdem hesaplayıcısı tekilleştirildi — kıdem hesaplayıcın zaten Araçlar'da vardı, oradan kullan ⚖️</li>
+          <li><b>🏦 Ödemeye dekont fotoğrafı:</b> Banka dekontunu ödemeyle beraber sakla, listede 🏦 ile aç. Delil ailesi 4'lendi: gün 📸 kaza 📷 fiş 🧾 dekont 🏦</li>
+          <li><b>📄 PDF raporu güçlendi:</b> Avanslar artık AYRI bölümde tek tek numaralı listeleniyor (tarih + not + tutar + kendi toplamı); hakediş ödemeleri, kesintiler ve diğerleri de kendi bölümlerinde — patron pazarlığında her kuruş belgeli</li>
+          <li><b>🧾 Masrafa fiş fotoğrafı:</b> Malzeme fişini masrafla beraber kaydet — listede 🧾 ile aç, patron "fiş nerede?" diyemesin. Delil üçlemesi tamam: gün 📸 + kaza 📷 + fiş 🧾</li>
           <li><b>💡 Bunu biliyor muydun:</b> Takvimde bir güne PARMAK BASILI TUT → modal açmadan anında tam yevmiye işlenir! (Artık kaydırırken yanlışlıkla tetiklenmiyor)</li>
           <li><b>🎨 Ödemeler renklendi:</b> Avans sarı, hakediş yeşil, kesinti kırmızı — liste bir bakışta okunuyor</li>
           <li><b>📺 2 yeni kanal:</b> TGRT Haber ve Haber Global listeye katıldı — ikisi de uygulamanın içinde, doğrulanmış resmî yayınlar. Kanal sayısı 6 oldu</li>
@@ -925,6 +929,7 @@ nav.cekmece{
         <div class="hafta-serit" id="hafta-serit"></div>
         <div id="tahmin-kart" class="gizli" style="margin-top:12px;background:var(--girdi);border:1.5px solid var(--cizgi);border-radius:12px;padding:11px 14px;font-size:13.5px;line-height:1.6"></div>
         <div id="maas-kart" class="gizli" style="margin-top:10px;background:var(--vurgu-zemin);border:1.5px solid var(--sari);border-radius:12px;padding:11px 14px;font-size:13.5px;font-weight:700"></div>
+        <div id="kart-uyari" class="gizli" style="margin-top:10px;background:var(--girdi);border:1.5px solid var(--sari);border-radius:12px;padding:11px 14px;font-size:13.5px;font-weight:700;cursor:pointer"></div>
         <div id="borc-uyari" class="gizli" style="margin-top:10px;background:var(--girdi);border:1.5px solid var(--gelmedi);border-radius:12px;padding:11px 14px;font-size:13.5px;font-weight:700;cursor:pointer"></div>
       </div>
       <div class="kart gizli" id="seviye-kart">
@@ -1076,6 +1081,12 @@ nav.cekmece{
         <div class="alan">
           <label>Not (isteğe bağlı)</label>
           <input type="text" id="odeme-not" placeholder="Örn: Usta elden verdi">
+        </div>
+        <div class="alan">
+          <label>Dekont / belge fotoğrafı (isteğe bağlı)</label>
+          <input type="file" id="dekont-foto-sec" accept="image/*" style="display:none">
+          <button class="eksik-cip" id="btn-dekont-foto">🏦 Dekont fotoğrafı ekle</button>
+          <img id="dekont-onizle" class="gizli" style="width:100%;border-radius:12px;margin-top:8px;border:1.5px solid var(--cizgi)" alt="">
         </div>
         <label style="display:flex;align-items:center;gap:10px;font-size:14px;margin-bottom:14px">
           <input type="checkbox" id="odeme-cuzdan" checked style="width:20px;height:20px;accent-color:var(--sari)"> Cüzdanıma da ekle (elime geçti)
@@ -1277,6 +1288,12 @@ nav.cekmece{
           <label>Ne aldın / ne ödedin?</label>
           <input type="text" id="masraf-aciklama" placeholder="Örn: Nalburdan vida + silikon">
         </div>
+        <div class="alan">
+          <label>Fiş / fatura fotoğrafı (isteğe bağlı — "fiş nerede?" derdine son)</label>
+          <input type="file" id="masraf-foto-sec" accept="image/*" style="display:none">
+          <button class="eksik-cip" id="btn-masraf-foto">🧾 Fiş fotoğrafı ekle</button>
+          <img id="masraf-foto-onizle" class="gizli" style="width:100%;border-radius:12px;margin-top:8px;border:1.5px solid var(--cizgi)" alt="">
+        </div>
         <button class="btn btn-sari" id="btn-masraf-ekle">Kaydet</button>
       </div>
       <div class="kart">
@@ -1343,6 +1360,38 @@ nav.cekmece{
         <ul class="liste" id="kisi-gunler"></ul>
         <h2 style="font-size:16px;margin-top:14px">💵 Aldığı paralar</h2>
         <ul class="liste" id="kisi-odemeler"></ul>
+      </div>
+    </section>
+
+    <!-- ===== GÖRÜNÜM: KREDİ KARTLARI ===== -->
+    <section id="goruntu-kartlar" class="gizli">
+      <div class="kart">
+        <h2>💳 Kart ekle</h2>
+        <p style="font-size:12px;color:var(--soluk);margin-bottom:12px">🔒 Kart NUMARANI değil, sadece takma adını yaz — bu uygulama kart numarası istemez, saklamaz.</p>
+        <div style="display:flex;gap:8px">
+          <div class="alan" style="flex:1.4">
+            <label>Kartın adı</label>
+            <input type="text" id="kart-ad" placeholder="Örn: Bonus, Axess...">
+          </div>
+          <div class="alan" style="flex:1">
+            <label>Son ödeme (ayın kaçı?)</label>
+            <input type="text" id="kart-gun" inputmode="numeric" placeholder="Örn: 26">
+          </div>
+        </div>
+        <div class="alan">
+          <label>Güncel dönem borcu (TL)</label>
+          <input type="text" id="kart-borc" inputmode="decimal" placeholder="Örn: 8500">
+        </div>
+        <button class="btn btn-sari" id="btn-kart-ekle">Kaydet</button>
+        <button class="btn btn-cizgili gizli" id="btn-kart-vazgec" style="margin-top:8px">Vazgeç</button>
+      </div>
+      <div class="kart">
+        <h2>Kartlarım</h2>
+        <div id="kart-toplam" style="font-size:13px;color:var(--soluk);margin-bottom:10px"></div>
+        <ul class="liste" id="liste-kartlar"></ul>
+        <p style="font-size:11.5px;color:var(--soluk);margin-top:10px;line-height:1.6">
+          💰 ile ödediğini işle, borcu düşsün. Karta dokun → borcu güncelle. Son ödeme günü yaklaşınca ana ekranda uyarırım — gecikme faizi işçinin cebinin en sinsi düşmanıdır, kaptırma.
+        </p>
       </div>
     </section>
 
@@ -1465,6 +1514,24 @@ nav.cekmece{
           <div id="boy-sonuc" style="font-size:13.5px;margin-top:8px;font-weight:700"></div>
         </div>
         <p style="font-size:11px;color:var(--soluk);margin-top:10px">Kaba hesaptır: beton %10 fireli · duvar m²'de ~55 tuğla / ~8,5 gazbeton · boya 2 kat, litrede ~5 m². Malzemeye göre değişir.</p>
+      </div>
+      <div class="kart">
+        <h2>📐 Su Terazisi</h2>
+        <p style="font-size:12px;color:var(--soluk);margin-bottom:10px">Telefonu yüzeye/duvara daya — baloncuk ortada ve yeşilse terazidedir. Kaba kontrole birebir (hassas iş için gerçek terazi şart).</p>
+        <button class="btn btn-cizgili" id="btn-terazi-basla">📐 Teraziyi başlat</button>
+        <div id="terazi-alan" class="gizli" style="text-align:center;margin-top:12px">
+          <canvas id="terazi-cnv" width="260" height="260" style="max-width:260px"></canvas>
+          <div id="terazi-derece" style="font-family:'Saira Condensed';font-size:34px;font-weight:800;margin-top:4px">—</div>
+        </div>
+      </div>
+      <div class="kart">
+        <h2>🕌 Namaz Vakitleri</h2>
+        <div class="alan">
+          <label>İlin</label>
+          <select id="vakit-il"></select>
+        </div>
+        <div id="vakit-liste" style="font-size:14px;line-height:2.1"></div>
+        <p style="font-size:11px;color:var(--soluk);margin-top:8px">Diyanet hesabına göre (Aladhan servisi). Günde bir güncellenir, internetsizken son indirilen gösterilir.</p>
       </div>
       <div class="kart">
         <h2>🚑 İş Kazası Defterim</h2>
@@ -1747,7 +1814,7 @@ nav.cekmece{
         <p style="font-size:13px;color:var(--soluk);margin-bottom:12px">Hata mı gördün, fikrin mi var? Direkt geliştiriciye ulaş:</p>
         <a class="btn btn-cizgili" style="display:block;text-align:center;text-decoration:none;margin-bottom:10px" href="https://wa.me/905051252339?text=Puantaj%20Defterim%20hakkında:" target="_blank">💬 WhatsApp'tan yaz</a>
         <a class="btn btn-cizgili" style="display:block;text-align:center;text-decoration:none" href="tel:05051252339">📞 0505 125 23 39</a>
-        <p style="font-size:11px;color:var(--soluk);margin-top:12px;text-align:center">Sürüm: v62 · Serkan Karakaş</p>
+        <p style="font-size:11px;color:var(--soluk);margin-top:12px;text-align:center">Sürüm: v68 · Serkan Karakaş</p>
       </div>
       <div class="kart">
         <h2>🔒 PIN kilidi</h2>
@@ -1942,6 +2009,7 @@ nav.cekmece{
   <div id="asistan-mesajlar"></div>
   <div id="asistan-cipler"></div>
   <div id="asistan-giris">
+    <button id="btn-asistan-mik" class="gizli" aria-label="Sesle sor" style="font-size:20px;padding:0 10px">🎙️</button>
     <input type="text" id="asistan-soru" placeholder="Usta'ya sor..." autocomplete="off">
     <button id="asistan-gonder">➤</button>
   </div>
@@ -2126,6 +2194,7 @@ let ayarlar = { yevmiye:0, mesaiUcret:0, ekGunluk:0, saatUcret:0, gunlukSaat:8,
 let girdiler = {};                     // { "2026-07-08": {...} }
 let odemeler = [];                     // bu ayın ödemeleri
 let borclar = [];                      // tüm borç kayıtları
+let kartlar = [], dinleyiciKart = null, duzenlenenKart = null; // 💳 kredi kartları
 let cuzdan = [];                       // cüzdan hareketleri
 let masraflar = [];                    // bu ayın iş masrafları
 let ekipListe = [];                    // ekipteki işçiler
@@ -2218,6 +2287,7 @@ function basla(){
 }
 
 function dinleyicileriKapat(){
+  if(dinleyiciKart) dinleyiciKart();
   if(dinleyiciGirdi) dinleyiciGirdi();
   if(dinleyiciOdeme) dinleyiciOdeme();
   if(dinleyiciAyar) dinleyiciAyar();
@@ -2288,6 +2358,12 @@ const ayKilitli = id => ayarlar.kapali.includes(ayAnahtar(id));
 
 /* ---------- Borç defteri ---------- */
 function borclariDinle(){
+  dinleyiciKart = kokRef().collection("kartlar").onSnapshot(qs=>{
+    kartlar = [];
+    qs.forEach(doc=> kartlar.push({id:doc.id, ...doc.data()}));
+    kartlar.sort((a,b)=> kartGunKalan(a.gun) - kartGunKalan(b.gun));
+    kartCiz();
+  }, ()=>{});
   dinleyiciBorc = kokRef().collection("borclar").onSnapshot(qs=>{
     borclar = [];
     qs.forEach(doc=> borclar.push({id:doc.id, ...doc.data()}));
@@ -2299,6 +2375,87 @@ function borclariDinle(){
   }, hataGoster);
 }
 
+/* ---------- 💳 Kredi kartı takibi ---------- */
+function kartGunKalan(sonGun){
+  /* Ayın kaçında son ödeme? Bugünden kaç gün kaldığını hesapla (31 çeken aylarda ay sonuna kırp) */
+  sonGun = Math.min(31, Math.max(1, Number(sonGun)||1));
+  const simdi = new Date();
+  const buAySon = new Date(simdi.getFullYear(), simdi.getMonth()+1, 0).getDate();
+  const hedefBuAy = Math.min(sonGun, buAySon);
+  if(simdi.getDate() <= hedefBuAy) return hedefBuAy - simdi.getDate();
+  const sonrakiAySon = new Date(simdi.getFullYear(), simdi.getMonth()+2, 0).getDate();
+  return (buAySon - simdi.getDate()) + Math.min(sonGun, sonrakiAySon);
+}
+function kartCiz(){
+  const ul = $("#liste-kartlar");
+  if(ul){
+    const toplamB = kartlar.reduce((t,k)=> t + (Number(k.borc)||0), 0);
+    const tEl = $("#kart-toplam");
+    if(tEl) tEl.textContent = kartlar.length
+      ? "Toplam kart borcun: " + (gizliMod ? "••••" : paraFmt(toplamB))
+      : "";
+    ul.innerHTML = "";
+    if(!kartlar.length){
+      ul.innerHTML = '<div class="bos-mesaj"><span class="buyuk">💳</span>Kayıtlı kart yok. Üstten ekle, son ödeme gününü kaçırma.</div>';
+    }
+    kartlar.forEach(k=>{
+      const kalanG = kartGunKalan(k.gun);
+      const borc = Number(k.borc)||0;
+      const li = document.createElement("li");
+      let etiket, renk;
+      if(borc <= 0){ etiket = "borç yok ✨"; renk = "var(--soluk)"; }
+      else if(kalanG === 0){ etiket = "SON ÖDEME BUGÜN!"; renk = "var(--gelmedi)"; li.style.borderLeft = "3px solid var(--gelmedi)"; }
+      else if(kalanG <= 2){ etiket = "son ödemeye "+kalanG+" gün!"; renk = "var(--sari)"; li.style.borderLeft = "3px solid var(--sari)"; }
+      else { etiket = "son ödeme: ayın "+k.gun+"'i ("+kalanG+" gün)"; renk = "var(--soluk)"; }
+      li.innerHTML =
+        '<div class="rozet" style="background:var(--mesai)">💳</div>'+
+        '<div class="orta" style="cursor:pointer"><div class="baslik">'+String(k.ad||"Kart").replace(/</g,"&lt;")+' <span style="font-size:11px;color:var(--soluk)">✏️</span></div>'+
+        '<div class="alt-yazi" style="color:'+renk+'">'+etiket+'</div></div>'+
+        '<div class="tutar">'+(gizliMod ? "••••" : paraFmt(borc))+'</div>'+
+        (borc > 0 ? '<button class="sil" aria-label="Ode" style="color:var(--tam)">💰</button>' : '')+
+        '<button class="sil" aria-label="Sil">🗑️</button>';
+      li.querySelector(".orta").addEventListener("click", ()=>{
+        duzenlenenKart = k;
+        $("#kart-ad").value = k.ad||"";
+        $("#kart-gun").value = k.gun||"";
+        $("#kart-borc").value = borc||"";
+        $("#btn-kart-ekle").textContent = "✏️ Güncelle";
+        $("#btn-kart-vazgec").classList.remove("gizli");
+        window.scrollTo({top:0, behavior:"smooth"});
+      });
+      const odeBtn = li.querySelector('[aria-label="Ode"]');
+      if(odeBtn) odeBtn.addEventListener("click", async ()=>{
+        const ham = prompt(k.ad+" kartına ne kadar ödedin? (borç: "+paraFmt(borc)+")");
+        if(ham === null) return;
+        const x = sayi(ham);
+        if(!(x > 0)){ toast("Geçerli bir tutar yaz kanka"); return; }
+        const yeni2 = Math.max(0, borc - x);
+        try{
+          await kokRef().collection("kartlar").doc(k.id).update({borc: yeni2});
+          toast(yeni2 === 0 ? "Kart borcu SIFIRLANDI 🎉 Helal!" : paraFmt(x)+" işlendi, kalan "+paraFmt(yeni2));
+        }catch(e){ hataGoster(e); }
+      });
+      li.querySelector('[aria-label="Sil"]').addEventListener("click", ()=>{
+        if(!confirm(k.ad+" kartı silinsin mi?")) return;
+        kokRef().collection("kartlar").doc(k.id).delete().catch(hataGoster);
+      });
+      ul.appendChild(li);
+    });
+  }
+  /* ⏰ Ana ekran uyarısı: 2 gün içinde son ödemesi olan borçlu kart */
+  const uy = $("#kart-uyari");
+  if(uy){
+    const yakin = kartlar.filter(k=> (Number(k.borc)||0) > 0 && kartGunKalan(k.gun) <= 2);
+    if(yakin.length){
+      const enYakin = yakin[0];
+      const g = kartGunKalan(enYakin.gun);
+      uy.innerHTML = "💳 <b>"+String(enYakin.ad||"Kart").replace(/</g,"&lt;")+"</b> kartının son ödemesi" +
+        (g === 0 ? " <b style='color:var(--gelmedi)'>BUGÜN!</b>" : "ne <b>"+g+" gün</b> kaldı!") +
+        (yakin.length > 1 ? " (+"+(yakin.length-1)+" kart daha)" : "") + " — dokun ›";
+      uy.classList.remove("gizli");
+    }else uy.classList.add("gizli");
+  }
+}
 function borcKalan(b){ return Math.max(0, (Number(b.tutar)||0) - (Number(b.odenen)||0)); }
 function vadeEtiket(b, bugunId){
   if(b.odendi || !b.vade) return "";
@@ -2823,14 +2980,30 @@ function masrafCiz(){
       '<div class="orta"><div class="baslik">'+(m.aciklama||"Masraf")+(m.odendi?" ✔ ödendi":"")+'</div>'+
       '<div class="alt-yazi">'+t.getDate()+' '+AYLAR[t.getMonth()]+'</div></div>'+
       '<div class="tutar">'+paraFmt(m.tutar)+'</div>'+
+      (m.fisli ? '<button class="sil" aria-label="Fis" style="color:var(--sari)">🧾</button>' : '')+
       '<button class="sil" aria-label="Ödendi" style="color:var(--tam)">'+(m.odendi?"↩️":"✔")+'</button>'+
       '<button class="sil" aria-label="Sil">🗑️</button>';
-    const btnler = li.querySelectorAll(".sil");
+    const fisBtn = li.querySelector('[aria-label="Fis"]');
+    if(fisBtn) fisBtn.addEventListener("click", async ()=>{
+      fisBtn.textContent = "⏳";
+      try{
+        const d = await kokRef().collection("fisler").doc(m.id).get();
+        fisBtn.textContent = "🧾";
+        const f = d.exists ? d.data().veri : null;
+        if(!f){ toast("Fiş fotoğrafı bulunamadı"); return; }
+        geriKaydet();
+        const b = $("#foto-buyuk");
+        b.querySelector("img").src = f;
+        b.style.display = "flex";
+      }catch(e){ fisBtn.textContent = "🧾"; toast("Fiş yüklenemedi, internete bak"); }
+    });
+    const btnler = li.querySelectorAll('[aria-label="Ödendi"], [aria-label="Sil"]');
     btnler[0].addEventListener("click", ()=>{
       kokRef().collection("masraflar").doc(m.id).update({odendi: !m.odendi})
         .then(()=> toast(m.odendi ? "Masraf tekrar açıldı" : "Masraf ödendi olarak işaretlendi ✔")).catch(hataGoster);
     });
     btnler[1].addEventListener("click", async ()=>{
+      if(m.fisli) kokRef().collection("fisler").doc(m.id).delete().catch(()=>{});
       const kopya = {...m}; delete kopya.id;
       try{
         await kokRef().collection("masraflar").doc(m.id).delete();
@@ -3863,7 +4036,7 @@ function gunPaylasMetni(){
   const tarihYazi = t.getDate()+" "+AYLAR[t.getMonth()]+" "+GUNLER[t.getDay()];
   const durumAd = {tam:"Tam yevmiye ✅", yarim:"Yarım yevmiye 🌗", gelmedi:"Gelmedim 🚫", izin:"İzinli 🏖️", saatlik:"Saatlik çalışma ⏱️"};
   const parcalar = [tarihYazi, durumAd[modalDurum] || modalDurum];
-  const mesai = sayi($("#gun-mesai").value);
+  const mesai = sayi($("#mesai-saat").value);
   if(mesai > 0) parcalar.push("+ "+mesai+" saat mesai");
   const arti = sayi($("#gun-arti").value);
   if(arti > 0) parcalar.push("+ "+arti+" gün içi artı");
@@ -3988,7 +4161,11 @@ function kimlikOzetCiz(){
   const el = $("#kimlik-ozet"); if(!el) return;
   const i = tumIstatistik || {};
   const kod = kimlikKodu(kullanici && kullanici.uid);
-  const ad = (kullanici && kullanici.displayName) || "—";
+  const ad = (kullanici && kullanici.displayName) || "İsimsiz Usta";
+  if(!(i.gunToplam >= 0)){
+    el.innerHTML = "🪪 Kimlik No: <b>"+kod+"</b><br>İstatistikler için önce Ana ekranı bir aç, sonra buraya dön.";
+    return;
+  }
   let kidem = "";
   if(ayarlar.iseGiris){
     const y = (Date.now() - new Date(ayarlar.iseGiris+"T12:00:00").getTime()) / (365.25*86400000);
@@ -4066,6 +4243,114 @@ async function kimlikKartOlustur(){
       toast("Karnen indirildi 🪪 Galeriden paylaşabilirsin");
     }, "image/png");
   }catch(e){ hataGoster(e); }
+}
+
+/* ---------- 📐 Su Terazisi ---------- */
+let teraziAcik = false;
+function teraziCiz(beta, gamma){
+  const c = $("#terazi-cnv"); if(!c) return;
+  const x = c.getContext("2d");
+  const M = 130, R = 110;
+  x.clearRect(0,0,260,260);
+  const stil = getComputedStyle(document.body);
+  /* Daire + hedef halkaları */
+  x.strokeStyle = (stil.getPropertyValue("--cizgi")||"#333").trim();
+  x.lineWidth = 2;
+  [R, R*0.55, R*0.18].forEach(r=>{ x.beginPath(); x.arc(M,M,r,0,Math.PI*2); x.stroke(); });
+  x.beginPath(); x.moveTo(M-R,M); x.lineTo(M+R,M); x.moveTo(M,M-R); x.lineTo(M,M+R); x.stroke();
+  /* Baloncuk */
+  const kx = Math.max(-30, Math.min(30, gamma)) / 30 * (R-18);
+  const ky = Math.max(-30, Math.min(30, beta))  / 30 * (R-18);
+  const egik = Math.sqrt(beta*beta + gamma*gamma);
+  const duz = egik <= 0.5;
+  x.beginPath();
+  x.arc(M + kx, M + ky, 16, 0, Math.PI*2);
+  x.fillStyle = duz ? "#35D07F" : (stil.getPropertyValue("--sari")||"#FFC400").trim();
+  x.fill();
+  const dEl = $("#terazi-derece");
+  if(dEl){
+    dEl.textContent = egik.toFixed(1) + "°" + (duz ? " ✓ TERAZİDE" : "");
+    dEl.style.color = duz ? "#35D07F" : "";
+  }
+}
+function teraziDinle(e){
+  if(!teraziAcik) return;
+  teraziCiz(Number(e.beta)||0, Number(e.gamma)||0);
+}
+async function teraziBaslat(){
+  if(!window.DeviceOrientationEvent){ toast("Bu telefonda eğim sensörü yok 😕"); return; }
+  try{
+    if(typeof DeviceOrientationEvent.requestPermission === "function"){
+      const izin = await DeviceOrientationEvent.requestPermission();  /* iPhone izni */
+      if(izin !== "granted"){ toast("Sensör izni verilmedi"); return; }
+    }
+  }catch(e){}
+  teraziAcik = true;
+  $("#terazi-alan").classList.remove("gizli");
+  window.removeEventListener("deviceorientation", teraziDinle);
+  window.addEventListener("deviceorientation", teraziDinle);
+  teraziCiz(0,0);
+}
+
+/* ---------- 🕌 Namaz Vakitleri ---------- */
+const VAKIT_ADLAR = [["Fajr","İmsak"],["Sunrise","Güneş"],["Dhuhr","Öğle"],["Asr","İkindi"],["Maghrib","Akşam"],["Isha","Yatsı"]];
+function vakitSiradaki(timings, simdi){
+  const su = simdi.getHours()*60 + simdi.getMinutes();
+  for(const [k, ad] of VAKIT_ADLAR){
+    if(k === "Sunrise") continue;  /* güneş doğuşu namaz vakti değil */
+    const p = String(timings[k]||"").slice(0,5).split(":");
+    const dk = Number(p[0])*60 + Number(p[1]);
+    if(isFinite(dk) && dk > su) return {ad, kalanDk: dk - su};
+  }
+  return {ad: "İmsak (yarın)", kalanDk: null};
+}
+async function vakitYukle(){
+  const kap = $("#vakit-liste"); if(!kap) return;
+  const il = $("#vakit-il").value || "Istanbul";
+  const bugun = tarihId(new Date());
+  let sakli = null;
+  try{ sakli = JSON.parse(localStorage.getItem("vakit:"+il)||"null"); }catch(e){}
+  let timings = (sakli && sakli.tarih === bugun) ? sakli.t : null;
+  if(!timings){
+    kap.innerHTML = '<div class="bos-mesaj" style="font-size:12.5px">Vakitler alınıyor... 🕌</div>';
+    try{
+      const r = await zamanAsimli(fetch("https://api.aladhan.com/v1/timingsByCity?city="+encodeURIComponent(il)+"&country=Turkey&method=13"), 9000);
+      const j = r && r.ok ? await r.json() : null;
+      if(j && j.data && j.data.timings){
+        timings = j.data.timings;
+        try{ localStorage.setItem("vakit:"+il, JSON.stringify({tarih: bugun, t: timings})); }catch(e){}
+      }
+    }catch(e){}
+    if(!timings && sakli) timings = sakli.t;  /* internetsiz: eski günün saatleri yine fikir verir */
+  }
+  if(!timings){ kap.innerHTML = '<div class="bos-mesaj" style="font-size:12.5px">Vakitlere ulaşılamadı 📡 İnternetini kontrol edip ili tekrar seç.</div>'; return; }
+  const sira = vakitSiradaki(timings, new Date());
+  kap.innerHTML = VAKIT_ADLAR.map(([k, ad])=>{
+    const saat = String(timings[k]||"").slice(0,5);
+    const bu = sira.ad === ad;
+    return '<div style="display:flex;justify-content:space-between'+(bu ? ';color:var(--sari);font-weight:800' : '')+'">'+
+      '<span>'+(bu ? "▶ " : "")+ad+'</span><b>'+saat+'</b></div>';
+  }).join("") +
+  (sira.kalanDk !== null
+    ? '<div style="margin-top:8px;font-size:13px;color:var(--soluk)">Sıradaki: <b style="color:var(--sari)">'+sira.ad+'</b> — '+
+      (sira.kalanDk >= 60 ? Math.floor(sira.kalanDk/60)+" sa "+(sira.kalanDk%60)+" dk" : sira.kalanDk+" dk")+' kaldı</div>'
+    : '<div style="margin-top:8px;font-size:13px;color:var(--soluk)">Bugünün vakitleri tamamlandı 🌙</div>');
+}
+function vakitIlKur(){
+  const sec = $("#vakit-il");
+  if(!sec || sec.childElementCount) return;
+  "Adana,Adıyaman,Afyonkarahisar,Ağrı,Aksaray,Amasya,Ankara,Antalya,Ardahan,Artvin,Aydın,Balıkesir,Bartın,Batman,Bayburt,Bilecik,Bingöl,Bitlis,Bolu,Burdur,Bursa,Çanakkale,Çankırı,Çorum,Denizli,Diyarbakır,Düzce,Edirne,Elazığ,Erzincan,Erzurum,Eskişehir,Gaziantep,Giresun,Gümüşhane,Hakkari,Hatay,Iğdır,Isparta,İstanbul,İzmir,Kahramanmaraş,Karabük,Karaman,Kars,Kastamonu,Kayseri,Kırıkkale,Kırklareli,Kırşehir,Kilis,Kocaeli,Konya,Kütahya,Malatya,Manisa,Mardin,Mersin,Muğla,Muş,Nevşehir,Niğde,Ordu,Osmaniye,Rize,Sakarya,Samsun,Siirt,Sinop,Sivas,Şanlıurfa,Şırnak,Tekirdağ,Tokat,Trabzon,Tunceli,Uşak,Van,Yalova,Yozgat,Zonguldak".split(",").forEach(il=>{
+    const o = document.createElement("option");
+    o.value = il; o.textContent = il;
+    sec.appendChild(o);
+  });
+  let kayitli = "İstanbul";
+  try{ kayitli = localStorage.getItem("vakitIl") || "İstanbul"; }catch(e){}
+  sec.value = kayitli;
+  sec.addEventListener("change", ()=>{
+    try{ localStorage.setItem("vakitIl", sec.value); }catch(e){}
+    vakitYukle();
+  });
 }
 
 /* ---------- 💪 Emek karnesi ---------- */
@@ -4563,20 +4848,6 @@ async function anaYukle(){
         konfetiPatlat();
       }else ydKart.classList.add("gizli");
     }
-    /* 📅 Haftalık özet (Cumartesi/Pazar görünür) */
-    const hKart = $("#hafta-ozet-kart");
-    if(hKart){
-      const haftaSonu = simdi.getDay()===6 || simdi.getDay()===0;
-      if(haftaSonu && haftaGun > 0){
-        $("#hafta-ozet-metin").innerHTML =
-          "Bu hafta <b>"+haftaGun+" yevmiye</b> çalıştın"+
-          (haftaMesai>0 ? ", <b>"+haftaMesai+" saat mesai</b> yaptın" : "")+
-          (gizliMod ? "." : " — hakedişin <b style='color:var(--sari)'>"+paraFmt(haftaHak)+"</b>.")+
-          " Emeğine sağlık! 💪";
-        hKart.dataset.gun = haftaGun; hKart.dataset.mesai = haftaMesai; hKart.dataset.hak = Math.round(haftaHak);
-        hKart.classList.remove("gizli");
-      }else hKart.classList.add("gizli");
-    }
     /* 💸 Maaş günü geri sayımı */
     const mKart = $("#maas-kart");
     if(mKart){
@@ -5031,7 +5302,22 @@ function odemeListesiCiz(){
       '<div class="orta" style="cursor:pointer"><div class="baslik">'+odemeTurEtiket(o.tur)+' <span style="font-size:11px;color:var(--soluk)">✏️ düzenle</span></div>'+
       '<div class="alt-yazi">'+(o.not||"—")+'</div></div>'+
       '<div class="tutar">'+paraFmt(o.tutar)+'</div>'+
+      (o.dekontlu ? '<button class="sil" aria-label="Dekont" style="color:var(--sari)">🏦</button>' : '')+
       '<button class="sil" aria-label="Sil">🗑️</button>';
+    const dkBtn = li.querySelector('[aria-label="Dekont"]');
+    if(dkBtn) dkBtn.addEventListener("click", async ()=>{
+      dkBtn.textContent = "⏳";
+      try{
+        const d3 = await kokRef().collection("dekontlar").doc(o.id).get();
+        dkBtn.textContent = "🏦";
+        const f = d3.exists ? d3.data().veri : null;
+        if(!f){ toast("Dekont bulunamadı"); return; }
+        geriKaydet();
+        const b = $("#foto-buyuk");
+        b.querySelector("img").src = f;
+        b.style.display = "flex";
+      }catch(err){ dkBtn.textContent = "🏦"; toast("Dekont yüklenemedi, internete bak"); }
+    });
     li.querySelector(".orta").addEventListener("click", ()=>{
       if(ayKilitli(o.tarih)){ toast("Bu ay kilitli 🔒 Hesap özetinden açabilirsin"); return; }
       duzenlenenOdeme = o;
@@ -5044,8 +5330,9 @@ function odemeListesiCiz(){
       window.scrollTo({top:0, behavior:"smooth"});
       toast("Düzenleme modu: bilgileri değiştir, Güncelle'ye bas");
     });
-    li.querySelector(".sil").addEventListener("click", async ()=>{
+    li.querySelector('[aria-label="Sil"]').addEventListener("click", async ()=>{
       if(ayKilitli(o.tarih)){ toast("Bu ay kilitli 🔒 Hesap özetinden açabilirsin"); return; }
+      if(o.dekontlu) kokRef().collection("dekontlar").doc(o.id).delete().catch(()=>{});
       const kopya = {...o}; delete kopya.id;
       try{
         await kokRef().collection("odemeler").doc(o.id).delete();
@@ -5734,21 +6021,34 @@ function pdfYazdir(gBas, gSon){
       "</td><td class='orta-h'>"+i.yev+"</td><td class='orta-h'>"+i.arti+"</td><td class='orta-h'>"+i.mesai+
       "</td><td class='sag'>"+(kazancVar ? paraFmt(girdiKazanc(v)) : "")+"</td></tr>";
   }
-  /* Dönem içindeki para girişleri (avans/ödeme) tablosu */
+  /* 💰 Para girişleri: türlere göre AYRI bölümler — avanslar tek tek görünür */
   const donemOdeme = odemeler.filter(o=> o.tarih>=t.bId && o.tarih<=t.sId)
                              .sort((a,b)=> a.tarih<b.tarih?-1:1);
-  let odemeHtml = "";
-  if(donemOdeme.length){
-    let oSat = "";
-    donemOdeme.forEach(o=>{
+  function odemeBolum(baslik, liste2){
+    if(!liste2.length) return "";
+    let oSat = "", araToplam = 0;
+    liste2.forEach((o, idx)=>{
       const d2 = new Date(o.tarih+"T12:00:00");
-      oSat += "<tr><td>"+pad(d2.getDate())+" / "+pad(d2.getMonth()+1)+" / "+d2.getFullYear()+
-        "</td><td>"+odemeTurEtiket(o.tur)+"</td><td>"+(o.not||"")+
+      araToplam += Number(o.tutar)||0;
+      oSat += "<tr><td class='orta-h'>"+(idx+1)+"</td><td>"+pad(d2.getDate())+" / "+pad(d2.getMonth()+1)+" / "+d2.getFullYear()+
+        " — "+GUNLER[d2.getDay()]+"</td><td>"+(o.not||"")+
         "</td><td class='sag'>"+paraFmt(o.tutar)+"</td></tr>";
     });
-    odemeHtml = '<h2 style="font-size:15px;margin-top:22px;border-bottom:3px solid #FFC400;padding-bottom:5px">ALINAN PARALAR (AVANS / ÖDEME)</h2>'+
-      '<table><tr><th>TARİH</th><th>TÜR</th><th>NOT</th><th class="sag">TUTAR</th></tr>'+oSat+
-      '<tr class="ozet"><td colspan="3">TOPLAM ALINAN</td><td class="sag">'+paraFmt(t.alinan)+'</td></tr></table>';
+    return '<h2 style="font-size:15px;margin-top:22px;border-bottom:3px solid #FFC400;padding-bottom:5px">'+baslik+' ('+liste2.length+' adet)</h2>'+
+      '<table><tr><th style="width:34px;text-align:center">#</th><th>TARİH</th><th>NOT</th><th class="sag">TUTAR</th></tr>'+oSat+
+      '<tr class="ozet"><td colspan="3">'+baslik+' TOPLAMI</td><td class="sag">'+paraFmt(araToplam)+'</td></tr></table>';
+  }
+  const tSec = t2 => donemOdeme.filter(o=> (o.tur||"diger")===t2);
+  let odemeHtml =
+    odemeBolum("AVANSLAR", tSec("avans")) +
+    odemeBolum("HAKEDİŞ ÖDEMELERİ", tSec("hakedis")) +
+    odemeBolum("KESİNTİLER", tSec("kesinti")) +
+    odemeBolum("DİĞER ÖDEMELER", tSec("diger"));
+  if(donemOdeme.length){
+    odemeHtml += '<table style="margin-top:10px"><tr class="ozet"><td>DÖNEM TOPLAM ALINAN ('+donemOdeme.length+' işlem)</td><td class="sag">'+paraFmt(t.alinan)+'</td></tr></table>';
+  }else{
+    odemeHtml = '<h2 style="font-size:15px;margin-top:22px;border-bottom:3px solid #FFC400;padding-bottom:5px">ALINAN PARALAR</h2>'+
+      '<p style="font-size:12px;color:#666">Bu dönemde kayıtlı para girişi yok.</p>';
   }
 
   const w = window.open("", "_blank");
@@ -6008,7 +6308,8 @@ document.addEventListener("DOMContentLoaded", ()=>{
     ayarlar:["Ayarlar","Ücret ve hesap"],
     haber:["Gündem","Türkiye ve dünya haberleri"],
     tv:["Canlı TV","Kanalların resmi yayınları"],
-    video:["Video","Ara, uygulamada izle"]
+    video:["Video","Ara, uygulamada izle"],
+    kartlar:["Kredi kartlarım","Borç ve son ödeme takibi"]
   };
   $$("[data-goruntu]").forEach(b=>{
     b.addEventListener("click", ()=>{
@@ -6017,10 +6318,10 @@ document.addEventListener("DOMContentLoaded", ()=>{
       aktifGoruntu = g;
       $("#btn-geri").classList.toggle("gizli", g==="ana");
       $$("[data-goruntu]").forEach(x=>x.classList.toggle("aktif", x===b));
-      ["ana","puantaj","odemeler","masraf","borc","ozet","yil","notlar","rozet","ekip","kisiler","arac","ayarlar","haber","tv","video"].forEach(x=>{
+      ["ana","puantaj","odemeler","masraf","borc","ozet","yil","notlar","rozet","ekip","kisiler","arac","ayarlar","haber","tv","video","kartlar"].forEach(x=>{
         $("#goruntu-"+x).classList.toggle("gizli", x!==g);
       });
-      $("#ay-bar").style.display = (g==="ayarlar"||g==="borc"||g==="ana"||g==="notlar"||g==="rozet"||g==="arac"||g==="haber"||g==="tv"||g==="video") ? "none" : "flex";
+      $("#ay-bar").style.display = (g==="ayarlar"||g==="borc"||g==="ana"||g==="notlar"||g==="rozet"||g==="arac"||g==="haber"||g==="tv"||g==="video"||g==="kartlar") ? "none" : "flex";
       $("#topbar-baslik").firstChild.textContent = basliklar[g][0];
       $("#topbar-alt").textContent = basliklar[g][1];
       $("#btn-bugun").style.display = g==="puantaj" ? "flex" : "none";
@@ -6037,7 +6338,11 @@ document.addEventListener("DOMContentLoaded", ()=>{
       if(g==="rozet") rozetYukle();
       if(g==="ekip"){ ekipYoklamaCiz(); ekipYoklamaYukle(); ekipOzetYukle(); }
       if(g==="kisiler") kisilerYukle();
-      if(g==="arac"){ yillikIzinCiz(); zamAnalizYap(); emekKarneCiz(); kimlikOzetCiz(); kazaListeYukle(); acilFormDoldur(); }
+      if(g!=="arac" && teraziAcik){ teraziAcik = false; window.removeEventListener("deviceorientation", teraziDinle); const ta=$("#terazi-alan"); if(ta) ta.classList.add("gizli"); }
+      if(g==="arac"){
+        [yillikIzinCiz, zamAnalizYap, emekKarneCiz, kimlikOzetCiz, kazaListeYukle, acilFormDoldur, vakitIlKur, vakitYukle]
+          .forEach(f=>{ try{ f(); }catch(e){ console.warn("araç kartı:", e); } });
+      }
       if(g==="haber") haberYukle(false);
       if(g==="tv") tvCiz();
       if(g==="video") videoSayfaAc();
@@ -6129,7 +6434,7 @@ document.addEventListener("DOMContentLoaded", ()=>{
   });
   $("#acil-buyuk").addEventListener("click", ()=>{ $("#acil-buyuk").style.display = "none"; });
   $("#btn-gun-paylas").addEventListener("click", async ()=>{
-    const m = gunPaylasMetni();
+    let m; try{ m = gunPaylasMetni(); }catch(e){ toast("Paylaşım hazırlanamadı"); return; }
     try{
       if(navigator.share) await navigator.share({text: m});
       else{ await navigator.clipboard.writeText(m); toast("Gün kopyalandı, istediğin yere yapıştır 📋"); }
@@ -6142,17 +6447,6 @@ document.addEventListener("DOMContentLoaded", ()=>{
   $("#btn-yildonumu-kapat").addEventListener("click", ()=>{
     $("#yildonumu-kart").classList.add("gizli");
     try{ localStorage.setItem("yildonumu:"+new Date().getFullYear(), "1"); }catch(e){}
-  });
-  $("#btn-hafta-paylas").addEventListener("click", async ()=>{
-    const k = $("#hafta-ozet-kart");
-    let m = "💪 Bu hafta " + (k.dataset.gun||0) + " yevmiye çalıştım";
-    if(Number(k.dataset.mesai)>0) m += ", " + k.dataset.mesai + " saat mesai yaptım";
-    if(!gizliMod && Number(k.dataset.hak)>0) m += " — " + paraFmt(Number(k.dataset.hak)) + " hakediş";
-    m += ". Alın terinin hesabı: Puantaj Defterim 📲";
-    try{
-      if(navigator.share) await navigator.share({text: m});
-      else{ await navigator.clipboard.writeText(m); toast("Kopyalandı, WhatsApp'a yapıştır 📋"); }
-    }catch(e){}
   });
   $("#btn-zam-kibar").addEventListener("click", ()=> zamMesajUret("kibar"));
   $("#btn-zam-net").addEventListener("click", ()=> zamMesajUret("net"));
@@ -6192,6 +6486,59 @@ document.addEventListener("DOMContentLoaded", ()=>{
     }catch(e){}
   });
   $("#borc-uyari").addEventListener("click", ()=> gorunumSec("borc"));
+  $("#kart-uyari").addEventListener("click", ()=> gorunumSec("kartlar"));
+  $("#btn-kart-ekle").addEventListener("click", async ()=>{
+    const ad = $("#kart-ad").value.trim();
+    const gun = Number(sayi($("#kart-gun").value));
+    const borc = sayi($("#kart-borc").value);
+    if(!ad){ toast("Kartın adını yaz kanka (Bonus, Axess...)"); return; }
+    if(!(gun >= 1 && gun <= 31)){ toast("Son ödeme günü 1-31 arası olmalı"); return; }
+    if(/\d{6,}/.test(ad)){ toast("Dur kanka! Kart NUMARASI yazma — sadece takma ad 🔒"); return; }
+    try{
+      if(duzenlenenKart){
+        await kokRef().collection("kartlar").doc(duzenlenenKart.id).update({ad, gun, borc: borc||0});
+        toast("Kart güncellendi ✏️");
+      }else{
+        await kokRef().collection("kartlar").add({ad, gun, borc: borc||0,
+          olusturma: firebase.firestore.FieldValue.serverTimestamp()});
+        toast("Kart eklendi 💳 Son ödeme yaklaşınca haber veririm");
+      }
+      duzenlenenKart = null;
+      $("#kart-ad").value=""; $("#kart-gun").value=""; $("#kart-borc").value="";
+      $("#btn-kart-ekle").textContent = "Kaydet";
+      $("#btn-kart-vazgec").classList.add("gizli");
+    }catch(e){ hataGoster(e); }
+  });
+  $("#btn-terazi-basla").addEventListener("click", teraziBaslat);
+  /* 🎙️ Sesle sorma — destekleyen telefonlarda görünür */
+  const SesTanima = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if(SesTanima){
+    const mikBtn = $("#btn-asistan-mik");
+    mikBtn.classList.remove("gizli");
+    mikBtn.addEventListener("click", ()=>{
+      try{
+        const rec = new SesTanima();
+        rec.lang = "tr-TR";
+        rec.interimResults = false;
+        mikBtn.textContent = "🔴";
+        rec.onresult = e=>{
+          const soz = e.results[0][0].transcript;
+          $("#asistan-soru").value = soz;
+          $("#asistan-gonder").click();
+        };
+        rec.onend = ()=>{ mikBtn.textContent = "🎙️"; };
+        rec.onerror = ()=>{ mikBtn.textContent = "🎙️"; toast("Seni duyamadım, tekrar dene 🎙️"); };
+        rec.start();
+        toast("Dinliyorum, konuş 🎙️");
+      }catch(e){ mikBtn.textContent = "🎙️"; toast("Ses tanıma başlatılamadı"); }
+    });
+  }
+  $("#btn-kart-vazgec").addEventListener("click", ()=>{
+    duzenlenenKart = null;
+    $("#kart-ad").value=""; $("#kart-gun").value=""; $("#kart-borc").value="";
+    $("#btn-kart-ekle").textContent = "Kaydet";
+    $("#btn-kart-vazgec").classList.add("gizli");
+  });
 
   /* Başlangıç rehberi olayları */
   $("#btn-rehber-kapat").addEventListener("click", ()=>{
@@ -6460,6 +6807,14 @@ document.addEventListener("DOMContentLoaded", ()=>{
       return ayarlar.iseGiris
         ? "İzin hesabın Araçlar sayfasında hazır duruyor " + ad + " — kıdemine göre hakkını ve kalanını orada görürsün 🏖️"
         : "İşe giriş tarihini Ayarlar'a girersen yıllık izin hakkını hesaplarım 🏖️";
+    if(ic("kart borc","kart borç","kredi kart")){
+      if(!kartlar.length) return "Kayıtlı kredi kartın yok " + ad + " — takip istersen menüden 💳 Kredi kartlarım'a ekle.";
+      const top = kartlar.reduce((t2,k)=> t2 + (Number(k.borc)||0), 0);
+      const borclu = kartlar.filter(k=> (Number(k.borc)||0) > 0).sort((a,b)=> kartGunKalan(a.gun) - kartGunKalan(b.gun));
+      if(!borclu.length) return "Kart borcun SIFIR " + ad + " 🎉 Böyle devam!";
+      const y = borclu[0];
+      return "Toplam kart borcun: " + paraFmt(top) + "\nEn yakın son ödeme: " + y.ad + " — " + (kartGunKalan(y.gun)===0 ? "BUGÜN!" : kartGunKalan(y.gun)+" gün kaldı") + " 💳";
+    }
     if(ic("kan grubu","kan grubum")){
       const a2 = ayarlar.acil||{};
       return a2.kan
@@ -6650,7 +7005,7 @@ document.addEventListener("DOMContentLoaded", ()=>{
   });
 
   /* Neler yeni kartı */
-  const YENILIK_SURUM = "v62";
+  const YENILIK_SURUM = "v68";
   try{ $("#cekmece-surum").textContent = "Puantaj Defterim " + YENILIK_SURUM; }catch(e){}
   try{
     if(localStorage.getItem("yenilik")!==YENILIK_SURUM) $("#yenilik-kart").classList.remove("gizli");
@@ -6849,15 +7204,37 @@ document.addEventListener("DOMContentLoaded", ()=>{
     if(!tutar || tutar<=0){ toast("Tutarı yaz kanka"); return; }
     if(ayKilitli(tarih)){ toast("O ay kilitli 🔒"); return; }
     try{
-      await kokRef().collection("masraflar").add({
+      const veri = {
         tarih, tutar,
         aciklama: $("#masraf-aciklama").value.trim(),
         odendi: false,
         olusturma: firebase.firestore.FieldValue.serverTimestamp()
-      });
+      };
+      if(masrafFoto) veri.fisli = true;   /* listeye sadece bayrak; fotoğraf ayrı bölmede */
+      const ref = await kokRef().collection("masraflar").add(veri);
+      if(masrafFoto){
+        try{ await kokRef().collection("fisler").doc(ref.id).set({veri: masrafFoto}); }
+        catch(fe){ toast("Masraf kaydedildi ama fiş fotoğrafı yüklenemedi 😕"); }
+      }
+      masrafFoto = null;
+      $("#masraf-foto-onizle").classList.add("gizli");
       $("#masraf-tutar").value=""; $("#masraf-aciklama").value="";
       toast("Masraf kaydedildi 🧾 Hesabına alacak olarak eklendi");
     }catch(e){ hataGoster(e); }
+  });
+  let masrafFoto = null;
+  $("#btn-masraf-foto").addEventListener("click", ()=> $("#masraf-foto-sec").click());
+  $("#masraf-foto-sec").addEventListener("change", async e=>{
+    const dosya = e.target.files && e.target.files[0];
+    e.target.value = "";
+    if(!dosya) return;
+    toast("Fiş küçültülüyor...");
+    try{
+      masrafFoto = await fotoSikistir(dosya);
+      const im = $("#masraf-foto-onizle");
+      im.src = masrafFoto; im.classList.remove("gizli");
+      toast("Fiş hazır, Kaydet'e bas 🧾");
+    }catch(err){ toast("Fotoğraf eklenemedi, başka dene"); }
   });
 
   /* ---- Ekip ---- */
@@ -7278,6 +7655,20 @@ document.addEventListener("DOMContentLoaded", ()=>{
     $("#btn-odeme-vazgec").classList.add("gizli");
   };
   $("#btn-odeme-vazgec").addEventListener("click", ()=>{ odemeFormSifirla(); toast("Düzenleme iptal edildi"); });
+  let dekontFoto = null;
+  $("#btn-dekont-foto").addEventListener("click", ()=> $("#dekont-foto-sec").click());
+  $("#dekont-foto-sec").addEventListener("change", async e=>{
+    const dosya = e.target.files && e.target.files[0];
+    e.target.value = "";
+    if(!dosya) return;
+    toast("Dekont küçültülüyor...");
+    try{
+      dekontFoto = await fotoSikistir(dosya);
+      const im = $("#dekont-onizle");
+      im.src = dekontFoto; im.classList.remove("gizli");
+      toast("Dekont hazır, Kaydet'e bas 🏦");
+    }catch(err){ toast("Fotoğraf eklenemedi, başka dene"); }
+  });
   $("#btn-odeme-ekle").addEventListener("click", async ()=>{
     const tarih = $("#odeme-tarih").value;
     const tutar = sayi($("#odeme-tutar").value);
@@ -7295,12 +7686,20 @@ document.addEventListener("DOMContentLoaded", ()=>{
         toast("Ödeme güncellendi ✏️");
         return;
       }
-      await kokRef().collection("odemeler").add({
+      const oVeri = {
         tarih, tutar,
         tur: $("#odeme-tur").value,
         not: $("#odeme-not").value.trim(),
         olusturma: firebase.firestore.FieldValue.serverTimestamp()
-      });
+      };
+      if(dekontFoto) oVeri.dekontlu = true;
+      const oRef = await kokRef().collection("odemeler").add(oVeri);
+      if(dekontFoto){
+        try{ await kokRef().collection("dekontlar").doc(oRef.id).set({veri: dekontFoto}); }
+        catch(fe){ toast("Ödeme kaydedildi ama dekont yüklenemedi 😕"); }
+      }
+      dekontFoto = null;
+      const dOn = $("#dekont-onizle"); if(dOn) dOn.classList.add("gizli");
       if($("#odeme-cuzdan").checked){
         await kokRef().collection("cuzdan").add({
           tarih, tutar, tip:"giris",
