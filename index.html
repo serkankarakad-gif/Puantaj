@@ -837,6 +837,12 @@ nav.cekmece{
       <div class="kart gizli" id="yenilik-kart" style="border-color:var(--sari)">
         <h2>🎁 Neler yeni?</h2>
         <ul style="padding-left:18px;font-size:13.5px;line-height:1.9">
+          <li><b>💡 Bunu biliyor muydun:</b> Takvimde bir güne PARMAK BASILI TUT → modal açmadan anında tam yevmiye işlenir! (Artık kaydırırken yanlışlıkla tetiklenmiyor)</li>
+          <li><b>🎨 Ödemeler renklendi:</b> Avans sarı, hakediş yeşil, kesinti kırmızı — liste bir bakışta okunuyor</li>
+          <li><b>📺 2 yeni kanal:</b> TGRT Haber ve Haber Global listeye katıldı — ikisi de uygulamanın içinde, doğrulanmış resmî yayınlar. Kanal sayısı 6 oldu</li>
+          <li><b>📺 TV kendini iyileştiriyor:</b> TRT Haber'in bayatlayan yayını tazelendi; artık bir kanalın yayını değişirse uygulama arkada yenisini bulup kendiliğinden geçiyor. "Yayın aranıyor" da artık sonsuza kadar dönmüyor</li>
+          <li><b>📷 Kaza kaydına fotoğraf:</b> Olay yeri/yara fotoğrafını kayda iliştir — delilin kralı. Listede 📷 ile büyük görüntüle</li>
+          <li><b>🏗️ Şantiye kırılımı:</b> Hesap özeti → tüm zamanlarda hangi şantiyeden ne kazandığını gör: "Konut 34.000 · Villa 18.000"</li>
           <li><b>🚑 İş Kazası Defteri:</b> Kaza olursa O GÜN kaydet: ne oldu, tanıklar, rapor, SGK durumu. Tek tuşla düzgün tutanak metni üret, paylaş — SGK ve tazminat sürecinde olay günü tutulan kayıt altındır. Defter sadece sende, sağlık bilgin kimseyle paylaşılmaz</li>
           <li><b>🆘 Acil Durum Kartı:</b> Kan grubu + acil numara + alerji bilgisi; tek tuşla TAM EKRAN kırmızı kart — şantiyede kaza anında arkadaşların telefonundan baksın, hayat kurtarır</li>
           <li><b>🪪 İşçi Kimlik Kartın:</b> Araçlar'da — sana özel kimlik numaralı, gerçek kayıtlarından üretilen karne görseli. İş görüşmesinde göster: "267 yevmiye, 84 saat mesai, 3 yıl kıdem" — rakamlar lafdan iyi konuşur. Sadece SEN paylaşırsan görülür, kimse senin hakkında bir şey yazamaz</li>
@@ -1183,6 +1189,7 @@ nav.cekmece{
         <h2>♾️ Tüm zamanlar</h2>
         <div class="ozet-grid" id="genel-grid"><div class="bos-mesaj">Yükleniyor...</div></div>
         <div id="zam-gecmisi" style="font-size:13.5px;color:var(--soluk);line-height:1.7;margin-top:12px"></div>
+        <div id="santiye-kirilim" style="font-size:13.5px;color:var(--soluk);line-height:1.7;margin-top:10px"></div>
         <div id="gg-kart" class="gizli" style="margin-top:16px">
           <h2 style="font-size:15px">📊 Hakediş / Alınan — son 12 ay</h2>
           <canvas id="gg-grafik" style="width:100%;height:195px;display:block"></canvas>
@@ -1489,6 +1496,12 @@ nav.cekmece{
             <option value="hayir">Hayır, bildirilmedi</option>
           </select>
         </div>
+        <div class="alan">
+          <label>Fotoğraf (isteğe bağlı — olay yeri, yara, kırık kalas... delilin kralıdır)</label>
+          <input type="file" id="kaza-foto-sec" accept="image/*" style="display:none">
+          <button class="eksik-cip" id="btn-kaza-foto">📷 Fotoğraf ekle</button>
+          <img id="kaza-foto-onizle" class="gizli" style="width:100%;border-radius:12px;margin-top:8px;border:1.5px solid var(--cizgi)" alt="">
+        </div>
         <button class="btn btn-sari" id="btn-kaza-kaydet">🚑 Kaydı tut</button>
         <ul class="liste" id="liste-kaza" style="margin-top:14px"></ul>
         <p style="font-size:11.5px;color:var(--soluk);margin-top:10px;line-height:1.6">
@@ -1734,7 +1747,7 @@ nav.cekmece{
         <p style="font-size:13px;color:var(--soluk);margin-bottom:12px">Hata mı gördün, fikrin mi var? Direkt geliştiriciye ulaş:</p>
         <a class="btn btn-cizgili" style="display:block;text-align:center;text-decoration:none;margin-bottom:10px" href="https://wa.me/905051252339?text=Puantaj%20Defterim%20hakkında:" target="_blank">💬 WhatsApp'tan yaz</a>
         <a class="btn btn-cizgili" style="display:block;text-align:center;text-decoration:none" href="tel:05051252339">📞 0505 125 23 39</a>
-        <p style="font-size:11px;color:var(--soluk);margin-top:12px;text-align:center">Sürüm: v58 · Serkan Karakaş</p>
+        <p style="font-size:11px;color:var(--soluk);margin-top:12px;text-align:center">Sürüm: v62 · Serkan Karakaş</p>
       </div>
       <div class="kart">
         <h2>🔒 PIN kilidi</h2>
@@ -3091,7 +3104,7 @@ async function kisiVeriYukle(){
       const t = new Date(o.tarih+"T12:00:00");
       const li = document.createElement("li");
       li.innerHTML =
-        '<div class="rozet" style="background:var(--asfalt2)">'+t.getDate()+'<small>'+AYLAR[t.getMonth()].slice(0,3)+'</small></div>'+
+        '<div class="rozet" style="background:'+odemeTurRenk(o.tur)+(o.tur==="avans" ? ";color:#111" : "")+'">'+t.getDate()+'<small>'+AYLAR[t.getMonth()].slice(0,3)+'</small></div>'+
         '<div class="orta"><div class="baslik">'+odemeTurEtiket(o.tur)+'</div>'+
         '<div class="alt-yazi">'+(o.not||"—")+'</div></div>'+
         '<div class="tutar">'+paraFmt(o.tutar)+'</div>';
@@ -3359,7 +3372,9 @@ const TV_KANALLAR = [
   {grup:"HABER KANALLARI", liste:[
     {ad:"Habertürk", kisa:"HT",    renk:"#0D47A1", url:"https://www.haberturk.com/canliyayin", ytId:"UCn6dNfiRE_Xunu7iMyvD7AA", ytVid:"RNVNlJSUFoE"},
     {ad:"CNN Türk",  kisa:"CNN",   renk:"#B71C1C", url:"https://www.cnnturk.com/canli-yayin",  ytId:"UCV6zcRug6Hqp1UX_FdyUeBg", ytVid:"6N8_r2uwLEc"},
-    {ad:"TRT Haber", kisa:"TRT H", renk:"#1565C0", url:"https://www.trthaber.com/canli-yayin", ytLive:"https://www.youtube.com/user/trthaber/live", ytVid:"TNax9QRxK40"}
+    {ad:"TRT Haber", kisa:"TRT H", renk:"#1565C0", url:"https://www.trthaber.com/canli-yayin", ytLive:"https://www.youtube.com/user/trthaber/live", ytVid:"vjNZVmImcxg"},
+    {ad:"TGRT Haber", kisa:"TGRT", renk:"#00838F", url:"https://www.tgrthaber.com/canli-yayin", ytVid:"0SAUIyvNA5s"},
+    {ad:"Haber Global", kisa:"HG", renk:"#5E35B1", url:"https://haberglobal.com/canli-yayin", ytId:"UCtc-a9ZUIg0_5HpsPxEO7Qg", ytVid:"EqoCJ8BPxtE"}
   ]},
   {grup:"SPOR", liste:[
     {ad:"A Spor",    kisa:"A S",   renk:"#1B5E20", url:"https://www.aspor.com.tr/webtv/canli-yayin", ytId:"UCJElRTCNEmLemgirqvsW63Q"}
@@ -3382,9 +3397,9 @@ async function koprudenGetir(hedefUrl){
   );
   for(const url of koprular){
     try{
-      const r = await fetch(url);
-      if(!r.ok) continue;
-      const metin = await r.text();
+      const r = await zamanAsimli(fetch(url), 8000);  /* 8 sn cevap yoksa sıradakine geç */
+      if(!r || !r.ok) continue;
+      const metin = await zamanAsimli(r.text(), 6000);
       if(metin && metin.length > 200) return metin;
     }catch(e){}
   }
@@ -3554,9 +3569,22 @@ async function tvOynat(k){
   $("#tv-oynatici").classList.remove("gizli");
   /* Doğrulanmış 7/24 yayın kimliği varsa köprü beklemeden ANINDA oynat */
   let vid = k.ytVid || null;
+  try{
+    /* Daha önce arkaplanda bulunmuş daha taze kimlik varsa onu tercih et */
+    const c2 = JSON.parse(localStorage.getItem("tvvid:"+k.ad)||"null");
+    if(c2 && c2.v) vid = c2.v;
+  }catch(e){}
   if(!vid){
     vid = await tvVideoBul(k);
     if(tvAcikKanal !== k || $("#tv-oynatici").classList.contains("gizli")) return; /* bu arada kapatıldı */
+  }else{
+    /* 🔄 Kendi kendini iyileştirme: yayın açıkken arkada taze kimliği ara,
+       farklıysa (eski gizlenmiş/bitmiş demektir) sessizce yenisine geç */
+    tvVideoBul(k).then(taze=>{
+      if(taze && taze !== vid && tvAcikKanal === k && !$("#tv-oynatici").classList.contains("gizli")){
+        $("#tvo-iframe").src = "https://www.youtube.com/embed/"+taze+"?autoplay=1&playsinline=1";
+      }
+    }).catch(()=>{});
   }
   let src = null;
   if(vid) src = "https://www.youtube.com/embed/"+vid+"?autoplay=1&playsinline=1";
@@ -3894,6 +3922,7 @@ function kazaTutanakMetni(k){
     (k.tanik ? "Tanıklar: " + k.tanik + "\n" : "") +
     (k.rapor ? "Hastane/rapor: " + k.rapor + "\n" : "") +
     "Durum: " + (sgkYazi[k.sgk]||"-") + "\n" +
+    (k.foto ? "Fotoğraf: kayıtta mevcut 📷\n" : "") +
     (kt ? "Bu kayıt " + kt.getDate() + " " + AYLAR[kt.getMonth()] + " " + kt.getFullYear() + " tarihinde işçi tarafından tutulmuştur.\n" : "") +
     "— Puantaj Defterim kayıt sistemi";
 }
@@ -3915,8 +3944,16 @@ async function kazaListeYukle(){
         '<div class="orta"><div class="baslik">'+String(k.aciklama||"").slice(0,60).replace(/</g,"&lt;")+'</div>'+
         '<div class="alt-yazi">'+(k.tanik ? "Tanık: "+String(k.tanik).replace(/</g,"&lt;") : "Tanık yazılmamış")+
         (k.sgk==="hayir" ? ' · <b style="color:var(--gelmedi)">SGK bildirilmedi!</b>' : '')+'</div></div>'+
+        (k.foto ? '<button class="sil" aria-label="KazaFoto" style="color:var(--sari)">📷</button>' : '')+
         '<button class="sil" aria-label="Tutanak" style="color:var(--mesai)">📄</button>'+
         '<button class="sil" aria-label="Sil">🗑️</button>';
+      const fBtn = li.querySelector('[aria-label="KazaFoto"]');
+      if(fBtn) fBtn.addEventListener("click", ()=>{
+        geriKaydet();
+        const b = $("#foto-buyuk");
+        b.querySelector("img").src = k.foto;
+        b.style.display = "flex";
+      });
       li.querySelector('[aria-label="Tutanak"]').addEventListener("click", async ()=>{
         const m = kazaTutanakMetni(k);
         try{
@@ -4902,11 +4939,15 @@ function takvimCiz(){
       el.appendChild(f);
     }
     /* Kısa dokunuş: modal aç. Basılı tut: anında tam yevmiye işle. */
-    let lpZaman=null, lpAtesledi=false;
+    let lpZaman=null, lpAtesledi=false, lpX=0, lpY=0;
     el.addEventListener("contextmenu", e=> e.preventDefault());
-    el.addEventListener("pointerdown", ()=>{
-      lpAtesledi=false;
+    el.addEventListener("pointerdown", e=>{
+      lpAtesledi=false; lpX=e.clientX; lpY=e.clientY;
       lpZaman=setTimeout(()=>{ lpAtesledi=true; hizliIsaretle(id); }, 550);
+    });
+    el.addEventListener("pointermove", e=>{
+      /* Takvimi kaydırırken yanlışlıkla gün işlenmesin */
+      if(Math.abs(e.clientX-lpX) > 12 || Math.abs(e.clientY-lpY) > 12) clearTimeout(lpZaman);
     });
     ["pointerup","pointerleave","pointercancel"].forEach(ev=>
       el.addEventListener(ev, ()=> clearTimeout(lpZaman)));
@@ -4963,6 +5004,9 @@ function gunListesiCiz(){
   });
 }
 
+function odemeTurRenk(t){
+  return t==="avans" ? "var(--sari)" : t==="hakedis" ? "var(--tam)" : t==="kesinti" ? "var(--gelmedi)" : "var(--mesai)";
+}
 function odemeTurEtiket(t){
   return t==="avans" ? "Avans" : t==="hakedis" ? "Hakediş" : t==="kesinti" ? "Kesinti" : "Diğer";
 }
@@ -4983,7 +5027,7 @@ function odemeListesiCiz(){
     const t = new Date(o.tarih+"T12:00:00");
     const li = document.createElement("li");
     li.innerHTML =
-      '<div class="rozet" style="background:var(--asfalt2)">'+t.getDate()+'<small>'+AYLAR[t.getMonth()].slice(0,3)+'</small></div>'+
+      '<div class="rozet" style="background:'+odemeTurRenk(o.tur)+(o.tur==="avans" ? ";color:#111" : "")+'">'+t.getDate()+'<small>'+AYLAR[t.getMonth()].slice(0,3)+'</small></div>'+
       '<div class="orta" style="cursor:pointer"><div class="baslik">'+odemeTurEtiket(o.tur)+' <span style="font-size:11px;color:var(--soluk)">✏️ düzenle</span></div>'+
       '<div class="alt-yazi">'+(o.not||"—")+'</div></div>'+
       '<div class="tutar">'+paraFmt(o.tutar)+'</div>'+
@@ -5208,6 +5252,7 @@ async function ozetDetayYukle(){
     let gun=0, mesai=0, alinan=0, hakedis=0;
     const ayHak = {}; // "2026-07" -> hakediş
     const yevGecmis = []; // {id:"2026-07-15", yev:2500} — zam geçmişi için
+    const santiyeHak = {}; // "Konut projesi" -> hakediş
     gSnap.forEach(doc=>{
       const v = doc.data(), ayKey = doc.id.slice(0,7);
       gun += girdiGun(v);
@@ -5216,6 +5261,8 @@ async function ozetDetayYukle(){
       hakedis += h;
       const uy = Number(v.uYevmiye)||0;
       if(uy>0) yevGecmis.push({id:doc.id, yev:uy});
+      const sAd = String(v.santiye||"").trim();
+      if(sAd && h>0) santiyeHak[sAd] = (santiyeHak[sAd]||0) + h;
       ayHak[ayKey] = (ayHak[ayKey]||0) + h;
     });
     const ayAlinan = {}; // "2026-07" -> alınan
@@ -5253,6 +5300,16 @@ async function ozetDetayYukle(){
           + (oran>0 ? " · başladığından beri <b>%"+oran+" zam</b> almışsın 💪"
              : oran<0 ? " · başladığından beri %"+Math.abs(oran)+" düşmüş görünüyor" : "");
       }else{ zamEl.textContent = ""; }
+    }
+    /* 🏗️ Şantiye kırılımı: nerede ne kazandın */
+    const skEl = $("#santiye-kirilim");
+    if(skEl){
+      const sirali = Object.keys(santiyeHak).sort((a,b)=> santiyeHak[b]-santiyeHak[a]);
+      if(sirali.length >= 2){
+        skEl.innerHTML = "🏗️ <b>Şantiye kırılımı:</b> " +
+          sirali.slice(0,5).map(ad2=> ad2.replace(/</g,"&lt;")+" <b>"+paraFmt(santiyeHak[ad2])+"</b>").join(" · ") +
+          (sirali.length>5 ? " · +"+(sirali.length-5)+" şantiye" : "");
+      }else skEl.textContent = "";
     }
     ggGrafikCiz(ayHak, ayAlinan);
 
@@ -6014,20 +6071,38 @@ document.addEventListener("DOMContentLoaded", ()=>{
   $("#btn-saglik").addEventListener("click", saglikTesti);
   insaatHesaplaKur();
   $("#btn-kimlik-kart").addEventListener("click", kimlikKartOlustur);
+  let kazaFoto = null;
+  $("#btn-kaza-foto").addEventListener("click", ()=> $("#kaza-foto-sec").click());
+  $("#kaza-foto-sec").addEventListener("change", async e=>{
+    const dosya = e.target.files && e.target.files[0];
+    e.target.value = "";
+    if(!dosya) return;
+    toast("Fotoğraf küçültülüyor...");
+    try{
+      kazaFoto = await fotoSikistir(dosya);
+      const im = $("#kaza-foto-onizle");
+      im.src = kazaFoto; im.classList.remove("gizli");
+      toast("Fotoğraf hazır, Kaydı tut'a bas 📷");
+    }catch(err){ toast("Fotoğraf eklenemedi, başka dene"); }
+  });
   $("#btn-kaza-kaydet").addEventListener("click", async ()=>{
     const tarih = $("#kaza-tarih").value;
     const aciklama = $("#kaza-aciklama").value.trim();
     if(!tarih){ toast("Kaza tarihini seç kanka"); return; }
     if(!aciklama){ toast("Ne olduğunu kısaca yaz — ileride en önemli satır bu"); return; }
     try{
-      await kokRef().collection("kazalar").add({
+      const veri = {
         tarih, aciklama,
         tanik: $("#kaza-tanik").value.trim(),
         rapor: $("#kaza-rapor").value.trim(),
         sgk: $("#kaza-sgk").value,
         kayitZamani: Date.now(),
         olusturma: firebase.firestore.FieldValue.serverTimestamp()
-      });
+      };
+      if(kazaFoto) veri.foto = kazaFoto;
+      await kokRef().collection("kazalar").add(veri);
+      kazaFoto = null;
+      $("#kaza-foto-onizle").classList.add("gizli");
       $("#kaza-aciklama").value=""; $("#kaza-tanik").value=""; $("#kaza-rapor").value="";
       toast("Kayıt tutuldu 🚑 Geçmiş olsun — 📄 ile tutanak paylaşabilirsin");
       kazaListeYukle();
@@ -6385,6 +6460,14 @@ document.addEventListener("DOMContentLoaded", ()=>{
       return ayarlar.iseGiris
         ? "İzin hesabın Araçlar sayfasında hazır duruyor " + ad + " — kıdemine göre hakkını ve kalanını orada görürsün 🏖️"
         : "İşe giriş tarihini Ayarlar'a girersen yıllık izin hakkını hesaplarım 🏖️";
+    if(ic("kan grubu","kan grubum")){
+      const a2 = ayarlar.acil||{};
+      return a2.kan
+        ? "Kan grubun kayıtlı: <b>"+a2.kan+"</b> 🩸 Acil kartın Araçlar'da, tam ekran gösterebilirsin."
+        : "Kan grubun kayıtlı değil " + ad + " — Araçlar → Acil Durum Kartı'na yaz, şantiyede hayat kurtarır 🆘";
+    }
+    if(ic("kaza","iş kazası","is kazasi"))
+      return "Geçmiş olsun " + ad + " 🙏 Araçlar → İş Kazası Defteri'ne hemen kaydet: ne oldu, tanıklar, rapor. Unutma: kazayı SGK'ya bildirmek İŞVERENİN görevi (3 iş günü) — bildirmezse ALO 170'i arayabilirsin.";
     if(ic("borç","borc","kime para","alacaklarım","alacaklarim")){
       const acikV = borclar.filter(b=> b.yon==="verdim" && !b.odendi);
       const acikA = borclar.filter(b=> b.yon==="aldim" && !b.odendi);
@@ -6567,7 +6650,7 @@ document.addEventListener("DOMContentLoaded", ()=>{
   });
 
   /* Neler yeni kartı */
-  const YENILIK_SURUM = "v58";
+  const YENILIK_SURUM = "v62";
   try{ $("#cekmece-surum").textContent = "Puantaj Defterim " + YENILIK_SURUM; }catch(e){}
   try{
     if(localStorage.getItem("yenilik")!==YENILIK_SURUM) $("#yenilik-kart").classList.remove("gizli");
