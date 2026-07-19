@@ -59,6 +59,23 @@ const firebaseConfig = {
 }
 /* 🎨 Temalar — vurgu rengi ve zemin değişir, düzen aynı kalır */
 body[data-tema="mavi"]{   --sari:#4FA8FF; --sari-koyu:#2E8BE6; --vurgu-zemin:#0F2035 }
+body[data-tema="altin"]{  --sari:#F5C84C; --sari-koyu:#D99A1F; --vurgu-zemin:#1A1608;
+  --zemin:#0B0C10; --kart:#14151B; --girdi:#1B1C24; --cizgi:#2C2A22 }
+/* ✨ Altın Vardiya: ışıldayan para, altın gradyanlı düğmeler */
+body[data-tema="altin"] .btn-sari{
+  background:linear-gradient(135deg,#F7D878,#E9B23A 55%,#C8891A);
+  box-shadow:0 4px 18px rgba(233,178,58,.35);
+  color:#1A1204;
+}
+body[data-tema="altin"] #sirket-bakiye, body[data-tema="altin"] .m-para{
+  text-shadow:0 0 22px rgba(245,200,76,.45);
+}
+body[data-tema="altin"] .kart{
+  border:1px solid #2E2817;
+  box-shadow:0 6px 22px rgba(0,0,0,.45);
+}
+body[data-tema="altin"] .rozet{ box-shadow:0 0 0 1px rgba(245,200,76,.15) }
+body[data-tema="altin"] .cekmece .aktif{ background:linear-gradient(90deg,rgba(245,200,76,.16),transparent) }
 body[data-tema="yesil"]{  --sari:#2EE59D; --sari-koyu:#1DC985; --vurgu-zemin:#0E2A1E }
 body[data-tema="turuncu"]{--sari:#FF8A3D; --sari-koyu:#F0762A; --vurgu-zemin:#2E1A0C }
 body[data-tema="amoled"]{
@@ -837,6 +854,7 @@ nav.cekmece{
           <li><b>🕌 NAMAZ VAKİTLERİ:</b> İlini seç (hatırlar), Diyanet usulü 6 vakit + sıradaki vakte geri sayım: "▶ İkindi — 1 sa 12 dk kaldı". İnternetsizken de son vakitler elinde</li>
           <li><b>🎙️ USTA'YA SESLE KONUŞ:</b> Sohbette mikrofona bas, "ne kadar alacağım" de — yazmadan sor, Usta cevaplasın (destekleyen telefonlarda)</li>
           <li><b>💳 KREDİ KARTI TAKİBİ (20. özellik! 🎉):</b> Menüde "Kredi kartlarım" — kartlarının borcunu ve son ödeme gününü takip et, günü yaklaşınca ana ekranda alarm: "Bonus'un son ödemesine 2 gün!" Ödedikçe 💰 ile düş, gecikme faizine tek kuruş kaptırma. Kart numarası İSTEMEZ (güvenlik böyle ister); Usta'ya "kart borcum ne" diye de sorabilirsin</li>
+          <li><b>✨ ALTIN VARDİYA teması:</b> Ayarlar → tema seçicide yeni ✨ nokta — is füme zemin, ışıldayan altın rakamlar, altın gradyanlı düğmeler. O lüks konsept görselinin ruhu, verine tek dokunmadan</li>
           <li><b>🔧 Büyük temizlik:</b> "Günü paylaş" düğmesindeki sessiz arıza giderildi (v56'dan beri çalışmıyordu!), yanlışlıkla çift eklenen hafta özeti ve kıdem hesaplayıcısı tekilleştirildi — kıdem hesaplayıcın zaten Araçlar'da vardı, oradan kullan ⚖️</li>
           <li><b>🏦 Ödemeye dekont fotoğrafı:</b> Banka dekontunu ödemeyle beraber sakla, listede 🏦 ile aç. Delil ailesi 4'lendi: gün 📸 kaza 📷 fiş 🧾 dekont 🏦</li>
           <li><b>📄 PDF raporu güçlendi:</b> Avanslar artık AYRI bölümde tek tek numaralı listeleniyor (tarih + not + tutar + kendi toplamı); hakediş ödemeleri, kesintiler ve diğerleri de kendi bölümlerinde — patron pazarlığında her kuruş belgeli</li>
@@ -1792,6 +1810,7 @@ nav.cekmece{
           <button data-tema="mavi" style="background:#4FA8FF" aria-label="Gece mavisi"></button>
           <button data-tema="yesil" style="background:#2EE59D" aria-label="Çimen yeşili"></button>
           <button data-tema="turuncu" style="background:#FF8A3D" aria-label="Baret turuncusu"></button>
+          <button data-tema="altin" style="background:linear-gradient(135deg,#F7D878,#C8891A)" aria-label="Altın vardiya">✨</button>
           <button data-tema="amoled" style="background:#000;border:3px solid #333" aria-label="Tam siyah">🌑</button>
         </div>
       </div>
@@ -1814,7 +1833,7 @@ nav.cekmece{
         <p style="font-size:13px;color:var(--soluk);margin-bottom:12px">Hata mı gördün, fikrin mi var? Direkt geliştiriciye ulaş:</p>
         <a class="btn btn-cizgili" style="display:block;text-align:center;text-decoration:none;margin-bottom:10px" href="https://wa.me/905051252339?text=Puantaj%20Defterim%20hakkında:" target="_blank">💬 WhatsApp'tan yaz</a>
         <a class="btn btn-cizgili" style="display:block;text-align:center;text-decoration:none" href="tel:05051252339">📞 0505 125 23 39</a>
-        <p style="font-size:11px;color:var(--soluk);margin-top:12px;text-align:center">Sürüm: v68 · Serkan Karakaş</p>
+        <p style="font-size:11px;color:var(--soluk);margin-top:12px;text-align:center">Sürüm: v69 · Serkan Karakaş</p>
       </div>
       <div class="kart">
         <h2>🔒 PIN kilidi</h2>
@@ -7005,7 +7024,7 @@ document.addEventListener("DOMContentLoaded", ()=>{
   });
 
   /* Neler yeni kartı */
-  const YENILIK_SURUM = "v68";
+  const YENILIK_SURUM = "v69";
   try{ $("#cekmece-surum").textContent = "Puantaj Defterim " + YENILIK_SURUM; }catch(e){}
   try{
     if(localStorage.getItem("yenilik")!==YENILIK_SURUM) $("#yenilik-kart").classList.remove("gizli");
