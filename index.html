@@ -87,6 +87,26 @@ body[data-tema="amoled"]{
 }
 #tema-secim button.secili{border-color:#fff;transform:scale(1.1)}
 .cekmece .menu-grup{font-size:10.5px;letter-spacing:1.5px;font-weight:800;color:var(--soluk);padding:12px 16px 4px;list-style:none}
+#asistan{bottom:88px !important}
+#asistan-panel{bottom:88px !important}
+/* ---------- 🥇 Poster faz 1: çipler + alt bar ---------- */
+.d-cip{flex:1;background:var(--kart);border:1.5px solid var(--cizgi);border-radius:13px;padding:10px 6px;text-align:center}
+.d-cip .d-etk{font-size:8.5px;letter-spacing:1.5px;color:var(--soluk);font-weight:800}
+.d-cip .d-say{font-family:'Saira Condensed';font-size:24px;font-weight:800;line-height:1.1}
+.d-cip .d-say small{font-size:11px;color:var(--soluk);font-weight:600}
+#alt-bar{position:fixed;left:0;right:0;bottom:0;z-index:7000;display:flex;align-items:flex-end;
+  background:color-mix(in srgb, var(--kart) 92%, transparent);backdrop-filter:blur(10px);
+  border-top:1.5px solid var(--cizgi);padding-bottom:env(safe-area-inset-bottom)}
+#alt-bar button{flex:1;padding:8px 0 9px;text-align:center;color:var(--soluk);font-size:9.5px;font-weight:700;line-height:1.4}
+#alt-bar button .ab-ikon{font-size:19px;display:block}
+#alt-bar button.aktif{color:var(--sari)}
+#alt-bar .ab-arti{width:52px;height:52px;border-radius:50%;flex:0 0 auto;margin:-20px 6px 8px;
+  background:linear-gradient(135deg,var(--sari),var(--sari-koyu));color:#14100B;font-size:26px;font-weight:800;
+  box-shadow:0 5px 16px rgba(0,0,0,.45), 0 0 0 4px var(--zemin);line-height:52px;text-align:center}
+main, #icerik{padding-bottom:76px}
+body{padding-bottom:0}
+#goruntu-ana{padding-bottom:80px}
+
 /* ---------- 📺 CANLI TV ---------- */
 .tv-grup{font-size:11px;letter-spacing:1.5px;font-weight:800;color:var(--soluk);margin:16px 4px 8px}
 .tv-izgara{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
@@ -494,8 +514,12 @@ main{padding:14px 14px 150px;max-width:560px;margin:0 auto}
   font-weight:700;font-size:13.5px;color:var(--soluk);
   display:flex;flex-direction:column;align-items:center;gap:4px;
 }
-.durum-secim button .buyuk-ikon{font-size:20px}
-.durum-secim button.secili-tam{border-color:var(--tam);background:var(--tam);color:#fff}
+.durum-secim button .buyuk-ikon{font-size:22px;display:block;margin-bottom:3px}
+.durum-secim button[data-durum="tam"]{border-color:rgba(53,208,127,.45)}
+.durum-secim button[data-durum="yarim"]{border-color:rgba(255,196,0,.45)}
+.durum-secim button[data-durum="gelmedi"]{border-color:rgba(255,91,82,.45)}
+.durum-secim button[data-durum="izin"]{border-color:rgba(76,125,255,.4)}
+.durum-secim button.secili-tam{border-color:var(--tam);background:var(--tam);color:#fff;box-shadow:0 4px 14px rgba(53,208,127,.35)}
 .durum-secim button.secili-yarim{border-color:var(--yarim);background:var(--yarim);color:#fff}
 .durum-secim button.secili-gelmedi{border-color:var(--gelmedi);background:var(--gelmedi);color:#fff}
 .durum-secim button.secili-izin{border-color:var(--mesai);background:var(--mesai);color:#fff}
@@ -666,6 +690,14 @@ nav.cekmece{
 </style>
 </head>
 <body>
+<div id="acilis-perde" style="position:fixed;inset:0;z-index:9999;background:linear-gradient(180deg,#15120A,#0B0C10 60%);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;transition:opacity .45s">
+  <div style="font-size:64px">🏗️</div>
+  <div style="font-family:'Saira Condensed';font-size:34px;font-weight:800;letter-spacing:2px;color:#F5C84C">PUANTAJ <span style="color:#fff">DEFTERİM</span></div>
+  <div style="font-size:13px;color:#8B8E99">Günün her saati, emeğin değerini takip et.</div>
+  <div style="width:150px;height:5px;background:#26241C;border-radius:3px;overflow:hidden;margin-top:8px">
+    <div id="acilis-bar" style="height:100%;width:0;background:linear-gradient(90deg,#F7D878,#C8891A);border-radius:3px;transition:width 1s ease"></div>
+  </div>
+</div>
 <div id="cevrim-bant" style="display:none;position:fixed;top:0;left:0;right:0;z-index:8000;background:var(--gelmedi);color:#fff;text-align:center;font-size:12.5px;font-weight:700;padding:6px">📴 Çevrimdışısın — kayıtların telefonda, internet gelince eşitlenecek</div>
 
 <!-- ============ AÇILIŞ EKRANI ============ -->
@@ -854,6 +886,8 @@ nav.cekmece{
           <li><b>🕌 NAMAZ VAKİTLERİ:</b> İlini seç (hatırlar), Diyanet usulü 6 vakit + sıradaki vakte geri sayım: "▶ İkindi — 1 sa 12 dk kaldı". İnternetsizken de son vakitler elinde</li>
           <li><b>🎙️ USTA'YA SESLE KONUŞ:</b> Sohbette mikrofona bas, "ne kadar alacağım" de — yazmadan sor, Usta cevaplasın (destekleyen telefonlarda)</li>
           <li><b>💳 KREDİ KARTI TAKİBİ (20. özellik! 🎉):</b> Menüde "Kredi kartlarım" — kartlarının borcunu ve son ödeme gününü takip et, günü yaklaşınca ana ekranda alarm: "Bonus'un son ödemesine 2 gün!" Ödedikçe 💰 ile düş, gecikme faizine tek kuruş kaptırma. Kart numarası İSTEMEZ (güvenlik böyle ister); Usta'ya "kart borcum ne" diye de sorabilirsin</li>
+          <li><b>🥈 POSTER FAZ 2:</b> Kayıt penceresindeki durumlar renk kimliğine kavuştu, takvim altına renk rehberi geldi, Paralar'ın tepesine 👛 altın "TOPLAM ALINAN" kartı kondu ve Hesap özetine posterdeki dolan ÇALIŞMA ORANI halkası eklendi</li>
+          <li><b>🥇 POSTER PROJESİ FAZ 1:</b> Uygulama gönderdiğin tasarıma dönüşmeye başladı — 🏗️ açılış ekranı (vinç + dolan çubuk), 💰 para çuvallı "TOPLAM ALACAK" kartı, TAM/YARIM/GELMEDİM çipleri ve posterin imzası: her ekranda ALT GEZİNME ÇUBUĞU, ortada dev ➕ ile bugünü işle. Devamı geliyor</li>
           <li><b>✨ ALTIN VARDİYA teması:</b> Ayarlar → tema seçicide yeni ✨ nokta — is füme zemin, ışıldayan altın rakamlar, altın gradyanlı düğmeler. O lüks konsept görselinin ruhu, verine tek dokunmadan</li>
           <li><b>🔧 Büyük temizlik:</b> "Günü paylaş" düğmesindeki sessiz arıza giderildi (v56'dan beri çalışmıyordu!), yanlışlıkla çift eklenen hafta özeti ve kıdem hesaplayıcısı tekilleştirildi — kıdem hesaplayıcın zaten Araçlar'da vardı, oradan kullan ⚖️</li>
           <li><b>🏦 Ödemeye dekont fotoğrafı:</b> Banka dekontunu ödemeyle beraber sakla, listede 🏦 ile aç. Delil ailesi 4'lendi: gün 📸 kaza 📷 fiş 🧾 dekont 🏦</li>
@@ -933,11 +967,18 @@ nav.cekmece{
           <button class="btn btn-sari" id="btn-krono" style="width:auto;padding:12px 18px;font-size:14px">▶ Başlat</button>
         </div>
       </div>
-      <div class="banka-kart sirket">
+      <div class="banka-kart sirket" style="position:relative;overflow:hidden">
+        <div style="position:absolute;right:10px;top:40px;font-size:52px;opacity:.9;pointer-events:none;filter:drop-shadow(0 4px 14px rgba(245,200,76,.35))">💰</div>
         <div class="kart-ust"><span>🏢 Şirket Hesap Kartı</span><button id="btn-goz" style="color:#fff;font-size:17px">👁️</button></div>
+        <div style="font-size:9.5px;letter-spacing:2px;color:rgba(255,255,255,.55);font-weight:800;margin-top:2px">TOPLAM ALACAK</div>
         <div class="bakiye" id="sirket-bakiye">—</div>
         <div class="kart-alt" id="sirket-alt">Çalıştıkça artar, avans aldıkça azalır</div>
         <div class="kart-alt" id="kur-satir" style="margin-top:6px;font-weight:700"></div>
+      </div>
+      <div id="durum-cips" style="display:none;gap:8px;margin-bottom:10px">
+        <div class="d-cip"><div class="d-etk">TAM GÜN</div><div class="d-say" id="cip-tam" style="color:var(--tam)">0</div></div>
+        <div class="d-cip"><div class="d-etk">YARIM GÜN</div><div class="d-say" id="cip-yarim" style="color:var(--sari)">0</div></div>
+        <div class="d-cip"><div class="d-etk">GELMEDİM</div><div class="d-say" id="cip-gelmedi" style="color:var(--gelmedi)">0</div></div>
       </div>
       <div class="kart" style="padding:13px 14px">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
@@ -1049,6 +1090,9 @@ nav.cekmece{
           <button class="eksik-cip" id="btn-takvim-mod" style="font-size:12px;padding:7px 12px">₺ Kazançları göster</button>
         </div>
         <div class="takvim" id="takvim"></div>
+        <div id="takvim-lejant" style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap;margin-top:10px;font-size:10.5px;color:var(--soluk)">
+          <span>🟢 Tam</span><span>🟡 Yarım</span><span>🔴 Gelmedim</span><span>🔵 İzinli</span><span>🟣 Mesai</span>
+        </div>
         <div class="lejant">
           <span><i style="background:var(--tam)"></i> Tam yevmiye</span>
           <span><i style="background:var(--yarim)"></i> Yarım</span>
@@ -1121,6 +1165,12 @@ nav.cekmece{
           <button class="eksik-cip" data-f="diger" style="font-size:12px;padding:7px 11px">Diğer</button>
         </div>
         <div class="alan" style="margin-bottom:10px"><input type="text" id="odeme-ara" placeholder="🔎 Ödeme notlarında ara..."></div>
+        <div id="odeme-hero" style="display:none;position:relative;overflow:hidden;background:linear-gradient(135deg,var(--vurgu-zemin),var(--kart));border:1.5px solid var(--sari);border-radius:16px;padding:14px 16px;margin-bottom:14px">
+          <div style="position:absolute;right:12px;top:14px;font-size:38px;opacity:.9">👛</div>
+          <div style="font-size:9.5px;letter-spacing:2px;color:var(--soluk);font-weight:800">TOPLAM ALINAN</div>
+          <div id="odeme-hero-tutar" style="font-family:'Saira Condensed';font-size:32px;font-weight:800;color:var(--sari)">—</div>
+          <div id="odeme-hero-alt" style="font-size:11px;color:var(--soluk)"></div>
+        </div>
         <h2>💵 Bu ay aldıkların <span id="odeme-toplam" style="margin-left:auto;font-size:14px;color:var(--soluk);font-family:Rubik;text-transform:none"></span></h2>
         <ul class="liste" id="liste-odemeler"></ul>
       </div>
@@ -1194,6 +1244,20 @@ nav.cekmece{
       </div>
       <div class="kart">
         <h2>🧮 Bu ayın hesabı</h2>
+        <div id="oran-halka-kap" style="display:none;align-items:center;gap:14px;background:var(--girdi);border:1.5px solid var(--cizgi);border-radius:14px;padding:12px 14px;margin-bottom:12px">
+          <svg width="74" height="74" viewBox="0 0 74 74">
+            <circle cx="37" cy="37" r="31" fill="none" stroke="var(--cizgi)" stroke-width="7"/>
+            <circle id="oran-halka" cx="37" cy="37" r="31" fill="none" stroke="var(--tam)" stroke-width="7"
+              stroke-linecap="round" stroke-dasharray="194.8" stroke-dashoffset="194.8"
+              transform="rotate(-90 37 37)" style="transition:stroke-dashoffset .8s ease"/>
+            <text id="oran-yazi" x="37" y="43" text-anchor="middle" fill="var(--metin)"
+              font-family="'Saira Condensed'" font-size="19" font-weight="800">%0</text>
+          </svg>
+          <div style="flex:1">
+            <div style="font-size:10px;letter-spacing:1.5px;color:var(--soluk);font-weight:800">ÇALIŞMA ORANI</div>
+            <div id="oran-detay" style="font-size:13px;margin-top:3px;line-height:1.5"></div>
+          </div>
+        </div>
         <div class="ozet-grid" id="ozet-grid"></div>
         <button class="btn btn-cizgili" id="btn-karne" style="margin-top:12px">📸 Ay karnesi oluştur (paylaşılır görsel)</button>
         <div id="odeme-dagilim" style="font-size:12.5px;color:var(--soluk);margin-top:10px;text-align:center"></div>
@@ -1833,7 +1897,7 @@ nav.cekmece{
         <p style="font-size:13px;color:var(--soluk);margin-bottom:12px">Hata mı gördün, fikrin mi var? Direkt geliştiriciye ulaş:</p>
         <a class="btn btn-cizgili" style="display:block;text-align:center;text-decoration:none;margin-bottom:10px" href="https://wa.me/905051252339?text=Puantaj%20Defterim%20hakkında:" target="_blank">💬 WhatsApp'tan yaz</a>
         <a class="btn btn-cizgili" style="display:block;text-align:center;text-decoration:none" href="tel:05051252339">📞 0505 125 23 39</a>
-        <p style="font-size:11px;color:var(--soluk);margin-top:12px;text-align:center">Sürüm: v69 · Serkan Karakaş</p>
+        <p style="font-size:11px;color:var(--soluk);margin-top:12px;text-align:center">Sürüm: v71 · Serkan Karakaş</p>
       </div>
       <div class="kart">
         <h2>🔒 PIN kilidi</h2>
@@ -2010,6 +2074,14 @@ nav.cekmece{
     <button class="btn btn-cizgili" id="btn-hd-paylas" style="flex:0 0 auto;padding-left:16px;padding-right:16px">📤</button>
   </div>
 </div>
+
+<nav id="alt-bar">
+  <button data-goruntu="ana"><span class="ab-ikon">🏠</span>Ana</button>
+  <button data-goruntu="puantaj"><span class="ab-ikon">📅</span>Takvim</button>
+  <button class="ab-arti" id="btn-alt-arti" aria-label="Bugünü işle">＋</button>
+  <button data-goruntu="odemeler"><span class="ab-ikon">💵</span>Paralar</button>
+  <button id="btn-alt-menu"><span class="ab-ikon">☰</span>Menü</button>
+</nav>
 
 <button id="asistan" aria-label="Usta asistanla konuş">
   <span class="a-yuz"><span class="a-goz sol"></span><span class="a-goz sag"></span><span class="a-agiz"></span></span>
@@ -4744,6 +4816,7 @@ async function anaYukle(){
     const simdi = new Date();
     const buAyOnEk = simdi.getFullYear()+"-"+pad(simdi.getMonth()+1);
     let buAyHak = 0, buAyGun = 0, buAyMesai = 0;
+    let buAyTam = 0, buAyYarim = 0, buAyGelmedi = 0;
     /* Haftalık özet: bu haftanın Pazartesi'sinden bugüne */
     const pzt = new Date(simdi); pzt.setDate(simdi.getDate() - ((simdi.getDay()+6)%7));
     const pztId = tarihId(pzt), bugunId2 = tarihId(simdi);
@@ -4763,6 +4836,9 @@ async function anaYukle(){
         buAyHak += k;
         buAyGun += girdiGun(v);
         buAyMesai += Number(v.mesai)||0;
+        if(v.durum==="tam") buAyTam++;
+        else if(v.durum==="yarim") buAyYarim++;
+        else if(v.durum==="gelmedi") buAyGelmedi++;
       }
       if(doc.id >= pztId && doc.id <= bugunId2){
         haftaGun += girdiGun(v);
@@ -4835,6 +4911,17 @@ async function anaYukle(){
         tKart.innerHTML = m;
         tKart.classList.remove("gizli");
       }else tKart.classList.add("gizli");
+    }
+    /* 🥇 Durum çipleri */
+    const cips = $("#durum-cips");
+    if(cips){
+      const hepsi = buAyTam + buAyYarim + buAyGelmedi;
+      if(hepsi > 0){
+        $("#cip-tam").innerHTML = buAyTam + "<small> gün</small>";
+        $("#cip-yarim").innerHTML = buAyYarim + "<small> gün</small>";
+        $("#cip-gelmedi").innerHTML = buAyGelmedi + "<small> gün</small>";
+        cips.style.display = "flex";
+      }else cips.style.display = "none";
     }
     /* 🌅 Günün kartı */
     gununKartiCiz();
@@ -5308,6 +5395,13 @@ function odemeListesiCiz(){
   if(oAra) gorunen = gorunen.filter(o=> String(o.not||"").toLowerCase().includes(oAra) || odemeTurEtiket(o.tur).toLowerCase().includes(oAra));
   const toplamEl = $("#odeme-toplam");
   if(toplamEl) toplamEl.textContent = gorunen.length ? "Toplam: "+paraFmt(gorunen.reduce((s,o)=>s+(Number(o.tutar)||0),0)) : "";
+  const oh = $("#odeme-hero");
+  if(oh){
+    const heroToplam = gorunen.reduce((s2,o)=> s2 + (Number(o.tutar)||0), 0);
+    $("#odeme-hero-tutar").textContent = gizliMod ? "••••" : paraFmt(heroToplam);
+    $("#odeme-hero-alt").textContent = gorunen.length + " işlem · " + AYLAR[aktifAy] + " " + aktifYil;
+    oh.style.display = gorunen.length ? "block" : "none";
+  }
   if(!gorunen.length){
     ul.innerHTML = '<div class="bos-mesaj"><span class="buyuk">💸</span>'+(odemeFiltre ? 'Bu türde kayıt yok.' : 'Bu ay para girişi yok.')+'</div>';
     return;
@@ -5472,8 +5566,24 @@ function modalKazancGuncelle(){
   }catch(e){}
 }
 
+function oranHalkaCiz(gunSayisi){
+  const kap = $("#oran-halka-kap"); if(!kap) return;
+  const simdi = new Date();
+  const buAyMi = aktifYil === simdi.getFullYear() && aktifAy === simdi.getMonth();
+  const gecenGun = buAyMi ? simdi.getDate() : new Date(aktifYil, aktifAy+1, 0).getDate();
+  if(!(gecenGun > 0)){ kap.style.display = "none"; return; }
+  const oran = Math.min(100, Math.round((Number(gunSayisi)||0) / gecenGun * 100));
+  const CEVRE = 194.8;
+  const halka = $("#oran-halka");
+  halka.style.strokeDashoffset = String(CEVRE * (1 - oran/100));
+  halka.style.stroke = oran >= 70 ? "var(--tam)" : oran >= 40 ? "var(--sari)" : "var(--gelmedi)";
+  $("#oran-yazi").textContent = "%" + oran;
+  $("#oran-detay").innerHTML = "<b>" + (Number(gunSayisi)||0) + "</b> yevmiye / " + gecenGun + " gün" + (buAyMi ? " (bugüne kadar)" : "");
+  kap.style.display = "flex";
+}
 function ozetCiz(){
   const t = hesapla();
+  oranHalkaCiz(Number(t.gunSayisi)||0);
   const seri = seriHesapla();
   $("#ozet-grid").innerHTML =
     kut("Tam yevmiye", t.tam + " gün", "tam-r") +
@@ -6308,6 +6418,8 @@ document.addEventListener("DOMContentLoaded", ()=>{
     $("#btn-hamburger").classList.toggle("acik", ac);
   };
   $("#btn-hamburger").addEventListener("click", ()=> cekmeceAc(!$("#cekmece").classList.contains("acik")));
+  $("#btn-alt-menu").addEventListener("click", ()=> cekmeceAc(true));
+  $("#btn-alt-arti").addEventListener("click", ()=> modalAc(tarihId(new Date())));
   $("#perde").addEventListener("click", ()=> cekmeceAc(false));
 
   /* Görünüm değiştirme */
@@ -6362,6 +6474,8 @@ document.addEventListener("DOMContentLoaded", ()=>{
         [yillikIzinCiz, zamAnalizYap, emekKarneCiz, kimlikOzetCiz, kazaListeYukle, acilFormDoldur, vakitIlKur, vakitYukle]
           .forEach(f=>{ try{ f(); }catch(e){ console.warn("araç kartı:", e); } });
       }
+      document.querySelectorAll("#alt-bar [data-goruntu]").forEach(b=>
+        b.classList.toggle("aktif", b.dataset.goruntu === g));
       if(g==="haber") haberYukle(false);
       if(g==="tv") tvCiz();
       if(g==="video") videoSayfaAc();
@@ -6725,6 +6839,16 @@ document.addEventListener("DOMContentLoaded", ()=>{
       b.classList.toggle("secili", (b.dataset.tema||"")===(ad||"")));
   }
   try{ temaUygula(localStorage.getItem("tema")||""); }catch(e){ temaUygula(""); }
+  /* 🏗️ Açılış perdesi */
+  (function(){
+    const a = $("#acilis-perde"); if(!a) return;
+    const hizli = AZ_HAREKET;
+    requestAnimationFrame(()=>{ const b=$("#acilis-bar"); if(b) b.style.width="100%"; });
+    setTimeout(()=>{
+      a.style.opacity = "0";
+      setTimeout(()=> a.remove(), 500);
+    }, hizli ? 150 : 1200);
+  })();
   /* 🔠 Büyük yazı modu — gözlüğü unutulan günler için */
   function buyukYaziUygula(acik){
     document.documentElement.style.fontSize = acik ? "112%" : "";
@@ -7024,7 +7148,7 @@ document.addEventListener("DOMContentLoaded", ()=>{
   });
 
   /* Neler yeni kartı */
-  const YENILIK_SURUM = "v69";
+  const YENILIK_SURUM = "v71";
   try{ $("#cekmece-surum").textContent = "Puantaj Defterim " + YENILIK_SURUM; }catch(e){}
   try{
     if(localStorage.getItem("yenilik")!==YENILIK_SURUM) $("#yenilik-kart").classList.remove("gizli");
