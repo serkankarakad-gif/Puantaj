@@ -61,9 +61,20 @@ const firebaseConfig = {
 /* 🎨 Temalar — vurgu rengi ve zemin değişir, düzen aynı kalır */
 body[data-tema="mavi"]{   --sari:#4FA8FF; --sari-koyu:#2E8BE6; --vurgu-zemin:#0F2035 }
 body[data-tema="cam"]{
-  --sari:#FFD64A; --sari-koyu:#E6B32E; --vurgu-zemin:rgba(255,214,74,.10);
-  --kart:rgba(255,255,255,.07); --girdi:rgba(255,255,255,.08); --cizgi:rgba(255,255,255,.16);
-  background:linear-gradient(160deg,#2B3140 0%,#151A26 55%,#3A2E1E 100%) fixed;
+  --sari:#FFD64A; --sari-koyu:#E6B32E; --vurgu-zemin:rgba(255,214,74,.12);
+  --kart:rgba(255,255,255,.12); --girdi:rgba(255,255,255,.10); --cizgi:rgba(255,255,255,.20);
+}
+/* Camın arkasında görünecek sahne: gün batımı + ışık süzmeleri (bunlar olmadan cam, mat durur) */
+body[data-tema="cam"]::before{
+  content:""; position:fixed; inset:0; z-index:-2;
+  background:linear-gradient(160deg,#33405A 0%,#151A26 52%,#4A3618 100%);
+}
+body[data-tema="cam"]::after{
+  content:""; position:fixed; inset:0; z-index:-1; pointer-events:none;
+  background:
+    radial-gradient(340px 340px at 88% 12%, rgba(255,214,74,.32), transparent 70%),
+    radial-gradient(420px 420px at 8% 78%, rgba(79,168,255,.26), transparent 70%),
+    radial-gradient(260px 260px at 55% 45%, rgba(255,255,255,.07), transparent 70%);
 }
 body[data-tema="cam"] .kart,
 body[data-tema="cam"] .banka-kart,
@@ -71,11 +82,50 @@ body[data-tema="cam"] .modal,
 body[data-tema="cam"] .cekmece,
 body[data-tema="cam"] .topbar,
 body[data-tema="cam"] #asistan-panel{
-  backdrop-filter: blur(14px);
-  -webkit-backdrop-filter: blur(14px);
-  border: 1px solid rgba(255,255,255,.14);
+  backdrop-filter: blur(18px) saturate(150%);
+  -webkit-backdrop-filter: blur(18px) saturate(150%);
+  border: 1px solid rgba(255,255,255,.22);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.22), 0 8px 24px rgba(0,0,0,.35);
 }
-body[data-tema="cam"] .banka-kart{ background:linear-gradient(135deg,rgba(255,255,255,.13),rgba(255,255,255,.05)) }
+body[data-tema="cam"] .banka-kart{ background:linear-gradient(135deg,rgba(255,255,255,.15),rgba(255,255,255,.06)) }
+/* 🧊 Komple cam kaplama: alt konsol, çipler, takvim, ay şeridi, toast, seçimler */
+body[data-tema="cam"] .alt-nav{
+  background:rgba(20,26,38,.55);
+  backdrop-filter:blur(18px) saturate(150%);
+  -webkit-backdrop-filter:blur(18px) saturate(150%);
+  border-top:1px solid rgba(255,255,255,.18);
+}
+body[data-tema="cam"] .eksik-cip,
+body[data-tema="cam"] .durum-secim button,
+body[data-tema="cam"] .hizli-cip,
+body[data-tema="cam"] .filtre-cip{
+  background:rgba(255,255,255,.10);
+  backdrop-filter:blur(10px);
+  -webkit-backdrop-filter:blur(10px);
+  border-color:rgba(255,255,255,.22);
+}
+body[data-tema="cam"] .hucre{
+  background:rgba(255,255,255,.08);
+  border-color:rgba(255,255,255,.14);
+  backdrop-filter:blur(8px);
+  -webkit-backdrop-filter:blur(8px);
+}
+body[data-tema="cam"] #toast{
+  background:rgba(28,34,48,.72);
+  backdrop-filter:blur(16px) saturate(150%);
+  -webkit-backdrop-filter:blur(16px) saturate(150%);
+  border:1px solid rgba(255,255,255,.22);
+}
+body[data-tema="cam"] select,
+body[data-tema="cam"] input,
+body[data-tema="cam"] textarea{
+  background:rgba(255,255,255,.09);
+  border-color:rgba(255,255,255,.20);
+}
+body[data-tema="cam"] .cekmece button{ border-radius:12px }
+body[data-tema="cam"] .cekmece button:active{ background:rgba(255,255,255,.10) }
+body[data-tema="cam"] .rozet{ box-shadow:inset 0 1px 0 rgba(255,255,255,.18) }
+body[data-tema="cam"] #asistan{ box-shadow:0 6px 20px rgba(0,0,0,.4), inset 0 1px 0 rgba(255,255,255,.3) }
 body[data-tema="cam"] .btn-cizgili{ background:rgba(255,255,255,.08); border-color:rgba(255,255,255,.2) }
 body[data-tema="cam"] .btn-sari{ box-shadow:0 4px 18px rgba(255,214,74,.30) }
 body[data-tema="cam"] .liste li{ border-bottom-color:rgba(255,255,255,.10) }
@@ -86,6 +136,8 @@ body[data-tema="cam"] .liste li{ border-bottom-color:rgba(255,255,255,.10) }
   body[data-tema="cam"] .cekmece,
   body[data-tema="cam"] .topbar,
   body[data-tema="cam"] #asistan-panel{ background:rgba(22,28,40,.94) }
+  body[data-tema="cam"] .alt-nav{ background:rgba(16,20,30,.97) }
+  body[data-tema="cam"] #toast{ background:rgba(28,34,48,.97) }
 }
 body[data-tema="yesil"]{  --sari:#2EE59D; --sari-koyu:#1DC985; --vurgu-zemin:#0E2A1E }
 body[data-tema="turuncu"]{--sari:#FF8A3D; --sari-koyu:#F0762A; --vurgu-zemin:#2E1A0C }
@@ -886,75 +938,7 @@ button:focus-visible{ outline: 2px solid var(--sari); outline-offset: 2px }
       <div class="kart gizli" id="yenilik-kart" style="border-color:var(--sari)">
         <h2>🎁 Neler yeni?</h2>
         <ul style="padding-left:18px;font-size:13.5px;line-height:1.9">
-          <li><b>📐 SU TERAZİSİ:</b> Telefonun sensörüyle gerçek terazi — Araçlar'da başlat, duvara/kalasa daya, baloncuk ortada yeşilse terazide! Cepte terazi taşıma devri bitti</li>
-          <li><b>🕌 NAMAZ VAKİTLERİ:</b> İlini seç (hatırlar), Diyanet usulü 6 vakit + sıradaki vakte geri sayım: "▶ İkindi — 1 sa 12 dk kaldı". İnternetsizken de son vakitler elinde</li>
-          <li><b>🎙️ USTA'YA SESLE KONUŞ:</b> Sohbette mikrofona bas, "ne kadar alacağım" de — yazmadan sor, Usta cevaplasın (destekleyen telefonlarda)</li>
-          <li><b>💳 KREDİ KARTI TAKİBİ (20. özellik! 🎉):</b> Menüde "Kredi kartlarım" — kartlarının borcunu ve son ödeme gününü takip et, günü yaklaşınca ana ekranda alarm: "Bonus'un son ödemesine 2 gün!" Ödedikçe 💰 ile düş, gecikme faizine tek kuruş kaptırma. Kart numarası İSTEMEZ (güvenlik böyle ister); Usta'ya "kart borcum ne" diye de sorabilirsin</li>
-          <li><b>🧊 CAM PANEL teması:</b> Ayarlar → tema seçicide yeni 🧊 nokta — gün batımı şantiye ışığı zemini üstünde buzlu cam kartlar. Eski telefonlarda otomatik sadeleşir, verine dokunmaz</li>
-          <li><b>💎 Profesyonel cila:</b> Uygulama geneli usta işi rötuşlar — rakamlar hizalı, düğmeler basınca yumuşakça çöküyor, kartlarda tutarlı derinlik, odak halkaları, çentikli ekranlara tam uyum, takvimde canlı dokunuş hissi</li>
-          <li><b>📣 Bildirim sistemi tam donanım:</b> Duyuru Kutusu (kaçan bildirim kaybolmaz, uygulama kapalıyken gelenler bile birikir), uygulama açıkken üstten şık duyuru bandı, 🧪 deneme bildirimi düğmesi, titreşimli zengin bildirimler, kayıtlı cihaz sayacı ve akşam 19'dan sonra günü işlemeyene "Bugünü işlemedin 📅" hatırlatması</li>
-          <li><b>🔔 BİLDİRİMLER GELDİ:</b> Ayarlar → "Bildirimleri aç" — yeni özellik duyuruları ve hatırlatmalar WhatsApp mesajı gibi telefonuna düşsün. Ücretsiz, istediğin an kapatılır (iPhone'da uygulamayı ana ekrana kurmuş olmak gerekir)</li>
-          <li><b>↩️ Klasik görünüme dönüş:</b> Deneme amaçlı görsel değişiklikler (açılış perdesi, alt bar, altın tema) kaldırıldı, uygulama alıştığın sağlam haline döndü. Bütün özellikler ve verilerin aynen yerinde</li>
-          <li><b>🔧 Büyük temizlik:</b> "Günü paylaş" düğmesindeki sessiz arıza giderildi (v56'dan beri çalışmıyordu!), yanlışlıkla çift eklenen hafta özeti ve kıdem hesaplayıcısı tekilleştirildi — kıdem hesaplayıcın zaten Araçlar'da vardı, oradan kullan ⚖️</li>
-          <li><b>🏦 Ödemeye dekont fotoğrafı:</b> Banka dekontunu ödemeyle beraber sakla, listede 🏦 ile aç. Delil ailesi 4'lendi: gün 📸 kaza 📷 fiş 🧾 dekont 🏦</li>
-          <li><b>📄 PDF raporu güçlendi:</b> Avanslar artık AYRI bölümde tek tek numaralı listeleniyor (tarih + not + tutar + kendi toplamı); hakediş ödemeleri, kesintiler ve diğerleri de kendi bölümlerinde — patron pazarlığında her kuruş belgeli</li>
-          <li><b>🧾 Masrafa fiş fotoğrafı:</b> Malzeme fişini masrafla beraber kaydet — listede 🧾 ile aç, patron "fiş nerede?" diyemesin. Delil üçlemesi tamam: gün 📸 + kaza 📷 + fiş 🧾</li>
-          <li><b>💡 Bunu biliyor muydun:</b> Takvimde bir güne PARMAK BASILI TUT → modal açmadan anında tam yevmiye işlenir! (Artık kaydırırken yanlışlıkla tetiklenmiyor)</li>
-          <li><b>🎨 Ödemeler renklendi:</b> Avans sarı, hakediş yeşil, kesinti kırmızı — liste bir bakışta okunuyor</li>
-          <li><b>📺 2 yeni kanal:</b> TGRT Haber ve Haber Global listeye katıldı — ikisi de uygulamanın içinde, doğrulanmış resmî yayınlar. Kanal sayısı 6 oldu</li>
-          <li><b>📺 TV kendini iyileştiriyor:</b> TRT Haber'in bayatlayan yayını tazelendi; artık bir kanalın yayını değişirse uygulama arkada yenisini bulup kendiliğinden geçiyor. "Yayın aranıyor" da artık sonsuza kadar dönmüyor</li>
-          <li><b>📷 Kaza kaydına fotoğraf:</b> Olay yeri/yara fotoğrafını kayda iliştir — delilin kralı. Listede 📷 ile büyük görüntüle</li>
-          <li><b>🏗️ Şantiye kırılımı:</b> Hesap özeti → tüm zamanlarda hangi şantiyeden ne kazandığını gör: "Konut 34.000 · Villa 18.000"</li>
-          <li><b>🚑 İş Kazası Defteri:</b> Kaza olursa O GÜN kaydet: ne oldu, tanıklar, rapor, SGK durumu. Tek tuşla düzgün tutanak metni üret, paylaş — SGK ve tazminat sürecinde olay günü tutulan kayıt altındır. Defter sadece sende, sağlık bilgin kimseyle paylaşılmaz</li>
-          <li><b>🆘 Acil Durum Kartı:</b> Kan grubu + acil numara + alerji bilgisi; tek tuşla TAM EKRAN kırmızı kart — şantiyede kaza anında arkadaşların telefonundan baksın, hayat kurtarır</li>
-          <li><b>🪪 İşçi Kimlik Kartın:</b> Araçlar'da — sana özel kimlik numaralı, gerçek kayıtlarından üretilen karne görseli. İş görüşmesinde göster: "267 yevmiye, 84 saat mesai, 3 yıl kıdem" — rakamlar lafdan iyi konuşur. Sadece SEN paylaşırsan görülür, kimse senin hakkında bir şey yazamaz</li>
-          <li><b>📤 Günü paylaş:</b> Gün penceresindeki kazanç kutusunda paylaş düğmesi — "18 Temmuz · Tam yevmiye + 2 saat mesai · 3.250 ₺" hazır mesaj, WhatsApp'a tek dokunuş</li>
-          <li><b>🔠 Büyük yazı modu:</b> Ayarlar → tema kartında — gözü yorulan ustalar için tüm yazılar bir boy büyür, tercih hatırlanır</li>
-          <li><b>💡 Bunu biliyor muydun:</b> Mesai kronometresini durdurunca "bugüne ekleyeyim mi?" diye soruyor — saat ölçüp elle yazmana gerek yok!</li>
-          <li><b>🌅 Günün kartı:</b> Ana ekran artık seni saate göre selamlıyor; her gün değişen söz / şantiye fıkrası / hak bilgisi — herkese aynı gün aynı içerik, muhabbet ortak 😄</li>
-          <li><b>📌 Dün hatırlatıcısı:</b> Dünü işlemeyi unuttuysan ana ekran nazikçe dürtüyor, tek dokunuşla dünü açıp işliyorsun</li>
-          <li><b>🧱 İnşaat hesaplayıcıları:</b> Araçlar'da beton m³ (fireli), duvar tuğla/gazbeton adedi ve boya litresi — yazdıkça anında hesaplıyor</li>
-          <li><b>💪 Emek karnem:</b> Araçlar'da toplam emeğinin gurur tablosu — "X yevmiye = Y ay emek, Z saat mesai, N pazar günü" 📜</li>
-          <li><b>🎉 Yıldönümü kutlaması:</b> İşe girişinin yıldönümünde konfeti patlıyor, kaç yıldır bu meslekte olduğun ve toplam biriktirdiğin yazıyor</li>
-          <li><b>📅 Haftanın özeti:</b> Cumartesi-Pazar ana ekranda haftalık karnen çıkıyor — kaç yevmiye, kaç mesai, ne hakediş — tek tuşla WhatsApp'a</li>
-          <li><b>📡 Yeni boru hatları:</b> Gazete ve video araması artık köprü beklemeden doğrudan açık servislerden de çekiyor — açılma şansı ciddi arttı, olmazsa eski yollar yedekte</li>
-          <li><b>🩺 Bağlantı testi:</b> Ayarlar'da — haber/kur/TV açılmıyorsa bas, hangi hat kopuk tek tek görsün, ekran görüntüsünü geliştiriciye at</li>
-          <li><b>🤖 Usta zekâ yükseltmesi:</b> Artık borç/alacaklarını, masraflarını, bugünü işleyip işlemediğini ve rozet durumunu da biliyor — sor bak</li>
-          <li><b>🌉 Sağlamlık güncellemesi:</b> Haber/video/TV'nin takılma sorunu için özel köprü desteği geldi — kurulum 5 dakika, tarif pakette (KOPRU-KURULUM.md)</li>
-          <li><b>🤝 Zam isteme asistanı:</b> Araçlar'da — kaç aydır zam almadığını, son zammını hesaplar; istediğin yevmiyeyi yaz, patrona atılacak pazarlık mesajını (kibar/net) hazır yazar 💪</li>
-          <li><b>📸 Ay karnesi:</b> Hesap özetinde tek tuşla story boyutunda şık karne görseli — "24 gün, 61.000 ₺" — WhatsApp durumuna at, herkes sorsun 😎 (gizli moddayken para koymaz)</li>
-          <li><b>▶️ VİDEO geldi!</b> Menüde YouTube araması var: film, maç özeti, müzik, belgesel... ara, kapaklı listeden seç, video UYGULAMANIN İÇİNDE oynasın. Hazır konu düğmeleri de cabası</li>
-          <li><b>📺 TV sayfası temizlendi:</b> Artık dışarı yönlendiren kanal yok — listedeki HER kanal uygulamanın içinde oynuyor: Habertürk, CNN Türk, TRT Haber ve ⚽ A Spor</li>
-          <li><b>📺 TV artık UYGULAMANIN İÇİNDE:</b> Habertürk, CNN Türk ve TRT Haber'in resmî canlı yayınları uygulamadan çıkmadan oynuyor — tam ekran yapabilirsin. "▶ UYGULAMADA" rozetli kanallar içeride, diğerleri resmi sitede açılır</li>
-          <li><b>📺 Canlı TV rehberi:</b> Menüde artık televizyon var — TRT 1, Kanal D, ATV, Show, Star, NOW, TV8, haber ve spor kanalları. Kanala dokun, canlı yayın kanalın resmi sitesinde açılır (yasal ve ücretsiz)</li>
-          <li><b>📰 Gündem büyüdü:</b> Habere dokun → detay sayfası açılır: büyük başlık, aynı haberi diğer gazetelerin nasıl verdiği, 📖 kaynağında okuma ve 📤 WhatsApp'a paylaşma. Üstüne ⚽ Spor sekmesi ve 🔎 haber arama geldi</li>
-          <li><b>📰 GÜNDEM geldi!</b> Menüde artık gazete var: Türkiye, dünya ve ekonomi haberleri gazete kağıdı görünümünde, canlı. 5 dakikada bir kendini yeniler, habere dokun kaynağında oku, internetsizken son gündem elinde</li>
-          <li><b>🚀 Performans:</b> Uygulama artık veriyi bir kez indirip canlı takip ediyor — açılış ve kayıt sonrası yenilenme belirgin hızlandı, internet paketine ve Firebase kotasına dokunuş azaldı. Hesap özeti açıkken kayıt girersen o da anında güncelleniyor</li>
-          <li><b>🔧 Denetim turu:</b> Yıllık izin sayacındaki sayım hatası düzeldi (izinli günler artık doğru sayılıyor), başka aya girilen kayıtlarda ana kart güncellenmeme sorunu bitti, geri tuşu artık Usta'nın sohbetini ve büyük fotoğrafı da kapatıyor</li>
-          <li><b>📥 "Uygulamayı indir":</b> Menüdeki kurulum artık bu adla — iPhone'da adım adım rehber, Android'de tek tuş kurulum</li>
-          <li><b>📝 Notlar renklendi:</b> Nota renk etiketi ver (önemliyse kırmızı, para işiyse yeşil...), dokunup düzenle — sabitleme ve arama zaten vardı</li>
-          <li><b>🤝 Borç defteri büyüdü:</b> Vade günü koy — geçerse kayıt kırmızıya döner, ana ekranda "vadesi geçen alacağın var!" uyarısı çıkar. 💰 ile kısmi ödeme işle: "500'ünü ödedi, 1.500 kaldı" takibi. Hatırlatma mesajı da kalanı ve gecikmeyi söylüyor</li>
-          <li><b>🏅 Rozet ilerlemesi:</b> Kilitli rozetlerde artık çubuk var — "37/50 gün" gibi, ne kadar kaldığını gör</li>
-          <li><b>📅 Yıl tablosu canlandı:</b> Aya dokun → gün başı ortalaman ve detayın açılır, tek tuşla o ayın takvimine atlarsın</li>
-          <li><b>🧾 Kazanç dökümü:</b> Gün penceresinde artık sadece toplam değil, kalem kalem hesap var — "Tam yevmiye 2.500 + Mesai 2s × 300 = 600 + Yol/yemek 150" gibi</li>
-          <li><b>🏦 Ekstre görünümü:</b> Şirket hareketleri banka ekstresi gibi oldu — ay başlıkları, her ayın +/− toplamı ve her işlemden sonra "kalan: X ₺"</li>
-          <li><b>📊 Gelir grafiği:</b> Hesap özetinde son 12 ayın hakediş/alınan çubuklarını gör — hangi ay coştun, hangi ay yattın belli</li>
-          <li><b>💸 Maaş günü sayacı:</b> Ayarlar'a maaş gününü yaz, ana ekranda "maaşa 5 gün kaldı" geri sayımı başlasın. Usta'ya da sorabilirsin</li>
-          <li><b>⚡ Anında güncelleme:</b> Gün işleyince/avans girince ana ekrandaki paran artık anında değişiyor, çık-gir yapmana gerek yok</li>
-          <li><b>‹ Geri butonu:</b> Üst barda geri oku var, telefonun geri tuşu da artık seni ana ekrana getiriyor (uygulamadan atmıyor)</li>
-          <li><b>🚀 Yeni başlayan rehberi</b> ve menüde gruplama — ilk kullananlar kaybolmasın</li>
-          <li><b>🤖 Usta geldi!</b> Ana ekrandaki göz kırpan yuvarlağa dokun — "Oooo hoş geldin patron!" Ne kadar alacağın var, bu ay kaç gün çalıştın, dolar kaç... sor, anında cevaplar, susmaz 😄</li>
-          <li><b>🔮 Ay sonu tahmini:</b> Ana ekranda "bu tempoyla ay sonunda şu kadar yaparsın" diyor, hedefin varsa onunla kıyaslıyor</li>
-          <li><b>🎨 Tema seçici:</b> Ayarlar'dan uygulamanın rengini seç — sarı, mavi, yeşil, turuncu veya pil dostu tam siyah</li>
-          <li><b>📸 Güne fotoğraf ekle:</b> Gün kaydına iş fotoğrafı koy (kanıt!) — takvimde 📸 işareti çıkar, dokununca büyük görürsün. Fotoğraf otomatik küçültülür, internetini yemez</li>
-          <li><b>🏖️ Yıllık izin sayacı:</b> Ayarlar'a işe giriş tarihini yaz, Araçlar'da kıdemine göre kaç gün iznin olduğunu ve kaç gün kaldığını gör</li>
-          <li><b>💰 Dolar/Altın karşılığı:</b> Şirket kartında alacağının kaç dolar ve kaç gram altın ettiği yazıyor (kurlar canlı, çevrimdışıyken son bilinen kur)</li>
-          <li><b>📈 Zam geçmişi:</b> Hesap özeti → tüm zamanlar bölümünde yevmiyenin nasıl arttığını ve toplam zam yüzdeni gör</li>
-          <li><b>✨ Canlı para sayacı:</b> Uygulamayı açınca alacağın 0'dan yükselerek sayılıyor, kartlarda parlama efekti — banka uygulaması gibi</li>
-          <li><b>0 ₺ günler düzeldi:</b> Yevmiye girmeden işlenen günler artık ayarlardaki güncel ücretinle hesaplanıyor — "hakediş 0 görünüyor" derdi bitti 🎉</li>
-          <li><b>iPhone tutar hatası düzeldi:</b> "5.000" yazınca artık 5 TL değil, 5.000 TL olarak anlaşılıyor</li>
-          <li><b>🩹 Tutar onarımı:</b> Eskiden yanlış kaydedilmiş avans/yevmiye varsa Ayarlar → Tutar onarımı ile tek dokunuşla düzelt</li>
-          <li>Rakamların yanına ₺ veya TL yazsan da artık sorun çıkmıyor</li>
+          <li><b>🧊 Cam artık HER YERDE:</b> Alt konsol, hamburger menü, takvim kutuları, hızlı çipler, kayıt penceresi, arama kutuları, hatta bildirim baloncuğu — 🧊 temasında uygulamanın tamamı buzlu cam. Ayarlar → 🧊'den aç, gez, hisset</li>
         </ul>
         <button class="btn btn-cizgili" id="btn-yenilik-kapat">Süper, kapat</button>
       </div>
@@ -1883,7 +1867,7 @@ button:focus-visible{ outline: 2px solid var(--sari); outline-offset: 2px }
         <p style="font-size:13px;color:var(--soluk);margin-bottom:12px">Hata mı gördün, fikrin mi var? Direkt geliştiriciye ulaş:</p>
         <a class="btn btn-cizgili" style="display:block;text-align:center;text-decoration:none;margin-bottom:10px" href="https://wa.me/905051252339?text=Puantaj%20Defterim%20hakkında:" target="_blank">💬 WhatsApp'tan yaz</a>
         <a class="btn btn-cizgili" style="display:block;text-align:center;text-decoration:none" href="tel:05051252339">📞 0505 125 23 39</a>
-        <p style="font-size:11px;color:var(--soluk);margin-top:12px;text-align:center">Sürüm: v76 · Serkan Karakaş</p>
+        <p style="font-size:11px;color:var(--soluk);margin-top:12px;text-align:center">Sürüm: v79 · Serkan Karakaş</p>
       </div>
       <div class="kart">
         <h2>🔒 PIN kilidi</h2>
@@ -3697,6 +3681,27 @@ async function videoAraDogrudan(q){
     "https://api.piped.private.coffee",
     "https://pipedapi.adminforge.de"
   ];
+  /* Yedek hat: Invidious tabanlı açık arama servisleri (farklı yapı, ayrı ayrıştırma) */
+  const invServisler = ["https://inv.nadeko.net", "https://invidious.nerdvpn.de"];
+  for(const kok of invServisler){
+    try{
+      const r = await zamanAsimli(fetch(kok + "/api/v1/search?q=" + encodeURIComponent(q) + "&type=video&region=TR"), 8000);
+      if(!r || !r.ok) continue;
+      const j = await r.json();
+      if(!Array.isArray(j) || !j.length) continue;
+      const liste = [];
+      j.forEach(v=>{
+        if(liste.length >= 20 || !v || !v.videoId) return;
+        liste.push({
+          id: String(v.videoId),
+          b: String(v.title||""),
+          k: String(v.author||""),
+          sure: (Number(v.lengthSeconds)>0) ? sureBicim(v.lengthSeconds) : ""
+        });
+      });
+      if(liste.length) return liste;
+    }catch(e){}
+  }
   for(const kok of servisler){
     try{
       const r = await zamanAsimli(fetch(kok+"/search?q="+encodeURIComponent(q)+"&filter=videos"), 8000);
@@ -3729,6 +3734,12 @@ async function videoAra(q){
   if(!liste){
     const metin = await koprudenGetir("https://www.youtube.com/results?search_query="+encodeURIComponent(q)+"&hl=tr&gl=TR");
     liste = metin ? ytSonuclariAyikla(metin) : [];
+  }
+  if(!liste || !liste.length){
+    kap.innerHTML = '<div class="bos-mesaj">Arama hatları şu an kapalı 📡 Birazdan tekrar dene.<br><br>' +
+      '<a class="btn btn-cizgili" style="display:inline-block;text-decoration:none" ' +
+      'href="https://m.youtube.com/results?search_query=' + encodeURIComponent(q) + '" target="_blank" rel="noopener">▶️ Aramayı YouTube\'da aç</a></div>';
+    return;
   }
   if(!liste.length){
     kap.innerHTML = '<div class="bos-mesaj">Aramaya şu an ulaşılamadı 📡 İnternetini kontrol edip tekrar dene.</div>';
@@ -4501,6 +4512,29 @@ function konfetiPatlat(){
     else c.remove();
   })(bas);
 }
+
+/* ---------- 🕛 Gün Devri Bekçisi: gece yarısını kaçırma ---------- */
+let bekciSonGun = tarihId(new Date());
+function gunDevriKontrol(){
+  const su = tarihId(new Date());
+  if(su === bekciSonGun) return;
+  const onceki = bekciSonGun;
+  bekciSonGun = su;
+  try{
+    /* Kullanıcı eski "bugünün ayında" geziniyorduysa görünümü yeni güne taşı */
+    const o = new Date(onceki + "T12:00:00");
+    const simdi = new Date();
+    if(aktifYil === o.getFullYear() && aktifAy === o.getMonth()){
+      aktifYil = simdi.getFullYear();
+      aktifAy = simdi.getMonth();
+      ayiYukle();
+      ayBarCiz();
+    }
+    anaTazele();
+  }catch(e){}
+}
+setInterval(gunDevriKontrol, 60000);
+document.addEventListener("visibilitychange", ()=>{ if(!document.hidden) gunDevriKontrol(); });
 
 /* ---------- 🔔 Bildirimler (FCM) ---------- */
 const VAPID_ANAHTAR = "BM566mNJdB-9hYvmhkyBNKopP2RMhy1wRuXvXDTds4PAOmMRW8Fq90HYvDY3u744PygXyoCgFAsNVJ9_z9Zm5gA";
@@ -7258,7 +7292,7 @@ document.addEventListener("DOMContentLoaded", ()=>{
   });
 
   /* Neler yeni kartı */
-  const YENILIK_SURUM = "v76";
+  const YENILIK_SURUM = "v79";
   try{ $("#cekmece-surum").textContent = "Puantaj Defterim " + YENILIK_SURUM; }catch(e){}
   try{
     if(localStorage.getItem("yenilik")!==YENILIK_SURUM) $("#yenilik-kart").classList.remove("gizli");
