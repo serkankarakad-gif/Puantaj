@@ -60,85 +60,6 @@ const firebaseConfig = {
 }
 /* 🎨 Temalar — vurgu rengi ve zemin değişir, düzen aynı kalır */
 body[data-tema="mavi"]{   --sari:#4FA8FF; --sari-koyu:#2E8BE6; --vurgu-zemin:#0F2035 }
-body[data-tema="cam"]{
-  --sari:#FFD64A; --sari-koyu:#E6B32E; --vurgu-zemin:rgba(255,214,74,.12);
-  --kart:rgba(255,255,255,.12); --girdi:rgba(255,255,255,.10); --cizgi:rgba(255,255,255,.20);
-}
-/* Camın arkasında görünecek sahne: gün batımı + ışık süzmeleri (bunlar olmadan cam, mat durur) */
-body[data-tema="cam"]::before{
-  content:""; position:fixed; inset:0; z-index:-2;
-  background:linear-gradient(160deg,#33405A 0%,#151A26 52%,#4A3618 100%);
-}
-body[data-tema="cam"]::after{
-  content:""; position:fixed; inset:0; z-index:-1; pointer-events:none;
-  background:
-    radial-gradient(340px 340px at 88% 12%, rgba(255,214,74,.32), transparent 70%),
-    radial-gradient(420px 420px at 8% 78%, rgba(79,168,255,.26), transparent 70%),
-    radial-gradient(260px 260px at 55% 45%, rgba(255,255,255,.07), transparent 70%);
-}
-body[data-tema="cam"] .kart,
-body[data-tema="cam"] .banka-kart,
-body[data-tema="cam"] .modal,
-body[data-tema="cam"] .cekmece,
-body[data-tema="cam"] .topbar,
-body[data-tema="cam"] #asistan-panel{
-  backdrop-filter: blur(18px) saturate(150%);
-  -webkit-backdrop-filter: blur(18px) saturate(150%);
-  border: 1px solid rgba(255,255,255,.22);
-  box-shadow: inset 0 1px 0 rgba(255,255,255,.22), 0 8px 24px rgba(0,0,0,.35);
-}
-body[data-tema="cam"] .banka-kart{ background:linear-gradient(135deg,rgba(255,255,255,.15),rgba(255,255,255,.06)) }
-/* 🧊 Komple cam kaplama: alt konsol, çipler, takvim, ay şeridi, toast, seçimler */
-body[data-tema="cam"] .alt-nav{
-  background:rgba(20,26,38,.55);
-  backdrop-filter:blur(18px) saturate(150%);
-  -webkit-backdrop-filter:blur(18px) saturate(150%);
-  border-top:1px solid rgba(255,255,255,.18);
-}
-body[data-tema="cam"] .eksik-cip,
-body[data-tema="cam"] .durum-secim button,
-body[data-tema="cam"] .hizli-cip,
-body[data-tema="cam"] .filtre-cip{
-  background:rgba(255,255,255,.10);
-  backdrop-filter:blur(10px);
-  -webkit-backdrop-filter:blur(10px);
-  border-color:rgba(255,255,255,.22);
-}
-body[data-tema="cam"] .hucre{
-  background:rgba(255,255,255,.08);
-  border-color:rgba(255,255,255,.14);
-  backdrop-filter:blur(8px);
-  -webkit-backdrop-filter:blur(8px);
-}
-body[data-tema="cam"] #toast{
-  background:rgba(28,34,48,.72);
-  backdrop-filter:blur(16px) saturate(150%);
-  -webkit-backdrop-filter:blur(16px) saturate(150%);
-  border:1px solid rgba(255,255,255,.22);
-}
-body[data-tema="cam"] select,
-body[data-tema="cam"] input,
-body[data-tema="cam"] textarea{
-  background:rgba(255,255,255,.09);
-  border-color:rgba(255,255,255,.20);
-}
-body[data-tema="cam"] .cekmece button{ border-radius:12px }
-body[data-tema="cam"] .cekmece button:active{ background:rgba(255,255,255,.10) }
-body[data-tema="cam"] .rozet{ box-shadow:inset 0 1px 0 rgba(255,255,255,.18) }
-body[data-tema="cam"] #asistan{ box-shadow:0 6px 20px rgba(0,0,0,.4), inset 0 1px 0 rgba(255,255,255,.3) }
-body[data-tema="cam"] .btn-cizgili{ background:rgba(255,255,255,.08); border-color:rgba(255,255,255,.2) }
-body[data-tema="cam"] .btn-sari{ box-shadow:0 4px 18px rgba(255,214,74,.30) }
-body[data-tema="cam"] .liste li{ border-bottom-color:rgba(255,255,255,.10) }
-@supports not (backdrop-filter: blur(1px)){
-  body[data-tema="cam"] .kart,
-  body[data-tema="cam"] .banka-kart,
-  body[data-tema="cam"] .modal,
-  body[data-tema="cam"] .cekmece,
-  body[data-tema="cam"] .topbar,
-  body[data-tema="cam"] #asistan-panel{ background:rgba(22,28,40,.94) }
-  body[data-tema="cam"] .alt-nav{ background:rgba(16,20,30,.97) }
-  body[data-tema="cam"] #toast{ background:rgba(28,34,48,.97) }
-}
 body[data-tema="yesil"]{  --sari:#2EE59D; --sari-koyu:#1DC985; --vurgu-zemin:#0E2A1E }
 body[data-tema="turuncu"]{--sari:#FF8A3D; --sari-koyu:#F0762A; --vurgu-zemin:#2E1A0C }
 body[data-tema="amoled"]{
@@ -739,7 +660,7 @@ button:focus-visible{ outline: 2px solid var(--sari); outline-offset: 2px }
 .kart{ box-shadow: 0 1px 3px rgba(0,0,0,.22) }
 .banka-kart{ box-shadow: 0 6px 20px rgba(0,0,0,.30) }
 .kart h2{ letter-spacing: .2px }
-.liste li{ transition: background .12s ease }
+
 .liste li:active{ background: var(--girdi) }
 .modal{ box-shadow: 0 -8px 32px rgba(0,0,0,.45) }
 #toast{ box-shadow: 0 6px 20px rgba(0,0,0,.4) }
@@ -862,6 +783,7 @@ button:focus-visible{ outline: 2px solid var(--sari); outline-offset: 2px }
       <li><button data-goruntu="ozet"><span class="ikon">🧮</span> Hesap özeti</button></li>
       <li><button data-goruntu="yil"><span class="ikon">📊</span> Yıl özeti</button></li>
       <li class="menu-grup">DİĞER</li>
+      <li><button data-goruntu="arama"><span class="ikon">🔍</span> Kayıt ara</button></li>
       <li><button data-goruntu="haber"><span class="ikon">📰</span> Gündem</button></li>
       <li><button data-goruntu="tv"><span class="ikon">📺</span> Canlı TV</button></li>
       <li><button data-goruntu="video"><span class="ikon">▶️</span> Video</button></li>
@@ -938,7 +860,8 @@ button:focus-visible{ outline: 2px solid var(--sari); outline-offset: 2px }
       <div class="kart gizli" id="yenilik-kart" style="border-color:var(--sari)">
         <h2>🎁 Neler yeni?</h2>
         <ul style="padding-left:18px;font-size:13.5px;line-height:1.9">
-          <li><b>🧊 Cam artık HER YERDE:</b> Alt konsol, hamburger menü, takvim kutuları, hızlı çipler, kayıt penceresi, arama kutuları, hatta bildirim baloncuğu — 🧊 temasında uygulamanın tamamı buzlu cam. Ayarlar → 🧊'den aç, gez, hisset</li>
+          <li><b>🔍 GENEL ARAMA:</b> Menüde "Kayıt ara" — tek kutuya yaz, tüm defterde bulsun: günlerdeki notlar ve şantiyeler, ödemeler, borçlar, kartlar. "Ali" yaz → Ali'yle ilgili her kayıt tek listede; dokun, kaydın olduğu yere ışınlan</li>
+          <li><b>🚀 Cam teması kaldırıldı:</b> Kasma şikayetleri üzerine cam tamamen söküldü — uygulama en hızlı klasik haline döndü. Cam seçmiş olanlar otomatik klasiğe geçer, hiçbir veri etkilenmez</li>
         </ul>
         <button class="btn btn-cizgili" id="btn-yenilik-kapat">Süper, kapat</button>
       </div>
@@ -1405,6 +1328,20 @@ button:focus-visible{ outline: 2px solid var(--sari); outline-offset: 2px }
       </div>
     </section>
 
+    <!-- ===== GÖRÜNÜM: GENEL ARAMA ===== -->
+    <section id="goruntu-arama" class="gizli">
+      <div class="kart">
+        <h2>🔍 Tüm defterde ara</h2>
+        <div class="alan" style="margin-bottom:8px">
+          <input type="text" id="arama-kutu" placeholder="İsim, şantiye, not, kart... en az 2 harf" autocomplete="off">
+        </div>
+        <p style="font-size:11.5px;color:var(--soluk)">Günler, ödemeler, borçlar ve kartların içinde arar. Sonuca dokun, kaydın olduğu yere götürsün.</p>
+      </div>
+      <div class="kart">
+        <ul class="liste" id="arama-sonuclar"><div class="bos-mesaj"><span class="buyuk">🔍</span>Ne arıyorsun usta? Yukarıya yaz.</div></ul>
+      </div>
+    </section>
+
     <!-- ===== GÖRÜNÜM: KREDİ KARTLARI ===== -->
     <section id="goruntu-kartlar" class="gizli">
       <div class="kart">
@@ -1834,7 +1771,6 @@ button:focus-visible{ outline: 2px solid var(--sari); outline-offset: 2px }
           <button data-tema="mavi" style="background:#4FA8FF" aria-label="Gece mavisi"></button>
           <button data-tema="yesil" style="background:#2EE59D" aria-label="Çimen yeşili"></button>
           <button data-tema="turuncu" style="background:#FF8A3D" aria-label="Baret turuncusu"></button>
-          <button data-tema="cam" style="background:linear-gradient(160deg,#2B3140,#3A2E1E);border:2px solid rgba(255,255,255,.35)" aria-label="Cam panel">🧊</button>
           <button data-tema="amoled" style="background:#000;border:3px solid #333" aria-label="Tam siyah">🌑</button>
         </div>
       </div>
@@ -1867,7 +1803,7 @@ button:focus-visible{ outline: 2px solid var(--sari); outline-offset: 2px }
         <p style="font-size:13px;color:var(--soluk);margin-bottom:12px">Hata mı gördün, fikrin mi var? Direkt geliştiriciye ulaş:</p>
         <a class="btn btn-cizgili" style="display:block;text-align:center;text-decoration:none;margin-bottom:10px" href="https://wa.me/905051252339?text=Puantaj%20Defterim%20hakkında:" target="_blank">💬 WhatsApp'tan yaz</a>
         <a class="btn btn-cizgili" style="display:block;text-align:center;text-decoration:none" href="tel:05051252339">📞 0505 125 23 39</a>
-        <p style="font-size:11px;color:var(--soluk);margin-top:12px;text-align:center">Sürüm: v79 · Serkan Karakaş</p>
+        <p style="font-size:11px;color:var(--soluk);margin-top:12px;text-align:center">Sürüm: v81 · Serkan Karakaş</p>
       </div>
       <div class="kart">
         <h2>🔒 PIN kilidi</h2>
@@ -4513,6 +4449,97 @@ function konfetiPatlat(){
   })(bas);
 }
 
+/* ---------- 🔍 Genel Arama ---------- */
+function aramaEslesme(q, metinler){
+  q = q.toLocaleLowerCase("tr");   /* Türkçe İ→i, I→ı doğru insin */
+  return metinler.some(m2=> String(m2||"").toLocaleLowerCase("tr").includes(q));
+}
+function aramaCalistir(){
+  const kap = $("#arama-sonuclar"); if(!kap) return;
+  const q = ($("#arama-kutu").value||"").trim();
+  if(q.length < 2){
+    kap.innerHTML = '<div class="bos-mesaj"><span class="buyuk">🔍</span>En az 2 harf yaz usta.</div>';
+    return;
+  }
+  const sonuc = [];
+  /* 📅 Günler: not + şantiye (tüm zamanlar önbelleğinden) */
+  try{
+    if(tumGirdilerQS) tumGirdilerQS.forEach(doc=>{
+      if(sonuc.length >= 60) return;
+      const v = doc.data();
+      if(aramaEslesme(q, [v.not, v.santiye])){
+        const t = new Date(doc.id+"T12:00:00");
+        sonuc.push({
+          ikon:"📅", renk:"var(--mesai)",
+          b: t.getDate()+" "+AYLAR[t.getMonth()]+" "+t.getFullYear(),
+          a: (v.santiye ? "📍 "+v.santiye+" · " : "") + (v.not ? String(v.not).slice(0,50) : durumEtiket(v.durum)),
+          git: ()=>{ aktifYil = t.getFullYear(); aktifAy = t.getMonth(); ayiYukle(); gorunumSec("puantaj"); modalAc(doc.id); }
+        });
+      }
+    });
+  }catch(e){}
+  /* 💵 Ödemeler: not + tür */
+  try{
+    if(tumOdemelerQS) tumOdemelerQS.forEach(doc=>{
+      if(sonuc.length >= 60) return;
+      const o = doc.data();
+      if(aramaEslesme(q, [o.not, odemeTurEtiket(o.tur)])){
+        const t = new Date((o.tarih||"2000-01-01")+"T12:00:00");
+        sonuc.push({
+          ikon:"💵", renk:"var(--tam)",
+          b: paraFmt(o.tutar)+" — "+odemeTurEtiket(o.tur),
+          a: t.getDate()+" "+AYLAR[t.getMonth()]+" "+t.getFullYear()+(o.not ? " · "+String(o.not).slice(0,40) : ""),
+          git: ()=>{ aktifYil = t.getFullYear(); aktifAy = t.getMonth(); ayiYukle(); gorunumSec("odemeler"); }
+        });
+      }
+    });
+  }catch(e){}
+  /* 🤝 Borçlar: kişi + not */
+  borclar.forEach(b2=>{
+    if(sonuc.length >= 60) return;
+    if(aramaEslesme(q, [b2.kisi, b2.not])){
+      sonuc.push({
+        ikon:"🤝", renk:"var(--sari)",
+        b: String(b2.kisi||"?") + " — " + paraFmt(borcKalan(b2)) + (b2.odendi ? " (kapandı)" : ""),
+        a: b2.yon === "verdim" ? "Alacağın" : "Borcun",
+        git: ()=> gorunumSec("borc")
+      });
+    }
+  });
+  /* 💳 Kartlar */
+  kartlar.forEach(k2=>{
+    if(sonuc.length >= 60) return;
+    if(aramaEslesme(q, [k2.ad])){
+      sonuc.push({
+        ikon:"💳", renk:"var(--mesai)",
+        b: String(k2.ad) + " — " + paraFmt(Number(k2.borc)||0),
+        a: "Son ödeme: ayın " + k2.gun + "'i",
+        git: ()=> gorunumSec("kartlar")
+      });
+    }
+  });
+  if(!sonuc.length){
+    kap.innerHTML = '<div class="bos-mesaj"><span class="buyuk">🤷</span>"'+q.replace(/</g,"&lt;")+'" için kayıt bulunamadı.</div>';
+    return;
+  }
+  kap.innerHTML = "";
+  sonuc.slice(0, 40).forEach(r=>{
+    const li = document.createElement("li");
+    li.style.cursor = "pointer";
+    li.innerHTML =
+      '<div class="rozet" style="background:'+r.renk+'">'+r.ikon+'</div>'+
+      '<div class="orta"><div class="baslik">'+String(r.b).replace(/</g,"&lt;")+'</div>'+
+      '<div class="alt-yazi">'+String(r.a).replace(/</g,"&lt;")+'</div></div>';
+    li.addEventListener("click", r.git);
+    kap.appendChild(li);
+  });
+  if(sonuc.length > 40){
+    const li = document.createElement("li");
+    li.innerHTML = '<div class="bos-mesaj" style="font-size:12px">+'+(sonuc.length-40)+' sonuç daha var — aramayı daralt</div>';
+    kap.appendChild(li);
+  }
+}
+
 /* ---------- 🕛 Gün Devri Bekçisi: gece yarısını kaçırma ---------- */
 let bekciSonGun = tarihId(new Date());
 function gunDevriKontrol(){
@@ -6562,7 +6589,8 @@ document.addEventListener("DOMContentLoaded", ()=>{
     haber:["Gündem","Türkiye ve dünya haberleri"],
     tv:["Canlı TV","Kanalların resmi yayınları"],
     video:["Video","Ara, uygulamada izle"],
-    kartlar:["Kredi kartlarım","Borç ve son ödeme takibi"]
+    kartlar:["Kredi kartlarım","Borç ve son ödeme takibi"],
+    arama:["Kayıt ara","Tüm defterde bul"]
   };
   $$("[data-goruntu]").forEach(b=>{
     b.addEventListener("click", ()=>{
@@ -6571,10 +6599,10 @@ document.addEventListener("DOMContentLoaded", ()=>{
       aktifGoruntu = g;
       $("#btn-geri").classList.toggle("gizli", g==="ana");
       $$("[data-goruntu]").forEach(x=>x.classList.toggle("aktif", x===b));
-      ["ana","puantaj","odemeler","masraf","borc","ozet","yil","notlar","rozet","ekip","kisiler","arac","ayarlar","haber","tv","video","kartlar"].forEach(x=>{
+      ["ana","puantaj","odemeler","masraf","borc","ozet","yil","notlar","rozet","ekip","kisiler","arac","ayarlar","haber","tv","video","kartlar","arama"].forEach(x=>{
         $("#goruntu-"+x).classList.toggle("gizli", x!==g);
       });
-      $("#ay-bar").style.display = (g==="ayarlar"||g==="borc"||g==="ana"||g==="notlar"||g==="rozet"||g==="arac"||g==="haber"||g==="tv"||g==="video"||g==="kartlar") ? "none" : "flex";
+      $("#ay-bar").style.display = (g==="ayarlar"||g==="borc"||g==="ana"||g==="notlar"||g==="rozet"||g==="arac"||g==="haber"||g==="tv"||g==="video"||g==="kartlar"||g==="arama") ? "none" : "flex";
       $("#topbar-baslik").firstChild.textContent = basliklar[g][0];
       $("#topbar-alt").textContent = basliklar[g][1];
       $("#btn-bugun").style.display = g==="puantaj" ? "flex" : "none";
@@ -6592,6 +6620,7 @@ document.addEventListener("DOMContentLoaded", ()=>{
       if(g==="ekip"){ ekipYoklamaCiz(); ekipYoklamaYukle(); ekipOzetYukle(); }
       if(g==="kisiler") kisilerYukle();
       if(g!=="arac" && teraziAcik){ teraziAcik = false; window.removeEventListener("deviceorientation", teraziDinle); const ta=$("#terazi-alan"); if(ta) ta.classList.add("gizli"); }
+      if(g==="arama"){ setTimeout(()=>{ const k=$("#arama-kutu"); if(k) k.focus(); }, 150); }
       if(g==="ayarlar"){
         const cs = $("#cihaz-sayi");
         if(cs && kullanici){
@@ -6636,6 +6665,11 @@ document.addEventListener("DOMContentLoaded", ()=>{
   $("#btn-tvo-kapat").addEventListener("click", tvKapat);
   $("#btn-saglik").addEventListener("click", saglikTesti);
   $("#btn-bildirim").addEventListener("click", bildirimAc);
+  let aramaZ = null;
+  $("#arama-kutu").addEventListener("input", ()=>{
+    clearTimeout(aramaZ);
+    aramaZ = setTimeout(aramaCalistir, 250);
+  });
   $("#btn-bildirim-dene").addEventListener("click", async ()=>{
     try{
       if(!("Notification" in window) || Notification.permission !== "granted"){
@@ -6992,7 +7026,11 @@ document.addEventListener("DOMContentLoaded", ()=>{
     document.querySelectorAll("#tema-secim button").forEach(b=>
       b.classList.toggle("secili", (b.dataset.tema||"")===(ad||"")));
   }
-  try{ temaUygula(localStorage.getItem("tema")||""); }catch(e){ temaUygula(""); }
+  try{
+    let kayitliTema = localStorage.getItem("tema")||"";
+    if(kayitliTema === "cam") kayitliTema = "";   /* cam kaldırıldı, klasiğe dön */
+    temaUygula(kayitliTema);
+  }catch(e){ temaUygula(""); }
   /* 🔠 Büyük yazı modu — gözlüğü unutulan günler için */
   function buyukYaziUygula(acik){
     document.documentElement.style.fontSize = acik ? "112%" : "";
@@ -7292,7 +7330,7 @@ document.addEventListener("DOMContentLoaded", ()=>{
   });
 
   /* Neler yeni kartı */
-  const YENILIK_SURUM = "v79";
+  const YENILIK_SURUM = "v81";
   try{ $("#cekmece-surum").textContent = "Puantaj Defterim " + YENILIK_SURUM; }catch(e){}
   try{
     if(localStorage.getItem("yenilik")!==YENILIK_SURUM) $("#yenilik-kart").classList.remove("gizli");
