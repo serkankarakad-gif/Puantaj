@@ -851,6 +851,9 @@ button:focus-visible{ outline: 2px solid var(--sari); outline-offset: 2px }
         <div id="gk-selam" style="font-weight:800;font-size:15.5px;margin-bottom:6px"></div>
         <div id="gk-icerik" style="font-size:13.5px;line-height:1.7;color:var(--soluk)"></div>
       </div>
+      <div class="kart gizli" id="tatil-kart" style="border:1.5px solid var(--sari);padding:14px">
+        <div id="tatil-metin" style="font-size:14px;line-height:1.7"></div>
+      </div>
       <div class="kart gizli" id="dun-kart" style="border:1.5px solid var(--mesai);padding:14px">
         <div style="font-size:14px;line-height:1.6">📌 <b>Dün işlenmemiş görünüyor.</b> Çalıştıysan unutma, iki dokunuşla işle:</div>
         <button class="eksik-cip" id="btn-dun-isle" style="margin-top:10px">📅 Dünü aç ve işle</button>
@@ -860,8 +863,9 @@ button:focus-visible{ outline: 2px solid var(--sari); outline-offset: 2px }
       <div class="kart gizli" id="yenilik-kart" style="border-color:var(--sari)">
         <h2>🎁 Neler yeni?</h2>
         <ul style="padding-left:18px;font-size:13.5px;line-height:1.9">
-          <li><b>🔍 GENEL ARAMA:</b> Menüde "Kayıt ara" — tek kutuya yaz, tüm defterde bulsun: günlerdeki notlar ve şantiyeler, ödemeler, borçlar, kartlar. "Ali" yaz → Ali'yle ilgili her kayıt tek listede; dokun, kaydın olduğu yere ışınlan</li>
-          <li><b>🚀 Cam teması kaldırıldı:</b> Kasma şikayetleri üzerine cam tamamen söküldü — uygulama en hızlı klasik haline döndü. Cam seçmiş olanlar otomatik klasiğe geçer, hiçbir veri etkilenmez</li>
+          <li><b>📸 Ay Karnesi görseli:</b> Hesap özetinde tek düğme — ayın karnen şık bir karta dönüşür (gün, mesai, hakediş), WhatsApp durumuna at: "Temmuz'da 22 gün 💪" Gizli modda paralar görünmez</li>
+          <li><b>🎙️ KONUŞARAK PUANTAJ:</b> Usta'ya mikrofon ya da yazıyla söyle: "bugün tam çalıştım, 2 saat mesai yaptım" → gün kendiliğinden işlenir! "Bugün gelmedim", "bugün izinliyim" de anlar. Zaten işli günün üzerine yazmaz, sorularını işlem sanmaz</li>
+          <li><b>🔧 Kıyas düzeltmesi:</b> Geçen yıl kıyasındaki mesai satırı yanlış alan okuyordu (hep 0 gösterecekti) — yayılmadan yakalandı, düzeltildi</li>
         </ul>
         <button class="btn btn-cizgili" id="btn-yenilik-kapat">Süper, kapat</button>
       </div>
@@ -1142,6 +1146,7 @@ button:focus-visible{ outline: 2px solid var(--sari); outline-offset: 2px }
       <div class="kart">
         <h2>🧮 Bu ayın hesabı</h2>
         <div class="ozet-grid" id="ozet-grid"></div>
+        <button class="btn btn-sari" id="btn-karne-kart" style="margin-top:12px">📸 Ay karnesini görsel yap, paylaş</button>
         <button class="btn btn-cizgili" id="btn-karne" style="margin-top:12px">📸 Ay karnesi oluştur (paylaşılır görsel)</button>
         <div id="odeme-dagilim" style="font-size:12.5px;color:var(--soluk);margin-top:10px;text-align:center"></div>
       </div>
@@ -1166,6 +1171,7 @@ button:focus-visible{ outline: 2px solid var(--sari); outline-offset: 2px }
         <div class="ozet-grid" id="genel-grid"><div class="bos-mesaj">Yükleniyor...</div></div>
         <div id="zam-gecmisi" style="font-size:13.5px;color:var(--soluk);line-height:1.7;margin-top:12px"></div>
         <div id="santiye-kirilim" style="font-size:13.5px;color:var(--soluk);line-height:1.7;margin-top:10px"></div>
+        <div id="yil-kiyas" style="display:none;background:var(--girdi);border:1.5px solid var(--cizgi);border-radius:14px;padding:12px 14px;margin-top:12px;font-size:13.5px;line-height:1.9"></div>
         <div id="gg-kart" class="gizli" style="margin-top:16px">
           <h2 style="font-size:15px">📊 Hakediş / Alınan — son 12 ay</h2>
           <canvas id="gg-grafik" style="width:100%;height:195px;display:block"></canvas>
@@ -1495,6 +1501,42 @@ button:focus-visible{ outline: 2px solid var(--sari); outline-offset: 2px }
         <p style="font-size:11px;color:var(--soluk);margin-top:10px">Kaba hesaptır: beton %10 fireli · duvar m²'de ~55 tuğla / ~8,5 gazbeton · boya 2 kat, litrede ~5 m². Malzemeye göre değişir.</p>
       </div>
       <div class="kart">
+        <h2>🔊 Gürültü Ölçer</h2>
+        <p style="font-size:12px;color:var(--soluk);margin-bottom:10px">Şantiyede ortam sesini ölç: <b>85 dB üstü</b> kulağa kalıcı zarar verir — kulak koruyucu ŞART (ve işveren vermek zorunda). Kaba ölçümdür, fikir verir.</p>
+        <button class="btn btn-cizgili" id="btn-ses-basla">🔊 Ölçümü başlat</button>
+        <div id="ses-alan" class="gizli" style="text-align:center;margin-top:12px">
+          <div id="ses-db" style="font-family:'Saira Condensed';font-size:52px;font-weight:800;line-height:1">—</div>
+          <div id="ses-durum" style="font-size:13.5px;font-weight:700;margin-top:4px"></div>
+          <div style="height:10px;background:var(--girdi);border-radius:5px;margin-top:10px;overflow:hidden">
+            <div id="ses-bar" style="height:100%;width:0%;background:var(--tam);transition:width .15s"></div>
+          </div>
+        </div>
+      </div>
+      <div class="kart">
+        <h2>🦺 İş Güvenliği Köşesi</h2>
+        <div style="font-size:13px;line-height:1.9;color:var(--soluk)">
+          <b style="color:var(--metin)">Hayat kurtaran 8 kural:</b><br>
+          1. Baretsiz sahaya adım atma — düşen bir cıvata bile öldürür ⛑️<br>
+          2. 3 metreden yüksekte <b>emniyet kemeri</b> tak, bağlantı noktasını kontrol et<br>
+          3. İskeleye çıkmadan önce bak: etiketli mi, korkuluğu tam mı?<br>
+          4. Elektrik panosuna yetkisiz dokunma; kaçak akım rölesi yoksa çalışma<br>
+          5. Vinç yükünün ALTINDAN asla geçme 🏗️<br>
+          6. Derin kazıya iksasız (destek) girme — göçük saniye ister<br>
+          7. Yorgunsan yüksekte çalışma, arkadaşını da uyar<br>
+          8. Güvensiz iş için <b>"yapmam" deme hakkın var</b> (6331 sayılı kanun, madde 13)<br><br>
+          <b style="color:var(--metin)">Bil:</b> Baret, kemer, kulaklık, eldiven — hepsi <b>KKD</b>'dir ve işveren ÜCRETSİZ vermek zorundadır. Vermiyorsa ALO 170'e bildirebilirsin. Bu köşeyi arkadaşlarına da göster usta 🙏
+        </div>
+      </div>
+      <div class="kart">
+        <h2>🧱 Tuğla Ustası — mola oyunu</h2>
+        <p style="font-size:12px;color:var(--soluk);margin-bottom:10px">Kayan tuğlayı tam alttakinin üstüne oturt: ekrana dokun! Kenardan taşan kısım kırılır, tuğla daralır. Kaç kat çıkabilirsin usta?</p>
+        <button class="btn btn-cizgili" id="btn-oyun-basla">🧱 Oyunu başlat</button>
+        <div id="oyun-alan" class="gizli" style="text-align:center;margin-top:12px">
+          <canvas id="oyun-cnv" width="300" height="380" style="max-width:300px;border:1.5px solid var(--cizgi);border-radius:12px;touch-action:manipulation"></canvas>
+          <div id="oyun-skor" style="font-family:'Saira Condensed';font-size:22px;font-weight:800;margin-top:6px"></div>
+        </div>
+      </div>
+      <div class="kart">
         <h2>📐 Su Terazisi</h2>
         <p style="font-size:12px;color:var(--soluk);margin-bottom:10px">Telefonu yüzeye/duvara daya — baloncuk ortada ve yeşilse terazidedir. Kaba kontrole birebir (hassas iş için gerçek terazi şart).</p>
         <button class="btn btn-cizgili" id="btn-terazi-basla">📐 Teraziyi başlat</button>
@@ -1803,7 +1845,7 @@ button:focus-visible{ outline: 2px solid var(--sari); outline-offset: 2px }
         <p style="font-size:13px;color:var(--soluk);margin-bottom:12px">Hata mı gördün, fikrin mi var? Direkt geliştiriciye ulaş:</p>
         <a class="btn btn-cizgili" style="display:block;text-align:center;text-decoration:none;margin-bottom:10px" href="https://wa.me/905051252339?text=Puantaj%20Defterim%20hakkında:" target="_blank">💬 WhatsApp'tan yaz</a>
         <a class="btn btn-cizgili" style="display:block;text-align:center;text-decoration:none" href="tel:05051252339">📞 0505 125 23 39</a>
-        <p style="font-size:11px;color:var(--soluk);margin-top:12px;text-align:center">Sürüm: v81 · Serkan Karakaş</p>
+        <p style="font-size:11px;color:var(--soluk);margin-top:12px;text-align:center">Sürüm: v85 · Serkan Karakaş</p>
       </div>
       <div class="kart">
         <h2>🔒 PIN kilidi</h2>
@@ -4267,6 +4309,220 @@ async function kimlikKartOlustur(){
   }catch(e){ hataGoster(e); }
 }
 
+/* ---------- 📸 Ay Karnesi Story Kartı ---------- */
+function karneIstat(t, gizli){
+  const satir = [
+    ["ÇALIŞILAN GÜN", String(t.gunSayisi||0)],
+    ["MESAİ (SAAT)", String(t.mesaiToplam||0)]
+  ];
+  if(!gizli){
+    satir.push(["HAKEDİŞ", paraFmt(t.hakedis||0)]);
+    satir.push(["KALAN ALACAK", paraFmt(t.kalan||0)]);
+  }else{
+    satir.push(["HAKEDİŞ", "••••"]);
+    satir.push(["KALAN ALACAK", "••••"]);
+  }
+  return satir;
+}
+async function karneKartOlustur(){
+  try{
+    const t = hesapla();
+    if(!(Number(t.gunSayisi) > 0)){ toast("Bu ayda işlenmiş gün yok — önce günleri işle 📅"); return; }
+    const c = document.createElement("canvas");
+    c.width = 1080; c.height = 1350;
+    const x = c.getContext("2d");
+    const stil = getComputedStyle(document.body);
+    const SARI = (stil.getPropertyValue("--sari")||"#FFC400").trim();
+    const g = x.createLinearGradient(0,0,1080,1350);
+    g.addColorStop(0,"#191A20"); g.addColorStop(1,"#0C0D11");
+    x.fillStyle = g; x.fillRect(0,0,1080,1350);
+    x.fillStyle = SARI; x.fillRect(0,0,1080,20); x.fillRect(0,1330,1080,20);
+    x.fillStyle = SARI; x.font = "800 46px 'Saira Condensed', sans-serif";
+    x.fillText("🏗️ AYLIK KARNEM", 70, 120);
+    x.fillStyle = "#fff"; x.font = "800 92px 'Saira Condensed', sans-serif";
+    x.fillText(AYLAR[aktifAy].toLocaleUpperCase("tr") + " " + aktifYil, 70, 235);
+    const ad = (kullanici && kullanici.displayName) || "";
+    if(ad){ x.fillStyle = "#8B8E99"; x.font = "700 34px sans-serif"; x.fillText("👷 " + ad.slice(0,26), 70, 295); }
+    const satirlar = karneIstat(t, gizliMod);
+    satirlar.forEach((st, i)=>{
+      const kx = 70 + (i % 2) * 490, ky = 380 + Math.floor(i / 2) * 300;
+      x.fillStyle = "rgba(255,255,255,.06)";
+      x.fillRect(kx, ky, 450, 250);
+      x.fillStyle = "#8B8E99"; x.font = "700 30px sans-serif";
+      x.fillText(st[0], kx + 34, ky + 62);
+      x.fillStyle = i < 2 ? "#fff" : SARI;
+      x.font = "800 84px 'Saira Condensed', sans-serif";
+      x.fillText(st[1], kx + 34, ky + 175);
+    });
+    x.fillStyle = "#8B8E99"; x.font = "600 30px sans-serif";
+    x.fillText("Alın terinin hesabı — Puantaj Defterim 📲", 70, 1160);
+    x.fillStyle = SARI; x.font = "800 36px 'Saira Condensed', sans-serif";
+    x.fillText("Emeğine sağlık usta 💪", 70, 1230);
+    c.toBlob(async blob=>{
+      if(!blob){ toast("Karne oluşturulamadı"); return; }
+      const dosya = new File([blob], "ay-karnem.png", {type:"image/png"});
+      try{
+        if(navigator.canShare && navigator.canShare({files:[dosya]})){
+          await navigator.share({files:[dosya]});
+          return;
+        }
+      }catch(e){ if(e && e.name === "AbortError") return; }
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(blob);
+      a.download = "ay-karnem.png";
+      a.click();
+      toast("Karnen indirildi 📸 Galeriden paylaşabilirsin");
+    }, "image/png");
+  }catch(e){ hataGoster(e); }
+}
+
+/* ---------- 🎙️ Sesle gün işleme ---------- */
+function sesKomutCoz(m){
+  m = String(m||"").toLocaleLowerCase("tr");
+  if(!(m.includes("bugün") || m.includes("bugun"))) return null;         /* sadece "bugün..." cümleleri */
+  if(m.includes(" mi") || m.includes(" mı") || m.includes("kaç") || m.includes("kac")) return null;  /* soru cümlesi: yazma! */
+  const mesaiM = m.match(/(\d+(?:[.,]\d+)?)\s*saat/);
+  const mesai = mesaiM ? Number(mesaiM[1].replace(",", ".")) : 0;
+  let durum = null;
+  if(m.includes("gelmedim") || m.includes("gitmedim")) durum = "gelmedi";
+  else if(m.includes("yarım") || m.includes("yarim")) durum = "yarim";
+  else if(m.includes("izinli") || m.includes("izin")) durum = "izin";
+  else if(m.includes("tam") || m.includes("çalıştım") || m.includes("calistim") || mesai > 0) durum = "tam";
+  if(!durum) return null;
+  return { durum, mesai: durum === "tam" ? mesai : 0 };
+}
+
+/* ---------- 🔊 Gürültü Ölçer ---------- */
+function dbHesapla(rms){
+  if(!(rms > 0)) return 30;
+  const db = Math.round(20 * Math.log10(rms) + 94);   /* kaba kalibrasyon */
+  return Math.max(30, Math.min(110, db));
+}
+function dbDurum(db){
+  if(db >= 85) return {m:"⚠️ TEHLİKELİ — kulak koruyucu TAK!", r:"var(--gelmedi)"};
+  if(db >= 70) return {m:"Gürültülü — uzun süre kalma", r:"var(--sari)"};
+  return {m:"Güvenli seviye ✓", r:"var(--tam)"};
+}
+let sesAkis = null, sesCtx = null;
+async function sesBaslat(){
+  try{
+    if(!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia){
+      toast("Bu telefonda mikrofon ölçümü desteklenmiyor 😕"); return;
+    }
+    sesAkis = await navigator.mediaDevices.getUserMedia({audio: true});
+    sesCtx = new (window.AudioContext || window.webkitAudioContext)();
+    const kaynak = sesCtx.createMediaStreamSource(sesAkis);
+    const coz = sesCtx.createAnalyser();
+    coz.fftSize = 2048;
+    kaynak.connect(coz);
+    const veri = new Float32Array(coz.fftSize);
+    $("#ses-alan").classList.remove("gizli");
+    (function olc(){
+      if(!sesAkis) return;
+      coz.getFloatTimeDomainData(veri);
+      let kare = 0;
+      for(let i = 0; i < veri.length; i++) kare += veri[i] * veri[i];
+      const rms = Math.sqrt(kare / veri.length);
+      const db = dbHesapla(rms);
+      const d = dbDurum(db);
+      $("#ses-db").textContent = db + " dB";
+      $("#ses-db").style.color = d.r;
+      $("#ses-durum").textContent = d.m;
+      $("#ses-durum").style.color = d.r;
+      const b = $("#ses-bar");
+      b.style.width = Math.min(100, (db - 30) / 80 * 100) + "%";
+      b.style.background = d.r;
+      requestAnimationFrame(olc);
+    })();
+  }catch(e){
+    toast("Mikrofon izni verilmedi ya da açılamadı 🎙️");
+  }
+}
+function sesDurdur(){
+  try{ if(sesAkis){ sesAkis.getTracks().forEach(t=> t.stop()); sesAkis = null; } }catch(e){}
+  try{ if(sesCtx){ sesCtx.close(); sesCtx = null; } }catch(e){}
+  const sa = $("#ses-alan"); if(sa) sa.classList.add("gizli");
+}
+
+/* ---------- 🧱 Tuğla Ustası ---------- */
+function tuglaKesisim(oncekiX, oncekiW, yeniX, yeniW){
+  const sol = Math.max(oncekiX, yeniX);
+  const sag = Math.min(oncekiX + oncekiW, yeniX + yeniW);
+  return sag > sol ? {x: sol, w: sag - sol} : null;
+}
+let oyun = null;
+function oyunBaslat(){
+  $("#oyun-alan").classList.remove("gizli");
+  const c = $("#oyun-cnv"), x = c.getContext("2d");
+  const W = 300, H = 380, KAT = 26;
+  const stil = getComputedStyle(document.body);
+  const SARI = (stil.getPropertyValue("--sari")||"#FFC400").trim();
+  let rekor = 0;
+  try{ rekor = Number(localStorage.getItem("tuglaRekor"))||0; }catch(e){}
+  oyun = {
+    kule: [{x: 75, w: 150}],       /* taban */
+    hx: 0, hw: 150, yon: 1, hiz: 2.2,
+    kat: 0, bitti: false
+  };
+  function ciz(){
+    x.fillStyle = "#15161B"; x.fillRect(0, 0, W, H);
+    /* kule (en fazla son 11 kat görünür, aşağı kaydır) */
+    const gorunur = oyun.kule.slice(-11);
+    gorunur.forEach((t, i)=>{
+      const y = H - 30 - i * KAT;
+      x.fillStyle = i === gorunur.length - 1 ? SARI : "#C89A18";
+      x.fillRect(t.x, y, t.w, KAT - 3);
+      x.strokeStyle = "#15161B"; x.strokeRect(t.x, y, t.w, KAT - 3);
+    });
+    if(!oyun.bitti){
+      /* kayan tuğla */
+      const y = H - 30 - gorunur.length * KAT;
+      x.fillStyle = SARI;
+      x.fillRect(oyun.hx, y, oyun.hw, KAT - 3);
+    }
+    x.fillStyle = "#fff"; x.font = "800 18px 'Saira Condensed'";
+    x.fillText("KAT: " + oyun.kat, 10, 24);
+    if(rekor) { x.textAlign = "right"; x.fillText("REKOR: " + rekor, W - 10, 24); x.textAlign = "left"; }
+  }
+  function adim(){
+    if(!oyun || oyun.bitti) return;
+    oyun.hx += oyun.hiz * oyun.yon;
+    if(oyun.hx <= 0){ oyun.hx = 0; oyun.yon = 1; }
+    if(oyun.hx + oyun.hw >= W){ oyun.hx = W - oyun.hw; oyun.yon = -1; }
+    ciz();
+    requestAnimationFrame(adim);
+  }
+  function koy(){
+    if(!oyun) return;
+    if(oyun.bitti){ oyunBaslat(); return; }  /* yeniden başlat */
+    const son = oyun.kule[oyun.kule.length - 1];
+    const kes = tuglaKesisim(son.x, son.w, oyun.hx, oyun.hw);
+    if(!kes){
+      oyun.bitti = true;
+      if(oyun.kat > rekor){
+        rekor = oyun.kat;
+        try{ localStorage.setItem("tuglaRekor", String(rekor)); }catch(e){}
+        $("#oyun-skor").textContent = "🏆 YENİ REKOR: " + oyun.kat + " kat! Helal usta!";
+      }else{
+        $("#oyun-skor").textContent = "Kule devrildi! " + oyun.kat + " kat çıktın — dokun, yeniden dene 💪";
+      }
+      ciz();
+      return;
+    }
+    oyun.kule.push(kes);
+    oyun.kat++;
+    oyun.hw = kes.w;
+    oyun.hiz = Math.min(6, 2.2 + oyun.kat * 0.18);   /* her katta hızlanır */
+    oyun.hx = 0; oyun.yon = 1;
+    if(navigator.vibrate) navigator.vibrate(15);
+    $("#oyun-skor").textContent = "";
+  }
+  c.onpointerdown = koy;
+  $("#oyun-skor").textContent = "";
+  ciz();
+  requestAnimationFrame(adim);
+}
+
 /* ---------- 📐 Su Terazisi ---------- */
 let teraziAcik = false;
 function teraziCiz(beta, gamma){
@@ -4448,6 +4704,20 @@ function konfetiPatlat(){
     else c.remove();
   })(bas);
 }
+
+/* ---------- 🗓️ Resmi tatiller (2026 tam liste + 2027 sabitler) ---------- */
+const TATILLER = {
+  "2026-01-01":"Yılbaşı", "2026-03-20":"Ramazan Bayramı 1. gün", "2026-03-21":"Ramazan Bayramı 2. gün",
+  "2026-03-22":"Ramazan Bayramı 3. gün", "2026-04-23":"23 Nisan Ulusal Egemenlik ve Çocuk Bayramı",
+  "2026-05-01":"1 Mayıs Emek ve Dayanışma Günü", "2026-05-19":"19 Mayıs Atatürk'ü Anma, Gençlik ve Spor Bayramı",
+  "2026-05-27":"Kurban Bayramı 1. gün", "2026-05-28":"Kurban Bayramı 2. gün",
+  "2026-05-29":"Kurban Bayramı 3. gün", "2026-05-30":"Kurban Bayramı 4. gün",
+  "2026-07-15":"15 Temmuz Demokrasi ve Millî Birlik Günü", "2026-08-30":"30 Ağustos Zafer Bayramı",
+  "2026-10-29":"29 Ekim Cumhuriyet Bayramı",
+  "2027-01-01":"Yılbaşı", "2027-04-23":"23 Nisan", "2027-05-01":"1 Mayıs", "2027-05-19":"19 Mayıs",
+  "2027-07-15":"15 Temmuz", "2027-08-30":"30 Ağustos", "2027-10-29":"29 Ekim Cumhuriyet Bayramı"
+};
+function tatilAd(id){ return TATILLER[id] || null; }
 
 /* ---------- 🔍 Genel Arama ---------- */
 function aramaEslesme(q, metinler){
@@ -5096,6 +5366,18 @@ async function anaYukle(){
         tKart.classList.remove("gizli");
       }else tKart.classList.add("gizli");
     }
+    /* 🗓️ Tatil uyarısı */
+    const tatilKrt = $("#tatil-kart");
+    if(tatilKrt){
+      const tatilYarin = new Date(simdi); tatilYarin.setDate(simdi.getDate()+1);
+      const bugunT = tatilAd(tarihId(simdi)), yarinT = tatilAd(tarihId(tatilYarin));
+      if(bugunT || yarinT){
+        $("#tatil-metin").innerHTML = bugunT
+          ? "🎉 <b>Bugün resmi tatil: " + bugunT + "</b><br>Çalıştıysan bil: resmi tatil mesaisi <b>zamlı ücrete</b> tabidir — günü işlemeyi ve mesaini yazmayı unutma 💪"
+          : "🎉 <b>Yarın resmi tatil: " + yarinT + "</b><br>Çalışacaksan zamlı ücret hakkın var; tatil yapacaksan şimdiden iyi bayramlar usta! 🙌";
+        tatilKrt.classList.remove("gizli");
+      }else tatilKrt.classList.add("gizli");
+    }
     /* 🌅 Günün kartı */
     gununKartiCiz();
     aksamDurt(bugunIsli);
@@ -5489,6 +5771,14 @@ function takvimCiz(){
       f.className="foto-nokta"; f.textContent="📸";
       el.appendChild(f);
     }
+    if(tatilAd(id)){
+      const tk = document.createElement("span");
+      tk.className = "foto-nokta";
+      tk.style.left = "auto"; tk.style.right = "2px";
+      tk.textContent = "🎉";
+      tk.title = tatilAd(id);
+      el.appendChild(tk);
+    }
     /* Kısa dokunuş: modal aç. Basılı tut: anında tam yevmiye işle. */
     let lpZaman=null, lpAtesledi=false, lpX=0, lpY=0;
     el.addEventListener("contextmenu", e=> e.preventDefault());
@@ -5820,6 +6110,8 @@ async function ozetDetayYukle(){
     const ayHak = {}; // "2026-07" -> hakediş
     const yevGecmis = []; // {id:"2026-07-15", yev:2500} — zam geçmişi için
     const santiyeHak = {}; // "Konut projesi" -> hakediş
+    const kiyasOnEk = (aktifYil-1) + "-" + pad(aktifAy+1);   // geçen yılın aynı ayı
+    let kGun = 0, kMesai = 0, kHak = 0;
     gSnap.forEach(doc=>{
       const v = doc.data(), ayKey = doc.id.slice(0,7);
       gun += girdiGun(v);
@@ -5830,6 +6122,11 @@ async function ozetDetayYukle(){
       if(uy>0) yevGecmis.push({id:doc.id, yev:uy});
       const sAd = String(v.santiye||"").trim();
       if(sAd && h>0) santiyeHak[sAd] = (santiyeHak[sAd]||0) + h;
+      if(doc.id.slice(0,7) === kiyasOnEk){
+        kGun += girdiGun(v);
+        kMesai += Number(v.mesai)||0;
+        kHak += h;
+      }
       ayHak[ayKey] = (ayHak[ayKey]||0) + h;
     });
     const ayAlinan = {}; // "2026-07" -> alınan
@@ -5877,6 +6174,22 @@ async function ozetDetayYukle(){
           sirali.slice(0,5).map(ad2=> ad2.replace(/</g,"&lt;")+" <b>"+paraFmt(santiyeHak[ad2])+"</b>").join(" · ") +
           (sirali.length>5 ? " · +"+(sirali.length-5)+" şantiye" : "");
       }else skEl.textContent = "";
+    }
+    /* 📊 Geçen yılla kıyas */
+    const ykEl = $("#yil-kiyas");
+    if(ykEl){
+      const buT = hesapla();
+      if(kGun > 0 && Number(buT.gunSayisi) > 0){
+        const yuzde = (eski2, yeni2)=> eski2 > 0 ? Math.round((yeni2-eski2)/eski2*100) : null;
+        const ok = f=> f===null ? "" : (f >= 0 ? " <b style='color:var(--tam)'>▲ %"+f+"</b>" : " <b style='color:var(--gelmedi)'>▼ %"+Math.abs(f)+"</b>");
+        ykEl.innerHTML =
+          "📊 <b>Geçen yılla kıyas — " + AYLAR[aktifAy] + "</b><br>" +
+          "Gün: " + kGun + " → <b>" + buT.gunSayisi + "</b>" + ok(yuzde(kGun, Number(buT.gunSayisi))) + "<br>" +
+          (kMesai > 0 || Number(buT.mesaiToplam) > 0 ? "Mesai: " + kMesai + " → <b>" + (Number(buT.mesaiToplam)||0) + " saat</b>" + ok(yuzde(kMesai, Number(buT.mesaiToplam)||0)) + "<br>" : "") +
+          (gizliMod ? "" : "Hakediş: " + paraFmt(kHak) + " → <b>" + paraFmt(buT.hakedis) + "</b>" + ok(yuzde(kHak, buT.hakedis)) + "<br>") +
+          "<span style='color:var(--soluk);font-size:12px'>" + (aktifYil-1) + " " + AYLAR[aktifAy] + " → " + aktifYil + " " + AYLAR[aktifAy] + "</span>";
+        ykEl.style.display = "block";
+      }else ykEl.style.display = "none";
     }
     ggGrafikCiz(ayHak, ayAlinan);
 
@@ -6619,6 +6932,8 @@ document.addEventListener("DOMContentLoaded", ()=>{
       if(g==="rozet") rozetYukle();
       if(g==="ekip"){ ekipYoklamaCiz(); ekipYoklamaYukle(); ekipOzetYukle(); }
       if(g==="kisiler") kisilerYukle();
+      if(g!=="arac" && sesAkis) sesDurdur();
+      if(g!=="arac" && oyun){ oyun.bitti = true; oyun = null; const oa=$("#oyun-alan"); if(oa) oa.classList.add("gizli"); }
       if(g!=="arac" && teraziAcik){ teraziAcik = false; window.removeEventListener("deviceorientation", teraziDinle); const ta=$("#terazi-alan"); if(ta) ta.classList.add("gizli"); }
       if(g==="arama"){ setTimeout(()=>{ const k=$("#arama-kutu"); if(k) k.focus(); }, 150); }
       if(g==="ayarlar"){
@@ -6831,6 +7146,9 @@ document.addEventListener("DOMContentLoaded", ()=>{
     }catch(e){ hataGoster(e); }
   });
   $("#btn-terazi-basla").addEventListener("click", teraziBaslat);
+  $("#btn-oyun-basla").addEventListener("click", oyunBaslat);
+  $("#btn-ses-basla").addEventListener("click", sesBaslat);
+  $("#btn-karne-kart").addEventListener("click", karneKartOlustur);
   /* 🎙️ Sesle sorma — destekleyen telefonlarda görünür */
   const SesTanima = window.SpeechRecognition || window.webkitSpeechRecognition;
   if(SesTanima){
@@ -7146,6 +7464,8 @@ document.addEventListener("DOMContentLoaded", ()=>{
         ? "Kan grubun kayıtlı: <b>"+a2.kan+"</b> 🩸 Acil kartın Araçlar'da, tam ekran gösterebilirsin."
         : "Kan grubun kayıtlı değil " + ad + " — Araçlar → Acil Durum Kartı'na yaz, şantiyede hayat kurtarır 🆘";
     }
+    if(ic("güvenli","guvenli","baret","iskele","kkd"))
+      return "İş güvenliği candır " + ad + " 🦺 Araçlar → İş Güvenliği Köşesi'nde hayat kurtaran 8 kural var. Unutma: baret/kemer/kulaklık işverenin ÜCRETSİZ vermek zorunda olduğu haklardır; güvensiz işi reddetme hakkın kanunla korunur (6331/13).";
     if(ic("kaza","iş kazası","is kazasi"))
       return "Geçmiş olsun " + ad + " 🙏 Araçlar → İş Kazası Defteri'ne hemen kaydet: ne oldu, tanıklar, rapor. Unutma: kazayı SGK'ya bildirmek İŞVERENİN görevi (3 iş günü) — bildirmezse ALO 170'i arayabilirsin.";
     if(ic("borç","borc","kime para","alacaklarım","alacaklarim")){
@@ -7167,6 +7487,33 @@ document.addEventListener("DOMContentLoaded", ()=>{
       return acik.length
         ? "Bu ay patrondan " + paraFmt(top) + " masraf alacağın var (" + acik.length + " kalem) 🧾"
         : "Bu ay bekleyen masraf alacağın yok " + ad + " ✨";
+    }
+    {
+      const komut = sesKomutCoz(soru);
+      if(komut){
+        const bugunId2 = tarihId(simdi);
+        if(girdiler[bugunId2]){
+          const e2 = {tam:"tam", yarim:"yarım", gelmedi:"gelmedin", izin:"izinli", saatlik:"saatlik"};
+          return "Bugün zaten işli (" + (e2[girdiler[bugunId2].durum]||"") + ") " + ad + " — değiştirmek istersen takvimden güne dokun ✏️";
+        }
+        try{
+          const veri = {
+            durum: komut.durum, mesai: komut.mesai, arti: 0,
+            santiye: ayarlar.santiye||"", santiyeId: "", not: "",
+            ...guncelOranlar(""),
+            guncelleme: firebase.firestore.FieldValue.serverTimestamp()
+          };
+          if(ayarlar.calismaTipi === "saatlik" && komut.durum === "tam"){
+            veri.durum = "saatlik"; veri.saat = ayarlar.gunlukSaat||8;
+          }
+          await kokRef().collection("girdiler").doc(bugunId2).set(veri);
+          anaTazele();
+          const e3 = {tam:"tam yevmiye ✅", yarim:"yarım yevmiye 🌗", gelmedi:"gelmedin 🚫", izin:"izinli 🏖️", saatlik:"saatlik ⏱️"};
+          return "İşledim usta! Bugün: " + (e3[veri.durum]||veri.durum) +
+                 (komut.mesai > 0 ? " + " + komut.mesai + " saat mesai 💪" : "") +
+                 "\nKonuşarak puantaj — bu devirde böyle 😎";
+        }catch(e){ return "İşleyemedim " + ad + " 😕 İnterneti kontrol edip tekrar dene."; }
+      }
     }
     if(ic("bugünü işledim mi","bugün işledim mi","bugunu isledim","bugün işli")){
       const v = girdiler[tarihId(simdi)];
@@ -7330,7 +7677,7 @@ document.addEventListener("DOMContentLoaded", ()=>{
   });
 
   /* Neler yeni kartı */
-  const YENILIK_SURUM = "v81";
+  const YENILIK_SURUM = "v85";
   try{ $("#cekmece-surum").textContent = "Puantaj Defterim " + YENILIK_SURUM; }catch(e){}
   try{
     if(localStorage.getItem("yenilik")!==YENILIK_SURUM) $("#yenilik-kart").classList.remove("gizli");
