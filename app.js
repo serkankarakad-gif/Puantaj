@@ -69,11 +69,12 @@ let db=null, auth=null, kullanici=null;
 let aktifYil, aktifAy;                 // gösterilen ay
 let ayarlar = { yevmiye:0, mesaiUcret:0, ekGunluk:0, saatUcret:0, gunlukSaat:8,
                 calismaTipi:"yevmiye", hedef:0, kapali:[], santiye:"", santiyeler:[],
-                pazarZam:0, tatilZam:0, parcaBirim:"adet", parcaFiyat:0 };
+                pazarZam:0, tatilZam:0, parcaBirim:"adet", parcaFiyat:0, belgeler:[] };
 let girdiler = {};                     // { "2026-07-08": {...} }
 let odemeler = [];                     // bu ayın ödemeleri
 let borclar = [];                      // tüm borç kayıtları
 let kartlar = [], dinleyiciKart = null, duzenlenenKart = null; // 💳 kredi kartları
+let planlar = [], dinleyiciPlan = null; // 📐 plan/proje linkleri
 let cuzdan = [];                       // cüzdan hareketleri
 let masraflar = [];                    // bu ayın iş masrafları
 let ekipListe = [];                    // ekipteki işçiler
@@ -150,6 +151,7 @@ function basla(){
       ayarlariDinle();
       ayiYukle();
       borclariDinle();
+      planlariDinle();
       cuzdaniDinle();
       notlariDinle();
       ekipDinle();
@@ -211,6 +213,7 @@ function ayarlariDinle(){
     ayarlar.tatilZam  = Number(d.tatilZam)||0;
     ayarlar.parcaBirim = d.parcaBirim || "adet";
     ayarlar.parcaFiyat = Number(d.parcaFiyat)||0;
+    ayarlar.belgeler = Array.isArray(d.belgeler) ? d.belgeler : [];
     $("#ayar-yevmiye").value = ayarlar.yevmiye||"";
     $("#ayar-mesai").value   = ayarlar.mesaiUcret||"";
     $("#ayar-ek").value      = ayarlar.ekGunluk||"";
@@ -234,6 +237,9 @@ function ayarlariDinle(){
     notCipCiz();
     sgkCiz();
     santiyeListCiz();
+    planListCiz();
+    belgeListCiz();
+    belgeDurt();
     hepsiniCiz();
   }, hataGoster);
 }
@@ -260,6 +266,61 @@ function borclariDinle(){
     });
     borcCiz();
   }, hataGoster);
+}
+
+/* ---------- 📐 Plan / proje linkleri (WhatsApp/Drive'dan gelen PDF ve fotoğraflar) ---------- */
+function linkGuvenliMi(u){
+  /* Sadece http/https linklerine izin ver — javascript: gibi zararlı adresleri reddet */
+  try{ const p = new URL(u); return p.protocol==="http:" || p.protocol==="https:"; }catch(e){ return false; }
+}
+function planlariDinle(){
+  dinleyiciPlan = kokRef().collection("planlar").onSnapshot(qs=>{
+    planlar = [];
+    qs.forEach(doc=> planlar.push({id:doc.id, ...doc.data()}));
+    planlar.sort((a,b)=> (b.eklenme||0) - (a.eklenme||0));
+    planListCiz();
+  }, ()=>{});
+}
+function planListCiz(){
+  const ul = $("#liste-planlar"); if(!ul) return;
+  if(!planlar.length){
+    ul.innerHTML = '<div class="bos-mesaj" style="padding:14px">Henüz plan eklemedin. WhatsApp\'tan gelen PDF/fotoğrafı Drive\'a atıp linkini buraya yapıştır.</div>';
+    return;
+  }
+  ul.innerHTML = "";
+  planlar.forEach(p=>{
+    const santiye = (ayarlar.santiyeler||[]).find(s=>s.id===p.santiyeId);
+    const li = document.createElement("li");
+    li.innerHTML =
+      '<div class="rozet" style="background:var(--mesai)">📐</div>'+
+      '<div class="orta" style="cursor:pointer"><div class="baslik">'+esc(p.ad||"Plan")+'</div>'+
+      '<div class="alt-yazi">'+(santiye ? "🏗️ "+esc(santiye.ad)+" · " : "")+"Açmak için dokun ›"+'</div></div>'+
+      '<button class="sil" aria-label="Sil">🗑️</button>';
+    li.querySelector(".orta").addEventListener("click", ()=>{
+      if(!linkGuvenliMi(p.link)){ toast("Bu link güvenli görünmüyor, açılamadı ⚠️"); return; }
+      window.open(p.link, "_blank", "noopener,noreferrer");
+    });
+    li.querySelector(".sil").addEventListener("click", async ()=>{
+      if(!confirm('"'+p.ad+'" planı listeden silinsin mi? (Drive\'daki dosyaya dokunulmaz)')) return;
+      try{
+        await kokRef().collection("planlar").doc(p.id).delete();
+        toast("Plan silindi");
+      }catch(e){ hataGoster(e); }
+    });
+    ul.appendChild(li);
+  });
+}
+function planSantiyeSecDoldur(){
+  const secAlan = $("#alan-plan-santiye-sec"), sec = $("#plan-santiye-sec");
+  if(!secAlan || !sec) return;
+  if((ayarlar.santiyeler||[]).length){
+    secAlan.classList.remove("gizli");
+    sec.innerHTML = '<option value="">Şantiye seçme (genel)</option>' +
+      ayarlar.santiyeler.map(s=> '<option value="'+s.id+'">'+esc(s.ad)+'</option>').join("");
+  }else{
+    secAlan.classList.add("gizli");
+    sec.innerHTML = "";
+  }
 }
 
 /* ---------- 💳 Kredi kartı takibi ---------- */
@@ -476,6 +537,76 @@ function santiyeListCiz(){
     });
     ul.appendChild(li);
   });
+}
+
+/* ---------- 📄 Belge / sertifika süre takibi (ehliyet, SRC, MYK vb.) ---------- */
+function belgeGunKalan(tarih){
+  const bugun = new Date(); bugun.setHours(12,0,0,0);
+  const t = new Date(tarih+"T12:00:00");
+  return Math.round((t - bugun) / 86400000);
+}
+function belgeListCiz(){
+  const ul = $("#liste-belgeler"); if(!ul) return;
+  const belgeler = ayarlar.belgeler||[];
+  const kart = $("#belge-uyari-kart");
+  if(!belgeler.length){
+    ul.innerHTML = '<div class="bos-mesaj" style="padding:14px">Henüz belge eklemedin (ehliyet, SRC, MYK ustalık belgesi vb.)</div>';
+    if(kart) kart.classList.add("gizli");
+    return;
+  }
+  const sirali = [...belgeler].sort((a,b)=> (a.tarih||"").localeCompare(b.tarih||""));
+  ul.innerHTML = "";
+  sirali.forEach(bl=>{
+    const kalan = belgeGunKalan(bl.tarih);
+    const durumRenk = kalan<0 ? "var(--gelmedi)" : (kalan<=30 ? "var(--sari)" : "var(--tam)");
+    const durumYazi = kalan<0 ? ("⚠️ "+Math.abs(kalan)+" gün önce doldu") : (kalan===0 ? "⚠️ Bugün doluyor" : kalan+" gün kaldı");
+    const li = document.createElement("li");
+    li.innerHTML =
+      '<div class="rozet" style="background:'+durumRenk+'">📄</div>'+
+      '<div class="orta"><div class="baslik">'+esc(bl.ad)+'</div>'+
+      '<div class="alt-yazi">Son geçerlilik: '+bl.tarih+' · '+durumYazi+'</div></div>'+
+      '<button class="sil" aria-label="Sil">🗑️</button>';
+    li.querySelector(".sil").addEventListener("click", async ()=>{
+      if(!confirm('"'+bl.ad+'" belgesi silinsin mi?')) return;
+      try{
+        await kokRef().set({belgeler: (ayarlar.belgeler||[]).filter(x=>x.id!==bl.id)},{merge:true});
+        toast("Belge silindi");
+      }catch(e){ hataGoster(e); }
+    });
+    ul.appendChild(li);
+  });
+  /* Ana ekran / ayarlar üstü uyarı: 30 gün içinde dolacak veya dolmuş belgeler */
+  if(kart){
+    const kritik = sirali.filter(bl=> belgeGunKalan(bl.tarih) <= 30);
+    if(kritik.length){
+      kart.innerHTML = "📄 <b>"+kritik.length+"</b> belgenin süresi "+(kritik.some(b=>belgeGunKalan(b.tarih)<0) ? "doldu / " : "")+"yakında doluyor: "+
+        kritik.map(b=> esc(b.ad)+" ("+(belgeGunKalan(b.tarih)<0 ? "doldu" : belgeGunKalan(b.tarih)+" gün")+")").join(", ");
+      kart.classList.remove("gizli");
+    }else kart.classList.add("gizli");
+  }
+}
+/* Belge süresi yaklaşınca günde 1 kez yerel bildirimle hatırlat */
+async function belgeDurt(){
+  try{
+    const belgeler = (ayarlar.belgeler||[]).filter(bl=> bl.tarih && belgeGunKalan(bl.tarih) <= 30);
+    if(!belgeler.length) return;
+    const izinVar = "Notification" in window && Notification.permission === "granted";
+    const acik = localStorage.getItem("bildirimAcik") === "1";
+    if(!izinVar || !acik) return;
+    const bugun = tarihId(new Date());
+    for(const bl of belgeler){
+      const anahtar = "belgedurt:"+bl.id+":"+bugun;
+      if(localStorage.getItem(anahtar) === "1") continue;
+      const kalan = belgeGunKalan(bl.tarih);
+      const kayit = await navigator.serviceWorker.ready;
+      await kayit.showNotification("📄 Belge süresi uyarısı", {
+        body: kalan<0 ? (bl.ad+" belgesinin süresi doldu!") : (bl.ad+" belgesinin süresine "+kalan+" gün kaldı"),
+        tag: "belge-durt-"+bl.id,
+        vibrate: [80,40,80]
+      });
+      localStorage.setItem(anahtar, "1");
+    }
+  }catch(e){}
 }
 
 function ayiYukle(){
@@ -4630,7 +4761,7 @@ function modalAc(id){
   if(ayarlar.santiyeler.length){
     secAlan.classList.remove("gizli");
     sec.innerHTML = '<option value="">Varsayılan ücret ('+paraFmt(ayarlar.yevmiye)+')</option>' +
-      ayarlar.santiyeler.map(s=> '<option value="'+s.id+'">'+s.ad+' ('+paraFmt(s.yevmiye)+')</option>').join("");
+      ayarlar.santiyeler.map(s=> '<option value="'+s.id+'">'+esc(s.ad)+' ('+paraFmt(s.yevmiye)+')</option>').join("");
     let hedefSec = v.santiyeId || "";
     if(!girdiler[id]){ try{ hedefSec = localStorage.getItem("sonSantiye")||""; }catch(e){} }
     sec.value = hedefSec;
@@ -4814,7 +4945,8 @@ document.addEventListener("DOMContentLoaded", ()=>{
     tv:["Canlı TV","Kanalların resmi yayınları"],
     video:["Video","Ara, uygulamada izle"],
     kartlar:["Kredi kartlarım","Borç ve son ödeme takibi"],
-    arama:["Kayıt ara","Tüm defterde bul"]
+    arama:["Kayıt ara","Tüm defterde bul"],
+    planlar:["Planlarım","Proje ve plan linklerin"]
   };
   $$("[data-goruntu]").forEach(b=>{
     b.addEventListener("click", ()=>{
@@ -4823,10 +4955,10 @@ document.addEventListener("DOMContentLoaded", ()=>{
       aktifGoruntu = g;
       $("#btn-geri").classList.toggle("gizli", g==="ana");
       $$("[data-goruntu]").forEach(x=>x.classList.toggle("aktif", x===b));
-      ["ana","puantaj","odemeler","masraf","borc","ozet","yil","notlar","rozet","ekip","kisiler","arac","ayarlar","haber","tv","video","kartlar","arama"].forEach(x=>{
+      ["ana","puantaj","odemeler","masraf","borc","ozet","yil","notlar","rozet","ekip","kisiler","arac","ayarlar","haber","tv","video","kartlar","arama","planlar"].forEach(x=>{
         $("#goruntu-"+x).classList.toggle("gizli", x!==g);
       });
-      $("#ay-bar").style.display = (g==="ayarlar"||g==="borc"||g==="ana"||g==="notlar"||g==="rozet"||g==="arac"||g==="haber"||g==="tv"||g==="video"||g==="kartlar"||g==="arama") ? "none" : "flex";
+      $("#ay-bar").style.display = (g==="ayarlar"||g==="borc"||g==="ana"||g==="notlar"||g==="rozet"||g==="arac"||g==="haber"||g==="tv"||g==="video"||g==="kartlar"||g==="arama"||g==="planlar") ? "none" : "flex";
       $("#topbar-baslik").firstChild.textContent = basliklar[g][0];
       $("#topbar-alt").textContent = basliklar[g][1];
       $("#btn-bugun").style.display = g==="puantaj" ? "flex" : "none";
@@ -4843,6 +4975,7 @@ document.addEventListener("DOMContentLoaded", ()=>{
       if(g==="rozet") rozetYukle();
       if(g==="ekip"){ ekipYoklamaCiz(); ekipYoklamaYukle(); ekipOzetYukle(); }
       if(g==="kisiler") kisilerYukle();
+      if(g==="planlar") planSantiyeSecDoldur();
       if(g!=="arac" && sesAkis) sesDurdur();
       if(g!=="arac" && oyun){ oyun.bitti = true; oyun = null; const oa=$("#oyun-alan"); if(oa) oa.classList.add("gizli"); }
       if(g!=="arac" && teraziAcik){ teraziAcik = false; window.removeEventListener("deviceorientation", teraziDinle); const ta=$("#terazi-alan"); if(ta) ta.classList.add("gizli"); }
@@ -5589,7 +5722,7 @@ document.addEventListener("DOMContentLoaded", ()=>{
   });
 
   /* Neler yeni kartı */
-  const YENILIK_SURUM = "v90";
+  const YENILIK_SURUM = "0.0.0.9";
   try{ $("#cekmece-surum").textContent = "Puantaj Defterim " + YENILIK_SURUM; }catch(e){}
   try{
     if(localStorage.getItem("yenilik")!==YENILIK_SURUM) $("#yenilik-kart").classList.remove("gizli");
@@ -6415,6 +6548,35 @@ document.addEventListener("DOMContentLoaded", ()=>{
       duzenlenenSantiyeId = null;
       $("#btn-santiye-ekle").textContent = "➕ Şantiye ekle";
       $("#yeni-santiye-ad").value=""; $("#yeni-santiye-yevmiye").value=""; $("#yeni-santiye-mesai").value="";
+    }catch(e){ hataGoster(e); }
+  });
+
+  /* Belge / sertifika ekle (ehliyet, SRC, MYK ustalık belgesi vb.) */
+  $("#btn-belge-ekle").addEventListener("click", async ()=>{
+    const ad = $("#yeni-belge-ad").value.trim();
+    const tarih = $("#yeni-belge-tarih").value;
+    if(!ad || !tarih){ toast("Belge adı ve son geçerlilik tarihini gir"); return; }
+    try{
+      const yeni = [...(ayarlar.belgeler||[]), {id: Date.now().toString(36), ad, tarih}];
+      await kokRef().set({belgeler: yeni},{merge:true});
+      toast("Belge eklendi 📄 — süresi yaklaşınca haber veririm");
+      $("#yeni-belge-ad").value=""; $("#yeni-belge-tarih").value="";
+    }catch(e){ hataGoster(e); }
+  });
+
+  /* Plan/proje linki ekle (WhatsApp/Drive'dan gelen PDF ve fotoğraflar) */
+  $("#btn-plan-ekle").addEventListener("click", async ()=>{
+    const ad = $("#plan-ad").value.trim();
+    const link = $("#plan-link").value.trim();
+    if(!ad || !link){ toast("Plan adı ve linki gir kanka"); return; }
+    if(!linkGuvenliMi(link)){ toast("Geçerli bir http(s) linki yapıştır"); return; }
+    try{
+      const santiyeId = $("#plan-santiye-sec").value || "";
+      await kokRef().collection("planlar").add({
+        ad, link, santiyeId, eklenme: Date.now()
+      });
+      toast("Plan eklendi 📐");
+      $("#plan-ad").value=""; $("#plan-link").value="";
     }catch(e){ hataGoster(e); }
   });
 

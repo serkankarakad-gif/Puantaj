@@ -156,6 +156,7 @@ const firebaseConfig = {
       <li><button data-goruntu="rozet"><span class="ikon">🏆</span> Başarımlarım</button></li>
       <li><button data-goruntu="ekip"><span class="ikon">👥</span> Ekibim</button></li>
       <li><button data-goruntu="kisiler"><span class="ikon">🌍</span> Herkes (puantajlar)</button></li>
+      <li><button data-goruntu="planlar"><span class="ikon">📐</span> Planlarım</button></li>
       <li><button data-goruntu="arac"><span class="ikon">🛠️</span> Araçlar & Bilgi</button></li>
       <li><button data-goruntu="ayarlar"><span class="ikon">⚙️</span> Ayarlar</button></li>
       <li><button id="btn-geribildirim"><span class="ikon">💬</span> Geri bildirim gönder</button></li>
@@ -228,8 +229,7 @@ const firebaseConfig = {
       <div class="kart gizli" id="yenilik-kart" style="border-color:var(--sari)">
         <h2>🎁 Neler yeni?</h2>
         <ul style="padding-left:18px;font-size:13.5px;line-height:1.9">
-          <li><b>📦 Parça başı ücretlendirme (YENİ):</b> Ayarlar'dan birim (m², kg, adet, sefer) ve birim fiyatını gir — yevmiyenin yanında o gün yaptığın ekstra iş miktarını gün ekranına yazınca otomatik hesaba eklensin. Rakip araştırmasında en çok istenen özelliklerden</li>
-          <li><b>⚖️ Yıllık fazla mesai sınırı uyarısı (YENİ):</b> İş Kanunu'ndaki 270 saatlik yıllık fazla mesai sınırına yaklaştığında/aştığında Hesap özetinde uyarı kartı görünür</li>
+          <li><b>📐 Planlarım (YENİ):</b> WhatsApp'tan gelen mimari/statik proje dosyasını (PDF, kolon ölçüleri vb.) Google Drive'a atıp linkini menüden "Planlarım"a ekle — dokununca tarayıcıda açılır, yakınlaştırıp ölçüleri okuyabilirsin. İstersen hangi şantiyeye ait olduğunu da işaretle</li>
         </ul>
         <button class="btn btn-cizgili" id="btn-yenilik-kapat">Süper, kapat</button>
       </div>
@@ -264,6 +264,7 @@ const firebaseConfig = {
         <div id="maas-kart" class="gizli" style="margin-top:10px;background:var(--vurgu-zemin);border:1.5px solid var(--sari);border-radius:12px;padding:11px 14px;font-size:13.5px;font-weight:700"></div>
         <div id="kart-uyari" class="gizli" style="margin-top:10px;background:var(--girdi);border:1.5px solid var(--sari);border-radius:12px;padding:11px 14px;font-size:13.5px;font-weight:700;cursor:pointer"></div>
         <div id="borc-uyari" class="gizli" style="margin-top:10px;background:var(--girdi);border:1.5px solid var(--gelmedi);border-radius:12px;padding:11px 14px;font-size:13.5px;font-weight:700;cursor:pointer"></div>
+        <div id="belge-uyari-kart" class="gizli" style="margin-top:10px;background:var(--girdi);border:1.5px solid var(--sari);border-radius:12px;padding:11px 14px;font-size:13.5px;font-weight:700"></div>
       </div>
       <div class="kart gizli" id="seviye-kart">
         <div class="seviye-satir">
@@ -749,6 +750,36 @@ const firebaseConfig = {
       </div>
     </section>
 
+    <!-- ===== GÖRÜNÜM: PLANLAR ===== -->
+    <section id="goruntu-planlar" class="gizli">
+      <div class="kart">
+        <h2>📐 Plan/proje linki ekle</h2>
+        <p style="font-size:12px;color:var(--soluk);margin-bottom:12px;line-height:1.6">
+          WhatsApp'tan gelen plan dosyasını (PDF veya fotoğraf) önce Google Drive'a ya da telefonunun galerisine kaydet, oradan "paylaş / link al" seçeneğiyle bir link üret, aşağıya yapıştır. Dokununca tarayıcıda açılır — PDF ise parmaklarınla yakınlaştırıp kolon ölçülerini net okuyabilirsin.
+        </p>
+        <div class="alan">
+          <label>Plan adı</label>
+          <input type="text" id="plan-ad" placeholder="Örn: Zemin kat kolon planı">
+        </div>
+        <div class="alan">
+          <label>Link (Google Drive / WhatsApp / diğer)</label>
+          <input type="url" id="plan-link" inputmode="url" placeholder="https://drive.google.com/...">
+        </div>
+        <div class="alan gizli" id="alan-plan-santiye-sec">
+          <label>Hangi şantiye? (opsiyonel)</label>
+          <select id="plan-santiye-sec"></select>
+        </div>
+        <button class="btn btn-sari" id="btn-plan-ekle">Kaydet</button>
+      </div>
+      <div class="kart">
+        <h2>Planlarım</h2>
+        <ul class="liste" id="liste-planlar"></ul>
+        <p style="font-size:11.5px;color:var(--soluk);margin-top:10px;line-height:1.6">
+          Dosyanın kendisi burada saklanmıyor, sadece linki. Google Drive'daki dosyayı silersen ya da paylaşımı kapatırsan buradan da açılmaz.
+        </p>
+      </div>
+    </section>
+
     <!-- ===== GÖRÜNÜM: GÜNDEM ===== -->
     <section id="goruntu-haber" class="gizli">
       <div style="display:flex;gap:8px;margin-bottom:12px;overflow-x:auto;padding-bottom:2px" id="haber-sekmeler">
@@ -1156,6 +1187,22 @@ const firebaseConfig = {
         <button class="btn btn-cizgili" id="btn-santiye-ekle">➕ Şantiye ekle</button>
       </div>
       <div class="kart">
+        <h2>📄 Belgeler / Sertifikalar</h2>
+        <p style="font-size:13px;color:var(--soluk);margin-bottom:12px;line-height:1.6">
+          Ehliyet, SRC, MYK ustalık belgesi gibi süresi dolan belgelerini ekle — süresi 30 gün kalınca bildirim gönderip haber veririm.
+        </p>
+        <ul class="liste" id="liste-belgeler"></ul>
+        <div class="alan" style="margin-top:8px">
+          <label>Belge adı</label>
+          <input type="text" id="yeni-belge-ad" placeholder="Örn: Ehliyet (B sınıfı)">
+        </div>
+        <div class="alan">
+          <label>Son geçerlilik tarihi</label>
+          <input type="date" id="yeni-belge-tarih">
+        </div>
+        <button class="btn btn-cizgili" id="btn-belge-ekle">➕ Belge ekle</button>
+      </div>
+      <div class="kart">
         <h2>🌙 Görünüm</h2>
         <button class="btn btn-cizgili" id="btn-tema">Karanlık moda geç</button>
         <div class="alan" style="margin-top:14px">
@@ -1240,7 +1287,7 @@ const firebaseConfig = {
         <p style="font-size:13px;color:var(--soluk);margin-bottom:12px">Hata mı gördün, fikrin mi var? Direkt geliştiriciye ulaş:</p>
         <a class="btn btn-cizgili" style="display:block;text-align:center;text-decoration:none;margin-bottom:10px" href="https://wa.me/905051252339?text=Puantaj%20Defterim%20hakkında:" target="_blank">💬 WhatsApp'tan yaz</a>
         <a class="btn btn-cizgili" style="display:block;text-align:center;text-decoration:none" href="tel:05051252339">📞 0505 125 23 39</a>
-        <p style="font-size:11px;color:var(--soluk);margin-top:12px;text-align:center">Sürüm: v90 · Serkan Karakaş</p>
+        <p style="font-size:11px;color:var(--soluk);margin-top:12px;text-align:center">Sürüm: 0.0.0.9 · Serkan Karakaş</p>
       </div>
       <div class="kart">
         <h2>🔒 PIN kilidi</h2>
