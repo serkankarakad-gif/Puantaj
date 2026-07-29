@@ -1,6 +1,6 @@
 /* Puantaj Defterim — service worker (çevrimdışı kabuk) */
-const KASA = "puantaj-v82";
-const DOSYALAR = ["./", "./index.html", "./manifest.webmanifest"];
+const KASA = "puantaj-v84";
+const DOSYALAR = ["./", "./index.html", "./manifest.webmanifest", "./style.css", "./app.js"];
 
 self.addEventListener("install", e => {
   e.waitUntil(
