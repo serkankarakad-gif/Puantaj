@@ -13,6 +13,10 @@ const GUNLER = ["Pazar","Pazartesi","Salı","Çarşamba","Perşembe","Cuma","Cum
 
 const paraFmt = n => new Intl.NumberFormat("tr-TR",{maximumFractionDigits:0}).format(n||0) + " ₺";
 const pad = n => String(n).padStart(2,"0");
+/* Kullanıcı metnini (not, açıklama, isim, şantiye vb.) HTML'e basmadan önce
+   kaçış (escape) et — başka birinin notu/ismi ekrana zararlı kod olarak
+   basılmasın diye (örn. "Herkes" ekranında başka bir hesabın verisi). */
+const esc = v => String(v==null ? "" : v).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
 
 /* iOS/Türkçe klavye dostu sayı okuma:
    "2,5" → 2.5 · "1.250,75" → 1250.75 · "5.000" → 5000 (binlik nokta!)
@@ -55,14 +59,17 @@ const TATIL_DINI = {
   "2026-03-20":"Ramazan Bayramı","2026-03-21":"Ramazan Bayramı","2026-03-22":"Ramazan Bayramı",
   "2026-05-27":"Kurban Bayramı","2026-05-28":"Kurban Bayramı","2026-05-29":"Kurban Bayramı","2026-05-30":"Kurban Bayramı",
   "2027-03-09":"Ramazan Bayramı","2027-03-10":"Ramazan Bayramı","2027-03-11":"Ramazan Bayramı",
-  "2027-05-16":"Kurban Bayramı","2027-05-17":"Kurban Bayramı","2027-05-18":"Kurban Bayramı","2027-05-19":"Kurban Bayramı"
+  "2027-05-16":"Kurban Bayramı","2027-05-17":"Kurban Bayramı","2027-05-18":"Kurban Bayramı","2027-05-19":"Kurban Bayramı",
+  "2028-02-27":"Ramazan Bayramı","2028-02-28":"Ramazan Bayramı","2028-02-29":"Ramazan Bayramı",
+  "2028-05-05":"Kurban Bayramı","2028-05-06":"Kurban Bayramı","2028-05-07":"Kurban Bayramı","2028-05-08":"Kurban Bayramı"
 };
 const tatilAdi = id => TATIL_DINI[id] || TATIL_SABIT[id.slice(5)] || null;
 
 let db=null, auth=null, kullanici=null;
 let aktifYil, aktifAy;                 // gösterilen ay
 let ayarlar = { yevmiye:0, mesaiUcret:0, ekGunluk:0, saatUcret:0, gunlukSaat:8,
-                calismaTipi:"yevmiye", hedef:0, kapali:[], santiye:"", santiyeler:[] };
+                calismaTipi:"yevmiye", hedef:0, kapali:[], santiye:"", santiyeler:[],
+                pazarZam:0, tatilZam:0, parcaBirim:"adet", parcaFiyat:0 };
 let girdiler = {};                     // { "2026-07-08": {...} }
 let odemeler = [];                     // bu ayın ödemeleri
 let borclar = [];                      // tüm borç kayıtları
@@ -200,6 +207,10 @@ function ayarlariDinle(){
     ayarlar.notCipler = Array.isArray(d.notCipler)&&d.notCipler.length ? d.notCipler : ["🌧 Yağmur","📦 Malzeme gelmedi","🕐 Erken paydos","🚚 Başka şantiye"];
     ayarlar.santiye   = d.santiye||"";
     ayarlar.santiyeler= Array.isArray(d.santiyeler) ? d.santiyeler : [];
+    ayarlar.pazarZam  = Number(d.pazarZam)||0;
+    ayarlar.tatilZam  = Number(d.tatilZam)||0;
+    ayarlar.parcaBirim = d.parcaBirim || "adet";
+    ayarlar.parcaFiyat = Number(d.parcaFiyat)||0;
     $("#ayar-yevmiye").value = ayarlar.yevmiye||"";
     $("#ayar-mesai").value   = ayarlar.mesaiUcret||"";
     $("#ayar-ek").value      = ayarlar.ekGunluk||"";
@@ -216,6 +227,10 @@ function ayarlariDinle(){
     $("#ayar-esik").value = ayarlar.uyariEsik||"";
     $("#ayar-kumbara").value = ayarlar.kumbara||"";
     $("#ayar-cipler").value = ayarlar.notCipler.join(", ");
+    $("#ayar-pazar-zam").value = ayarlar.pazarZam||"";
+    $("#ayar-tatil-zam").value = ayarlar.tatilZam||"";
+    $("#ayar-parca-birim").value = ayarlar.parcaBirim||"adet";
+    $("#ayar-parca-fiyat").value = ayarlar.parcaFiyat||"";
     notCipCiz();
     sgkCiz();
     santiyeListCiz();
@@ -372,8 +387,8 @@ function borcCiz(){
     const odenen = Number(b.odenen)||0;
     li.innerHTML =
       '<div class="rozet" style="background:'+(b.yon==="verdim"?"var(--tam)":"var(--gelmedi)")+'">'+(b.yon==="verdim"?"↗":"↘")+'<small>'+t.getDate()+' '+AYLAR[t.getMonth()].slice(0,3)+'</small></div>'+
-      '<div class="orta"><div class="baslik">'+(b.kisi||"?")+(b.odendi?" ✔ kapandı":"")+'</div>'+
-      '<div class="alt-yazi">'+(b.yon==="verdim"?"Ona verdim":"Ondan aldım")+(b.not?" — "+b.not:"")+vadeEtiket(b, bugunId)+'</div></div>'+
+      '<div class="orta"><div class="baslik">'+esc(b.kisi||"?")+(b.odendi?" ✔ kapandı":"")+'</div>'+
+      '<div class="alt-yazi">'+(b.yon==="verdim"?"Ona verdim":"Ondan aldım")+(b.not?" — "+esc(b.not):"")+vadeEtiket(b, bugunId)+'</div></div>'+
       '<div class="tutar">'+paraFmt(b.odendi ? b.tutar : kalan)+
         (odenen>0 && !b.odendi ? '<div style="font-size:10px;color:var(--tam);font-weight:600">'+paraFmt(odenen)+' ödendi</div>' : '')+'</div>'+
       '<button class="sil" aria-label="Paylaş" style="color:var(--mesai)">📤</button>'+
@@ -441,7 +456,7 @@ function santiyeListCiz(){
     const li = document.createElement("li");
     li.innerHTML =
       '<div class="rozet" style="background:var(--mesai)">🏗️</div>'+
-      '<div class="orta" style="cursor:pointer"><div class="baslik">'+s.ad+' <span style="font-size:11px;color:var(--soluk)">✏️</span></div>'+
+      '<div class="orta" style="cursor:pointer"><div class="baslik">'+esc(s.ad)+' <span style="font-size:11px;color:var(--soluk)">✏️</span></div>'+
       '<div class="alt-yazi">Yevmiye '+paraFmt(s.yevmiye)+' · Mesai '+paraFmt(s.mesaiUcret)+'/saat</div></div>'+
       '<button class="sil" aria-label="Sil">🗑️</button>';
     li.querySelector(".orta").addEventListener("click", ()=>{
@@ -588,7 +603,7 @@ function cuzdanCiz(){
     const li = document.createElement("li");
     li.innerHTML =
       '<div class="rozet" style="background:'+(giris?"var(--tam)":"var(--gelmedi)")+'">'+(giris?"＋":"−")+'</div>'+
-      '<div class="orta"><div class="baslik">'+(h.not||(giris?"Para girişi":"Harcama"))+'</div>'+
+      '<div class="orta"><div class="baslik">'+esc(h.not||(giris?"Para girişi":"Harcama"))+'</div>'+
       '<div class="alt-yazi">'+t.getDate()+' '+AYLAR[t.getMonth()]+' '+t.getFullYear()+'</div></div>'+
       '<div class="tutar" style="color:'+(giris?"var(--tam)":"var(--gelmedi)")+'">'+(giris?"+":"−")+paraFmt(h.tutar)+'</div>'+
       '<button class="sil" aria-label="Sil">🗑️</button>';
@@ -804,7 +819,24 @@ function sgkCiz(){
     (kalan>0 ? " · Emekliliğe ~"+kalan.toLocaleString("tr-TR")+" gün (yaklaşık "+Math.ceil(kalan/300)+" yıl çalışma) 🏖️" : " · Hayırlı olsun usta, gün doldu! 🎉");
 }
 
-/* ---------- Hava durumu (yarın yağmur var mı?) ---------- */
+/* ---------- ⚖️ Yıllık fazla mesai sınırı (İş Kanunu m.41: yılda en fazla 270 saat) ---------- */
+function mesaiSinirCiz(buYilMesai){
+  const kart = $("#mesai-sinir-kart"); if(!kart) return;
+  const SINIR = 270;
+  /* Henüz mesai girilmemişse veya sınırdan çok uzaksa kartı gösterme, gereksiz kalabalık yapmasın */
+  if(!(buYilMesai>0) || buYilMesai < SINIR*0.7){ kart.classList.add("gizli"); return; }
+  kart.classList.remove("gizli");
+  const yuzde = Math.min(100, Math.round(buYilMesai/SINIR*100));
+  const dolu = $("#mesai-sinir-dolu");
+  dolu.style.width = yuzde+"%";
+  dolu.classList.toggle("tamamlandi", buYilMesai>=SINIR);
+  const kalan = Math.max(0, SINIR - buYilMesai);
+  $("#mesai-sinir-yazi").innerHTML = "<b>"+Math.round(buYilMesai)+"</b> / "+SINIR+" saat (bu yıl, %"+yuzde+")"+
+    (buYilMesai>=SINIR
+      ? " · ⚠️ İş Kanunu'ndaki yıllık 270 saatlik fazla mesai sınırını aştın — bu durum patronunla konuşmak için haklı bir gerekçe olabilir"
+      : " · Yıllık yasal sınıra <b>"+Math.round(kalan)+" saat</b> kaldı");
+}
+
 function havaYukle(){
   if(!navigator.geolocation) return;
   try{
@@ -849,7 +881,7 @@ function masrafCiz(){
     if(m.odendi) li.style.opacity = ".45";
     li.innerHTML =
       '<div class="rozet" style="background:var(--yarim)">'+t.getDate()+'<small>'+AYLAR[t.getMonth()].slice(0,3)+'</small></div>'+
-      '<div class="orta"><div class="baslik">'+(m.aciklama||"Masraf")+(m.odendi?" ✔ ödendi":"")+'</div>'+
+      '<div class="orta"><div class="baslik">'+esc(m.aciklama||"Masraf")+(m.odendi?" ✔ ödendi":"")+'</div>'+
       '<div class="alt-yazi">'+t.getDate()+' '+AYLAR[t.getMonth()]+'</div></div>'+
       '<div class="tutar">'+paraFmt(m.tutar)+'</div>'+
       (m.fisli ? '<button class="sil" aria-label="Fis" style="color:var(--sari)">🧾</button>' : '')+
@@ -905,8 +937,8 @@ function isciListeCiz(){
   ekipListe.forEach(i=>{
     const li = document.createElement("li");
     li.innerHTML =
-      '<div class="rozet" style="background:var(--mesai)">'+String(i.ad||"?").charAt(0).toUpperCase()+'</div>'+
-      '<div class="orta"><div class="baslik">'+i.ad+'</div>'+
+      '<div class="rozet" style="background:var(--mesai)">'+esc(String(i.ad||"?").charAt(0).toUpperCase())+'</div>'+
+      '<div class="orta"><div class="baslik">'+esc(i.ad)+'</div>'+
       '<div class="alt-yazi">Yevmiye '+paraFmt(i.yevmiye)+' · Mesai '+paraFmt(i.mesaiUcret)+'/saat</div></div>'+
       '<button class="sil" aria-label="Sil">🗑️</button>';
     li.querySelector(".orta").style.cursor = "pointer";
@@ -941,7 +973,7 @@ function ekipYoklamaCiz(){
     const sat = document.createElement("div");
     sat.style.cssText = "display:flex;align-items:center;gap:8px;padding:9px 0;border-bottom:1px solid var(--cizgi)";
     sat.innerHTML =
-      '<div style="flex:1;font-weight:600;font-size:14px;min-width:0;overflow:hidden;text-overflow:ellipsis">'+i.ad+'</div>'+
+      '<div style="flex:1;font-weight:600;font-size:14px;min-width:0;overflow:hidden;text-overflow:ellipsis">'+esc(i.ad)+'</div>'+
       '<div style="display:flex;gap:5px">'+
         ['tam|T','yarim|Y','yok|0'].map(x=>{
           const [d,et]=x.split("|");
@@ -1018,8 +1050,8 @@ async function ekipOzetYukle(){
       g.gunler.sort((a,b)=>a-b);
       const li = document.createElement("li");
       li.innerHTML =
-        '<div class="rozet" style="background:var(--asfalt2)">'+String(isc.ad||"?").charAt(0).toUpperCase()+'</div>'+
-        '<div class="orta"><div class="baslik">'+isc.ad+'</div>'+
+        '<div class="rozet" style="background:var(--asfalt2)">'+esc(String(isc.ad||"?").charAt(0).toUpperCase())+'</div>'+
+        '<div class="orta"><div class="baslik">'+esc(isc.ad)+'</div>'+
         '<div class="alt-yazi">'+g.gun+' gün · '+g.mesai+' saat mesai</div></div>'+
         '<div class="tutar">'+paraFmt(g.hak)+'</div>'+
         '<button class="sil" aria-label="Paylaş" style="color:var(--mesai)">📤</button>';
@@ -1134,7 +1166,7 @@ async function kisiVeriYukle(){
         '<div class="rozet" style="background:'+durumRenk(v.durum)+'">'+t.getDate()+'<small>'+AYLAR[t.getMonth()].slice(0,3)+'</small></div>'+
         '<div class="orta"><div class="baslik">'+GUNLER[t.getDay()]+' · '+girisEtiket(v)+
         (Number(v.mesai)>0 ? " · +"+v.mesai+" saat mesai" : "")+'</div>'+
-        '<div class="alt-yazi">'+([v.santiye, v.not].filter(Boolean).join(" — ")||"—")+'</div></div>'+
+        '<div class="alt-yazi">'+esc([v.santiye, v.not].filter(Boolean).join(" — ")||"—")+'</div></div>'+
         '<div class="tutar">'+paraFmt(kisiKazanc(v))+'</div>';
       gunUl.appendChild(li);
     });
@@ -1151,7 +1183,7 @@ async function kisiVeriYukle(){
       li.innerHTML =
         '<div class="rozet" style="background:'+odemeTurRenk(o.tur)+(o.tur==="avans" ? ";color:#111" : "")+'">'+t.getDate()+'<small>'+AYLAR[t.getMonth()].slice(0,3)+'</small></div>'+
         '<div class="orta"><div class="baslik">'+odemeTurEtiket(o.tur)+'</div>'+
-        '<div class="alt-yazi">'+(o.not||"—")+'</div></div>'+
+        '<div class="alt-yazi">'+esc(o.not||"—")+'</div></div>'+
         '<div class="tutar">'+paraFmt(o.tutar)+'</div>';
       odUl.appendChild(li);
     });
@@ -1225,7 +1257,7 @@ async function liderYukle(){
       const li = document.createElement("li");
       li.innerHTML =
         '<div class="rozet" style="background:'+(i<3?"var(--sari)":"var(--asfalt2)")+';color:'+(i<3?"#111":"#fff")+'">'+(madalya[i]||("#"+(i+1)))+'</div>'+
-        '<div class="orta"><div class="baslik">'+s.ad+(s.uid===kullanici.uid?" (sen)":"")+'</div>'+
+        '<div class="orta"><div class="baslik">'+esc(s.ad)+(s.uid===kullanici.uid?" (sen)":"")+'</div>'+
         '<div class="alt-yazi">'+s.gun+' gün · '+s.mesai+' saat mesai</div></div>';
       ul.appendChild(li);
     });
@@ -1331,7 +1363,7 @@ async function kronoDurdur(bas){
     const v = doc.exists ? doc.data() : null;
     const yeni = v ? {...v, mesai: (Number(v.mesai)||0) + saat}
                    : {durum:"tam", mesai:saat, arti:0, santiye:ayarlar.santiye||"", santiyeId:"", not:"",
-                      ...guncelOranlar(""), guncelleme: firebase.firestore.FieldValue.serverTimestamp()};
+                      ...guncelOranlar("", id), guncelleme: firebase.firestore.FieldValue.serverTimestamp()};
     await ref.set(yeni);
     toast("⏱ "+saat+" saat mesai bugüne eklendi ✅");
   }catch(e){ hataGoster(e); }
@@ -3105,6 +3137,8 @@ async function anaYukle(){
     const hareketler = [];
     let gunToplam=0, mesaiToplam=0, artiToplam=0, pazarToplam=0;
     const simdi = new Date();
+    const buYilOnEk = String(simdi.getFullYear());
+    let buYilMesai = 0;
     const buAyOnEk = simdi.getFullYear()+"-"+pad(simdi.getMonth()+1);
     let buAyHak = 0, buAyGun = 0, buAyMesai = 0;
     /* Haftalık özet: bu haftanın Pazartesi'sinden bugüne */
@@ -3138,6 +3172,7 @@ async function anaYukle(){
       gunToplam += girdiGun(v);
       mesaiToplam += Number(v.mesai)||0;
       artiToplam += Number(v.arti)||0;
+      if(doc.id.slice(0,4)===buYilOnEk) buYilMesai += Number(v.mesai)||0;
       if(girdiGun(v)>0 && new Date(doc.id+"T12:00:00").getDay()===0) pazarToplam++;
       if(k>0) hareketler.push({tarih:doc.id, tutar:k, tip:"+", baslik:girisEtiket(v)+(v.santiye?" · "+v.santiye:"")});
     });
@@ -3169,8 +3204,8 @@ async function anaYukle(){
         setTimeout(()=> balon.classList.add("gizli"), 6000);
       }
     }
-    tumIstatistik = {gunToplam, mesaiToplam, artiToplam, pazarToplam, hakedisToplam:hakedis, odemeSayisi:oSnap.size};
-    seviyeCiz(); sgkCiz();
+    tumIstatistik = {gunToplam, mesaiToplam, artiToplam, pazarToplam, hakedisToplam:hakedis, odemeSayisi:oSnap.size, buYilMesai};
+    seviyeCiz(); sgkCiz(); mesaiSinirCiz(buYilMesai);
     /* Alacak eşiği uyarısı */
     const esikEl = $("#esik-uyari");
     if(esikEl){
@@ -3343,15 +3378,30 @@ function girdiKazanc(v){
     k += s*o.sa + (s>0 ? o.ek : 0);
   }
   k += (Number(v.arti)||0) * (o.yev + o.ek);
+  k += (Number(v.parcaMiktar)||0) * (v.uParcaFiyat!=null ? Number(v.uParcaFiyat) : (ayarlar.parcaFiyat||0));
   return k;
 }
-function guncelOranlar(santiyeId){
+/* Bir tarihe (id: "YYYY-AA-GG") pazar/tatil zammı uygulanır mı, uygulanırsa hangi oranda? */
+function zamOrani(id){
+  if(!id) return {oran:0, sebep:null};
+  if(tatilAdi(id) && (ayarlar.tatilZam||0) > 0) return {oran:ayarlar.tatilZam/100, sebep:"tatil"};
+  if(new Date(id+"T12:00:00").getDay()===0 && (ayarlar.pazarZam||0) > 0) return {oran:ayarlar.pazarZam/100, sebep:"pazar"};
+  return {oran:0, sebep:null};
+}
+function guncelOranlar(santiyeId, id){
+  const z = zamOrani(id);
+  const c = 1 + z.oran;
   const s = (ayarlar.santiyeler||[]).find(x=>x.id===santiyeId);
+  const yev = s ? (Number(s.yevmiye)||ayarlar.yevmiye) : ayarlar.yevmiye;
+  const mes = s ? (Number(s.mesaiUcret)||ayarlar.mesaiUcret) : ayarlar.mesaiUcret;
   return {
-    uYevmiye: s ? (Number(s.yevmiye)||ayarlar.yevmiye) : ayarlar.yevmiye,
-    uMesai:   s ? (Number(s.mesaiUcret)||ayarlar.mesaiUcret) : ayarlar.mesaiUcret,
-    uEk:      ayarlar.ekGunluk||0,
-    uSaatU:   ayarlar.saatUcret||0
+    uYevmiye: yev * c,
+    uMesai:   mes * c,
+    uEk:      (ayarlar.ekGunluk||0) * c,
+    uSaatU:   (ayarlar.saatUcret||0) * c,
+    uParcaFiyat: (ayarlar.parcaFiyat||0) * c,
+    zamOrani: z.oran || 0,
+    zamSebep: z.sebep || null
   };
 }
 /* Bir girdinin "gün" karşılığı (saatlik günler 1 gün sayılır) */
@@ -3513,7 +3563,7 @@ function santiyeOzetCiz(){
     const li = document.createElement("li");
     li.innerHTML =
       '<div class="rozet" style="background:var(--asfalt)">🏗️</div>'+
-      '<div class="orta"><div class="baslik">'+ad+'</div>'+
+      '<div class="orta"><div class="baslik">'+esc(ad)+'</div>'+
       '<div class="alt-yazi">'+g.gun+' gün · '+g.mesai+' saat mesai</div></div>'+
       '<div class="tutar">'+paraFmt(g.kazanc)+'</div>';
     ul.appendChild(li);
@@ -3669,11 +3719,11 @@ function gunListesiCiz(){
     const t = new Date(id+"T12:00:00");
     const li = document.createElement("li");
     const mesaiYazi = (Number(v.mesai)>0 ? " · +"+v.mesai+" saat mesai" : "") + (Number(v.arti)>0 ? " · "+v.arti+" artı" : "");
-    const notYazi = [(v.basSaat&&v.bitSaat ? "🕐 "+v.basSaat+"–"+v.bitSaat : ""), v.santiye, v.not, (v.konum&&v.konum.adres ? "📍 "+v.konum.adres : "")].filter(Boolean).join(" — ");
+    const notYazi = [(v.basSaat&&v.bitSaat ? "🕐 "+v.basSaat+"–"+v.bitSaat : ""), v.santiye, (Number(v.parcaMiktar)>0 ? "📦 "+v.parcaMiktar+" "+(ayarlar.parcaBirim||"adet") : ""), v.not, (v.konum&&v.konum.adres ? "📍 "+v.konum.adres : "")].filter(Boolean).join(" — ");
     li.innerHTML =
       '<div class="rozet" style="background:'+durumRenk(v.durum)+'">'+t.getDate()+'<small>'+AYLAR[t.getMonth()].slice(0,3)+'</small></div>'+
       '<div class="orta"><div class="baslik">'+GUNLER[t.getDay()]+' · '+girisEtiket(v)+mesaiYazi+'</div>'+
-      '<div class="alt-yazi">'+(notYazi||"—")+'</div></div>';
+      '<div class="alt-yazi">'+esc(notYazi||"—")+'</div></div>';
     li.style.cursor="pointer";
     li.addEventListener("click", ()=> modalAc(id));
     ul.appendChild(li);
@@ -3705,7 +3755,7 @@ function odemeListesiCiz(){
     li.innerHTML =
       '<div class="rozet" style="background:'+odemeTurRenk(o.tur)+(o.tur==="avans" ? ";color:#111" : "")+'">'+t.getDate()+'<small>'+AYLAR[t.getMonth()].slice(0,3)+'</small></div>'+
       '<div class="orta" style="cursor:pointer"><div class="baslik">'+odemeTurEtiket(o.tur)+' <span style="font-size:11px;color:var(--soluk)">✏️ düzenle</span></div>'+
-      '<div class="alt-yazi">'+(o.not||"—")+'</div></div>'+
+      '<div class="alt-yazi">'+esc(o.not||"—")+'</div></div>'+
       '<div class="tutar">'+paraFmt(o.tutar)+'</div>'+
       (o.dekontlu ? '<button class="sil" aria-label="Dekont" style="color:var(--sari)">🏦</button>' : '')+
       '<button class="sil" aria-label="Sil">🗑️</button>';
@@ -3770,11 +3820,13 @@ function toastGeriAlVeri(mesaj, koleksiyon, id, veri){
 
 function hesapla(){
   let tam=0, yarim=0, gelmedi=0, izinli=0, mesaiToplam=0, saatToplam=0, gunSayisi=0;
-  let yevmiyeKazanc=0, mesaiKazanc=0, ekKazanc=0;
+  let yevmiyeKazanc=0, mesaiKazanc=0, ekKazanc=0, parcaKazanc=0;
+  let zamGun=0, zamKazanc=0;
   Object.values(girdiler).forEach(v=>{
     const o = oranBul(v);
-    if(v.durum==="tam"){ tam++; yevmiyeKazanc+=o.yev; ekKazanc+=o.ek; }
-    else if(v.durum==="yarim"){ yarim++; yevmiyeKazanc+=o.yev/2; ekKazanc+=o.ek/2; }
+    let gunKazanc = 0;
+    if(v.durum==="tam"){ tam++; yevmiyeKazanc+=o.yev; ekKazanc+=o.ek; gunKazanc += o.yev+o.ek; }
+    else if(v.durum==="yarim"){ yarim++; yevmiyeKazanc+=o.yev/2; ekKazanc+=o.ek/2; gunKazanc += (o.yev+o.ek)/2; }
     else if(v.durum==="gelmedi") gelmedi++;
     else if(v.durum==="izin") izinli++;
     else if(v.durum==="saatlik"){
@@ -3782,17 +3834,28 @@ function hesapla(){
       saatToplam += s;
       yevmiyeKazanc += s*o.sa;
       if(s>0) ekKazanc += o.ek;
+      gunKazanc += s*o.sa + (s>0 ? o.ek : 0);
     }
     gunSayisi += girdiGun(v);
     const m = Number(v.mesai)||0;
     mesaiToplam += m;
     mesaiKazanc += m*o.mes;
+    gunKazanc += m*o.mes;
+    const pMiktar = Number(v.parcaMiktar)||0;
+    if(pMiktar>0){
+      const pTutar = pMiktar * (v.uParcaFiyat!=null ? Number(v.uParcaFiyat) : (ayarlar.parcaFiyat||0));
+      parcaKazanc += pTutar;
+      gunKazanc += pTutar;
+    }
+    /* Pazar/bayram zammından bu güne düşen ekstra pay (mühürlenmiş orandan geri hesaplanır) */
+    if(v.zamOrani>0 && gunKazanc>0){ zamGun++; zamKazanc += gunKazanc * (v.zamOrani/(1+v.zamOrani)); }
   });
-  const hakedis = yevmiyeKazanc + mesaiKazanc + ekKazanc;
+  const hakedis = yevmiyeKazanc + mesaiKazanc + ekKazanc + parcaKazanc;
   const alinan = odemeler.reduce((s,o)=> s + (Number(o.tutar)||0), 0);
   const masrafToplam = masraflar.filter(m=>!m.odendi).reduce((s,m)=> s + (Number(m.tutar)||0), 0);
   return { tam, yarim, gelmedi, izinli, mesaiToplam, saatToplam, gunSayisi,
-           yevmiyeKazanc, mesaiKazanc, ekKazanc, hakedis, alinan, masrafToplam,
+           yevmiyeKazanc, mesaiKazanc, ekKazanc, parcaKazanc, hakedis, alinan, masrafToplam,
+           zamGun, zamKazanc,
            kalan: hakedis + masrafToplam - alinan };
 }
 
@@ -3824,8 +3887,9 @@ function modalKazancGuncelle(){
       durum: saatlikMod ? "saatlik" : modalDurum,
       mesai: sayi($("#mesai-saat").value)||0,
       arti: sayi($("#gun-arti").value)||0,
+      parcaMiktar: sayi($("#gun-parca-miktar").value)||0,
       santiyeId: secId,
-      ...guncelOranlar(secId)
+      ...guncelOranlar(secId, modalTarih)
     };
     if(saatlikMod) temp.saat = sayi($("#gun-saat").value)||0;
     const toplam = girdiKazanc(temp);
@@ -3835,6 +3899,8 @@ function modalKazancGuncelle(){
     if(dok){
       const o = oranBul(temp);
       const parcalar = [];
+      const zam = zamOrani(modalTarih);
+      if(zam.oran>0) parcalar.push((zam.sebep==="tatil" ? "🎉 Resmi/dini bayram" : "🛐 Pazar günü")+" — %"+Math.round(zam.oran*100)+" zamlı hesaplanıyor");
       const m = Number(temp.mesai)||0, a = Number(temp.arti)||0;
       if(saatlikMod){
         const st = Number(temp.saat)||0;
@@ -3852,6 +3918,8 @@ function modalKazancGuncelle(){
       }
       if(m>0) parcalar.push("Mesai "+m+" saat × "+paraFmt(o.mes)+" = <b>"+paraFmt(m*o.mes)+"</b>");
       if(a>0) parcalar.push("Gün içi artı "+a+" × "+paraFmt(o.yev+o.ek)+" = <b>"+paraFmt(a*(o.yev+o.ek))+"</b>");
+      const pM = Number(temp.parcaMiktar)||0;
+      if(pM>0) parcalar.push("📦 "+pM+" "+(ayarlar.parcaBirim||"adet")+" × "+paraFmt(temp.uParcaFiyat)+" = <b>"+paraFmt(pM*temp.uParcaFiyat)+"</b>");
       dok.innerHTML = parcalar.length ? parcalar.map(p=>"• "+p).join("<br>") : "";
       dok.style.display = parcalar.length ? "block" : "none";
     }
@@ -3873,10 +3941,12 @@ function ozetCiz(){
     kut("Yevmiye kazancı", paraFmt(t.yevmiyeKazanc), "", t.yevmiyeKazanc) +
     kut("Mesai kazancı", paraFmt(t.mesaiKazanc), "mesai-r", t.mesaiKazanc) +
     (t.ekKazanc>0 ? kut("Yol + yemek", paraFmt(t.ekKazanc), "", t.ekKazanc) : "") +
+    (t.parcaKazanc>0 ? kut("📦 Parça başı kazanç", paraFmt(t.parcaKazanc), "", t.parcaKazanc) : "") +
     (t.gunSayisi>0 ? kut("Gün başı ortalama", paraFmt(t.hakedis/t.gunSayisi), "", t.hakedis/t.gunSayisi) : "") +
     kut("Toplam hakediş", paraFmt(t.hakedis), "vurgu", t.hakedis) +
     kut("Aldığım para", paraFmt(t.alinan), "", t.alinan) +
     (t.masrafToplam>0 ? kut("🧾 Masraf alacağı", paraFmt(t.masrafToplam), "", t.masrafToplam) : "") +
+    (t.zamGun>0 ? kut("🛐 Pazar/bayram zammı", t.zamGun+" gün · +"+paraFmt(t.zamKazanc), "mesai-r") : "") +
     kut("Kalan alacağım", paraFmt(t.kalan), t.kalan>=0?"vurgu":"eksi", t.kalan);
   function kut(et,deger,cls,para){
     return '<div class="ozet-kut '+cls+'"><div class="et">'+et+'</div><div class="deger"'+(para!=null ? ' data-para="'+para+'"' : '')+'>'+deger+'</div></div>';
@@ -4399,7 +4469,7 @@ async function hizliIsaretle(id){
     durum: saatlikMod ? "saatlik" : "tam",
     mesai:0,
     santiye: ayarlar.santiye||"", santiyeId:"", not:"",
-    ...guncelOranlar(""),
+    ...guncelOranlar("", id),
     guncelleme: firebase.firestore.FieldValue.serverTimestamp()
   };
   if(saatlikMod) veri.saat = ayarlar.gunlukSaat||8;
@@ -4459,7 +4529,7 @@ function pdfYazdir(gBas, gSon){
       const d2 = new Date(o.tarih+"T12:00:00");
       araToplam += Number(o.tutar)||0;
       oSat += "<tr><td class='orta-h'>"+(idx+1)+"</td><td>"+pad(d2.getDate())+" / "+pad(d2.getMonth()+1)+" / "+d2.getFullYear()+
-        " — "+GUNLER[d2.getDay()]+"</td><td>"+(o.not||"")+
+        " — "+GUNLER[d2.getDay()]+"</td><td>"+esc(o.not||"")+
         "</td><td class='sag'>"+paraFmt(o.tutar)+"</td></tr>";
     });
     return '<h2 style="font-size:15px;margin-top:22px;border-bottom:3px solid #FFC400;padding-bottom:5px">'+baslik+' ('+liste2.length+' adet)</h2>'+
@@ -4524,6 +4594,12 @@ function modalAc(id){
   }
   $("#mesai-saat").value = v.mesai || 0;
   $("#gun-arti").value = Number(v.arti)||0;
+  const parcaAcik = (ayarlar.parcaFiyat||0) > 0;
+  $("#alan-parca").classList.toggle("gizli", !parcaAcik);
+  if(parcaAcik){
+    $("#parca-etiket").textContent = "📦 "+(ayarlar.parcaBirim||"adet")+" (bugün) — birim fiyat "+paraFmt(ayarlar.parcaFiyat);
+    $("#gun-parca-miktar").value = Number(v.parcaMiktar)||"";
+  }
   $("#gun-bas-saat").value = v.basSaat || "";
   $("#gun-bit-saat").value = v.bitSaat || "";
   gunKonum = v.konum || null;
@@ -5133,10 +5209,11 @@ document.addEventListener("DOMContentLoaded", ()=>{
       santiyeId: secId,
       santiye: $("#gun-santiye").value.trim() || (s ? s.ad : (ayarlar.santiye||"")),
       not: $("#gun-not").value.trim(),
-      ...guncelOranlar(secId),
+      ...guncelOranlar(secId, modalTarih),
       guncelleme: firebase.firestore.FieldValue.serverTimestamp()
     };
     if(saatlikMod) veri.saat = sayi($("#gun-saat").value)||0;
+    if((ayarlar.parcaFiyat||0) > 0) veri.parcaMiktar = Math.max(0, sayi($("#gun-parca-miktar").value)||0);
     if(gunKonum) veri.konum = gunKonum;
     const bs = $("#gun-bas-saat").value, bts = $("#gun-bit-saat").value;
     if(bs) veri.basSaat = bs;
@@ -5335,7 +5412,7 @@ document.addEventListener("DOMContentLoaded", ()=>{
           const veri = {
             durum: komut.durum, mesai: komut.mesai, arti: 0,
             santiye: ayarlar.santiye||"", santiyeId: "", not: "",
-            ...guncelOranlar(""),
+            ...guncelOranlar("", bugunId2),
             guncelleme: firebase.firestore.FieldValue.serverTimestamp()
           };
           if(ayarlar.calismaTipi === "saatlik" && komut.durum === "tam"){
@@ -5512,7 +5589,7 @@ document.addEventListener("DOMContentLoaded", ()=>{
   });
 
   /* Neler yeni kartı */
-  const YENILIK_SURUM = "v85";
+  const YENILIK_SURUM = "v90";
   try{ $("#cekmece-surum").textContent = "Puantaj Defterim " + YENILIK_SURUM; }catch(e){}
   try{
     if(localStorage.getItem("yenilik")!==YENILIK_SURUM) $("#yenilik-kart").classList.remove("gizli");
@@ -6293,6 +6370,10 @@ document.addEventListener("DOMContentLoaded", ()=>{
         santiye: $("#ayar-santiye").value.trim(),
         iseGiris: $("#ayar-giris").value || "",
         maasGunu: Math.max(0, Math.min(31, Math.round(sayi($("#ayar-maas").value))))
+        ,pazarZam: Math.max(0, sayi($("#ayar-pazar-zam").value)||0)
+        ,tatilZam: Math.max(0, sayi($("#ayar-tatil-zam").value)||0)
+        ,parcaBirim: ($("#ayar-parca-birim").value||"adet").trim().slice(0,12)
+        ,parcaFiyat: Math.max(0, sayi($("#ayar-parca-fiyat").value)||0)
       },{merge:true});
       toast("Ayarlar kaydedildi ⚙️");
     }catch(e){ hataGoster(e); }
@@ -6483,7 +6564,7 @@ document.addEventListener("DOMContentLoaded", ()=>{
         durum: (saatlikMod && durum!=="gelmedi") ? "saatlik" : durum,
         mesai,
         santiye: ayarlar.santiye||"", santiyeId:"", not:"",
-        ...guncelOranlar(""),
+        ...guncelOranlar("", id),
         guncelleme: firebase.firestore.FieldValue.serverTimestamp()
       };
       if(veri.durum==="saatlik"){

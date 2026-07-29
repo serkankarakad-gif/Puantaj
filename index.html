@@ -228,9 +228,8 @@ const firebaseConfig = {
       <div class="kart gizli" id="yenilik-kart" style="border-color:var(--sari)">
         <h2>🎁 Neler yeni?</h2>
         <ul style="padding-left:18px;font-size:13.5px;line-height:1.9">
-          <li><b>📸 Ay Karnesi görseli:</b> Hesap özetinde tek düğme — ayın karnen şık bir karta dönüşür (gün, mesai, hakediş), WhatsApp durumuna at: "Temmuz'da 22 gün 💪" Gizli modda paralar görünmez</li>
-          <li><b>🎙️ KONUŞARAK PUANTAJ:</b> Usta'ya mikrofon ya da yazıyla söyle: "bugün tam çalıştım, 2 saat mesai yaptım" → gün kendiliğinden işlenir! "Bugün gelmedim", "bugün izinliyim" de anlar. Zaten işli günün üzerine yazmaz, sorularını işlem sanmaz</li>
-          <li><b>🔧 Kıyas düzeltmesi:</b> Geçen yıl kıyasındaki mesai satırı yanlış alan okuyordu (hep 0 gösterecekti) — yayılmadan yakalandı, düzeltildi</li>
+          <li><b>📦 Parça başı ücretlendirme (YENİ):</b> Ayarlar'dan birim (m², kg, adet, sefer) ve birim fiyatını gir — yevmiyenin yanında o gün yaptığın ekstra iş miktarını gün ekranına yazınca otomatik hesaba eklensin. Rakip araştırmasında en çok istenen özelliklerden</li>
+          <li><b>⚖️ Yıllık fazla mesai sınırı uyarısı (YENİ):</b> İş Kanunu'ndaki 270 saatlik yıllık fazla mesai sınırına yaklaştığında/aştığında Hesap özetinde uyarı kartı görünür</li>
         </ul>
         <button class="btn btn-cizgili" id="btn-yenilik-kapat">Süper, kapat</button>
       </div>
@@ -278,6 +277,11 @@ const firebaseConfig = {
             <div style="font-size:12px;color:var(--soluk);margin-top:6px" id="seviye-alt"></div>
           </div>
         </div>
+      </div>
+      <div class="kart gizli" id="mesai-sinir-kart">
+        <h2>⚖️ Yıllık fazla mesai sınırı</h2>
+        <div class="hedef-bar" style="height:14px"><div class="dolu" id="mesai-sinir-dolu" style="width:0%"></div></div>
+        <div style="font-size:13px;color:var(--soluk);margin-top:8px" id="mesai-sinir-yazi"></div>
       </div>
       <div class="kart gizli" id="sgk-kart">
         <h2>🏖️ Emeklilik yolculuğu</h2>
@@ -1073,6 +1077,32 @@ const firebaseConfig = {
           <label>Günlük yol + yemek parası (TL, yoksa 0)</label>
           <input type="text" id="ayar-ek" inputmode="decimal" placeholder="Örn: 150">
         </div>
+        <div style="display:flex;gap:10px">
+          <div class="alan" style="flex:1">
+            <label>🛐 Pazar günü zammı (%)</label>
+            <input type="text" id="ayar-pazar-zam" inputmode="decimal" placeholder="0">
+          </div>
+          <div class="alan" style="flex:1">
+            <label>🎉 Resmi/dini bayram zammı (%)</label>
+            <input type="text" id="ayar-tatil-zam" inputmode="decimal" placeholder="0">
+          </div>
+        </div>
+        <div class="kart" style="background:transparent;border:none;padding:0 0 4px;margin:-6px 0 12px;font-size:12px;color:var(--soluk)">
+          Örn: %50 girersen, pazar günü veya resmi/dini bayramda işlenen bir gün, o günkü yevmiye + mesai + yol-yemek üzerinden %50 fazlasıyla hesaplanır. 0 bırakırsan hiçbir şey değişmez. Zam, günü kaydettiğin andaki oranla mühürlenir — sonradan zam oranını değiştirsen bile geçmiş günler etkilenmez.
+        </div>
+        <div style="display:flex;gap:10px">
+          <div class="alan" style="flex:1">
+            <label>📦 Parça başı birimi</label>
+            <input type="text" id="ayar-parca-birim" placeholder="Örn: m², kg, adet, sefer">
+          </div>
+          <div class="alan" style="flex:1">
+            <label>📦 Birim fiyatı (TL)</label>
+            <input type="text" id="ayar-parca-fiyat" inputmode="decimal" placeholder="0">
+          </div>
+        </div>
+        <div class="kart" style="background:transparent;border:none;padding:0 0 4px;margin:-6px 0 12px;font-size:12px;color:var(--soluk)">
+          Yevmiyenin yanında ekstra iş yaptığında (örn. günde 20 m² fayans döşedin) gün ekranında miktarını gir, otomatik hesaplansın. 0 bırakırsan bu alan gün ekranında görünmez.
+        </div>
         <div class="alan">
           <label>Aylık kazanç hedefin (TL, istemezsen 0)</label>
           <input type="text" id="ayar-hedef" inputmode="decimal" placeholder="Örn: 45000">
@@ -1210,7 +1240,7 @@ const firebaseConfig = {
         <p style="font-size:13px;color:var(--soluk);margin-bottom:12px">Hata mı gördün, fikrin mi var? Direkt geliştiriciye ulaş:</p>
         <a class="btn btn-cizgili" style="display:block;text-align:center;text-decoration:none;margin-bottom:10px" href="https://wa.me/905051252339?text=Puantaj%20Defterim%20hakkında:" target="_blank">💬 WhatsApp'tan yaz</a>
         <a class="btn btn-cizgili" style="display:block;text-align:center;text-decoration:none" href="tel:05051252339">📞 0505 125 23 39</a>
-        <p style="font-size:11px;color:var(--soluk);margin-top:12px;text-align:center">Sürüm: v85 · Serkan Karakaş</p>
+        <p style="font-size:11px;color:var(--soluk);margin-top:12px;text-align:center">Sürüm: v90 · Serkan Karakaş</p>
       </div>
       <div class="kart">
         <h2>🔒 PIN kilidi</h2>
@@ -1314,6 +1344,11 @@ const firebaseConfig = {
       <input type="text" id="gun-arti" inputmode="decimal" min="0" step="0.5" value="0">
       <button id="arti-arti">＋</button>
     </div>
+  </div>
+
+  <div class="alan gizli" id="alan-parca">
+    <label id="parca-etiket">📦 Parça başı miktar (bugün)</label>
+    <input type="text" id="gun-parca-miktar" inputmode="decimal" min="0" step="0.5" placeholder="0">
   </div>
 
   <div class="alan gizli" id="alan-santiye-sec">
