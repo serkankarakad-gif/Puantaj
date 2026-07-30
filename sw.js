@@ -1,6 +1,6 @@
 /* Puantaj Defterim — service worker (çevrimdışı kabuk) */
-const KASA = "puantaj-0.0.0.12";
-const DOSYALAR = ["./", "./index.html", "./manifest.webmanifest", "./style.css", "./app.js"];
+const KASA = "puantaj-0.0.0.18";
+const DOSYALAR = ["./", "./index.html", "./manifest.webmanifest", "./style.css", "./app.js", "./firebase-config.js"];
 
 self.addEventListener("install", e => {
   e.waitUntil(

@@ -3,11 +3,37 @@
 <head>
 <meta charset="UTF-8">
 <link rel="manifest" href="manifest.webmanifest">
+<meta name="referrer" content="strict-origin-when-cross-origin">
+<meta http-equiv="Content-Security-Policy" content="
+  default-src 'self';
+  script-src 'self' https://www.gstatic.com https://www.google.com;
+  style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;
+  font-src 'self' https://fonts.gstatic.com data:;
+  img-src 'self' data: https:;
+  connect-src 'self' https://*.googleapis.com https://*.gstatic.com https://*.firebaseio.com wss://*.firebaseio.com https://*.firebasedatabase.app https://*.firebaseapp.com https://*.workers.dev https://api.aladhan.com https://api.allorigins.win https://api.bigdatacloud.net https://api.codetabs.com https://api.open-meteo.com https://api.piped.private.coffee https://api.rss2json.com https://corsproxy.io https://finans.truncgil.com https://inv.nadeko.net https://invidious.nerdvpn.de https://open.er-api.com https://pipedapi.adminforge.de https://pipedapi.kavin.rocks https://news.google.com https://www.youtube.com https://m.youtube.com https://haberglobal.com https://www.aspor.com.tr https://www.cnnturk.com https://www.haberturk.com https://www.tgrthaber.com https://www.trthaber.com https://drive.google.com https://maps.google.com;
+  frame-src https://www.youtube.com;
+  worker-src 'self';
+  manifest-src 'self';
+  object-src 'none';
+  base-uri 'self';
+  form-action 'self';
+">
 <meta name="theme-color" content="#17181C">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<meta name="theme-color" content="#17181C">
 <link rel="manifest" id="manifest-link">
 <title>Puantaj Defterim</title>
+
+<!-- ================= iOS / Safari "Ana ekrana ekle" desteği ================= -->
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Puantaj">
+<meta name="mobile-web-app-capable" content="yes">
+<link rel="apple-touch-icon" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAMAAAADACAIAAADdvvtQAAADJElEQVR4nO3dy20UURBAURs5B1gQFmESBqGwIAvYIUsWP9/Br6rnnL2tfjW3q8cayfP4/sPHB3itd6cvgN0ERCIgEgGRCIhEQCQCIhEQiYBIBEQiIBIBkQiIREAkAiIREImASAREIiASAZEIiERAJAIiERCJgEgERCIgEgGRCIhEQCRPpy/gvG+fv776Zz98uvd/jmMDkQiIREAkAiIREImASAREIiASAZEIiERAJI93+1UH5SOwl+72Q7H7Cui20fzKXcV0FwG9TTcv3UNJFw/oVDrPXTujawY0oZuXLlnS1QKamc5zF8voUn/Gz6/nYclF/r2LbKCNr8o1VtH6gDam89z2jHY/wrbX87D/CIsD2j76n1YfZOUjbPXEf2Pj42zfBrpqPQ87j7ZsA70c8R/v2rOvyisub9ce2rSBNt6gr7DrmGsC2jXWaNFhdwS0aKC3suXICwLaMsqbW3Hw6QGtGOL/M//4owOaP743MHwIcwMaPri3NHkUQwOaPLIjxg5kaEBsMTGgsXfbWTPHMi6gmWMaYuBwZgU0cEDTTBvRrIBYZ1BA0+6tsUYNalBAbDQloFF31XxzxjUioDnjWGTI0EYExF7nAxpyJ200YXTnA2I1AZEcDmjCEl7t+ABtIJKTAR2/e67h7BhtIBIBkRwLyPPrhg4O0wYiERCJgEjOBOQN0M2dGqkNRCIgEgGRCIjkQEDeQf8nRwZrA5EIiERAJAIiebrVL/LWeIJ/ehVu8h/NbxbQKcPDHX55nUcYiYBIBEQiIBIBkQiIREAkAiIREImASAREsuxbm5nGBiIREImASAREIiASAZEIiERAJAIiERCJgEgERCIgEgGRCIhEQCQCIhEQiYBIBEQiIBIBkQiIREAkAiIREImASAREIiASAZEIiERAJAIiERCJgEgERCIgEgGRCIhEQCQCIhEQiYBIBEQiIBIBkQiIREAkAiIREImASAREIiASAZE8fv9y+hLYzAYiERCJgEgERCIgEgGRCIhEQCQCIhEQiYBIBEQiIBIBkQiIREAkAiIREImASAREIiASAZEIiERAJAIiERDJD17Trqk1D/6oAAAAAElFTkSuQmCC">
+<link rel="apple-touch-icon" sizes="192x192" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAMAAAADACAIAAADdvvtQAAADJElEQVR4nO3dy20UURBAURs5B1gQFmESBqGwIAvYIUsWP9/Br6rnnL2tfjW3q8cayfP4/sPHB3itd6cvgN0ERCIgEgGRCIhEQCQCIhEQiYBIBEQiIBIBkQiIREAkAiIREImASAREIiASAZEIiERAJAIiERCJgEgERCIgEgGRCIhEQCRPpy/gvG+fv776Zz98uvd/jmMDkQiIREAkAiIREImASAREIiASAZEIiERAJI93+1UH5SOwl+72Q7H7Cui20fzKXcV0FwG9TTcv3UNJFw/oVDrPXTujawY0oZuXLlnS1QKamc5zF8voUn/Gz6/nYclF/r2LbKCNr8o1VtH6gDam89z2jHY/wrbX87D/CIsD2j76n1YfZOUjbPXEf2Pj42zfBrpqPQ87j7ZsA70c8R/v2rOvyisub9ce2rSBNt6gr7DrmGsC2jXWaNFhdwS0aKC3suXICwLaMsqbW3Hw6QGtGOL/M//4owOaP743MHwIcwMaPri3NHkUQwOaPLIjxg5kaEBsMTGgsXfbWTPHMi6gmWMaYuBwZgU0cEDTTBvRrIBYZ1BA0+6tsUYNalBAbDQloFF31XxzxjUioDnjWGTI0EYExF7nAxpyJ200YXTnA2I1AZEcDmjCEl7t+ABtIJKTAR2/e67h7BhtIBIBkRwLyPPrhg4O0wYiERCJgEjOBOQN0M2dGqkNRCIgEgGRCIjkQEDeQf8nRwZrA5EIiERAJAIiebrVL/LWeIJ/ehVu8h/NbxbQKcPDHX55nUcYiYBIBEQiIBIBkQiIREAkAiIREImASAREsuxbm5nGBiIREImASAREIiASAZEIiERAJAIiERCJgEgERCIgEgGRCIhEQCQCIhEQiYBIBEQiIBIBkQiIREAkAiIREImASAREIiASAZEIiERAJAIiERCJgEgERCIgEgGRCIhEQCQCIhEQiYBIBEQiIBIBkQiIREAkAiIREImASAREIiASAZE8fv9y+hLYzAYiERCJgEgERCIgEgGRCIhEQCQCIhEQiYBIBEQiIBIBkQiIREAkAiIREImASAREIiASAZEIiERAJAIiERDJD17Trqk1D/6oAAAAAElFTkSuQmCC">
+<!-- iOS splash ekranı manifest/meta ile kısıtlı; gerçek "launch image" ekranı
+     ancak apple-touch-startup-image ile cihaz-boyutuna-özel PNG'ler istiyor.
+     Bunun yerine theme-color + background_color + tam ekran ikon kombinasyonu
+     iOS 16 sonrası otomatik makul bir açılış ekranı üretiyor. -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Saira+Condensed:wght@600;700;800&family=Rubik:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -17,25 +43,9 @@
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-messaging-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-check-compat.js"></script>
 
-<script>
-/* =========================================================
-   !!! BURAYI DOLDUR !!!
-   Firebase konsolundan (console.firebase.google.com)
-   kendi projenin ayarlarını buraya yapıştır.
-   Nasıl yapılacağı README.md dosyasında adım adım anlatılıyor.
-   ========================================================= */
-const firebaseConfig = {
-  apiKey: "AIzaSyB5pl78DRao2SmUWsMYMSZ6YbfX4rtRNdc",
-  authDomain: "gamezone-e11b0.firebaseapp.com",
-  databaseURL: "https://gamezone-e11b0-default-rtdb.europe-west1.firebasedatabase.app",
-  projectId: "gamezone-e11b0",
-  storageBucket: "gamezone-e11b0.firebasestorage.app",
-  messagingSenderId: "775694460272",
-  appId: "1:775694460272:web:7e5fd5691df9d8399d5bb5",
-  measurementId: "G-3M7FXX8XR4"
-};
-</script>
+<script src="firebase-config.js"></script>
 
 <link rel="stylesheet" href="style.css">
 </head>
@@ -229,7 +239,8 @@ const firebaseConfig = {
       <div class="kart gizli" id="yenilik-kart" style="border-color:var(--sari)">
         <h2>🎁 Neler yeni?</h2>
         <ul style="padding-left:18px;font-size:13.5px;line-height:1.9">
-          <li><b>📅 "Bu ödeme hangi ayın hesabına yazılsın?" (YENİ):</b> Para girişi ekle formuna açık bir ay seçici eklendi. Temmuz'un parasını Ağustos'ta geç aldıysan, artık hangi ayı görüntülediğini hatırlamana gerek yok — direkt "Temmuz"u seç, Ağustos'un kendi hesabına hiç karışmaz</li>
+          <li><b>💸 Firestore okuma maliyeti düşürüldü:</b> "Bu ayın çalışkanları" (liderlik tablosu) her açılışta 25 kişiye kadar tek tek sorgu atıyordu (775 okumaya kadar) — artık 5 dakika önbelleğe alınıyor, tekrar tekrar açman gereksiz maliyete yol açmıyor</li>
+          <li>• Firestore kullanım/maliyet analizi MALIYET-RAPORU.md dosyasında</li>
         </ul>
         <button class="btn btn-cizgili" id="btn-yenilik-kapat">Süper, kapat</button>
       </div>
@@ -1237,6 +1248,13 @@ const firebaseConfig = {
         </div>
       </div>
       <div class="kart">
+        <h2>🧹 Depolama</h2>
+        <p style="font-size:13px;color:var(--soluk);margin-bottom:12px;line-height:1.6">
+          Uygulama açılışta yavaşladıysa ya da eski bir sürümde takılı kaldıysa, önbelleği temizleyip yeniden yükleyebilirsin. <b>Kayıtların silinmez</b> — onlar Firestore'da (bulutta) duruyor, bu sadece uygulamanın kendi dosya önbelleğini boşaltır.
+        </p>
+        <button class="btn btn-cizgili" id="btn-onbellek-temizle">🧹 Önbelleği temizle ve yenile</button>
+      </div>
+      <div class="kart">
         <h2>🏖️ SGK / Emeklilik</h2>
         <p style="font-size:13px;color:var(--soluk);margin-bottom:12px;line-height:1.6">
           Şu ana kadarki SGK prim gününü yaz; uygulamada işlediğin günler üstüne eklenir, ana ekranda emekliliğe ne kaldığını görürsün.
@@ -1294,7 +1312,7 @@ const firebaseConfig = {
         <p style="font-size:13px;color:var(--soluk);margin-bottom:12px">Hata mı gördün, fikrin mi var? Direkt geliştiriciye ulaş:</p>
         <a class="btn btn-cizgili" style="display:block;text-align:center;text-decoration:none;margin-bottom:10px" href="https://wa.me/905051252339?text=Puantaj%20Defterim%20hakkında:" target="_blank">💬 WhatsApp'tan yaz</a>
         <a class="btn btn-cizgili" style="display:block;text-align:center;text-decoration:none" href="tel:05051252339">📞 0505 125 23 39</a>
-        <p style="font-size:11px;color:var(--soluk);margin-top:12px;text-align:center">Sürüm: 0.0.0.12 · Serkan Karakaş</p>
+        <p style="font-size:11px;color:var(--soluk);margin-top:12px;text-align:center">Sürüm: 0.0.0.18 · Serkan Karakaş</p>
       </div>
       <div class="kart">
         <h2>🔒 PIN kilidi</h2>

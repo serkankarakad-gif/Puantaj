@@ -106,6 +106,13 @@ function basla(){
     return;
   }
   firebase.initializeApp(firebaseConfig);
+  /* App Check: sadece gerçek bir site key girilmişse devreye girer.
+     Girilmemişse (placeholder ise) sessizce atlanır, hiçbir şeyi bozmaz. */
+  try{
+    if(typeof RECAPTCHA_SITE_KEY==="string" && RECAPTCHA_SITE_KEY && !RECAPTCHA_SITE_KEY.startsWith("BURAYA") && firebase.appCheck){
+      firebase.appCheck().activate(RECAPTCHA_SITE_KEY, true);
+    }
+  }catch(e){ console.warn("App Check başlatılamadı:", e); }
   auth = firebase.auth();
   db = firebase.firestore();
   db.enablePersistence({synchronizeTabs:true}).catch(()=>{ /* çevrimdışı desteklenmiyorsa sorun değil */ });
@@ -150,11 +157,8 @@ function basla(){
       hepsiniCiz();        /* takvim hemen çizilsin, veri sonra dolar */
       ayarlariDinle();
       ayiYukle();
-      borclariDinle();
-      planlariDinle();
-      cuzdaniDinle();
-      notlariDinle();
-      ekipDinle();
+      borclariDinle();     /* Ana ekrandaki kart/borç vade uyarı kutuları buna bağlı, ertelenemez */
+      cuzdaniDinle();      /* Ana ekranda gösterildiği için hemen gerekli */
       anaYukle();
       havaYukle();
       const anaBtn = document.querySelector('[data-goruntu="ana"]');
@@ -177,7 +181,9 @@ function dinleyicileriKapat(){
   if(dinleyiciNot) dinleyiciNot();
   if(dinleyiciMasraf) dinleyiciMasraf();
   if(dinleyiciEkip) dinleyiciEkip();
-  dinleyiciGirdi=dinleyiciOdeme=dinleyiciAyar=dinleyiciBorc=dinleyiciCuzdan=dinleyiciNot=dinleyiciMasraf=dinleyiciEkip=null;
+  if(dinleyiciPlan) dinleyiciPlan();
+  dinleyiciGirdi=dinleyiciOdeme=dinleyiciAyar=dinleyiciBorc=dinleyiciCuzdan=dinleyiciNot=dinleyiciMasraf=dinleyiciEkip=dinleyiciPlan=null;
+  baslatmalariSifirla();  /* ertelenen dinleyiciler bir sonraki girişte tekrar başlayabilsin */
 }
 
 function kullaniciBilgiYaz(){
@@ -248,6 +254,16 @@ function ayarlariDinle(){
 const ayAnahtar = id => String(id).slice(0,7);          // "2026-07-15" -> "2026-07"
 const aktifAyAnahtar = () => aktifYil+"-"+pad(aktifAy+1);
 const ayKilitli = id => ayarlar.kapali.includes(ayAnahtar(id));
+
+/* ---------- ⚡ Performans: nadiren kullanılan Firestore dinleyicilerini
+   sadece o ekran ilk açıldığında başlat (girişte hepsini birden açmak yerine) ---------- */
+const baslatilanlar = new Set();
+function birKezBaslat(anahtar, fn){
+  if(baslatilanlar.has(anahtar)) return;
+  baslatilanlar.add(anahtar);
+  fn();
+}
+function baslatmalariSifirla(){ baslatilanlar.clear(); }
 
 /* ---------- Borç defteri ---------- */
 function borclariDinle(){
@@ -1414,8 +1430,14 @@ function notCipCiz(){
 }
 
 /* ---------- Liderlik tablosu (bu ayın çalışkanları) ---------- */
-async function liderYukle(){
+let liderOnbellek = null;  /* {anahtar, zaman, sonuclar} — pahalı N-kişi sorgusunu 5 dk önbelleğe al */
+async function liderYukle(zorla){
   const ul = $("#lider-liste");
+  const anahtar = aktifYil+"-"+pad(aktifAy+1);
+  if(!zorla && liderOnbellek && liderOnbellek.anahtar===anahtar && (Date.now()-liderOnbellek.zaman < 5*60*1000)){
+    liderCiz(liderOnbellek.sonuclar);
+    return;
+  }
   ul.innerHTML = '<div class="bos-mesaj">Hesaplanıyor... (kişi sayısına göre biraz sürebilir)</div>';
   try{
     const bas = aktifYil+"-"+pad(aktifAy+1)+"-01";
@@ -1434,18 +1456,23 @@ async function liderYukle(){
       }catch(e){ return {...k, gun:0, mesai:0}; }
     }));
     sonuclar.sort((a,b)=> b.gun - a.gun || b.mesai - a.mesai);
-    ul.innerHTML = "";
-    const madalya = ["🥇","🥈","🥉"];
-    sonuclar.filter(s=> s.gun>0 || s.mesai>0).forEach((s,i)=>{
-      const li = document.createElement("li");
-      li.innerHTML =
-        '<div class="rozet" style="background:'+(i<3?"var(--sari)":"var(--asfalt2)")+';color:'+(i<3?"#111":"#fff")+'">'+(madalya[i]||("#"+(i+1)))+'</div>'+
-        '<div class="orta"><div class="baslik">'+esc(s.ad)+(s.uid===kullanici.uid?" (sen)":"")+'</div>'+
-        '<div class="alt-yazi">'+s.gun+' gün · '+s.mesai+' saat mesai</div></div>';
-      ul.appendChild(li);
-    });
-    if(!ul.children.length) ul.innerHTML = '<div class="bos-mesaj">Bu ay kimse gün işlememiş 🤷</div>';
+    liderOnbellek = {anahtar, zaman: Date.now(), sonuclar};
+    liderCiz(sonuclar);
   }catch(e){ ul.innerHTML=""; hataGoster(e); }
+}
+function liderCiz(sonuclar){
+  const ul = $("#lider-liste");
+  ul.innerHTML = "";
+  const madalya = ["🥇","🥈","🥉"];
+  sonuclar.filter(s=> s.gun>0 || s.mesai>0).forEach((s,i)=>{
+    const li = document.createElement("li");
+    li.innerHTML =
+      '<div class="rozet" style="background:'+(i<3?"var(--sari)":"var(--asfalt2)")+';color:'+(i<3?"#111":"#fff")+'">'+(madalya[i]||("#"+(i+1)))+'</div>'+
+      '<div class="orta"><div class="baslik">'+esc(s.ad)+(s.uid===kullanici.uid?" (sen)":"")+'</div>'+
+      '<div class="alt-yazi">'+s.gun+' gün · '+s.mesai+' saat mesai</div></div>';
+    ul.appendChild(li);
+  });
+  if(!ul.children.length) ul.innerHTML = '<div class="bos-mesaj">Bu ay kimse gün işlememiş 🤷</div>';
 }
 
 /* ---------- Görsel (PNG) patron raporu ---------- */
@@ -2027,7 +2054,7 @@ function haberDetayAc(h){
       h.i.map(x=> '<div class="gz-haber" data-link="'+x.l.replace(/"/g,"&quot;")+'" style="padding:9px 2px">'+
         '<div class="gz-no">›</div><div class="gz-baslik" style="font-size:14px">'+x.b.replace(/</g,"&lt;")+'</div></div>').join("");
     ilgiliKap.querySelectorAll("[data-link]").forEach(el=>
-      el.addEventListener("click", ()=>{ try{ window.open(el.dataset.link, "_blank"); }catch(e){} }));
+      el.addEventListener("click", ()=>{ try{ if(linkGuvenliMi(el.dataset.link)) window.open(el.dataset.link, "_blank"); }catch(e){} }));
   }else{
     ilgiliKap.innerHTML = "";
   }
@@ -3260,10 +3287,16 @@ function fotoSikistir(dosya){
           c.width = Math.max(1, Math.round(img.width*olcek));
           c.height = Math.max(1, Math.round(img.height*olcek));
           c.getContext("2d").drawImage(img, 0, 0, c.width, c.height);
-          let kalite = 0.72, url = c.toDataURL("image/jpeg", kalite);
+          /* WebP, JPEG'e göre aynı kalitede genelde %25-35 daha küçük dosya verir
+             (Firestore'un 1MB/belge sınırına daha rahat sığar, daha net kalır).
+             Tarayıcı encode desteklemiyorsa toDataURL sessizce başka format döner,
+             onu algılayıp JPEG'e otomatik düşüyoruz — hiçbir cihazda bozulma olmaz. */
+          const webpDestekli = c.toDataURL("image/webp", 0.5).indexOf("data:image/webp") === 0;
+          const format = webpDestekli ? "image/webp" : "image/jpeg";
+          let kalite = 0.72, url = c.toDataURL(format, kalite);
           while(url.length > 500000 && kalite > 0.3){
             kalite -= 0.12;
-            url = c.toDataURL("image/jpeg", kalite);
+            url = c.toDataURL(format, kalite);
           }
           if(url.length > 900000) reddet(new Error("fotoğraf çok büyük"));
           else cozul(url);
@@ -3483,8 +3516,10 @@ async function anaYukle(){
     if(gunToplam>0 && hakedis<=0 && !(ayarlar.yevmiye>0) && !(ayarlar.saatUcret>0)){
       $("#sirket-alt").innerHTML = "⚠️ <b>"+gunToplam+" günün işli ama yevmiyen girili değil!</b> Ayarlar → Ücret ayarları'ndan günlük yevmiyeni yaz, paraların hemen görünsün.";
     }else{
-      $("#sirket-alt").textContent = gizliMod ? "Toplam hakediş •••• · Alınan ••••"
-        : "Toplam hakediş "+paraFmt(hakedis)+" · Alınan "+paraFmt(alinan);
+      $("#sirket-alt").innerHTML = (gizliMod ? "Toplam hakediş •••• · Alınan ••••"
+        : "Toplam hakediş "+paraFmt(hakedis)+" · Alınan "+paraFmt(alinan))
+        + ' <span style="opacity:.75">(başlangıçtan bugüne, tüm aylar dahil)</span>'
+        + ' <span style="text-decoration:underline">Ay ay dökümü ›</span>';
     }
     hareketler.sort((a,b)=> a.tarih < b.tarih ? 1 : -1);
     const ul = $("#liste-sirket-hareket");
@@ -4847,11 +4882,44 @@ function durumButonYenile(){
 }
 
 /* ---------- Olaylar ---------- */
-/* PWA: service worker kaydı */
+/* PWA: service worker kaydı + güncelleme bildirimi.
+   Otomatik yenilemiyoruz (kullanıcı ortasında form doldurken sayfa
+   birden yenilenirse yazdığı şey kaybolur) — sadece nazikçe haber veriyoruz,
+   dokununca kendi isteğiyle yeniliyor. */
 if("serviceWorker" in navigator){
   window.addEventListener("load", ()=>{
-    navigator.serviceWorker.register("./sw.js").catch(()=>{});
+    navigator.serviceWorker.register("./sw.js").then(kayit=>{
+      kayit.addEventListener("updatefound", ()=>{
+        const yeni = kayit.installing; if(!yeni) return;
+        yeni.addEventListener("statechange", ()=>{
+          if(yeni.state==="installed" && navigator.serviceWorker.controller) guncellemeBandiGoster();
+        });
+      });
+    }).catch(()=>{});
+    let yenilendiMi = false;
+    navigator.serviceWorker.addEventListener("controllerchange", ()=>{
+      if(!yenilendiMi) return;   /* sadece kullanıcı bizzat "yenile"ye bastıysa reload et */
+      yenilendiMi = false;
+      location.reload();
+    });
+    window._swYenile = ()=>{ yenilendiMi = true; };
   });
+}
+function guncellemeBandiGoster(){
+  if($("#guncelleme-bandi")) return;   /* zaten gösteriliyor */
+  const b = document.createElement("div");
+  b.id = "guncelleme-bandi";
+  b.textContent = "🔄 Yeni sürüm hazır — yenilemek için dokun";
+  b.style.cssText = "position:fixed;left:12px;right:12px;bottom:90px;z-index:99999;"+
+    "background:var(--sari);color:#111;text-align:center;padding:13px 16px;"+
+    "border-radius:14px;font-weight:700;font-size:13.5px;cursor:pointer;"+
+    "box-shadow:0 6px 18px rgba(0,0,0,.35)";
+  b.addEventListener("click", ()=>{
+    b.textContent = "Yenileniyor…";
+    window._swYenile();
+    location.reload();
+  });
+  document.body.appendChild(b);
 }
 
 /* Android geri tuşu: açık pencereyi kapat, uygulamadan çıkma */
@@ -4957,6 +5025,7 @@ document.addEventListener("DOMContentLoaded", ()=>{
         if(!ad){ girisHata("Adını yaz kanka, menüde görünsün."); return; }
         const c = await auth.createUserWithEmailAndPassword(eposta, sifre);
         await c.user.updateProfile({displayName: ad});
+        try{ await c.user.sendEmailVerification(); }catch(e){}
         kullanici = auth.currentUser; kullaniciBilgiYaz();
         toast("Hesabın hazır, hoş geldin " + ad + " 👷");
       }else{
@@ -5031,9 +5100,10 @@ document.addEventListener("DOMContentLoaded", ()=>{
       if(g==="ozet") ozetDetayYukle();
       if(g==="ana") anaYukle();
       if(g==="rozet") rozetYukle();
-      if(g==="ekip"){ ekipYoklamaCiz(); ekipYoklamaYukle(); ekipOzetYukle(); }
+      if(g==="ekip"){ birKezBaslat("ekip", ekipDinle); ekipYoklamaCiz(); ekipYoklamaYukle(); ekipOzetYukle(); }
       if(g==="kisiler") kisilerYukle();
-      if(g==="planlar") planSantiyeSecDoldur();
+      if(g==="planlar"){ birKezBaslat("planlar", planlariDinle); planSantiyeSecDoldur(); }
+      if(g==="notlar") birKezBaslat("notlar", notlariDinle);
       if(g!=="arac" && sesAkis) sesDurdur();
       if(g!=="arac" && oyun){ oyun.bitti = true; oyun = null; const oa=$("#oyun-alan"); if(oa) oa.classList.add("gizli"); }
       if(g!=="arac" && teraziAcik){ teraziAcik = false; window.removeEventListener("deviceorientation", teraziDinle); const ta=$("#terazi-alan"); if(ta) ta.classList.add("gizli"); }
@@ -5213,7 +5283,7 @@ document.addEventListener("DOMContentLoaded", ()=>{
     if(tvAcikKanal) try{ window.open(tvAcikKanal.url, "_blank"); }catch(e){ location.href = tvAcikKanal.url; }
   });
   $("#btn-hd-oku").addEventListener("click", ()=>{
-    if(acikHaber) try{ window.open(acikHaber.l, "_blank"); }catch(e){ location.href = acikHaber.l; }
+    if(acikHaber && linkGuvenliMi(acikHaber.l)) try{ window.open(acikHaber.l, "_blank"); }catch(e){ location.href = acikHaber.l; }
   });
   $("#btn-hd-paylas").addEventListener("click", async ()=>{
     if(!acikHaber) return;
@@ -5780,7 +5850,7 @@ document.addEventListener("DOMContentLoaded", ()=>{
   });
 
   /* Neler yeni kartı */
-  const YENILIK_SURUM = "0.0.0.12";
+  const YENILIK_SURUM = "0.0.0.18";
   try{ $("#cekmece-surum").textContent = "Puantaj Defterim " + YENILIK_SURUM; }catch(e){}
   try{
     if(localStorage.getItem("yenilik")!==YENILIK_SURUM) $("#yenilik-kart").classList.remove("gizli");
@@ -5971,6 +6041,12 @@ document.addEventListener("DOMContentLoaded", ()=>{
     document.querySelector('[data-goruntu="rozet"]').click();
   });
 
+  /* Şirket hesap kartı → dokununca "Yıl özeti"ne git (ay ay dökümü orada, kafa karışıklığı burada çözülsün) */
+  $("#sirket-alt").style.cursor = "pointer";
+  $("#sirket-alt").addEventListener("click", ()=>{
+    document.querySelector('[data-goruntu="yil"]').click();
+  });
+
   /* ---- İş masrafları ---- */
   $("#masraf-tarih").value = tarihId(new Date());
   $("#btn-masraf-ekle").addEventListener("click", async ()=>{
@@ -6132,7 +6208,7 @@ document.addEventListener("DOMContentLoaded", ()=>{
   });
 
   /* Liderlik tablosu */
-  $("#btn-lider").addEventListener("click", liderYukle);
+  $("#btn-lider").addEventListener("click", ()=> liderYukle());
 
   /* Ekip toplu rapor */
   $("#btn-ekip-rapor").addEventListener("click", async ()=>{
@@ -6828,6 +6904,26 @@ document.addEventListener("DOMContentLoaded", ()=>{
   /* CSV & yedek */
   $("#btn-csv").addEventListener("click", csvIndir);
   $("#btn-yedek").addEventListener("click", yedekAl);
+
+  /* Önbelleği temizle */
+  $("#btn-onbellek-temizle").addEventListener("click", async ()=>{
+    if(!confirm("Önbellek temizlenip sayfa yenilenecek. Kayıtların bulutta güvende, sadece uygulamanın dosya önbelleği silinir. Devam edilsin mi?")) return;
+    try{
+      if("caches" in window){
+        const adlar = await caches.keys();
+        await Promise.all(adlar.map(a=> caches.delete(a)));
+      }
+      if("serviceWorker" in navigator){
+        const kayitlar = await navigator.serviceWorker.getRegistrations();
+        await Promise.all(kayitlar.map(k=> k.unregister()));
+      }
+      toast("Önbellek temizlendi, yenileniyor…");
+      setTimeout(()=> location.reload(true), 600);
+    }catch(e){
+      toast("Temizlenemedi, elle sayfayı yenile");
+      hataGoster(e);
+    }
+  });
 
   /* Çıkış */
   $("#btn-cikis").addEventListener("click", ()=>{

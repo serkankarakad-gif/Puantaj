@@ -4,10 +4,25 @@
    bulma isteklerini güvenilir şekilde taşır.
    Kurulum rehberi: KOPRU-KURULUM.md dosyasında.
    ============================================================ */
+
+/* !!! OPSİYONEL SIKILAŞTIRMA !!!
+   Uygulamanı yayınladığın adresi (örn. "https://puantaj.senin-adresin.com")
+   buraya yazarsan, köprünü SADECE senin uygulaman kullanabilir olur —
+   başka siteler bunu ücretsiz proxy olarak kullanıp kotanı tüketemez.
+   Boş bırakırsan (aşağıdaki gibi) herkese açık kalır, eskisi gibi çalışır. */
+const IZINLI_KAYNAK = ""; // örn: "https://puantaj-defterim.pages.dev"
+
 export default {
   async fetch(istek) {
     const url = new URL(istek.url);
     const hedef = url.searchParams.get("url");
+    const gelenKaynak = istek.headers.get("Origin") || "";
+    const acaoDeger = IZINLI_KAYNAK ? IZINLI_KAYNAK : "*";
+
+    /* Origin kısıtlaması aktifse ve istek başka bir siteden geliyorsa reddet */
+    if (IZINLI_KAYNAK && gelenKaynak && gelenKaynak !== IZINLI_KAYNAK) {
+      return new Response("izin yok", { status: 403 });
+    }
 
     /* Güvenlik: köprü sadece bu adreslere gider, başkası kullanamaz */
     const izinli = [
@@ -32,7 +47,7 @@ export default {
         status: cevap.status,
         headers: {
           "content-type": cevap.headers.get("content-type") || "text/plain; charset=utf-8",
-          "access-control-allow-origin": "*",
+          "access-control-allow-origin": acaoDeger,
           "cache-control": "public, max-age=120"
         }
       });
