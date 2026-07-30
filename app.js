@@ -2833,19 +2833,8 @@ function konfetiPatlat(){
 }
 
 /* ---------- 🗓️ Resmi tatiller (2026 tam liste + 2027 sabitler) ---------- */
-const TATILLER = {
-  "2026-01-01":"Yılbaşı", "2026-03-20":"Ramazan Bayramı 1. gün", "2026-03-21":"Ramazan Bayramı 2. gün",
-  "2026-03-22":"Ramazan Bayramı 3. gün", "2026-04-23":"23 Nisan Ulusal Egemenlik ve Çocuk Bayramı",
-  "2026-05-01":"1 Mayıs Emek ve Dayanışma Günü", "2026-05-19":"19 Mayıs Atatürk'ü Anma, Gençlik ve Spor Bayramı",
-  "2026-05-27":"Kurban Bayramı 1. gün", "2026-05-28":"Kurban Bayramı 2. gün",
-  "2026-05-29":"Kurban Bayramı 3. gün", "2026-05-30":"Kurban Bayramı 4. gün",
-  "2026-07-15":"15 Temmuz Demokrasi ve Millî Birlik Günü", "2026-08-30":"30 Ağustos Zafer Bayramı",
-  "2026-10-29":"29 Ekim Cumhuriyet Bayramı",
-  "2027-01-01":"Yılbaşı", "2027-04-23":"23 Nisan", "2027-05-01":"1 Mayıs", "2027-05-19":"19 Mayıs",
-  "2027-07-15":"15 Temmuz", "2027-08-30":"30 Ağustos", "2027-10-29":"29 Ekim Cumhuriyet Bayramı"
-};
-function tatilAd(id){ return TATILLER[id] || null; }
-
+/* TATILLER/tatilAd (eksik, 2025 ve 2028'i kapsamıyordu) kaldırıldı —
+   artık her yerde sabitler.js'teki tam liste (tatilAdi) kullanılıyor. */
 /* ---------- 🔍 Genel Arama ---------- */
 function aramaEslesme(q, metinler){
   q = q.toLocaleLowerCase("tr");   /* Türkçe İ→i, I→ı doğru insin */
@@ -3418,7 +3407,7 @@ async function anaYukle(){
       sonYediGun.push(tarihId(d2));
     }
     const islenenSon7 = [];
-    let bugunIsli = false;
+    let bugunIsli = false, bugunVeri = null, bugunKazanc = 0;
     gSnap.forEach(doc=>{
       const v = doc.data();
       const k = girdiKazanc(v);
@@ -3434,7 +3423,7 @@ async function anaYukle(){
         haftaMesai += Number(v.mesai)||0;
       }
       if(sonYediGun.indexOf(doc.id) > -1) islenenSon7.push(doc.id);
-      if(doc.id === bugunId2) bugunIsli = true;
+      if(doc.id === bugunId2){ bugunIsli = true; bugunVeri = v; bugunKazanc = k; }
       gunToplam += girdiGun(v);
       mesaiToplam += Number(v.mesai)||0;
       artiToplam += Number(v.arti)||0;
@@ -3449,6 +3438,8 @@ async function anaYukle(){
     });
     sirketOzet = {hakedis, alinan};
     asistanVeri = {buAyHak, buAyGun, buAyMesai};
+    bugunKazancCiz(bugunVeri, bugunKazanc);
+    hedefCiz({hakedis: buAyHak}, "ana-hedef-kart", "ana-hedef-icerik");
     /* 🚀 Yeni kullanıcı rehberi */
     const rehber = $("#rehber-kart");
     if(rehber){
@@ -3506,7 +3497,7 @@ async function anaYukle(){
     const tatilKrt = $("#tatil-kart");
     if(tatilKrt){
       const tatilYarin = new Date(simdi); tatilYarin.setDate(simdi.getDate()+1);
-      const bugunT = tatilAd(tarihId(simdi)), yarinT = tatilAd(tarihId(tatilYarin));
+      const bugunT = tatilAdi(tarihId(simdi)), yarinT = tatilAdi(tarihId(tatilYarin));
       if(bugunT || yarinT){
         $("#tatil-metin").innerHTML = bugunT
           ? "🎉 <b>Bugün resmi tatil: " + bugunT + "</b><br>Çalıştıysan bil: resmi tatil mesaisi <b>zamlı ücrete</b> tabidir — günü işlemeyi ve mesaini yazmayı unutma 💪"
@@ -3873,11 +3864,6 @@ function ayBarCiz(){
 function takvimCiz(){
   const kap = $("#takvim");
   kap.innerHTML = "";
-  GUNLER_KISA.forEach(g=>{
-    const el = document.createElement("div");
-    el.className = "gun-adi"; el.textContent = g;
-    kap.appendChild(el);
-  });
   const ilkGun = new Date(aktifYil, aktifAy, 1);
   let bosluk = (ilkGun.getDay()+6)%7; // Pazartesi başlangıç
   for(let i=0;i<bosluk;i++){
@@ -3924,12 +3910,12 @@ function takvimCiz(){
       f.className="foto-nokta"; f.textContent="📸";
       el.appendChild(f);
     }
-    if(tatilAd(id)){
+    if(tatilAdi(id)){
       const tk = document.createElement("span");
       tk.className = "foto-nokta";
       tk.style.left = "auto"; tk.style.right = "2px";
       tk.textContent = "🎉";
-      tk.title = tatilAd(id);
+      tk.title = tatilAdi(id);
       el.appendChild(tk);
     }
     /* Kısa dokunuş: modal aç. Basılı tut: anında tam yevmiye işle. */
@@ -4232,20 +4218,36 @@ function ozetCiz(){
     : "";
 }
 
-/* ---------- Aylık hedef çubuğu ---------- */
-function hedefCiz(t){
-  const kart = $("#hedef-kart");
+/* ---------- Aylık hedef çubuğu (hem Hesap özeti hem Ana ekranda kullanılır) ---------- */
+function hedefCiz(t, kartId, icerikId){
+  const kart = $("#"+(kartId||"hedef-kart"));
+  if(!kart) return;
   if(!(ayarlar.hedef>0)){ kart.classList.add("gizli"); return; }
   kart.classList.remove("gizli");
   const yuzde = Math.min(100, Math.round(t.hakedis/ayarlar.hedef*100));
   const kaldi = ayarlar.hedef - t.hakedis;
-  $("#hedef-icerik").innerHTML =
+  $("#"+(icerikId||"hedef-icerik")).innerHTML =
     '<div style="display:flex;justify-content:space-between;font-size:13.5px">'+
     '<span><b>'+paraFmt(t.hakedis)+'</b> / '+paraFmt(ayarlar.hedef)+'</span>'+
     '<b>%'+yuzde+'</b></div>'+
     '<div class="hedef-bar"><div class="dolu'+(yuzde>=100?' tamamlandi':'')+'" style="width:'+yuzde+'%"></div></div>'+
     '<div style="font-size:13px;color:var(--soluk);margin-top:8px">'+
     (kaldi>0 ? 'Hedefe '+paraFmt(kaldi)+' kaldı, gaza devam 💪' : '🎉 Hedefi geçtin, helal olsun usta!')+'</div>';
+}
+/* ---------- 📅 Ana ekran: bugünkü kazanç kartı ---------- */
+function bugunKazancCiz(v, kazanc){
+  const kart = $("#bugun-kazanc-kart"), icerik = $("#bugun-kazanc-icerik");
+  if(!kart || !icerik) return;
+  if(!v){
+    icerik.innerHTML = '<div style="color:var(--soluk);font-size:13.5px">Bugün henüz işlemedin — "Bugünü işle"ye dokun 👆</div>';
+    return;
+  }
+  const mesai = Number(v.mesai)||0;
+  icerik.innerHTML =
+    '<div style="display:flex;align-items:baseline;justify-content:space-between">'+
+    '<span style="font-size:13.5px;color:var(--soluk)">'+girisEtiket(v)+(mesai>0?" · "+mesai+" saat mesai":"")+'</span>'+
+    '<span style="font-family:\'Saira Condensed\';font-size:26px;font-weight:800;color:var(--sari)">'+gizliPara(kazanc)+'</span>'+
+    '</div>';
 }
 
 /* ---------- Kilit butonu ---------- */
@@ -5969,7 +5971,7 @@ document.addEventListener("DOMContentLoaded", ()=>{
   });
 
   /* Neler yeni kartı */
-  const YENILIK_SURUM = "0.0.0.22";
+  const YENILIK_SURUM = "0.0.0.25";
   try{ $("#cekmece-surum").textContent = "Puantaj Defterim " + YENILIK_SURUM; }catch(e){}
   try{
     if(localStorage.getItem("yenilik")!==YENILIK_SURUM) $("#yenilik-kart").classList.remove("gizli");

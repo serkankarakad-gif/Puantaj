@@ -241,8 +241,9 @@
       <div class="kart gizli" id="yenilik-kart" style="border-color:var(--sari)">
         <h2>🎁 Neler yeni?</h2>
         <ul style="padding-left:18px;font-size:13.5px;line-height:1.9">
-          <li><b>📗 Gerçek Excel (.xlsx) indirme (YENİ):</b> Ayarlar → Dışa aktarım'da artık CSV'nin yanında gerçek bir Excel dosyası da indirebiliyorsun — Puantaj ve Ödemeler ayrı sayfalarda, düzgün sütun genişlikleriyle</li>
-          <li><b>💾 Yedek hatırlatması (YENİ):</b> 30 gündür yerel yedek almadıysan nazikçe hatırlatıyoruz — kayıtların zaten bulutta güvende, bu ekstra bir güvenlik katmanı</li>
+          <li><b>🐞 Gizli tatil hatası bulundu ve düzeltildi:</b> Takvimdeki 🎉 ikonu eksik bir listeden besleniyordu (2025 ve 2028 tatilleri hiç görünmüyordu) — artık doğru, tam listeyi kullanıyor</li>
+          <li><b>📌 Sticky gün başlığı (YENİ):</b> Takvimde kaydırırken Pzt-Paz satırı artık üstte sabit kalıyor</li>
+          <li><b>🎬 Hafif giriş animasyonu:</b> Takvim yeniden çizildiğinde hücreler artık yumuşak bir fade ile beliriyor</li>
         </ul>
         <button class="btn btn-cizgili" id="btn-yenilik-kapat">Süper, kapat</button>
       </div>
@@ -251,6 +252,10 @@
         <button class="btn btn-cizgili" id="btn-ana-avans" style="flex:1;padding:12px 4px;font-size:13px">💵 Avans</button>
         <button class="btn btn-cizgili" id="btn-ana-paylas" style="flex:1;padding:12px 4px;font-size:13px">📤 Paylaş</button>
         <button class="btn btn-cizgili" id="btn-ana-not" style="flex:1;padding:12px 4px;font-size:13px">📝 Not</button>
+      </div>
+      <div class="kart" id="bugun-kazanc-kart" style="padding:13px 14px">
+        <div style="font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--soluk);font-weight:700">📅 Bugün</div>
+        <div id="bugun-kazanc-icerik" style="margin-top:6px"></div>
       </div>
       <div class="kart" id="krono-kart" style="padding:13px 14px">
         <div style="display:flex;align-items:center;gap:12px">
@@ -284,6 +289,10 @@
         <div id="kart-uyari" class="gizli" style="margin-top:10px;background:var(--girdi);border:1.5px solid var(--sari);border-radius:12px;padding:11px 14px;font-size:13.5px;font-weight:700;cursor:pointer"></div>
         <div id="borc-uyari" class="gizli" style="margin-top:10px;background:var(--girdi);border:1.5px solid var(--gelmedi);border-radius:12px;padding:11px 14px;font-size:13.5px;font-weight:700;cursor:pointer"></div>
         <div id="belge-uyari-kart" class="gizli" style="margin-top:10px;background:var(--girdi);border:1.5px solid var(--sari);border-radius:12px;padding:11px 14px;font-size:13.5px;font-weight:700"></div>
+      </div>
+      <div class="kart gizli" id="ana-hedef-kart">
+        <h2 style="margin-bottom:10px">🎯 Bu ayın hedefi</h2>
+        <div id="ana-hedef-icerik"></div>
       </div>
       <div class="kart gizli" id="seviye-kart">
         <div class="seviye-satir">
@@ -383,6 +392,10 @@
       <div class="kart">
         <div style="display:flex;justify-content:flex-end;margin-bottom:8px">
           <button class="eksik-cip" id="btn-takvim-mod" style="font-size:12px;padding:7px 12px">₺ Kazançları göster</button>
+        </div>
+        <div class="takvim-baslik">
+          <div class="gun-adi">Pzt</div><div class="gun-adi">Sal</div><div class="gun-adi">Çar</div>
+          <div class="gun-adi">Per</div><div class="gun-adi">Cum</div><div class="gun-adi">Cmt</div><div class="gun-adi">Paz</div>
         </div>
         <div class="takvim" id="takvim"></div>
         <div class="lejant">
@@ -1328,7 +1341,7 @@
         <p style="font-size:13px;color:var(--soluk);margin-bottom:12px">Hata mı gördün, fikrin mi var? Direkt geliştiriciye ulaş:</p>
         <a class="btn btn-cizgili" style="display:block;text-align:center;text-decoration:none;margin-bottom:10px" href="https://wa.me/905051252339?text=Puantaj%20Defterim%20hakkında:" target="_blank">💬 WhatsApp'tan yaz</a>
         <a class="btn btn-cizgili" style="display:block;text-align:center;text-decoration:none" href="tel:05051252339">📞 0505 125 23 39</a>
-        <p style="font-size:11px;color:var(--soluk);margin-top:12px;text-align:center">Sürüm: 0.0.0.22 · Serkan Karakaş</p>
+        <p style="font-size:11px;color:var(--soluk);margin-top:12px;text-align:center">Sürüm: 0.0.0.25 · Serkan Karakaş</p>
       </div>
       <div class="kart">
         <h2>🔒 PIN kilidi</h2>
