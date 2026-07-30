@@ -229,11 +229,7 @@ const firebaseConfig = {
       <div class="kart gizli" id="yenilik-kart" style="border-color:var(--sari)">
         <h2>🎁 Neler yeni?</h2>
         <ul style="padding-left:18px;font-size:13.5px;line-height:1.9">
-          <li><b>🐞 Baştan sona hata taraması yapıldı:</b></li>
-          <li>• Masraf ekleme tarihi de (ödeme gibi) geçmiş ayı incelerken bugüne değil o ayın son gününe ayarlanıyor artık</li>
-          <li>• <b>Patrona gönderilen Görsel (PNG) raporda masraf alacağı hiç görünmüyordu</b> — KALAN'a dahildi ama görselde yazmıyordu, kafa karıştırıyordu. Artık gösteriliyor</li>
-          <li>• <b>"Herkes" ekranında bir ekip arkadaşının parça başı kazancı hiç hesaba katılmıyordu</b> — düzeltildi, artık doğru gösteriliyor</li>
-          <li>• PDF raporunda kendi ad/şantiye bilgisi için ek güvenlik önlemi alındı</li>
+          <li><b>📅 "Bu ödeme hangi ayın hesabına yazılsın?" (YENİ):</b> Para girişi ekle formuna açık bir ay seçici eklendi. Temmuz'un parasını Ağustos'ta geç aldıysan, artık hangi ayı görüntülediğini hatırlamana gerek yok — direkt "Temmuz"u seç, Ağustos'un kendi hesabına hiç karışmaz</li>
         </ul>
         <button class="btn btn-cizgili" id="btn-yenilik-kapat">Süper, kapat</button>
       </div>
@@ -399,11 +395,15 @@ const firebaseConfig = {
       <div class="kart">
         <h2>➕ Para girişi ekle</h2>
         <div class="alan">
-          <label>Tarih</label>
-          <input type="date" id="odeme-tarih">
+          <label>📅 Bu ödeme hangi ayın hesabına yazılsın?</label>
+          <select id="odeme-ait-ay"></select>
           <div style="font-size:11.5px;color:var(--soluk);margin-top:6px;line-height:1.5">
-            💡 Bu tarih, ödemenin hangi ayın hesabına yazılacağını belirler. Parayı geç aldıysan (örn. Temmuz'un parası Ağustos'ta geldiyse) ve hâlâ Temmuz'u incelemek istiyorsan, tarihi Temmuz içinden seç — yoksa Temmuz'un "kalanı" hiç düşmez.
+            💡 Parayı geç aldıysan (örn. Temmuz'un parası Ağustos'ta geldiyse), buradan <b>Temmuz'u seç</b> — parayı fiilen ne zaman aldığın önemli değil, hangi ayın alacağını kapattığı önemli. Temmuz'un "kalanı" böyle sıfırlanır, Ağustos'un kendi hesabına karışmaz.
           </div>
+        </div>
+        <div class="alan">
+          <label>Tarih (parayı fiilen aldığın gün — dekont/hatırlama için)</label>
+          <input type="date" id="odeme-tarih">
         </div>
         <div class="alan">
           <label>Tutar (TL)</label>
@@ -1294,7 +1294,7 @@ const firebaseConfig = {
         <p style="font-size:13px;color:var(--soluk);margin-bottom:12px">Hata mı gördün, fikrin mi var? Direkt geliştiriciye ulaş:</p>
         <a class="btn btn-cizgili" style="display:block;text-align:center;text-decoration:none;margin-bottom:10px" href="https://wa.me/905051252339?text=Puantaj%20Defterim%20hakkında:" target="_blank">💬 WhatsApp'tan yaz</a>
         <a class="btn btn-cizgili" style="display:block;text-align:center;text-decoration:none" href="tel:05051252339">📞 0505 125 23 39</a>
-        <p style="font-size:11px;color:var(--soluk);margin-top:12px;text-align:center">Sürüm: 0.0.0.11 · Serkan Karakaş</p>
+        <p style="font-size:11px;color:var(--soluk);margin-top:12px;text-align:center">Sürüm: 0.0.0.12 · Serkan Karakaş</p>
       </div>
       <div class="kart">
         <h2>🔒 PIN kilidi</h2>

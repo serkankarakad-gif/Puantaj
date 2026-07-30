@@ -626,20 +626,42 @@ function masrafTarihVarsayilaniAyarla(){
     el.value = aktifYil+"-"+pad(aktifAy+1)+"-"+pad(ayinSonGunu);
   }
 }
-function odemeTarihVarsayilaniAyarla(){
-  const el = $("#odeme-tarih"); if(!el || duzenlenenOdeme) return;
+/* 💵 "Bu ödeme hangi ayın hesabına yazılsın?" seçicisi.
+   Parayı fiilen ne zaman aldığın değil, hangi ayın alacağını kapattığı önemli —
+   bu yüzden kullanıcıya doğrudan ay seçtiriyoruz, "tarih"i biz arkada ayarlıyoruz. */
+function odemeAitAySecDoldur(){
+  const sel = $("#odeme-ait-ay"); if(!sel || duzenlenenOdeme) return;
   const simdi = new Date();
-  if(aktifYil === simdi.getFullYear() && aktifAy === simdi.getMonth()){
+  const secenekler = [];
+  for(let i=0;i<12;i++){
+    const d = new Date(simdi.getFullYear(), simdi.getMonth()-i, 1);
+    secenekler.push(d.getFullYear()+"-"+pad(d.getMonth()+1)+"|"+AYLAR[d.getMonth()]+" "+d.getFullYear());
+  }
+  sel.innerHTML = secenekler.map(s=>{
+    const [deger, etiket] = s.split("|");
+    return '<option value="'+deger+'">'+etiket+'</option>';
+  }).join("");
+  const goruntulenen = aktifYil+"-"+pad(aktifAy+1);
+  sel.value = goruntulenen;
+  if(sel.value !== goruntulenen) sel.value = simdi.getFullYear()+"-"+pad(simdi.getMonth()+1); /* 12 aydan eskiyse bugüne düş */
+  odemeTarihiAyaGoreAyarla();
+}
+function odemeTarihiAyaGoreAyarla(){
+  const sel = $("#odeme-ait-ay"), el = $("#odeme-tarih");
+  if(!sel || !el || duzenlenenOdeme || !sel.value) return;
+  const [y,a] = sel.value.split("-").map(Number);
+  const simdi = new Date();
+  if(y===simdi.getFullYear() && (a-1)===simdi.getMonth()){
     el.value = tarihId(simdi);
   }else{
-    const ayinSonGunu = new Date(aktifYil, aktifAy+1, 0).getDate();
-    el.value = aktifYil+"-"+pad(aktifAy+1)+"-"+pad(ayinSonGunu);
+    const ayinSonGunu = new Date(y, a, 0).getDate();
+    el.value = y+"-"+pad(a)+"-"+pad(ayinSonGunu);
   }
 }
 function ayiYukle(){
   if(dinleyiciGirdi) dinleyiciGirdi();
   if(dinleyiciOdeme) dinleyiciOdeme();
-  odemeTarihVarsayilaniAyarla();
+  odemeAitAySecDoldur();
   masrafTarihVarsayilaniAyarla();
 
   const bas = aktifYil + "-" + pad(aktifAy+1) + "-01";
@@ -3943,6 +3965,7 @@ function odemeListesiCiz(){
       if(ayKilitli(o.tarih)){ toast("Bu ay kilitli 🔒 Hesap özetinden açabilirsin"); return; }
       duzenlenenOdeme = o;
       $("#odeme-tarih").value = o.tarih;
+      const aaSel = $("#odeme-ait-ay"); if(aaSel) aaSel.value = String(o.tarih).slice(0,7);
       $("#odeme-tutar").value = o.tutar;
       $("#odeme-tur").value = o.tur||"diger";
       $("#odeme-not").value = o.not||"";
@@ -5757,7 +5780,7 @@ document.addEventListener("DOMContentLoaded", ()=>{
   });
 
   /* Neler yeni kartı */
-  const YENILIK_SURUM = "0.0.0.11";
+  const YENILIK_SURUM = "0.0.0.12";
   try{ $("#cekmece-surum").textContent = "Puantaj Defterim " + YENILIK_SURUM; }catch(e){}
   try{
     if(localStorage.getItem("yenilik")!==YENILIK_SURUM) $("#yenilik-kart").classList.remove("gizli");
@@ -6400,11 +6423,13 @@ document.addEventListener("DOMContentLoaded", ()=>{
 
   /* Ödeme ekle / güncelle */
   $("#odeme-tarih").value = tarihId(new Date());
+  $("#odeme-ait-ay").addEventListener("change", odemeTarihiAyaGoreAyarla);
   const odemeFormSifirla = ()=>{
     duzenlenenOdeme = null;
     $("#odeme-tutar").value=""; $("#odeme-not").value="";
     $("#btn-odeme-ekle").textContent = "Kaydet";
     $("#btn-odeme-vazgec").classList.add("gizli");
+    odemeAitAySecDoldur();
   };
   $("#btn-odeme-vazgec").addEventListener("click", ()=>{ odemeFormSifirla(); toast("Düzenleme iptal edildi"); });
   let dekontFoto = null;
