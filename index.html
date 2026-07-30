@@ -229,7 +229,11 @@ const firebaseConfig = {
       <div class="kart gizli" id="yenilik-kart" style="border-color:var(--sari)">
         <h2>🎁 Neler yeni?</h2>
         <ul style="padding-left:18px;font-size:13.5px;line-height:1.9">
-          <li><b>📐 Planlarım (YENİ):</b> WhatsApp'tan gelen mimari/statik proje dosyasını (PDF, kolon ölçüleri vb.) Google Drive'a atıp linkini menüden "Planlarım"a ekle — dokununca tarayıcıda açılır, yakınlaştırıp ölçüleri okuyabilirsin. İstersen hangi şantiyeye ait olduğunu da işaretle</li>
+          <li><b>🐞 Baştan sona hata taraması yapıldı:</b></li>
+          <li>• Masraf ekleme tarihi de (ödeme gibi) geçmiş ayı incelerken bugüne değil o ayın son gününe ayarlanıyor artık</li>
+          <li>• <b>Patrona gönderilen Görsel (PNG) raporda masraf alacağı hiç görünmüyordu</b> — KALAN'a dahildi ama görselde yazmıyordu, kafa karıştırıyordu. Artık gösteriliyor</li>
+          <li>• <b>"Herkes" ekranında bir ekip arkadaşının parça başı kazancı hiç hesaba katılmıyordu</b> — düzeltildi, artık doğru gösteriliyor</li>
+          <li>• PDF raporunda kendi ad/şantiye bilgisi için ek güvenlik önlemi alındı</li>
         </ul>
         <button class="btn btn-cizgili" id="btn-yenilik-kapat">Süper, kapat</button>
       </div>
@@ -397,6 +401,9 @@ const firebaseConfig = {
         <div class="alan">
           <label>Tarih</label>
           <input type="date" id="odeme-tarih">
+          <div style="font-size:11.5px;color:var(--soluk);margin-top:6px;line-height:1.5">
+            💡 Bu tarih, ödemenin hangi ayın hesabına yazılacağını belirler. Parayı geç aldıysan (örn. Temmuz'un parası Ağustos'ta geldiyse) ve hâlâ Temmuz'u incelemek istiyorsan, tarihi Temmuz içinden seç — yoksa Temmuz'un "kalanı" hiç düşmez.
+          </div>
         </div>
         <div class="alan">
           <label>Tutar (TL)</label>
@@ -1287,7 +1294,7 @@ const firebaseConfig = {
         <p style="font-size:13px;color:var(--soluk);margin-bottom:12px">Hata mı gördün, fikrin mi var? Direkt geliştiriciye ulaş:</p>
         <a class="btn btn-cizgili" style="display:block;text-align:center;text-decoration:none;margin-bottom:10px" href="https://wa.me/905051252339?text=Puantaj%20Defterim%20hakkında:" target="_blank">💬 WhatsApp'tan yaz</a>
         <a class="btn btn-cizgili" style="display:block;text-align:center;text-decoration:none" href="tel:05051252339">📞 0505 125 23 39</a>
-        <p style="font-size:11px;color:var(--soluk);margin-top:12px;text-align:center">Sürüm: 0.0.0.9 · Serkan Karakaş</p>
+        <p style="font-size:11px;color:var(--soluk);margin-top:12px;text-align:center">Sürüm: 0.0.0.11 · Serkan Karakaş</p>
       </div>
       <div class="kart">
         <h2>🔒 PIN kilidi</h2>

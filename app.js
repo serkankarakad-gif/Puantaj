@@ -609,9 +609,38 @@ async function belgeDurt(){
   }catch(e){}
 }
 
+/* 💵 Ödeme tarihi kutusunun varsayılanı: görüntülediğin aya göre ayarla.
+   Bugünkü ayı görüntülüyorsan bugünü öner; geçmiş bir ayı (henüz kilitlemediğin
+   için hâlâ açık olan bir ayı) görüntülüyorsan, o ayın SON GÜNÜNÜ öner —
+   böylece "bugün" tarihiyle kaydedip ödemeyi yanlış aya yazma hatası önlenir. */
+/* 🧾 Masraf tarihi kutusunun varsayılanı: ödeme tarihiyle aynı mantık —
+   görüntülediğin aya göre ayarla, geçmiş bir ayı incelerken o ayın son
+   gününü öner (yoksa masraf yanlış aya kaydolur, aynı ödeme hatası gibi). */
+function masrafTarihVarsayilaniAyarla(){
+  const el = $("#masraf-tarih"); if(!el) return;
+  const simdi = new Date();
+  if(aktifYil === simdi.getFullYear() && aktifAy === simdi.getMonth()){
+    el.value = tarihId(simdi);
+  }else{
+    const ayinSonGunu = new Date(aktifYil, aktifAy+1, 0).getDate();
+    el.value = aktifYil+"-"+pad(aktifAy+1)+"-"+pad(ayinSonGunu);
+  }
+}
+function odemeTarihVarsayilaniAyarla(){
+  const el = $("#odeme-tarih"); if(!el || duzenlenenOdeme) return;
+  const simdi = new Date();
+  if(aktifYil === simdi.getFullYear() && aktifAy === simdi.getMonth()){
+    el.value = tarihId(simdi);
+  }else{
+    const ayinSonGunu = new Date(aktifYil, aktifAy+1, 0).getDate();
+    el.value = aktifYil+"-"+pad(aktifAy+1)+"-"+pad(ayinSonGunu);
+  }
+}
 function ayiYukle(){
   if(dinleyiciGirdi) dinleyiciGirdi();
   if(dinleyiciOdeme) dinleyiciOdeme();
+  odemeTarihVarsayilaniAyarla();
+  masrafTarihVarsayilaniAyarla();
 
   const bas = aktifYil + "-" + pad(aktifAy+1) + "-01";
   const son = aktifYil + "-" + pad(aktifAy+1) + "-31";
@@ -1265,6 +1294,7 @@ function kisiKazanc(v){
   else if(v.durum==="yarim") k += (yev + ek)/2;
   else if(v.durum==="saatlik"){ const st = Number(v.saat)||0; k += st*sa + (st>0?ek:0); }
   k += (Number(v.arti)||0) * (yev + ek);
+  k += (Number(v.parcaMiktar)||0) * (v.uParcaFiyat!=null ? Number(v.uParcaFiyat) : (Number(ka.parcaFiyat)||0));
   return k;
 }
 
@@ -1400,7 +1430,8 @@ async function liderYukle(){
 async function pngRapor(gBas, gSon){
   const t = hesaplaAralik(gBas, gSon);
   const gunler = t.gSon - t.gBas + 1;
-  const W = 820, satirY = 34, ustH = 130, altH = 150;
+  const masrafSatiriVar = t.masrafToplam > 0;
+  const W = 820, satirY = 34, ustH = 130, altH = 150 + (masrafSatiriVar ? 34 : 0);
   const H = ustH + (gunler+1)*satirY + altH;
   const cv = document.createElement("canvas");
   cv.width = W; cv.height = H;
@@ -1440,8 +1471,12 @@ async function pngRapor(gBas, gSon){
   c.fillStyle = "#222"; c.font = "bold 17px Arial";
   c.fillText("✅ "+t.gunSayisi+" gün · ⏱ "+t.mesaiToplam+" saat mesai"+(t.artiToplam>0?" · ➕ "+t.artiToplam+" artı":""), 24, oy+30);
   c.fillText("💰 Hakediş: "+paraFmt(t.hakedis)+"    💵 Alınan: "+paraFmt(t.alinan), 24, oy+62);
+  if(masrafSatiriVar){
+    c.fillStyle = "#7A5C00";
+    c.fillText("🧾 Masraf alacağı: "+paraFmt(t.masrafToplam), 24, oy+90);
+  }
   c.fillStyle = "#B3261E"; c.font = "bold 20px Arial";
-  c.fillText("KALAN: "+paraFmt(t.kalan), 24, oy+96);
+  c.fillText("KALAN: "+paraFmt(t.kalan), 24, oy+(masrafSatiriVar ? 128 : 96));
   c.fillStyle = "#999"; c.font = "12px Arial";
   c.fillText("Puantaj Defterim ile hazırlandı", W-220, H-14);
   cv.toBlob(async blob=>{
@@ -4692,7 +4727,7 @@ function pdfYazdir(gBas, gSon){
     '.imza{display:flex;justify-content:space-between;margin-top:55px}'+
     '.imza div{width:40%;border-top:1.5px solid #111;padding-top:6px;text-align:center;font-size:12px}</style></head><body>'+
     '<h1>PUANTAJ ÇİZELGESİ — '+AYLAR[aktifAy]+' '+aktifYil+t.etiket+'</h1>'+
-    (ad ? '<p><b>İşçi:</b> '+ad+(ayarlar.santiye?' &nbsp;·&nbsp; <b>Şantiye:</b> '+ayarlar.santiye:'')+'</p>' : '')+
+    (ad ? '<p><b>İşçi:</b> '+esc(ad)+(ayarlar.santiye?' &nbsp;·&nbsp; <b>Şantiye:</b> '+esc(ayarlar.santiye):'')+'</p>' : '')+
     '<table><tr><th>TARİH</th><th style="text-align:center">YEVMİYE</th><th style="text-align:center">GÜN İÇİ ARTI</th><th style="text-align:center">MESAİ</th><th class="sag">KAZANÇ</th></tr>'+
     satirlar+
     '<tr class="ozet"><td>TOPLAM: '+t.gunSayisi+' gün'+(t.artiToplam>0?' · '+t.artiToplam+' artı':'')+' · '+t.mesaiToplam+' saat mesai</td><td colspan="3">HAKEDİŞ</td><td class="sag">'+paraFmt(t.hakedis)+'</td></tr>'+
@@ -5722,7 +5757,7 @@ document.addEventListener("DOMContentLoaded", ()=>{
   });
 
   /* Neler yeni kartı */
-  const YENILIK_SURUM = "0.0.0.9";
+  const YENILIK_SURUM = "0.0.0.11";
   try{ $("#cekmece-surum").textContent = "Puantaj Defterim " + YENILIK_SURUM; }catch(e){}
   try{
     if(localStorage.getItem("yenilik")!==YENILIK_SURUM) $("#yenilik-kart").classList.remove("gizli");
