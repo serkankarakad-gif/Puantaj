@@ -2174,16 +2174,49 @@ function ggGrafikCiz(ayHak, ayAlinan){
     x.fillStyle = soluk;
     x.fillText(paraKisa(v), solPay-5, yy+3);
   });
-  /* çubuklar */
-  const slot = (G - solPay - 6)/12, bar = Math.max(3, slot*0.3);
-  x.textAlign = "center";
-  d12.forEach((a,i)=>{
-    const bx = solPay + i*slot + slot/2;
-    const h = ayHak[a.key]||0, al = ayAlinan[a.key]||0;
-    if(h>0){ x.fillStyle = sari; const yy = olcek(h); x.fillRect(bx-bar-1, yy, bar, (Y-altPay)-yy); }
-    if(al>0){ x.fillStyle = mavi; const yy = olcek(al); x.fillRect(bx+1, yy, bar, (Y-altPay)-yy); }
-    if(i%2===1 || d12.length<=6){ x.fillStyle = soluk; x.fillText(a.ad, bx, Y-7); }
-  });
+  /* Her ayın x konumu (nokta merkezleri) — bar grafiğiyle birebir aynı ölçek/matematik */
+  const slot = (G - solPay - 6)/12;
+  const xKonum = i => solPay + i*slot + slot/2;
+  /* Bir seriyi (alan dolgusu + çizgi + noktalar) çiz. `veri` her ay için ham
+     TL değeri; sadece >0 olan aylar bir noktaya sahip, aradaki boşluklar
+     (hiç çalışılmamış/ödenmemiş ay) çizgiyi koparır, uydurma bir değer
+     bağlanmaz. */
+  function seriCiz(veri, renkKodu){
+    const noktalar = d12.map((a,i)=> ({i, x:xKonum(i), y: olcek(veri[a.key]||0), v: veri[a.key]||0}));
+    /* Alan dolgusu: sadece ardışık (boşluksuz) veri olan bölümlerde */
+    let k = 0;
+    while(k < noktalar.length){
+      if(!(noktalar[k].v>0)){ k++; continue; }
+      let j = k;
+      while(j+1 < noktalar.length && noktalar[j+1].v>0) j++;
+      if(j > k){
+        x.beginPath();
+        x.moveTo(noktalar[k].x, Y-altPay);
+        for(let m=k;m<=j;m++) x.lineTo(noktalar[m].x, noktalar[m].y);
+        x.lineTo(noktalar[j].x, Y-altPay);
+        x.closePath();
+        x.fillStyle = renkKodu + "22";  /* ~%13 opaklık, hex alfa */
+        x.fill();
+        x.strokeStyle = renkKodu; x.lineWidth = 2; x.lineJoin = "round";
+        x.beginPath();
+        for(let m=k;m<=j;m++){ if(m===k) x.moveTo(noktalar[m].x, noktalar[m].y); else x.lineTo(noktalar[m].x, noktalar[m].y); }
+        x.stroke();
+      }
+      k = j+1;
+    }
+    /* Tek başına (öncesi/sonrası boş) bir ay varsa en azından bir nokta göster */
+    noktalar.forEach(n=>{
+      if(n.v>0){
+        x.beginPath(); x.arc(n.x, n.y, 3, 0, Math.PI*2);
+        x.fillStyle = renkKodu; x.fill();
+      }
+    });
+  }
+  seriCiz(ayAlinan, mavi);   /* önce alınan (arkada) */
+  seriCiz(ayHak, sari);      /* sonra hakediş (önde) */
+  /* Ay adları */
+  x.textAlign = "center"; x.fillStyle = soluk;
+  d12.forEach((a,i)=>{ if(i%2===1 || d12.length<=6) x.fillText(a.ad, xKonum(i), Y-7); });
 }
 
 /* ---------- 🏖️ Yıllık izin sayacı ---------- */
@@ -5159,6 +5192,31 @@ document.addEventListener("DOMContentLoaded", ()=>{
   $("#btn-hamburger").addEventListener("click", ()=> cekmeceAc(!$("#cekmece").classList.contains("acik")));
   $("#perde").addEventListener("click", ()=> cekmeceAc(false));
 
+  /* Menü grupları: katlanabilir (accordion). Kullanıcının hangi grupları
+     kapattığı localStorage'da hatırlanır, varsayılan hepsi açık. */
+  (function(){
+    let kapaliGruplar = [];
+    try{ kapaliGruplar = JSON.parse(localStorage.getItem("menuGrupKapali")||"[]"); }catch(e){}
+    const uygula = ()=>{
+      $$(".menu-grup[data-grup-baslik]").forEach(baslik=>{
+        const grup = baslik.dataset.grupBaslik;
+        const kapali = kapaliGruplar.includes(grup);
+        baslik.classList.toggle("kapali", kapali);
+        $$('li[data-grup="'+grup+'"]').forEach(li=> li.classList.toggle("grup-kapali", kapali));
+      });
+    };
+    uygula();
+    $$(".menu-grup[data-grup-baslik]").forEach(baslik=>{
+      baslik.addEventListener("click", ()=>{
+        const grup = baslik.dataset.grupBaslik;
+        const i = kapaliGruplar.indexOf(grup);
+        if(i>-1) kapaliGruplar.splice(i,1); else kapaliGruplar.push(grup);
+        try{ localStorage.setItem("menuGrupKapali", JSON.stringify(kapaliGruplar)); }catch(e){}
+        uygula();
+      });
+    });
+  })();
+
   /* Görünüm değiştirme */
   const basliklar = {
     ana:["Ana ekran","Cüzdanın ve şirket hesabın"],
@@ -5971,7 +6029,7 @@ document.addEventListener("DOMContentLoaded", ()=>{
   });
 
   /* Neler yeni kartı */
-  const YENILIK_SURUM = "0.0.0.25";
+  const YENILIK_SURUM = "0.0.0.30";
   try{ $("#cekmece-surum").textContent = "Puantaj Defterim " + YENILIK_SURUM; }catch(e){}
   try{
     if(localStorage.getItem("yenilik")!==YENILIK_SURUM) $("#yenilik-kart").classList.remove("gizli");
@@ -6425,6 +6483,46 @@ document.addEventListener("DOMContentLoaded", ()=>{
   window.addEventListener("offline", cevrimYaz);
   if(!navigator.onLine) $("#cevrim-bant").style.display = "block";
 
+  /* ---- Aşağı çekerek yenile (Ana ekran) — veriler zaten canlı senkronize
+     oluyor ama kullanıcı alışık olduğu bu jesti bekleyebilir; zararsız,
+     sadece ana ekranı elle bir daha tazeler. ---- */
+  (function(){
+    let baslangicY = null, yenileniyor = false;
+    const ESIK = 70;
+    window.addEventListener("touchstart", e=>{
+      if(aktifGoruntu !== "ana" || window.scrollY > 5){ baslangicY = null; return; }
+      baslangicY = e.touches[0].clientY;
+    }, {passive:true});
+    window.addEventListener("touchend", e=>{
+      if(baslangicY===null) return;
+      const son = e.changedTouches && e.changedTouches[0];
+      const fark = son ? son.clientY - baslangicY : 0;
+      baslangicY = null;
+      if(fark > ESIK && aktifGoruntu==="ana" && !yenileniyor){
+        yenileniyor = true;
+        titret(20);
+        toast("Yenileniyor… 🔄");
+        anaYukle();
+        setTimeout(()=> yenileniyor=false, 1200);
+      }
+    }, {passive:true});
+  })();
+
+  /* ---- Ripple efekti (Material dokunma dalgası) ---- */
+  document.addEventListener("pointerdown", e=>{
+    const hedef = e.target.closest(".btn, .eksik-cip, .durum-secim button");
+    if(!hedef) return;
+    const r = hedef.getBoundingClientRect();
+    const boyut = Math.max(r.width, r.height);
+    const dalga = document.createElement("span");
+    dalga.className = "ripple";
+    dalga.style.width = dalga.style.height = boyut+"px";
+    dalga.style.left = (e.clientX - r.left - boyut/2)+"px";
+    dalga.style.top = (e.clientY - r.top - boyut/2)+"px";
+    hedef.appendChild(dalga);
+    setTimeout(()=> dalga.remove(), 520);
+  }, {passive:true});
+
   /* ---- Takvimde kaydırarak ay değiştirme ---- */
   let kayX = null;
   $("#takvim").addEventListener("touchstart", e=>{ kayX = e.touches[0].clientX; }, {passive:true});
@@ -6480,6 +6578,27 @@ document.addEventListener("DOMContentLoaded", ()=>{
     document.querySelector('[data-goruntu="puantaj"]').click();
     $("#btn-bugun").click();
   });
+
+  /* FAB'a basılı tutunca hızlı kısayol menüsü (akıllı kısayollar) */
+  (function(){
+    const fab = $("#nav-arti"), menu = $("#fab-kisayol-menu"), perde = $("#fab-kisayol-perde");
+    let lpZaman = null, lpAtesledi = false;
+    const ac = ()=>{
+      lpAtesledi = true;
+      titret(30);
+      menu.classList.remove("gizli"); perde.classList.remove("gizli");
+    };
+    const kapat = ()=>{
+      menu.classList.add("gizli"); perde.classList.add("gizli");
+    };
+    fab.addEventListener("pointerdown", ()=>{ lpAtesledi=false; lpZaman = setTimeout(ac, 420); });
+    ["pointerup","pointerleave","pointercancel"].forEach(ev=> fab.addEventListener(ev, ()=> clearTimeout(lpZaman)));
+    fab.addEventListener("click", e=>{ if(lpAtesledi){ e.stopImmediatePropagation(); lpAtesledi=false; } }, true);
+    perde.addEventListener("click", kapat);
+    $("#fab-k-not").addEventListener("click", ()=>{ kapat(); $("#btn-ana-not").click(); });
+    $("#fab-k-avans").addEventListener("click", ()=>{ kapat(); $("#btn-ana-avans").click(); });
+    $("#fab-k-dun").addEventListener("click", ()=>{ kapat(); document.querySelector('[data-goruntu="ana"]').click(); setTimeout(()=> $("#btn-dun-isle").click(), 250); });
+  })();
 
   /* Ana ekran hızlı işlemler */
   $("#btn-ana-bugun").addEventListener("click", ()=>{

@@ -150,27 +150,33 @@
     <ul>
       <li class="gizli" id="li-anaekran-ekle"><button id="btn-anaekran-ekle"><span class="ikon">📥</span> Uygulamayı indir</button></li>
       <li><button data-goruntu="ana" class="aktif"><span class="ikon">🏠</span> Ana ekran</button></li>
-      <li class="menu-grup">GÜNLÜK İŞLER</li>
-      <li><button data-goruntu="puantaj"><span class="ikon">📅</span> Puantaj çizelgesi</button></li>
-      <li class="menu-grup">PARA İŞLERİ</li>
-      <li><button data-goruntu="odemeler"><span class="ikon">💵</span> Aldığım paralar</button></li>
-      <li><button data-goruntu="borc"><span class="ikon">🤝</span> Borç defteri</button></li>
-      <li><button data-goruntu="kartlar"><span class="ikon">💳</span> Kredi kartlarım</button></li>
-      <li><button data-goruntu="masraf"><span class="ikon">🧾</span> İş masrafları</button></li>
-      <li><button data-goruntu="ozet"><span class="ikon">🧮</span> Hesap özeti</button></li>
-      <li><button data-goruntu="yil"><span class="ikon">📊</span> Yıl özeti</button></li>
-      <li class="menu-grup">DİĞER</li>
-      <li><button data-goruntu="arama"><span class="ikon">🔍</span> Kayıt ara</button></li>
-      <li><button data-goruntu="haber"><span class="ikon">📰</span> Gündem</button></li>
-      <li><button data-goruntu="tv"><span class="ikon">📺</span> Canlı TV</button></li>
-      <li><button data-goruntu="video"><span class="ikon">▶️</span> Video</button></li>
-      <li><button data-goruntu="notlar"><span class="ikon">📝</span> Not defterim</button></li>
-      <li><button data-goruntu="rozet"><span class="ikon">🏆</span> Başarımlarım</button></li>
-      <li><button data-goruntu="ekip"><span class="ikon">👥</span> Ekibim</button></li>
-      <li><button data-goruntu="kisiler"><span class="ikon">🌍</span> Herkes (puantajlar)</button></li>
-      <li><button data-goruntu="planlar"><span class="ikon">📐</span> Planlarım</button></li>
-      <li><button data-goruntu="arac"><span class="ikon">🛠️</span> Araçlar & Bilgi</button></li>
-      <li><button data-goruntu="ayarlar"><span class="ikon">⚙️</span> Ayarlar</button></li>
+
+      <li class="menu-grup" data-grup-baslik="gunluk"><span>📅 GÜNLÜK İŞLER</span><span class="menu-grup-ok">▾</span></li>
+      <li data-grup="gunluk"><button data-goruntu="puantaj"><span class="ikon">📅</span> Puantaj çizelgesi</button></li>
+      <li data-grup="gunluk"><button data-goruntu="notlar"><span class="ikon">📝</span> Not defterim</button></li>
+      <li data-grup="gunluk"><button data-goruntu="arama"><span class="ikon">🔍</span> Kayıt ara</button></li>
+
+      <li class="menu-grup" data-grup-baslik="para"><span>💰 PARA İŞLERİ</span><span class="menu-grup-ok">▾</span></li>
+      <li data-grup="para"><button data-goruntu="odemeler"><span class="ikon">💵</span> Aldığım paralar</button></li>
+      <li data-grup="para"><button data-goruntu="borc"><span class="ikon">🤝</span> Borç defteri</button></li>
+      <li data-grup="para"><button data-goruntu="kartlar"><span class="ikon">💳</span> Kredi kartlarım</button></li>
+      <li data-grup="para"><button data-goruntu="masraf"><span class="ikon">🧾</span> İş masrafları</button></li>
+      <li data-grup="para"><button data-goruntu="ozet"><span class="ikon">🧮</span> Hesap özeti</button></li>
+      <li data-grup="para"><button data-goruntu="yil"><span class="ikon">📊</span> Yıl özeti</button></li>
+
+      <li class="menu-grup" data-grup-baslik="ekip"><span>👥 EKİP & TOPLULUK</span><span class="menu-grup-ok">▾</span></li>
+      <li data-grup="ekip"><button data-goruntu="ekip"><span class="ikon">👥</span> Ekibim</button></li>
+      <li data-grup="ekip"><button data-goruntu="kisiler"><span class="ikon">🌍</span> Herkes (puantajlar)</button></li>
+      <li data-grup="ekip"><button data-goruntu="planlar"><span class="ikon">📐</span> Planlarım</button></li>
+      <li data-grup="ekip"><button data-goruntu="rozet"><span class="ikon">🏆</span> Başarımlarım</button></li>
+
+      <li class="menu-grup" data-grup-baslik="diger"><span>🛠️ ARAÇLAR & EĞLENCE</span><span class="menu-grup-ok">▾</span></li>
+      <li data-grup="diger"><button data-goruntu="haber"><span class="ikon">📰</span> Gündem</button></li>
+      <li data-grup="diger"><button data-goruntu="tv"><span class="ikon">📺</span> Canlı TV</button></li>
+      <li data-grup="diger"><button data-goruntu="video"><span class="ikon">▶️</span> Video</button></li>
+      <li data-grup="diger"><button data-goruntu="arac"><span class="ikon">🛠️</span> Araçlar & Bilgi</button></li>
+
+      <li style="margin-top:6px"><button data-goruntu="ayarlar"><span class="ikon">⚙️</span> Ayarlar</button></li>
       <li><button id="btn-geribildirim"><span class="ikon">💬</span> Geri bildirim gönder</button></li>
     </ul>
     <div class="cekmece-alt">
@@ -241,9 +247,7 @@
       <div class="kart gizli" id="yenilik-kart" style="border-color:var(--sari)">
         <h2>🎁 Neler yeni?</h2>
         <ul style="padding-left:18px;font-size:13.5px;line-height:1.9">
-          <li><b>🐞 Gizli tatil hatası bulundu ve düzeltildi:</b> Takvimdeki 🎉 ikonu eksik bir listeden besleniyordu (2025 ve 2028 tatilleri hiç görünmüyordu) — artık doğru, tam listeyi kullanıyor</li>
-          <li><b>📌 Sticky gün başlığı (YENİ):</b> Takvimde kaydırırken Pzt-Paz satırı artık üstte sabit kalıyor</li>
-          <li><b>🎬 Hafif giriş animasyonu:</b> Takvim yeniden çizildiğinde hücreler artık yumuşak bir fade ile beliriyor</li>
+          <li><b>📈 Gelir-gider grafiği modernleşti:</b> Çubuk grafik yerine artık alan dolgulu, yumuşak çizgi grafiği — hakediş (altın) ve alınan (mavi) trendini daha net gösteriyor. Hesaplama mantığı hiç değişmedi, sadece çizim şekli</li>
         </ul>
         <button class="btn btn-cizgili" id="btn-yenilik-kapat">Süper, kapat</button>
       </div>
@@ -1341,7 +1345,7 @@
         <p style="font-size:13px;color:var(--soluk);margin-bottom:12px">Hata mı gördün, fikrin mi var? Direkt geliştiriciye ulaş:</p>
         <a class="btn btn-cizgili" style="display:block;text-align:center;text-decoration:none;margin-bottom:10px" href="https://wa.me/905051252339?text=Puantaj%20Defterim%20hakkında:" target="_blank">💬 WhatsApp'tan yaz</a>
         <a class="btn btn-cizgili" style="display:block;text-align:center;text-decoration:none" href="tel:05051252339">📞 0505 125 23 39</a>
-        <p style="font-size:11px;color:var(--soluk);margin-top:12px;text-align:center">Sürüm: 0.0.0.25 · Serkan Karakaş</p>
+        <p style="font-size:11px;color:var(--soluk);margin-top:12px;text-align:center">Sürüm: 0.0.0.30 · Serkan Karakaş</p>
       </div>
       <div class="kart">
         <h2>🔒 PIN kilidi</h2>
@@ -1374,6 +1378,13 @@
       </div>
     </section>
   </main>
+
+  <div class="gizli" id="fab-kisayol-perde" style="position:fixed;inset:0;z-index:95"></div>
+  <div class="gizli" id="fab-kisayol-menu" style="position:fixed;left:50%;bottom:150px;transform:translateX(-50%);z-index:96;display:flex;flex-direction:column;gap:8px;align-items:center">
+    <button class="eksik-cip" id="fab-k-not" style="white-space:nowrap;box-shadow:0 4px 14px rgba(0,0,0,.35)">📝 Not ekle</button>
+    <button class="eksik-cip" id="fab-k-avans" style="white-space:nowrap;box-shadow:0 4px 14px rgba(0,0,0,.35)">💵 Avans ekle</button>
+    <button class="eksik-cip" id="fab-k-dun" style="white-space:nowrap;box-shadow:0 4px 14px rgba(0,0,0,.35)">⏪ Dünü işle</button>
+  </div>
 
   <button class="hizli-fab" id="btn-bugun">✚ Bugünü işle</button>
 
