@@ -247,7 +247,8 @@
       <div class="kart gizli" id="yenilik-kart" style="border-color:var(--sari)">
         <h2>🎁 Neler yeni?</h2>
         <ul style="padding-left:18px;font-size:13.5px;line-height:1.9">
-          <li><b>📈 Gelir-gider grafiği modernleşti:</b> Çubuk grafik yerine artık alan dolgulu, yumuşak çizgi grafiği — hakediş (altın) ve alınan (mavi) trendini daha net gösteriyor. Hesaplama mantığı hiç değişmedi, sadece çizim şekli</li>
+          <li><b>🕓 Bekleyen aylar (YENİ):</b> Ana ekrana, parası hâlâ tam yatmamış eski ayları tek tek gösteren bir kutu eklendi (inşaatta avans/maaş farklı tarihlerde parça parça yatabiliyor diye). Birine dokun, o ayın hesabına ödeme yaz — kalan otomatik düşer</li>
+          <li><b>🌙 Gece mesaisi zammı (YENİ):</b> Gün ekranına normal mesaiden ayrı, opsiyonel bir "gece mesaisi" saat girişi eklendi — Ayarlar'dan zam yüzdesi belirleyebilirsin</li>
         </ul>
         <button class="btn btn-cizgili" id="btn-yenilik-kapat">Süper, kapat</button>
       </div>
@@ -281,6 +282,13 @@
         <div class="gizli" id="sirket-hareket-kutu" style="margin-top:10px;background:rgba(0,0,0,.18);border-radius:12px;padding:6px 10px;max-height:340px;overflow-y:auto">
           <ul class="liste hareket-liste" id="liste-sirket-hareket"></ul>
         </div>
+      </div>
+      <div class="kart gizli" id="bekleyen-aylar-kart">
+        <h2 style="margin-bottom:4px">🕓 Bekleyen aylar</h2>
+        <p style="font-size:12.5px;color:var(--soluk);margin-bottom:10px;line-height:1.5">
+          Bu ay dışında, parası hâlâ tam yatmamış eski aylar. Avans/maaş geldikçe birine dokun, o ayın hesabına yaz — kalan otomatik düşer.
+        </p>
+        <ul class="liste" id="liste-bekleyen-aylar"></ul>
       </div>
       <div class="kart" style="padding:13px 14px">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
@@ -1161,6 +1169,13 @@
         <div class="kart" style="background:transparent;border:none;padding:0 0 4px;margin:-6px 0 12px;font-size:12px;color:var(--soluk)">
           Örn: %50 girersen, pazar günü veya resmi/dini bayramda işlenen bir gün, o günkü yevmiye + mesai + yol-yemek üzerinden %50 fazlasıyla hesaplanır. 0 bırakırsan hiçbir şey değişmez. Zam, günü kaydettiğin andaki oranla mühürlenir — sonradan zam oranını değiştirsen bile geçmiş günler etkilenmez.
         </div>
+        <div class="alan">
+          <label>🌙 Gece mesaisi zammı (%) — normal mesai ücretine ek</label>
+          <input type="text" id="ayar-gece-zam" inputmode="decimal" placeholder="0">
+        </div>
+        <div class="kart" style="background:transparent;border:none;padding:0 0 4px;margin:-6px 0 12px;font-size:12px;color:var(--soluk)">
+          Gün ekranında ayrı bir "gece mesaisi" saati gireceksin (normal mesaiden bağımsız) — bu saatler, mesai ücretinin üzerine buradaki yüzde kadar zamlı hesaplanır. 0 bırakırsan normal mesai ücretiyle aynı hesaplanır.
+        </div>
         <div style="display:flex;gap:10px">
           <div class="alan" style="flex:1">
             <label>📦 Parça başı birimi</label>
@@ -1345,7 +1360,7 @@
         <p style="font-size:13px;color:var(--soluk);margin-bottom:12px">Hata mı gördün, fikrin mi var? Direkt geliştiriciye ulaş:</p>
         <a class="btn btn-cizgili" style="display:block;text-align:center;text-decoration:none;margin-bottom:10px" href="https://wa.me/905051252339?text=Puantaj%20Defterim%20hakkında:" target="_blank">💬 WhatsApp'tan yaz</a>
         <a class="btn btn-cizgili" style="display:block;text-align:center;text-decoration:none" href="tel:05051252339">📞 0505 125 23 39</a>
-        <p style="font-size:11px;color:var(--soluk);margin-top:12px;text-align:center">Sürüm: 0.0.0.30 · Serkan Karakaş</p>
+        <p style="font-size:11px;color:var(--soluk);margin-top:12px;text-align:center">Sürüm: 0.0.0.32 · Serkan Karakaş</p>
       </div>
       <div class="kart">
         <h2>🔒 PIN kilidi</h2>
@@ -1455,6 +1470,15 @@
       <button id="arti-eksi">−</button>
       <input type="text" id="gun-arti" inputmode="decimal" min="0" step="0.5" value="0">
       <button id="arti-arti">＋</button>
+    </div>
+  </div>
+
+  <div class="alan">
+    <label>🌙 Gece mesaisi (saat) — normal mesaiden ayrı, opsiyonel</label>
+    <div class="sayac">
+      <button id="gece-eksi">−</button>
+      <input type="text" id="gun-gece-mesai" inputmode="decimal" min="0" step="0.5" value="0">
+      <button id="gece-arti">＋</button>
     </div>
   </div>
 
