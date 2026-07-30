@@ -6,7 +6,7 @@
 <meta name="referrer" content="strict-origin-when-cross-origin">
 <meta http-equiv="Content-Security-Policy" content="
   default-src 'self';
-  script-src 'self' https://www.gstatic.com https://www.google.com;
+  script-src 'self' https://www.gstatic.com https://www.google.com https://cdn.sheetjs.com;
   style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;
   font-src 'self' https://fonts.gstatic.com data:;
   img-src 'self' data: https:;
@@ -46,6 +46,8 @@
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-check-compat.js"></script>
 
 <script src="firebase-config.js"></script>
+<script src="sabitler.js"></script>
+<script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js"></script>
 
 <link rel="stylesheet" href="style.css">
 </head>
@@ -209,7 +211,7 @@
       <div id="rehber-kart" class="kart gizli" style="border:1.5px solid var(--sari)">
         <div style="display:flex;justify-content:space-between;align-items:center">
           <h2 style="margin:0">🚀 Hoş geldin! 3 adımda başla</h2>
-          <button id="btn-rehber-kapat" style="color:var(--soluk);font-size:18px;padding:4px 8px">✕</button>
+          <button id="btn-rehber-kapat" style="color:var(--soluk);font-size:18px;min-width:44px;min-height:44px">✕</button>
         </div>
         <div style="font-size:14px;line-height:1.7;margin-top:8px">
           <div id="rehber-a1">1️⃣ Günlük yevmiyeni gir → <button class="eksik-cip" id="btn-rehber-yevmiye">⚙️ Ayarlara git</button></div>
@@ -239,8 +241,8 @@
       <div class="kart gizli" id="yenilik-kart" style="border-color:var(--sari)">
         <h2>🎁 Neler yeni?</h2>
         <ul style="padding-left:18px;font-size:13.5px;line-height:1.9">
-          <li><b>💸 Firestore okuma maliyeti düşürüldü:</b> "Bu ayın çalışkanları" (liderlik tablosu) her açılışta 25 kişiye kadar tek tek sorgu atıyordu (775 okumaya kadar) — artık 5 dakika önbelleğe alınıyor, tekrar tekrar açman gereksiz maliyete yol açmıyor</li>
-          <li>• Firestore kullanım/maliyet analizi MALIYET-RAPORU.md dosyasında</li>
+          <li><b>📗 Gerçek Excel (.xlsx) indirme (YENİ):</b> Ayarlar → Dışa aktarım'da artık CSV'nin yanında gerçek bir Excel dosyası da indirebiliyorsun — Puantaj ve Ödemeler ayrı sayfalarda, düzgün sütun genişlikleriyle</li>
+          <li><b>💾 Yedek hatırlatması (YENİ):</b> 30 gündür yerel yedek almadıysan nazikçe hatırlatıyoruz — kayıtların zaten bulutta güvende, bu ekstra bir güvenlik katmanı</li>
         </ul>
         <button class="btn btn-cizgili" id="btn-yenilik-kapat">Süper, kapat</button>
       </div>
@@ -259,11 +261,17 @@
           <button class="btn btn-sari" id="btn-krono" style="width:auto;padding:12px 18px;font-size:14px">▶ Başlat</button>
         </div>
       </div>
-      <div class="banka-kart sirket">
+      <div class="banka-kart sirket" id="sirket-kart">
         <div class="kart-ust"><span>🏢 Şirket Hesap Kartı</span><button id="btn-goz" style="color:#fff;font-size:17px">👁️</button></div>
         <div class="bakiye" id="sirket-bakiye">—</div>
         <div class="kart-alt" id="sirket-alt">Çalıştıkça artar, avans aldıkça azalır</div>
         <div class="kart-alt" id="kur-satir" style="margin-top:6px;font-weight:700"></div>
+        <button id="btn-sirket-hareket-ac" style="margin-top:14px;width:100%;display:flex;align-items:center;justify-content:space-between;background:rgba(255,255,255,.08);border-radius:12px;padding:11px 13px;color:#fff;font-weight:700;font-size:13.5px">
+          <span>📋 Hareketler</span><span id="sirket-hareket-ok" style="transition:transform .2s">›</span>
+        </button>
+        <div class="gizli" id="sirket-hareket-kutu" style="margin-top:10px;background:rgba(0,0,0,.18);border-radius:12px;padding:6px 10px;max-height:340px;overflow-y:auto">
+          <ul class="liste hareket-liste" id="liste-sirket-hareket"></ul>
+        </div>
       </div>
       <div class="kart" style="padding:13px 14px">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
@@ -299,10 +307,6 @@
         <h2>🏖️ Emeklilik yolculuğu</h2>
         <div class="hedef-bar" style="height:14px"><div class="dolu" id="sgk-dolu" style="width:0%"></div></div>
         <div style="font-size:13px;color:var(--soluk);margin-top:8px" id="sgk-yazi"></div>
-      </div>
-      <div class="kart">
-        <h2>🏢 Şirket hesap hareketleri</h2>
-        <ul class="liste hareket-liste" id="liste-sirket-hareket"></ul>
       </div>
 
       <div class="banka-kart cuzdan-k">
@@ -586,6 +590,7 @@
         <div id="yil-icerik"><div class="bos-mesaj">Yükleniyor...</div></div>
         <button class="btn btn-cizgili" id="btn-yil-paylas" style="margin-top:14px">📤 Yıl raporunu paylaş</button>
         <button class="btn btn-cizgili" id="btn-csv" style="margin-top:10px">⬇️ Excel için CSV indir</button>
+        <button class="btn btn-cizgili" id="btn-xlsx" style="margin-top:10px">📗 Gerçek Excel (.xlsx) indir</button>
       </div>
     </section>
 
@@ -1300,6 +1305,17 @@
         <div id="saglik-sonuc" style="margin-top:12px;font-size:13.5px;line-height:2"></div>
       </div>
       <div class="kart">
+        <h2>🪵 Hata günlüğü</h2>
+        <p style="font-size:13px;color:var(--soluk);margin-bottom:12px">
+          Uygulama beklenmedik bir hatayla karşılaşırsa burada birikir (son 30 tanesi, sadece bu telefonda saklanır). Bir sorun yaşarsan "Kopyala"ya basıp geliştiriciye WhatsApp'tan atabilirsin.
+        </p>
+        <div style="display:flex;gap:10px;margin-bottom:10px">
+          <button class="btn btn-cizgili" id="btn-hata-kopyala" style="flex:1;padding:11px">📋 Kopyala</button>
+          <button class="btn btn-cizgili" id="btn-hata-temizle" style="flex:1;padding:11px">🗑️ Temizle</button>
+        </div>
+        <div id="hata-gunlugu-sonuc" style="font-size:12.5px;line-height:1.8;color:var(--soluk);max-height:220px;overflow-y:auto"></div>
+      </div>
+      <div class="kart">
         <h2>🩹 Tutar onarımı</h2>
         <p style="font-size:13px;color:var(--soluk);margin-bottom:12px;line-height:1.6">
           Eskiden "5.000" gibi noktayla yazılan tutarlar yanlışlıkla "5 TL" kaydediliyordu (özellikle iPhone'da).
@@ -1312,7 +1328,7 @@
         <p style="font-size:13px;color:var(--soluk);margin-bottom:12px">Hata mı gördün, fikrin mi var? Direkt geliştiriciye ulaş:</p>
         <a class="btn btn-cizgili" style="display:block;text-align:center;text-decoration:none;margin-bottom:10px" href="https://wa.me/905051252339?text=Puantaj%20Defterim%20hakkında:" target="_blank">💬 WhatsApp'tan yaz</a>
         <a class="btn btn-cizgili" style="display:block;text-align:center;text-decoration:none" href="tel:05051252339">📞 0505 125 23 39</a>
-        <p style="font-size:11px;color:var(--soluk);margin-top:12px;text-align:center">Sürüm: 0.0.0.18 · Serkan Karakaş</p>
+        <p style="font-size:11px;color:var(--soluk);margin-top:12px;text-align:center">Sürüm: 0.0.0.22 · Serkan Karakaş</p>
       </div>
       <div class="kart">
         <h2>🔒 PIN kilidi</h2>
@@ -1466,7 +1482,7 @@
       <b id="tvo-ad"></b>
       <div style="font-size:11px;color:#FF5B52;font-weight:800;letter-spacing:1px">● CANLI YAYIN</div>
     </div>
-    <button id="btn-tvo-kapat" style="color:#fff;font-size:24px;padding:6px 10px">✕</button>
+    <button id="btn-tvo-kapat" style="color:#fff;font-size:24px;min-width:44px;min-height:44px">✕</button>
   </div>
   <div style="width:100%;aspect-ratio:16/9;background:#000;position:relative">
     <iframe id="tvo-iframe" style="width:100%;height:100%;border:0" allow="autoplay; fullscreen; encrypted-media; picture-in-picture" allowfullscreen></iframe>
@@ -1484,7 +1500,7 @@
 <div id="haber-detay" class="gizli" style="position:fixed;left:10px;right:10px;bottom:calc(10px + env(safe-area-inset-bottom));z-index:8600;max-height:78vh;overflow-y:auto;background:#F4EFE3;color:#1B1B18;border:1px solid #D8D0BC;border-radius:20px;box-shadow:0 -8px 30px rgba(0,0,0,.5);padding:18px 16px">
   <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px">
     <div style="font-size:10px;letter-spacing:2px;color:#A33;font-weight:800">HABER DETAYI</div>
-    <button id="btn-haber-detay-kapat" style="font-size:20px;color:#5A5646;padding:0 4px">✕</button>
+    <button id="btn-haber-detay-kapat" style="font-size:20px;color:#5A5646;min-width:44px;min-height:44px">✕</button>
   </div>
   <div id="hd-baslik" style="font-family:Georgia,'Times New Roman',serif;font-size:22px;line-height:1.35;font-weight:800;margin-top:8px"></div>
   <div id="hd-kaynak" style="font-size:12px;color:#7A745E;margin-top:8px;letter-spacing:.3px;border-bottom:1px solid #DDD6C2;padding-bottom:12px"></div>
@@ -1507,7 +1523,7 @@
       <b>Usta</b>
       <div style="font-size:11.5px;color:var(--soluk)">Hesabını bilir, hemen cevaplar</div>
     </div>
-    <button id="asistan-kapat" style="font-size:20px;color:var(--soluk);padding:6px">✕</button>
+    <button id="asistan-kapat" style="font-size:20px;color:var(--soluk);min-width:44px;min-height:44px">✕</button>
   </div>
   <div id="asistan-mesajlar"></div>
   <div id="asistan-cipler"></div>
@@ -1521,7 +1537,7 @@
 <div id="duyuru-bant" style="display:none;position:fixed;top:10px;left:10px;right:10px;z-index:9600;background:var(--kart);border:1.5px solid var(--sari);border-radius:14px;padding:12px 40px 12px 14px;box-shadow:0 8px 24px rgba(0,0,0,.45)">
   <div id="duyuru-bant-baslik" style="font-weight:800;font-size:14px">📣</div>
   <div id="duyuru-bant-metin" style="font-size:13px;color:var(--soluk);margin-top:3px"></div>
-  <button id="duyuru-bant-kapat" aria-label="Kapat" style="position:absolute;right:8px;top:8px;font-size:16px;padding:4px 8px">✕</button>
+  <button id="duyuru-bant-kapat" aria-label="Kapat" style="position:absolute;right:4px;top:4px;font-size:16px;min-width:44px;min-height:44px">✕</button>
 </div>
 
 <div id="acil-buyuk" style="display:none;position:fixed;inset:0;z-index:9000;background:#B71C1C;color:#fff;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:24px;gap:14px">

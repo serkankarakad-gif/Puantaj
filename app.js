@@ -5,11 +5,29 @@
 "use strict";
 
 const $ = s => document.querySelector(s);
+/* Titreşim ayarına uyan ortak haptic feedback yardımcısı */
+function titret(desen){
+  try{
+    if(!navigator.vibrate) return;
+    if(localStorage.getItem("titresim")==="0") return;
+    navigator.vibrate(desen);
+  }catch(e){}
+}
+/* Liste yüklenirken "Yükleniyor..." yerine gerçek satırların hatlarını taklit eden iskelet göster */
+function iskeletGoster(kap, adet){
+  if(!kap) return;
+  let h = "";
+  for(let i=0;i<(adet||4);i++){
+    h += '<div class="iskelet-satir">'+
+      '<div class="iskelet iskelet-rozet"></div>'+
+      '<div class="iskelet-metin"><div class="iskelet iskelet-satir-1"></div><div class="iskelet iskelet-satir-2"></div></div>'+
+      '</div>';
+  }
+  kap.innerHTML = h;
+}
 const $$ = s => document.querySelectorAll(s);
 
-const AYLAR = ["Ocak","Şubat","Mart","Nisan","Mayıs","Haziran","Temmuz","Ağustos","Eylül","Ekim","Kasım","Aralık"];
-const GUNLER_KISA = ["Pzt","Sal","Çar","Per","Cum","Cmt","Paz"];
-const GUNLER = ["Pazar","Pazartesi","Salı","Çarşamba","Perşembe","Cuma","Cumartesi"];
+/* AYLAR, GUNLER_KISA, GUNLER → sabitler.js'e taşındı */
 
 const paraFmt = n => new Intl.NumberFormat("tr-TR",{maximumFractionDigits:0}).format(n||0) + " ₺";
 const pad = n => String(n).padStart(2,"0");
@@ -49,21 +67,7 @@ function sayi(v){
 const tarihId = d => d.getFullYear() + "-" + pad(d.getMonth()+1) + "-" + pad(d.getDate());
 
 /* Resmi tatiller (sabit) + dini bayramlar (2025-2027, Diyanet takvimine göre) */
-const TATIL_SABIT = {
-  "01-01":"Yılbaşı","04-23":"23 Nisan","05-01":"1 Mayıs (Emek günü)",
-  "05-19":"19 Mayıs","07-15":"15 Temmuz","08-30":"30 Ağustos Zafer Bayramı","10-29":"Cumhuriyet Bayramı"
-};
-const TATIL_DINI = {
-  "2025-03-30":"Ramazan Bayramı","2025-03-31":"Ramazan Bayramı","2025-04-01":"Ramazan Bayramı",
-  "2025-06-06":"Kurban Bayramı","2025-06-07":"Kurban Bayramı","2025-06-08":"Kurban Bayramı","2025-06-09":"Kurban Bayramı",
-  "2026-03-20":"Ramazan Bayramı","2026-03-21":"Ramazan Bayramı","2026-03-22":"Ramazan Bayramı",
-  "2026-05-27":"Kurban Bayramı","2026-05-28":"Kurban Bayramı","2026-05-29":"Kurban Bayramı","2026-05-30":"Kurban Bayramı",
-  "2027-03-09":"Ramazan Bayramı","2027-03-10":"Ramazan Bayramı","2027-03-11":"Ramazan Bayramı",
-  "2027-05-16":"Kurban Bayramı","2027-05-17":"Kurban Bayramı","2027-05-18":"Kurban Bayramı","2027-05-19":"Kurban Bayramı",
-  "2028-02-27":"Ramazan Bayramı","2028-02-28":"Ramazan Bayramı","2028-02-29":"Ramazan Bayramı",
-  "2028-05-05":"Kurban Bayramı","2028-05-06":"Kurban Bayramı","2028-05-07":"Kurban Bayramı","2028-05-08":"Kurban Bayramı"
-};
-const tatilAdi = id => TATIL_DINI[id] || TATIL_SABIT[id.slice(5)] || null;
+/* TATIL_SABIT, TATIL_DINI, tatilAdi → sabitler.js'e taşındı */
 
 let db=null, auth=null, kullanici=null;
 let aktifYil, aktifAy;                 // gösterilen ay
@@ -161,6 +165,7 @@ function basla(){
       cuzdaniDinle();      /* Ana ekranda gösterildiği için hemen gerekli */
       anaYukle();
       havaYukle();
+      yedekHatirlat();
       const anaBtn = document.querySelector('[data-goruntu="ana"]');
       if(anaBtn) anaBtn.click();
     }else{
@@ -741,15 +746,86 @@ function anaTazele(){
   }, 300);
 }
 
-function hataGoster(e){
-  console.error(e);
+/* ---------- 🩺 Hata günlüğü + kullanıcı dostu hata çevirisi ---------- */
+function hataKaydet(kaynak, e){
+  try{
+    const kayit = {
+      z: Date.now(),
+      kaynak,
+      mesaj: (e && (e.message||String(e))) || "bilinmeyen hata",
+      kod: (e && e.code) || "",
+      yigin: (e && e.stack) ? String(e.stack).slice(0,400) : ""
+    };
+    const gunluk = JSON.parse(localStorage.getItem("hataGunlugu")||"[]");
+    gunluk.push(kayit);
+    while(gunluk.length > 30) gunluk.shift();   /* sadece son 30 hatayı tut */
+    localStorage.setItem("hataGunlugu", JSON.stringify(gunluk));
+  }catch(err){}
+}
+/* Firestore/Auth hata kodlarını okunaklı Türkçeye çevirir (login ekranındaki
+   hataCevir'in genel/global hali — her yerde tutarlı mesaj için) */
+function hataCeviriGenel(e){
+  const k = (e && e.code) || "";
+  const m = (e && e.message) || "";
+  if(k.includes("permission-denied")) return "Bu işlem için yetkin yok — oturumun düşmüş olabilir, çıkıp tekrar giriş yap.";
+  if(k.includes("unavailable") || k.includes("network")) return "Sunucuya ulaşılamıyor. İnternetini kontrol et, kayıtların telefonda bekliyor.";
+  if(k.includes("deadline-exceeded")) return "Sunucu cevap vermedi (zaman aşımı). Tekrar dener misin?";
+  if(k.includes("resource-exhausted")) return "Sunucu şu an çok yoğun, birazdan tekrar dene.";
+  if(k.includes("unauthenticated")) return "Oturumun kapanmış görünüyor, tekrar giriş yapman gerekebilir.";
+  if(k.includes("already-exists")) return "Bu kayıt zaten var.";
+  if(k.includes("not-found")) return "Aradığın kayıt bulunamadı, silinmiş olabilir.";
+  if(k.includes("cancelled")) return "İşlem iptal edildi.";
+  if(m.includes("quota")) return "Günlük kullanım sınırına yaklaşıldı, birazdan tekrar dene.";
+  return "";
+}
+function hataGunluguCiz(){
+  const kap = $("#hata-gunlugu-sonuc"); if(!kap) return;
+  let gunluk = [];
+  try{ gunluk = JSON.parse(localStorage.getItem("hataGunlugu")||"[]"); }catch(e){}
+  if(!gunluk.length){ kap.innerHTML = '<span style="color:var(--tam)">✓ Kayıtlı hata yok, her şey temiz görünüyor.</span>'; return; }
+  kap.innerHTML = gunluk.slice().reverse().map(k=>{
+    const t = new Date(k.z);
+    const saat = pad(t.getHours())+":"+pad(t.getMinutes());
+    return "<div style='margin-bottom:6px;padding-bottom:6px;border-bottom:1px dashed var(--cizgi)'>"+
+      "<b>"+saat+"</b> · "+esc(k.kaynak)+(k.kod?" ("+esc(k.kod)+")":"")+"<br>"+esc(k.mesaj)+"</div>";
+  }).join("");
+}
+function hataGunluguMetin(){
+  let gunluk = [];
+  try{ gunluk = JSON.parse(localStorage.getItem("hataGunlugu")||"[]"); }catch(e){}
+  if(!gunluk.length) return "Kayıtlı hata yok.";
+  return gunluk.map(k=>{
+    const t = new Date(k.z).toLocaleString("tr-TR");
+    return t+" | "+k.kaynak+(k.kod?" ("+k.kod+")":"")+" | "+k.mesaj;
+  }).join("\n");
+}
+
+function hataGoster(e, kaynak){
+  console.error(kaynak||"", e);
+  hataKaydet(kaynak||"?", e);
   if(e && (e.code==="permission-denied" || String(e.message||"").includes("permission"))){
     $("#izin-uyari").classList.remove("gizli");
     toast("Veritabanı izni yok — üstteki kırmızı kutuya bak 👆");
     return;
   }
-  toast("Hata: " + (e && e.message ? e.message : "bağlantı sorunu"));
+  const dostMesaj = hataCeviriGenel(e);
+  toast(dostMesaj ? dostMesaj : "Hata: " + (e && e.message ? e.message : "bağlantı sorunu"));
 }
+
+/* ---------- 🚨 Global hata yakalayıcı: try/catch dışında kalan her şeyi
+   (beklenmedik JS hataları + yakalanmamış Promise reddleri) burada tutup
+   kullanıcıya nazik bir mesaj gösteririz, sessizce çökmesin. ---------- */
+window.addEventListener("error", (ev)=>{
+  hataKaydet("global-js", ev.error || {message: ev.message});
+  console.error("Global hata:", ev.error || ev.message);
+});
+window.addEventListener("unhandledrejection", (ev)=>{
+  hataKaydet("global-promise", ev.reason);
+  console.error("Yakalanmamış Promise hatası:", ev.reason);
+  /* Kullanıcıyı gereksiz yere ürkütmeyelim — sadece günlüğe yaz, sessiz kalsın.
+     Zaten kritik olan yerlerde (Firestore işlemleri) hataGoster() ayrıca
+     toast gösteriyor. Bu sadece "hiç yakalanmamış" olanlar için son çare. */
+});
 
 /* ---------- Çizimler ---------- */
 /* ---------- Cüzdan ---------- */
@@ -947,23 +1023,7 @@ function seviyeCiz(){
 }
 
 /* ---------- Başarım rozetleri ---------- */
-const ROZETLER = [
-  {ikon:"🥇", ad:"İlk Adım",          sart:"İlk gününü işle",           d: i=> i.gunToplam,     h:1,       t: i=> i.gunToplam>=1},
-  {ikon:"🔟", ad:"Onluk",             sart:"10 gün çalış",              d: i=> i.gunToplam,     h:10,      t: i=> i.gunToplam>=10},
-  {ikon:"💪", ad:"Ellilik",           sart:"50 gün çalış",              d: i=> i.gunToplam,     h:50,      t: i=> i.gunToplam>=50},
-  {ikon:"💯", ad:"Yüzler Kulübü",     sart:"100 gün çalış",             d: i=> i.gunToplam,     h:100,     t: i=> i.gunToplam>=100},
-  {ikon:"🏗️", ad:"Demirbaş",          sart:"250 gün çalış",             d: i=> i.gunToplam,     h:250,     t: i=> i.gunToplam>=250},
-  {ikon:"🗿", ad:"Şantiyenin Direği", sart:"500 gün çalış",             d: i=> i.gunToplam,     h:500,     t: i=> i.gunToplam>=500},
-  {ikon:"⏰", ad:"İlk Mesai",         sart:"İlk mesaini yap",           d: i=> i.mesaiToplam,   h:1,       t: i=> i.mesaiToplam>=1},
-  {ikon:"🌙", ad:"Gece Kuşu",         sart:"50 saat mesai",             d: i=> i.mesaiToplam,   h:50,      t: i=> i.mesaiToplam>=50},
-  {ikon:"🔥", ad:"Mesai Canavarı",    sart:"150 saat mesai",            d: i=> i.mesaiToplam,   h:150,     t: i=> i.mesaiToplam>=150},
-  {ikon:"➕", ad:"Artı Avcısı",       sart:"Toplam 5 gün içi artı",     d: i=> i.artiToplam,    h:5,       t: i=> i.artiToplam>=5},
-  {ikon:"🛐", ad:"Pazar Fedaisi",     sart:"1 pazar günü çalış",        d: i=> i.pazarToplam,   h:1,       t: i=> i.pazarToplam>=1},
-  {ikon:"🦸", ad:"Pazar Kahramanı",   sart:"10 pazar günü çalış",       d: i=> i.pazarToplam,   h:10,      t: i=> i.pazarToplam>=10},
-  {ikon:"💵", ad:"İlk Hakediş",       sart:"İlk para girişini kaydet",  d: i=> i.odemeSayisi,   h:1,       t: i=> i.odemeSayisi>=1},
-  {ikon:"💰", ad:"Çeyrek Milyon",     sart:"250.000 ₺ hakediş",         d: i=> i.hakedisToplam, h:250000,  t: i=> i.hakedisToplam>=250000},
-  {ikon:"🏆", ad:"Milyoner Usta",     sart:"1.000.000 ₺ hakediş",       d: i=> i.hakedisToplam, h:1000000, t: i=> i.hakedisToplam>=1000000}
-];
+/* ROZETLER → sabitler.js'e taşındı */
 async function rozetYukle(){
   if(!tumIstatistik) await anaYukle();
   if(!tumIstatistik) return;
@@ -994,7 +1054,7 @@ async function rozetYukle(){
     const yeni = acikAdlar.filter(a=> !eski.includes(a));
     if(eski.length && yeni.length){
       toast("🎉 Yeni rozet" + (yeni.length>1?"ler":"") + ": " + yeni.join(", ") + " — helal usta!");
-      if(navigator.vibrate) navigator.vibrate([60,40,60]);
+      titret([60,40,60]);
     }
     localStorage.setItem("rozetler", JSON.stringify(acikAdlar));
   }catch(e){}
@@ -1342,6 +1402,7 @@ async function kisiVeriYukle(){
   const bas = aktifYil + "-" + pad(aktifAy+1) + "-01";
   const son = aktifYil + "-" + pad(aktifAy+1) + "-31";
   $("#kisi-ozet").innerHTML = '<div class="bos-mesaj" style="grid-column:1/-1">Yükleniyor...</div>';
+  iskeletGoster($("#kisi-gunler"), 4);
   try{
     const [gSnap, oSnap] = await Promise.all([
       ref.collection("girdiler")
@@ -1438,7 +1499,7 @@ async function liderYukle(zorla){
     liderCiz(liderOnbellek.sonuclar);
     return;
   }
-  ul.innerHTML = '<div class="bos-mesaj">Hesaplanıyor... (kişi sayısına göre biraz sürebilir)</div>';
+  iskeletGoster(ul, 5);
   try{
     const bas = aktifYil+"-"+pad(aktifAy+1)+"-01";
     const son = aktifYil+"-"+pad(aktifAy+1)+"-31";
@@ -1660,18 +1721,7 @@ async function kurSatirYaz(kalan){
 }
 
 /* ---------- 📺 CANLI TV: yalnızca resmi yayın sayfaları ---------- */
-const TV_KANALLAR = [
-  {grup:"HABER KANALLARI", liste:[
-    {ad:"Habertürk", kisa:"HT",    renk:"#0D47A1", url:"https://www.haberturk.com/canliyayin", ytId:"UCn6dNfiRE_Xunu7iMyvD7AA", ytVid:"RNVNlJSUFoE"},
-    {ad:"CNN Türk",  kisa:"CNN",   renk:"#B71C1C", url:"https://www.cnnturk.com/canli-yayin",  ytId:"UCV6zcRug6Hqp1UX_FdyUeBg", ytVid:"6N8_r2uwLEc"},
-    {ad:"TRT Haber", kisa:"TRT H", renk:"#1565C0", url:"https://www.trthaber.com/canli-yayin", ytLive:"https://www.youtube.com/user/trthaber/live", ytVid:"vjNZVmImcxg"},
-    {ad:"TGRT Haber", kisa:"TGRT", renk:"#00838F", url:"https://www.tgrthaber.com/canli-yayin", ytVid:"0SAUIyvNA5s"},
-    {ad:"Haber Global", kisa:"HG", renk:"#5E35B1", url:"https://haberglobal.com/canli-yayin", ytId:"UCtc-a9ZUIg0_5HpsPxEO7Qg", ytVid:"EqoCJ8BPxtE"}
-  ]},
-  {grup:"SPOR", liste:[
-    {ad:"A Spor",    kisa:"A S",   renk:"#1B5E20", url:"https://www.aspor.com.tr/webtv/canli-yayin", ytId:"UCJElRTCNEmLemgirqvsW63Q"}
-  ]}
-];
+/* TV_KANALLAR → sabitler.js'e taşındı */
 /* ---------- 🌉 KÖPRÜ: dış kaynaklara erişim ----------
    ÖNEMLİ: Haber/video/TV'nin sağlam çalışması için KOPRU-KURULUM.md
    rehberiyle kendi Cloudflare köprünü kur ve adresini aşağıya yapıştır.
@@ -1946,12 +1996,7 @@ function tvCiz(){
 }
 
 /* ---------- 📰 GÜNDEM: Google Haberler RSS (canlı, önbellekli) ---------- */
-const HABER_KAYNAK = {
-  gundem:  "https://news.google.com/rss?hl=tr&gl=TR&ceid=TR:tr",
-  dunya:   "https://news.google.com/rss/headlines/section/topic/WORLD?hl=tr&gl=TR&ceid=TR:tr",
-  ekonomi: "https://news.google.com/rss/headlines/section/topic/BUSINESS?hl=tr&gl=TR&ceid=TR:tr",
-  spor:    "https://news.google.com/rss/headlines/section/topic/SPORTS?hl=tr&gl=TR&ceid=TR:tr"
-};
+/* HABER_KAYNAK → sabitler.js'e taşındı */
 let haberKat = "gundem", haberSayac = null;
 function habercik(t){ /* göreli zaman */
   const dk = Math.floor((Date.now()-t)/60000);
@@ -2596,7 +2641,7 @@ function oyunBaslat(){
     oyun.hw = kes.w;
     oyun.hiz = Math.min(6, 2.2 + oyun.kat * 0.18);   /* her katta hızlanır */
     oyun.hx = 0; oyun.yon = 1;
-    if(navigator.vibrate) navigator.vibrate(15);
+    titret(15);
     $("#oyun-skor").textContent = "";
   }
   c.onpointerdown = koy;
@@ -2653,7 +2698,7 @@ async function teraziBaslat(){
 }
 
 /* ---------- 🕌 Namaz Vakitleri ---------- */
-const VAKIT_ADLAR = [["Fajr","İmsak"],["Sunrise","Güneş"],["Dhuhr","Öğle"],["Asr","İkindi"],["Maghrib","Akşam"],["Isha","Yatsı"]];
+/* VAKIT_ADLAR → sabitler.js'e taşındı */
 function vakitSiradaki(timings, simdi){
   const su = simdi.getHours()*60 + simdi.getMinutes();
   for(const [k, ad] of VAKIT_ADLAR){
@@ -4384,7 +4429,66 @@ async function csvIndir(){
   }catch(e){ hataGoster(e); }
 }
 
-/* ---------- Yedek ---------- */
+/* ---------- Gerçek Excel (.xlsx) dışa aktarım (SheetJS) ---------- */
+async function excelIndir(){
+  if(typeof XLSX === "undefined"){
+    toast("Excel kütüphanesi yüklenemedi — internetin var mı? 📡");
+    return;
+  }
+  toast("Excel hazırlanıyor...");
+  try{
+    const bas = aktifYil+"-01-01", son = aktifYil+"-12-31";
+    const [gSnap, oSnap] = await Promise.all([
+      kokRef().collection("girdiler")
+        .where(firebase.firestore.FieldPath.documentId(), ">=", bas)
+        .where(firebase.firestore.FieldPath.documentId(), "<=", son).get(),
+      kokRef().collection("odemeler")
+        .where("tarih", ">=", bas).where("tarih", "<=", son).get()
+    ]);
+    const puantajSatir = [["Tarih","Gün","Durum","Mesai (saat)","Şantiye","Not","Kazanç (TL)"]];
+    const gunler = [];
+    gSnap.forEach(doc=> gunler.push({id:doc.id, ...doc.data()}));
+    gunler.sort((a,b)=> a.id<b.id?-1:1);
+    gunler.forEach(v=>{
+      const t = new Date(v.id+"T12:00:00");
+      puantajSatir.push([v.id, GUNLER[t.getDay()], girisEtiket(v), Number(v.mesai)||0, v.santiye||"", v.not||"", girdiKazanc(v)]);
+    });
+    const odemeSatir = [["Tarih","Tür","Not","Tutar (TL)"]];
+    const odemeler2 = [];
+    oSnap.forEach(doc=> odemeler2.push(doc.data()));
+    odemeler2.sort((a,b)=> String(a.tarih)<String(b.tarih)?-1:1);
+    odemeler2.forEach(o=> odemeSatir.push([o.tarih||"", odemeTurEtiket(o.tur), o.not||"", Number(o.tutar)||0]));
+
+    const wb = XLSX.utils.book_new();
+    const ws1 = XLSX.utils.aoa_to_sheet(puantajSatir);
+    ws1["!cols"] = [{wch:11},{wch:11},{wch:10},{wch:9},{wch:16},{wch:28},{wch:12}];
+    XLSX.utils.book_append_sheet(wb, ws1, "Puantaj");
+    const ws2 = XLSX.utils.aoa_to_sheet(odemeSatir);
+    ws2["!cols"] = [{wch:11},{wch:12},{wch:28},{wch:12}];
+    XLSX.utils.book_append_sheet(wb, ws2, "Ödemeler");
+
+    XLSX.writeFile(wb, "puantaj-"+aktifYil+".xlsx");
+    toast("Excel indirildi 📗");
+  }catch(e){ hataGoster(e, "excel-indir"); }
+}
+
+
+/* 💾 Kayıtların zaten Firestore'da (bulutta) otomatik güvende — ama hesap
+   silinir/proje bozulursa diye 30 günde bir de yerel bir JSON kopyası
+   indirmesini öner (bir kere/gün, gereksiz sıkmasın). */
+function yedekHatirlat(){
+  try{
+    const bugun = tarihId(new Date());
+    if(localStorage.getItem("yedekHatirlatGun") === bugun) return;   /* bugün zaten sorduk */
+    const son = Number(localStorage.getItem("sonYedekTarihi")||0);
+    const gun30 = 30*24*60*60*1000;
+    if(son && (Date.now()-son) < gun30) return;   /* yakın zamanda yedek alınmış */
+    localStorage.setItem("yedekHatirlatGun", bugun);
+    setTimeout(()=>{
+      toast("💾 30 gündür yerel yedek almadın — Ayarlar → Yedekleme'den bir JSON kopyası indirmeni öneririm.");
+    }, 4000);
+  }catch(e){}
+}
 async function yedekAl(){
   toast("Yedek hazırlanıyor...");
   try{
@@ -4416,6 +4520,7 @@ async function yedekAl(){
     eSnap.forEach(doc=> yedek.ekip[doc.id] = doc.data());
     egSnap.forEach(doc=> yedek.ekipGun[doc.id] = doc.data());
     dosyaIndir("puantaj-yedek-"+tarihId(new Date())+".json", JSON.stringify(yedek,null,2), "application/json");
+    try{ localStorage.setItem("sonYedekTarihi", Date.now().toString()); }catch(e){}
     try{ localStorage.setItem("yedekZaman", Date.now()); }catch(e){}
     toast("Yedek indirildi 💾");
   }catch(e){ hataGoster(e); }
@@ -4698,8 +4803,7 @@ async function hizliIsaretle(id){
   };
   if(saatlikMod) veri.saat = ayarlar.gunlukSaat||8;
   try{
-    let titre=true; try{ titre = localStorage.getItem("titresim")!=="0"; }catch(e){}
-    if(titre && navigator.vibrate) navigator.vibrate(35);
+    titret(35);
     await kokRef().collection("girdiler").doc(id).set(veri);
     toastGeriAl(saatlikMod ? "⚡ "+(ayarlar.gunlukSaat||8)+" saat işlendi" : "⚡ Tam yevmiye işlendi", {id, onceki});
   }catch(e){ hataGoster(e); }
@@ -5117,7 +5221,7 @@ document.addEventListener("DOMContentLoaded", ()=>{
         }
       }
       if(g==="arac"){
-        [yillikIzinCiz, zamAnalizYap, emekKarneCiz, kimlikOzetCiz, kazaListeYukle, acilFormDoldur, vakitIlKur, vakitYukle]
+        [yillikIzinCiz, zamAnalizYap, emekKarneCiz, kimlikOzetCiz, kazaListeYukle, acilFormDoldur, vakitIlKur, vakitYukle, hataGunluguCiz]
           .forEach(f=>{ try{ f(); }catch(e){ console.warn("araç kartı:", e); } });
       }
       if(g==="haber") haberYukle(false);
@@ -5151,6 +5255,20 @@ document.addEventListener("DOMContentLoaded", ()=>{
   $("#btn-haber-detay-kapat").addEventListener("click", ()=> $("#haber-detay").classList.add("gizli"));
   $("#btn-tvo-kapat").addEventListener("click", tvKapat);
   $("#btn-saglik").addEventListener("click", saglikTesti);
+
+  /* Hata günlüğü: kopyala / temizle */
+  $("#btn-hata-kopyala").addEventListener("click", async ()=>{
+    try{
+      await navigator.clipboard.writeText(hataGunluguMetin());
+      toast("Hata günlüğü kopyalandı 📋");
+    }catch(e){ toast("Kopyalanamadı, elle seçip kopyala"); }
+  });
+  $("#btn-hata-temizle").addEventListener("click", ()=>{
+    if(!confirm("Hata günlüğü temizlensin mi?")) return;
+    try{ localStorage.removeItem("hataGunlugu"); }catch(e){}
+    hataGunluguCiz();
+    toast("Hata günlüğü temizlendi");
+  });
   $("#btn-bildirim").addEventListener("click", bildirimAc);
   let aramaZ = null;
   $("#arama-kutu").addEventListener("input", ()=>{
@@ -5484,6 +5602,7 @@ document.addEventListener("DOMContentLoaded", ()=>{
     if(fotoVar) veri.foto = true;
     try{
       await kokRef().collection("girdiler").doc(modalTarih).set(veri);
+      titret(25);
       if(typeof modalFoto === "string" && modalFoto){
         try{ await kokRef().collection("fotolar").doc(modalTarih).set({veri: modalFoto, guncelleme: firebase.firestore.FieldValue.serverTimestamp()}); }
         catch(fe){ toast("Gün kaydedildi ama fotoğraf kaydedilemedi 😕"); }
@@ -5850,7 +5969,7 @@ document.addEventListener("DOMContentLoaded", ()=>{
   });
 
   /* Neler yeni kartı */
-  const YENILIK_SURUM = "0.0.0.18";
+  const YENILIK_SURUM = "0.0.0.22";
   try{ $("#cekmece-surum").textContent = "Puantaj Defterim " + YENILIK_SURUM; }catch(e){}
   try{
     if(localStorage.getItem("yenilik")!==YENILIK_SURUM) $("#yenilik-kart").classList.remove("gizli");
@@ -6385,6 +6504,14 @@ document.addEventListener("DOMContentLoaded", ()=>{
     toast(gizliMod ? "Bakiyeler gizlendi 🙈" : "Bakiyeler görünür 👁️");
   });
 
+  /* Şirket hesap hareketleri: kart içinde aç/kapa */
+  $("#btn-sirket-hareket-ac").addEventListener("click", ()=>{
+    const kutu = $("#sirket-hareket-kutu"), ok = $("#sirket-hareket-ok");
+    const acikMi = !kutu.classList.contains("gizli");
+    kutu.classList.toggle("gizli", acikMi);
+    ok.style.transform = acikMi ? "rotate(0deg)" : "rotate(90deg)";
+  });
+
   /* Dünü kopyala */
   $("#btn-dun-kopya").addEventListener("click", ()=>{
     if(!modalTarih) return;
@@ -6903,6 +7030,7 @@ document.addEventListener("DOMContentLoaded", ()=>{
 
   /* CSV & yedek */
   $("#btn-csv").addEventListener("click", csvIndir);
+  $("#btn-xlsx").addEventListener("click", excelIndir);
   $("#btn-yedek").addEventListener("click", yedekAl);
 
   /* Önbelleği temizle */
