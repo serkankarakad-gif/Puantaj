@@ -5,6 +5,47 @@ kullanır: `0.0.0.X` — X, her güncellemede 1 artar. Uygulama içindeki sürü
 (alt bilgi + "Neler yeni" kartı) ve dağıtılan zip dosyasının adı her zaman
 birebir aynıdır.
 
+## 0.0.0.33 — Maaşlar (büyük güncelleme)
+- Yeni "Maaşlar" ekranı: her ay kendi hesap kartına sahip (gün sayısı, avans/askeriye/hakediş dökümü, kalan tutar, ödendi durumu)
+- Ana ekrandaki "Şirket Hesap Kartı" artık sadece BU AYI gösteriyor (eskiden tüm zamanlar toplamıydı) — geçmiş aylar "Maaşlar"da ayrı ayrı duruyor
+- Yeni ödeme türü: "Askeriye"
+
+## 0.0.0.32 — Gece mesaisi zammı
+- Gün ekranına normal mesaiden ayrı, opsiyonel "gece mesaisi" saat girişi eklendi, Ayarlar'dan zam yüzdesi belirlenebiliyor
+
+## 0.0.0.31 — Hata düzeltmesi
+- "Aşağı çekerek yenile" özelliği normal kaydırmayı bile "çekme" sanıp sürekli bildirim gösteriyordu — özellik kaldırıldı
+
+## 0.0.0.30 — UI/UX: modern grafik
+- Gelir-gider grafiği çubuktan çizgi+alan grafiğine çevrildi (aynı doğru matematik, sadece çizim şekli değişti)
+
+## 0.0.0.29 — UI/UX: katlanabilir menü
+- Menü 4 dengeli gruba ayrıldı, her grup başlığı açılıp kapanıyor (accordion)
+
+## 0.0.0.28 — UI/UX: gradient başlıklar
+- Giriş ekranı, üst bar ve bakiye rakamları gradient metin kullanıyor
+
+## 0.0.0.27 — Navigasyon: akıllı kısayollar
+- FAB'a (➕) basılı tutunca "Not ekle / Avans ekle / Dünü işle" hızlı menüsü
+
+## 0.0.0.26 — Mikro animasyonlar
+- Ripple efekti, pull-to-refresh (sonradan 0.0.0.31'de kaldırıldı)
+
+## 0.0.0.25 — Takvim
+- Sticky gün başlığı, hafif giriş animasyonu; iki ayrı/eksik tatil listesi tek listeye birleştirildi (2025/2028 tatilleri artık doğru gösteriliyor)
+
+## 0.0.0.24 — Ana ekran
+- Bugünkü kazanç kartı ve aylık hedef çubuğu Ana ekrana eklendi
+
+## 0.0.0.23 — UI/UX: cam efekti
+- Modal ve menü perdelerine glassmorphism eklendi
+
+## 0.0.0.22 — Profesyonel ekstra özellikler
+- Gerçek Excel (.xlsx) dışa aktarım, 30 günlük yedek hatırlatması
+
+## 0.0.0.21 — Bakım
+- Sabitler ayrı dosyaya (sabitler.js) taşındı, CHANGELOG/VERSIYONLAMA/KOD-STILI eklendi, şirket hesap hareketleri karta taşındı
+
 ## 0.0.0.20 — Hata yönetimi
 - Global hata yakalayıcı eklendi (`window.onerror`, `unhandledrejection`) — artık hiçbir beklenmedik hata sessizce kaybolmuyor
 - Kalıcı hata günlüğü eklendi (Araçlar & Bilgi ekranı, son 30 hata, kopyalanabilir)

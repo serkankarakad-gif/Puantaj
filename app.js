@@ -98,6 +98,7 @@ let duzenlenenIsciId = null;           // düzenlenen ekip işçisi
 let ekipOzetSon = null;                // son ekip özeti (toplu rapor için)
 let yilSon = null;                     // son yüklenen yıl özeti (paylaşım için)
 let sirketOzet = null;                 // tüm zamanlar {hakedis, alinan}
+let maaslarVeri = null;                // "Maaşlar" ekranı için ay bazlı veri {ay: {hak, alinan, gun, mesai, odemeler}}
 let dinleyiciGirdi=null, dinleyiciOdeme=null, dinleyiciAyar=null, dinleyiciBorc=null, dinleyiciCuzdan=null, dinleyiciNot=null, dinleyiciMasraf=null, dinleyiciEkip=null;
 let modalTarih=null, modalDurum=null;
 let aktifGoruntu="puantaj";
@@ -3480,11 +3481,9 @@ async function anaYukle(){
     asistanVeri = {buAyHak, buAyGun, buAyMesai};
     bugunKazancCiz(bugunVeri, bugunKazanc);
     hedefCiz({hakedis: buAyHak}, "ana-hedef-kart", "ana-hedef-icerik");
-    /* 🕓 Bekleyen aylar: geçmiş (bu ay hariç) her ayın kalanı 50₺'den fazlaysa
-       "parası henüz tam yatmamış" say — inşaatta maaş/avans farklı tarihlerde,
-       parça parça yatabiliyor; bu liste hangi ayın hâlâ ne kadar alacağı
-       olduğunu tek tek gösterir, yeni ay geldi diye eskisi kaybolmaz. */
-    bekleyenAylarCiz(aylikHak, aylikAlinan, buAyOnEk);
+    /* Not: "Bekleyen aylar" artık Ana ekranda ayrı bir kart değil — tüm aylar
+       (ödenmiş/ödenmemiş) artık kendi detaylı hesap kartlarıyla "Maaşlar"
+       ekranında duruyor. Ana ekran sadece BU AYI gösteriyor (yukarıda). */
     /* 🚀 Yeni kullanıcı rehberi */
     const rehber = $("#rehber-kart");
     if(rehber){
@@ -3519,8 +3518,10 @@ async function anaYukle(){
     }
     const sirketKart = $("#sirket-bakiye").closest(".banka-kart");
     if(sirketKart) sirketKart.classList.add("kart-parla");
-    sayacAnim($("#sirket-bakiye"), hakedis - alinan);
-    kurSatirYaz(hakedis - alinan);
+    const buAyAlinan = aylikAlinan[buAyOnEk]||0;
+    const buAyKalan = buAyHak - buAyAlinan;
+    sayacAnim($("#sirket-bakiye"), buAyKalan);
+    kurSatirYaz(buAyKalan);
     /* 🔮 Ay sonu tahmini: bu tempoyla ay bitince ne kadar yaparsın */
     const tKart = $("#tahmin-kart");
     if(tKart){
@@ -3594,13 +3595,13 @@ async function anaYukle(){
         mKart.classList.remove("gizli");
       }
     }
-    if(gunToplam>0 && hakedis<=0 && !(ayarlar.yevmiye>0) && !(ayarlar.saatUcret>0)){
-      $("#sirket-alt").innerHTML = "⚠️ <b>"+gunToplam+" günün işli ama yevmiyen girili değil!</b> Ayarlar → Ücret ayarları'ndan günlük yevmiyeni yaz, paraların hemen görünsün.";
+    if(buAyGun>0 && buAyHak<=0 && !(ayarlar.yevmiye>0) && !(ayarlar.saatUcret>0)){
+      $("#sirket-alt").innerHTML = "⚠️ <b>"+buAyGun+" günün işli ama yevmiyen girili değil!</b> Ayarlar → Ücret ayarları'ndan günlük yevmiyeni yaz, paraların hemen görünsün.";
     }else{
-      $("#sirket-alt").innerHTML = (gizliMod ? "Toplam hakediş •••• · Alınan ••••"
-        : "Toplam hakediş "+paraFmt(hakedis)+" · Alınan "+paraFmt(alinan))
-        + ' <span style="opacity:.75">(başlangıçtan bugüne, tüm aylar dahil)</span>'
-        + ' <span style="text-decoration:underline">Ay ay dökümü ›</span>';
+      $("#sirket-alt").innerHTML = (gizliMod ? "Bu ayki hakediş •••• · Alınan ••••"
+        : "Bu ayki hakediş "+paraFmt(buAyHak)+" · Alınan "+paraFmt(buAyAlinan))
+        + ' <span style="opacity:.75">('+AYLAR[simdi.getMonth()]+" "+simdi.getFullYear()+')</span>'
+        + ' <span style="text-decoration:underline">Maaşlar (tüm aylar) ›</span>';
     }
     hareketler.sort((a,b)=> a.tarih < b.tarih ? 1 : -1);
     const ul = $("#liste-sirket-hareket");
@@ -4033,10 +4034,10 @@ function gunListesiCiz(){
 }
 
 function odemeTurRenk(t){
-  return t==="avans" ? "var(--sari)" : t==="hakedis" ? "var(--tam)" : t==="kesinti" ? "var(--gelmedi)" : "var(--mesai)";
+  return t==="avans" ? "var(--sari)" : t==="askeriye" ? "var(--mesai)" : t==="hakedis" ? "var(--tam)" : t==="kesinti" ? "var(--gelmedi)" : "var(--mesai)";
 }
 function odemeTurEtiket(t){
-  return t==="avans" ? "Avans" : t==="hakedis" ? "Hakediş" : t==="kesinti" ? "Kesinti" : "Diğer";
+  return t==="avans" ? "Avans" : t==="askeriye" ? "Askeriye" : t==="hakedis" ? "Hakediş" : t==="kesinti" ? "Kesinti" : "Diğer";
 }
 
 function odemeListesiCiz(){
@@ -4308,49 +4309,92 @@ function bugunKazancCiz(v, kazanc){
 }
 
 /* ---------- 🕓 Bekleyen aylar: geçmiş her ayın "hâlâ ödenmemiş" kısmı ---------- */
-function bekleyenAylarCiz(aylikHak, aylikAlinan, buAyOnEk){
-  const kart = $("#bekleyen-aylar-kart"), liste = $("#liste-bekleyen-aylar");
-  if(!kart || !liste) return;
-  const anahtarlar = new Set([...Object.keys(aylikHak), ...Object.keys(aylikAlinan)]);
-  anahtarlar.delete(buAyOnEk);   /* bu ayın hesabı zaten Ana ekranda başka yerde */
-  const satirlar = [];
-  anahtarlar.forEach(ay=>{
-    const hak = aylikHak[ay]||0, al = aylikAlinan[ay]||0, kalan = hak - al;
-    if(kalan > 50) satirlar.push({ay, hak, alinan:al, kalan});
+/* Not: "bekleyenAylarCiz" (eski Ana ekran kartı) kaldırıldı — yerini "Maaşlar" ekranı aldı. */
+
+/* ---------- 💰 Maaşlar: her ayın kendi hesap kartı ---------- */
+let aktifAyDetay = null;
+function maaslarListCiz(){
+  const ul = $("#liste-maaslar"); if(!ul) return;
+  const gSnap = tumGirdilerQS, oSnap = tumOdemelerQS;
+  if(!gSnap || !oSnap){ ul.innerHTML = '<div class="bos-mesaj">Yükleniyor...</div>'; return; }
+  const aylar = {};
+  gSnap.forEach(doc=>{
+    const v = doc.data(), ay = doc.id.slice(0,7);
+    if(!aylar[ay]) aylar[ay] = {hak:0, alinan:0, gun:0, mesai:0, odemeler:[]};
+    aylar[ay].hak += girdiKazanc(v);
+    aylar[ay].gun += girdiGun(v);
+    aylar[ay].mesai += Number(v.mesai)||0;
   });
-  if(!satirlar.length){ kart.classList.add("gizli"); return; }
-  kart.classList.remove("gizli");
-  satirlar.sort((a,b)=> a.ay < b.ay ? -1 : 1);   /* en eski (en çok bekleyen) üstte */
-  liste.innerHTML = "";
-  satirlar.forEach(s=>{
-    const [yy, aa] = s.ay.split("-").map(Number);
+  oSnap.forEach(doc=>{
+    const v = doc.data(), ay = String(v.tarih||"").slice(0,7);
+    if(!ay) return;
+    if(!aylar[ay]) aylar[ay] = {hak:0, alinan:0, gun:0, mesai:0, odemeler:[]};
+    aylar[ay].alinan += Number(v.tutar)||0;
+    aylar[ay].odemeler.push({id:doc.id, ...v});
+  });
+  const anahtarlar = Object.keys(aylar).sort().reverse();
+  maaslarVeri = aylar;
+  if(!anahtarlar.length){ ul.innerHTML = '<div class="bos-mesaj">Henüz hiç kayıt yok — bir gün işleyince burada birikmeye başlar.</div>'; return; }
+  ul.innerHTML = "";
+  anahtarlar.forEach(ay=>{
+    const a = aylar[ay];
+    const kalan = a.hak - a.alinan;
+    const [yy,aa] = ay.split("-").map(Number);
     const li = document.createElement("li");
     li.style.cursor = "pointer";
+    const tamMi = kalan <= 50;
+    const durumRenk = tamMi ? "var(--tam)" : "var(--sari)";
+    const durumYazi = tamMi ? "✓ Tamamlandı" : paraFmt(kalan)+" kaldı";
     li.innerHTML =
-      '<div class="rozet" style="background:var(--sari);color:#111">'+AYLAR[aa-1].slice(0,3)+'<small>'+yy+'</small></div>'+
+      '<div class="rozet" style="background:'+durumRenk+';color:'+(tamMi?'#fff':'#111')+'">'+AYLAR[aa-1].slice(0,3)+'</div>'+
       '<div class="orta"><div class="baslik">'+AYLAR[aa-1]+' '+yy+'</div>'+
-      '<div class="alt-yazi">Hakediş '+paraFmt(s.hak)+' · Alınan '+paraFmt(s.alinan)+'</div></div>'+
-      '<div class="tutar" style="color:var(--sari)">'+paraFmt(s.kalan)+'</div>';
-    li.addEventListener("click", ()=>{
-      document.querySelector('[data-goruntu="odemeler"]').click();
-      setTimeout(()=>{
-        const sel = $("#odeme-ait-ay");
-        if(sel){
-          if(![...sel.options].some(o=>o.value===s.ay)){
-            const op = document.createElement("option");
-            op.value = s.ay; op.textContent = AYLAR[aa-1]+" "+yy;
-            sel.appendChild(op);
-          }
-          sel.value = s.ay;
-          odemeTarihiAyaGoreAyarla();
-        }
-        toast("📅 "+AYLAR[aa-1]+" "+yy+" seçili — kalan "+paraFmt(s.kalan)+", tutarı yazıp kaydet");
-        const tutarEl = $("#odeme-tutar"); if(tutarEl) tutarEl.focus();
-      }, 250);
-    });
-    liste.appendChild(li);
+      '<div class="alt-yazi">'+a.gun+' gün · Hakediş '+paraFmt(a.hak)+'</div></div>'+
+      '<div class="tutar" style="color:'+durumRenk+'">'+durumYazi+'</div>';
+    li.addEventListener("click", ()=> ayDetayAc(ay));
+    ul.appendChild(li);
   });
 }
+function ayDetayAc(ay){
+  const a = (maaslarVeri||{})[ay]; if(!a) return;
+  aktifAyDetay = ay;
+  const [yy,aa] = ay.split("-").map(Number);
+  const kalan = a.hak - a.alinan;
+  const tamMi = kalan <= 50;
+  $("#ay-detay-ay-adi").textContent = AYLAR[aa-1]+" "+yy;
+  $("#ay-detay-kalan").textContent = paraFmt(Math.max(0,kalan));
+  const durumEl = $("#ay-detay-durum");
+  durumEl.textContent = tamMi ? "✓ Tamamlandı" : "Eksik";
+  durumEl.style.background = tamMi ? "var(--tam)" : "var(--sari)";
+  durumEl.style.color = tamMi ? "#fff" : "#111";
+  $("#ay-detay-ozet-alt").textContent = "Hakediş "+paraFmt(a.hak)+" · Alınan "+paraFmt(a.alinan);
+  $("#ay-detay-calisma").innerHTML =
+    '<div style="display:flex;justify-content:space-between;padding:4px 0"><span>Çalışılan gün</span><b>'+a.gun+' gün</b></div>'+
+    '<div style="display:flex;justify-content:space-between;padding:4px 0"><span>Mesai</span><b>'+a.mesai+' saat</b></div>';
+  const turler = {};
+  a.odemeler.forEach(o=>{ const t=o.tur||"diger"; turler[t]=(turler[t]||0)+(Number(o.tutar)||0); });
+  const turSirasi = ["avans","askeriye","hakedis","kesinti","diger"];
+  const dokumHtml = turSirasi.filter(t=>turler[t]).map(t=>
+    '<div style="display:flex;justify-content:space-between;padding:4px 0"><span>'+odemeTurEtiket(t)+'</span><b>'+paraFmt(turler[t])+'</b></div>'
+  ).join("");
+  $("#ay-detay-odeme-dokum").innerHTML = dokumHtml || '<div style="color:var(--soluk);font-size:13px">Bu ay için hiç ödeme kaydı yok.</div>';
+  const liste = $("#ay-detay-odeme-liste");
+  liste.innerHTML = "";
+  [...a.odemeler].sort((x,y)=> String(x.tarih)<String(y.tarih)?-1:1).forEach(o=>{
+    const li = document.createElement("li");
+    li.innerHTML =
+      '<div class="rozet" style="background:'+odemeTurRenk(o.tur)+'">💰</div>'+
+      '<div class="orta"><div class="baslik">'+odemeTurEtiket(o.tur)+'</div><div class="alt-yazi">'+esc(o.tarih||"")+(o.not?" — "+esc(o.not):"")+'</div></div>'+
+      '<div class="tutar">'+paraFmt(o.tutar)+'</div>';
+    liste.appendChild(li);
+  });
+  $("#modal-perde").classList.add("acik");
+  $("#ay-detay-modal").classList.add("acik");
+}
+function ayDetayKapat(){
+  $("#modal-perde").classList.remove("acik");
+  $("#ay-detay-modal").classList.remove("acik");
+}
+
 function kilitYenile(){
   const kilitli = ayarlar.kapali.includes(aktifAyAnahtar());
   $("#btn-kilit").textContent = kilitli
@@ -5305,7 +5349,8 @@ document.addEventListener("DOMContentLoaded", ()=>{
     video:["Video","Ara, uygulamada izle"],
     kartlar:["Kredi kartlarım","Borç ve son ödeme takibi"],
     arama:["Kayıt ara","Tüm defterde bul"],
-    planlar:["Planlarım","Proje ve plan linklerin"]
+    planlar:["Planlarım","Proje ve plan linklerin"],
+    maaslar:["Maaşlar","Her ayın kendi hesap kartı"]
   };
   $$("[data-goruntu]").forEach(b=>{
     b.addEventListener("click", ()=>{
@@ -5314,10 +5359,10 @@ document.addEventListener("DOMContentLoaded", ()=>{
       aktifGoruntu = g;
       $("#btn-geri").classList.toggle("gizli", g==="ana");
       $$("[data-goruntu]").forEach(x=>x.classList.toggle("aktif", x===b));
-      ["ana","puantaj","odemeler","masraf","borc","ozet","yil","notlar","rozet","ekip","kisiler","arac","ayarlar","haber","tv","video","kartlar","arama","planlar"].forEach(x=>{
+      ["ana","puantaj","odemeler","masraf","borc","ozet","yil","notlar","rozet","ekip","kisiler","arac","ayarlar","haber","tv","video","kartlar","arama","planlar","maaslar"].forEach(x=>{
         $("#goruntu-"+x).classList.toggle("gizli", x!==g);
       });
-      $("#ay-bar").style.display = (g==="ayarlar"||g==="borc"||g==="ana"||g==="notlar"||g==="rozet"||g==="arac"||g==="haber"||g==="tv"||g==="video"||g==="kartlar"||g==="arama"||g==="planlar") ? "none" : "flex";
+      $("#ay-bar").style.display = (g==="ayarlar"||g==="borc"||g==="ana"||g==="notlar"||g==="rozet"||g==="arac"||g==="haber"||g==="tv"||g==="video"||g==="kartlar"||g==="arama"||g==="planlar"||g==="maaslar") ? "none" : "flex";
       $("#topbar-baslik").firstChild.textContent = basliklar[g][0];
       $("#topbar-alt").textContent = basliklar[g][1];
       $("#btn-bugun").style.display = g==="puantaj" ? "flex" : "none";
@@ -5335,6 +5380,7 @@ document.addEventListener("DOMContentLoaded", ()=>{
       if(g==="ekip"){ birKezBaslat("ekip", ekipDinle); ekipYoklamaCiz(); ekipYoklamaYukle(); ekipOzetYukle(); }
       if(g==="kisiler") kisilerYukle();
       if(g==="planlar"){ birKezBaslat("planlar", planlariDinle); planSantiyeSecDoldur(); }
+      if(g==="maaslar") maaslarListCiz();
       if(g==="notlar") birKezBaslat("notlar", notlariDinle);
       if(g!=="arac" && sesAkis) sesDurdur();
       if(g!=="arac" && oyun){ oyun.bitti = true; oyun = null; const oa=$("#oyun-alan"); if(oa) oa.classList.add("gizli"); }
@@ -6104,7 +6150,7 @@ document.addEventListener("DOMContentLoaded", ()=>{
   });
 
   /* Neler yeni kartı */
-  const YENILIK_SURUM = "0.0.0.32";
+  const YENILIK_SURUM = "0.0.0.33";
   try{ $("#cekmece-surum").textContent = "Puantaj Defterim " + YENILIK_SURUM; }catch(e){}
   try{
     if(localStorage.getItem("yenilik")!==YENILIK_SURUM) $("#yenilik-kart").classList.remove("gizli");
@@ -6295,10 +6341,10 @@ document.addEventListener("DOMContentLoaded", ()=>{
     document.querySelector('[data-goruntu="rozet"]').click();
   });
 
-  /* Şirket hesap kartı → dokununca "Yıl özeti"ne git (ay ay dökümü orada, kafa karışıklığı burada çözülsün) */
+  /* Şirket hesap kartı → dokununca "Maaşlar"a git (tüm ayların ayrı ayrı dökümü orada) */
   $("#sirket-alt").style.cursor = "pointer";
   $("#sirket-alt").addEventListener("click", ()=>{
-    document.querySelector('[data-goruntu="yil"]').click();
+    document.querySelector('[data-goruntu="maaslar"]').click();
   });
 
   /* ---- İş masrafları ---- */
@@ -6686,6 +6732,28 @@ document.addEventListener("DOMContentLoaded", ()=>{
     const acikMi = !kutu.classList.contains("gizli");
     kutu.classList.toggle("gizli", acikMi);
     ok.style.transform = acikMi ? "rotate(0deg)" : "rotate(90deg)";
+  });
+
+  /* Ay detay modalı (Maaşlar) */
+  $("#btn-ay-detay-kapat").addEventListener("click", ayDetayKapat);
+  $("#btn-ay-detay-odeme-ekle").addEventListener("click", ()=>{
+    const ay = aktifAyDetay;
+    ayDetayKapat();
+    document.querySelector('[data-goruntu="odemeler"]').click();
+    setTimeout(()=>{
+      const sel = $("#odeme-ait-ay");
+      if(sel && ay){
+        if(![...sel.options].some(o=>o.value===ay)){
+          const [yy,aa] = ay.split("-").map(Number);
+          const op = document.createElement("option");
+          op.value = ay; op.textContent = AYLAR[aa-1]+" "+yy;
+          sel.appendChild(op);
+        }
+        sel.value = ay;
+        odemeTarihiAyaGoreAyarla();
+      }
+      const tutarEl = $("#odeme-tutar"); if(tutarEl) tutarEl.focus();
+    }, 250);
   });
 
   /* Dünü kopyala */

@@ -157,6 +157,7 @@
       <li data-grup="gunluk"><button data-goruntu="arama"><span class="ikon">🔍</span> Kayıt ara</button></li>
 
       <li class="menu-grup" data-grup-baslik="para"><span>💰 PARA İŞLERİ</span><span class="menu-grup-ok">▾</span></li>
+      <li data-grup="para"><button data-goruntu="maaslar"><span class="ikon">💰</span> Maaşlar</button></li>
       <li data-grup="para"><button data-goruntu="odemeler"><span class="ikon">💵</span> Aldığım paralar</button></li>
       <li data-grup="para"><button data-goruntu="borc"><span class="ikon">🤝</span> Borç defteri</button></li>
       <li data-grup="para"><button data-goruntu="kartlar"><span class="ikon">💳</span> Kredi kartlarım</button></li>
@@ -247,8 +248,9 @@
       <div class="kart gizli" id="yenilik-kart" style="border-color:var(--sari)">
         <h2>🎁 Neler yeni?</h2>
         <ul style="padding-left:18px;font-size:13.5px;line-height:1.9">
-          <li><b>🕓 Bekleyen aylar (YENİ):</b> Ana ekrana, parası hâlâ tam yatmamış eski ayları tek tek gösteren bir kutu eklendi (inşaatta avans/maaş farklı tarihlerde parça parça yatabiliyor diye). Birine dokun, o ayın hesabına ödeme yaz — kalan otomatik düşer</li>
-          <li><b>🌙 Gece mesaisi zammı (YENİ):</b> Gün ekranına normal mesaiden ayrı, opsiyonel bir "gece mesaisi" saat girişi eklendi — Ayarlar'dan zam yüzdesi belirleyebilirsin</li>
+          <li><b>💰 Maaşlar (YENİ — büyük güncelleme):</b> Menüye yeni bir bölüm eklendi. Her ay artık kendi hesap kartına sahip — kaç gün çalıştın, avans/askeriye/hakediş ayrı ayrı ne kadar geldi, kalan ne kadar, tek ekranda görünüyor. Ay bitince otomatik burada birikir</li>
+          <li><b>🏢 Şirket Hesap Kartı artık SADECE BU AYI gösteriyor</b> (eskiden baştan beri toplamı gösteriyordu) — geçmiş ayların tamamı artık "Maaşlar"da ayrı ayrı duruyor, hiçbiri kaybolmuyor</li>
+          <li><b>🪖 "Askeriye" yeni bir ödeme türü olarak eklendi</b> (Avans/Askeriye/Hakediş/Kesinti/Diğer)</li>
         </ul>
         <button class="btn btn-cizgili" id="btn-yenilik-kapat">Süper, kapat</button>
       </div>
@@ -282,13 +284,6 @@
         <div class="gizli" id="sirket-hareket-kutu" style="margin-top:10px;background:rgba(0,0,0,.18);border-radius:12px;padding:6px 10px;max-height:340px;overflow-y:auto">
           <ul class="liste hareket-liste" id="liste-sirket-hareket"></ul>
         </div>
-      </div>
-      <div class="kart gizli" id="bekleyen-aylar-kart">
-        <h2 style="margin-bottom:4px">🕓 Bekleyen aylar</h2>
-        <p style="font-size:12.5px;color:var(--soluk);margin-bottom:10px;line-height:1.5">
-          Bu ay dışında, parası hâlâ tam yatmamış eski aylar. Avans/maaş geldikçe birine dokun, o ayın hesabına yaz — kalan otomatik düşer.
-        </p>
-        <ul class="liste" id="liste-bekleyen-aylar"></ul>
       </div>
       <div class="kart" style="padding:13px 14px">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
@@ -430,6 +425,44 @@
       </div>
     </section>
 
+    <!-- ===== GÖRÜNÜM: MAAŞLAR ===== -->
+    <section id="goruntu-maaslar" class="gizli">
+      <div class="kart">
+        <p style="font-size:13px;color:var(--soluk);margin-bottom:4px;line-height:1.6">
+          Her ayın kendi hesap kartı burada. Ay bitince otomatik burada birikir — o ayın avansı, askeriyesi, maaşı ne zaman/ne kadar geldi, kaç yevmiye yaptın, hepsi tek ekranda. Bir aya dokun, detayına gir.
+        </p>
+      </div>
+      <ul class="liste" id="liste-maaslar"></ul>
+    </section>
+
+    <!-- ===== AY DETAY MODALI (Maaşlar) ===== -->
+    <div class="alt-sayfa" id="ay-detay-modal" style="max-height:88vh;overflow-y:auto">
+      <div class="tutamak"></div>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+        <h3 id="ay-detay-baslik" style="margin:0">Ay detayı</h3>
+        <button id="btn-ay-detay-kapat" style="font-size:20px;color:var(--soluk);min-width:44px;min-height:44px">✕</button>
+      </div>
+
+      <div class="banka-kart sirket">
+        <div class="kart-ust"><span>📅 <span id="ay-detay-ay-adi">-</span></span><span id="ay-detay-durum" style="font-size:12px;font-weight:800;padding:4px 10px;border-radius:20px"></span></div>
+        <div class="bakiye" id="ay-detay-kalan">—</div>
+        <div class="kart-alt" id="ay-detay-ozet-alt"></div>
+      </div>
+
+      <div class="kart" style="margin-top:14px">
+        <h2>👷 Çalışma</h2>
+        <div id="ay-detay-calisma"></div>
+      </div>
+
+      <div class="kart">
+        <h2>💵 Ödeme dökümü</h2>
+        <div id="ay-detay-odeme-dokum"></div>
+        <ul class="liste" id="ay-detay-odeme-liste" style="margin-top:8px"></ul>
+      </div>
+
+      <button class="btn btn-sari" id="btn-ay-detay-odeme-ekle" style="margin-top:6px">➕ Bu aya ödeme ekle</button>
+    </div>
+
     <!-- ===== GÖRÜNÜM: ÖDEMELER ===== -->
     <section id="goruntu-odemeler" class="gizli">
       <div class="kart">
@@ -459,6 +492,7 @@
           <label>Tür</label>
           <select id="odeme-tur">
             <option value="avans">Avans</option>
+            <option value="askeriye">Askeriye (ilk gelen kısım)</option>
             <option value="hakedis">Hakediş / Maaş ödemesi</option>
             <option value="kesinti">Kesinti (yemek, ceza vb.)</option>
             <option value="diger">Diğer</option>
@@ -484,6 +518,7 @@
         <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px" id="odeme-filtre">
           <button class="eksik-cip secili-f" data-f="" style="font-size:12px;padding:7px 11px;border-color:var(--sari)">Tümü</button>
           <button class="eksik-cip" data-f="avans" style="font-size:12px;padding:7px 11px">Avans</button>
+          <button class="eksik-cip" data-f="askeriye" style="font-size:12px;padding:7px 11px">Askeriye</button>
           <button class="eksik-cip" data-f="hakedis" style="font-size:12px;padding:7px 11px">Hakediş</button>
           <button class="eksik-cip" data-f="kesinti" style="font-size:12px;padding:7px 11px">Kesinti</button>
           <button class="eksik-cip" data-f="diger" style="font-size:12px;padding:7px 11px">Diğer</button>
@@ -1360,7 +1395,7 @@
         <p style="font-size:13px;color:var(--soluk);margin-bottom:12px">Hata mı gördün, fikrin mi var? Direkt geliştiriciye ulaş:</p>
         <a class="btn btn-cizgili" style="display:block;text-align:center;text-decoration:none;margin-bottom:10px" href="https://wa.me/905051252339?text=Puantaj%20Defterim%20hakkında:" target="_blank">💬 WhatsApp'tan yaz</a>
         <a class="btn btn-cizgili" style="display:block;text-align:center;text-decoration:none" href="tel:05051252339">📞 0505 125 23 39</a>
-        <p style="font-size:11px;color:var(--soluk);margin-top:12px;text-align:center">Sürüm: 0.0.0.32 · Serkan Karakaş</p>
+        <p style="font-size:11px;color:var(--soluk);margin-top:12px;text-align:center">Sürüm: 0.0.0.33 · Serkan Karakaş</p>
       </div>
       <div class="kart">
         <h2>🔒 PIN kilidi</h2>
