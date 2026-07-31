@@ -6375,7 +6375,7 @@ document.addEventListener("DOMContentLoaded", ()=>{
   });
 
   /* Neler yeni kartı */
-  const YENILIK_SURUM = "0.0.0.41";
+  const YENILIK_SURUM = "0.0.0.42";
   try{ $("#cekmece-surum").textContent = "Puantaj Defterim " + YENILIK_SURUM; }catch(e){}
   try{
     if(localStorage.getItem("yenilik")!==YENILIK_SURUM) $("#yenilik-kart").classList.remove("gizli");
@@ -6962,13 +6962,15 @@ document.addEventListener("DOMContentLoaded", ()=>{
   /* Ay detay modalı (Maaşlar) */
   $("#btn-ay-detay-kapat").addEventListener("click", ayDetayKapat);
 
-  /* Hava durumu tam ekran */
-  $("#btn-hava-menu").addEventListener("click", ()=>{
-    cekmeceAc(false);
-    havaTamEkranAc();
+  /* Hava durumu tam ekran — doğrudan düğmeye değil, tüm sayfaya bağlı bir
+     dinleyici kullanıyoruz (delegasyon). Böylece düğme her ne sebeple olursa
+     olsun sayfa ilk yüklenirken anlık olarak bulunamasa bile (ör. bir önceki
+     satırda beklenmedik bir hata olsa bile) yine de çalışır — çok daha sağlam. */
+  document.addEventListener("click", e=>{
+    if(e.target.closest("#btn-hava-menu")){ cekmeceAc(false); havaTamEkranAc(); return; }
+    if(e.target.closest("#hava-uyari-satir")){ havaTamEkranAc(); return; }
+    if(e.target.closest("#btn-hava-kapat")){ $("#hava-tam-ekran").classList.add("gizli"); return; }
   });
-  $("#hava-uyari-satir").addEventListener("click", havaTamEkranAc);
-  $("#btn-hava-kapat").addEventListener("click", ()=> $("#hava-tam-ekran").classList.add("gizli"));
   $("#btn-ay-detay-odeme-ekle").addEventListener("click", ()=>{
     const ay = aktifAyDetay;
     ayDetayKapat();
