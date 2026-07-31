@@ -4320,15 +4320,17 @@ function maaslarListCiz(){
   const aylar = {};
   gSnap.forEach(doc=>{
     const v = doc.data(), ay = doc.id.slice(0,7);
-    if(!aylar[ay]) aylar[ay] = {hak:0, alinan:0, gun:0, mesai:0, odemeler:[]};
-    aylar[ay].hak += girdiKazanc(v);
+    if(!aylar[ay]) aylar[ay] = {hak:0, alinan:0, gun:0, mesai:0, odemeler:[], gunler:[]};
+    const kazanc = girdiKazanc(v);
+    aylar[ay].hak += kazanc;
     aylar[ay].gun += girdiGun(v);
     aylar[ay].mesai += Number(v.mesai)||0;
+    aylar[ay].gunler.push({id:doc.id, ...v, kazanc});
   });
   oSnap.forEach(doc=>{
     const v = doc.data(), ay = String(v.tarih||"").slice(0,7);
     if(!ay) return;
-    if(!aylar[ay]) aylar[ay] = {hak:0, alinan:0, gun:0, mesai:0, odemeler:[]};
+    if(!aylar[ay]) aylar[ay] = {hak:0, alinan:0, gun:0, mesai:0, odemeler:[], gunler:[]};
     aylar[ay].alinan += Number(v.tutar)||0;
     aylar[ay].odemeler.push({id:doc.id, ...v});
   });
@@ -4354,6 +4356,20 @@ function maaslarListCiz(){
     ul.appendChild(li);
   });
 }
+/* "3 gün önce", "dün", "bugün" gibi göreli tarih metni üretir (YYYY-MM-DD alır) */
+function gunFarkiYaz(tarihStr){
+  try{
+    const g = new Date(tarihStr+"T12:00:00"), bugun = new Date();
+    bugun.setHours(12,0,0,0);
+    const fark = Math.round((bugun - g) / 86400000);
+    if(fark===0) return "bugün";
+    if(fark===1) return "dün";
+    if(fark>1 && fark<31) return fark+" gün önce";
+    if(fark<0) return "ileri tarihli";
+    const ay = Math.round(fark/30);
+    return ay+" ay önce";
+  }catch(e){ return ""; }
+}
 function ayDetayAc(ay){
   const a = (maaslarVeri||{})[ay]; if(!a) return;
   aktifAyDetay = ay;
@@ -4369,7 +4385,28 @@ function ayDetayAc(ay){
   $("#ay-detay-ozet-alt").textContent = "Hakediş "+paraFmt(a.hak)+" · Alınan "+paraFmt(a.alinan);
   $("#ay-detay-calisma").innerHTML =
     '<div style="display:flex;justify-content:space-between;padding:4px 0"><span>Çalışılan gün</span><b>'+a.gun+' gün</b></div>'+
-    '<div style="display:flex;justify-content:space-between;padding:4px 0"><span>Mesai</span><b>'+a.mesai+' saat</b></div>';
+    '<div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid var(--cizgi);margin-bottom:8px;padding-bottom:10px"><span>Mesai</span><b>'+a.mesai+' saat</b></div>';
+  const gunKap = document.createElement("div");
+  gunKap.style.cssText = "max-height:260px;overflow-y:auto";
+  const gunlerSirali = [...(a.gunler||[])].sort((x,y)=> x.id < y.id ? 1 : -1);
+  if(!gunlerSirali.length){
+    gunKap.innerHTML = '<div style="color:var(--soluk);font-size:13px">Bu ay için hiç gün işlenmemiş.</div>';
+  }else{
+    const ulGun = document.createElement("ul");
+    ulGun.className = "liste";
+    gunlerSirali.forEach(v=>{
+      const t = new Date(v.id+"T12:00:00");
+      const li = document.createElement("li");
+      li.innerHTML =
+        '<div class="rozet" style="background:var(--asfalt2);font-size:12px">'+t.getDate()+'<small>'+GUNLER_KISA[(t.getDay()+6)%7]+'</small></div>'+
+        '<div class="orta"><div class="baslik">'+girisEtiket(v)+(Number(v.mesai)>0 ? " · "+v.mesai+" saat mesai" : "")+'</div>'+
+        '<div class="alt-yazi">'+esc([v.santiye, v.not].filter(Boolean).join(" — ")||"—")+'</div></div>'+
+        '<div class="tutar">'+paraFmt(v.kazanc)+'</div>';
+      ulGun.appendChild(li);
+    });
+    gunKap.appendChild(ulGun);
+  }
+  $("#ay-detay-calisma").appendChild(gunKap);
   const turler = {};
   a.odemeler.forEach(o=>{ const t=o.tur||"diger"; turler[t]=(turler[t]||0)+(Number(o.tutar)||0); });
   const turSirasi = ["avans","askeriye","hakedis","kesinti","diger"];
@@ -4381,10 +4418,67 @@ function ayDetayAc(ay){
   liste.innerHTML = "";
   [...a.odemeler].sort((x,y)=> String(x.tarih)<String(y.tarih)?-1:1).forEach(o=>{
     const li = document.createElement("li");
+    const t = o.tarih ? new Date(o.tarih+"T12:00:00") : null;
+    const gunAdi = t ? GUNLER[t.getDay()] : "";
+    const tarihUzun = t ? (t.getDate()+" "+AYLAR[t.getMonth()]+" "+gunAdi) : "";
     li.innerHTML =
-      '<div class="rozet" style="background:'+odemeTurRenk(o.tur)+'">💰</div>'+
-      '<div class="orta"><div class="baslik">'+odemeTurEtiket(o.tur)+'</div><div class="alt-yazi">'+esc(o.tarih||"")+(o.not?" — "+esc(o.not):"")+'</div></div>'+
-      '<div class="tutar">'+paraFmt(o.tutar)+'</div>';
+      '<div class="rozet" style="background:'+odemeTurRenk(o.tur)+(o.tur==="avans"||o.tur==="askeriye" ? ";color:#111" : "")+'">'+(t?t.getDate():"💰")+(t?'<small>'+GUNLER_KISA[(t.getDay()+6)%7]+'</small>':'')+'</div>'+
+      '<div class="orta" style="cursor:pointer"><div class="baslik">'+odemeTurEtiket(o.tur)+(o.dekontlu ? ' 🏦' : '')+' <span style="font-size:11px;color:var(--soluk)">✏️ düzenle</span></div>'+
+      '<div class="alt-yazi">'+esc(tarihUzun)+' · '+gunFarkiYaz(o.tarih)+(o.not?" — "+esc(o.not):"")+'</div></div>'+
+      '<div class="tutar">'+paraFmt(o.tutar)+'</div>'+
+      (o.dekontlu ? '<button class="sil" aria-label="Dekont" style="color:var(--sari)">🏦</button>' : '')+
+      '<button class="sil" aria-label="Sil">🗑️</button>';
+    const dkBtn = li.querySelector('[aria-label="Dekont"]');
+    if(dkBtn) dkBtn.addEventListener("click", async ()=>{
+      dkBtn.textContent = "⏳";
+      try{
+        const d3 = await kokRef().collection("dekontlar").doc(o.id).get();
+        dkBtn.textContent = "🏦";
+        const f = d3.exists ? d3.data().veri : null;
+        if(!f){ toast("Dekont bulunamadı"); return; }
+        geriKaydet();
+        const b = $("#foto-buyuk");
+        b.querySelector("img").src = f;
+        b.style.display = "flex";
+      }catch(err){ dkBtn.textContent = "🏦"; toast("Dekont yüklenemedi, internete bak"); }
+    });
+    li.querySelector(".orta").addEventListener("click", ()=>{
+      if(ayKilitli(o.tarih)){ toast("Bu ay kilitli 🔒 Hesap özetinden açabilirsin"); return; }
+      ayDetayKapat();
+      document.querySelector('[data-goruntu="odemeler"]').click();
+      setTimeout(()=>{
+        duzenlenenOdeme = o;
+        $("#odeme-tarih").value = o.tarih;
+        const aaSel = $("#odeme-ait-ay");
+        if(aaSel){
+          if(![...aaSel.options].some(op=>op.value===String(o.tarih).slice(0,7))){
+            const [yy,aa2] = String(o.tarih).slice(0,7).split("-").map(Number);
+            const op2 = document.createElement("option");
+            op2.value = String(o.tarih).slice(0,7); op2.textContent = AYLAR[aa2-1]+" "+yy;
+            aaSel.appendChild(op2);
+          }
+          aaSel.value = String(o.tarih).slice(0,7);
+        }
+        $("#odeme-tutar").value = o.tutar;
+        $("#odeme-tur").value = o.tur||"diger";
+        $("#odeme-not").value = o.not||"";
+        $("#btn-odeme-ekle").textContent = "✏️ Güncelle";
+        $("#btn-odeme-vazgec").classList.remove("gizli");
+        toast("Düzenleme modu: bilgileri değiştir, Güncelle'ye bas");
+      }, 250);
+    });
+    li.querySelector('[aria-label="Sil"]').addEventListener("click", async ()=>{
+      if(ayKilitli(o.tarih)){ toast("Bu ay kilitli 🔒 Hesap özetinden açabilirsin"); return; }
+      if(!confirm("Bu ödeme kaydı silinsin mi?")) return;
+      if(o.dekontlu) kokRef().collection("dekontlar").doc(o.id).delete().catch(()=>{});
+      const kopya = {...o}; delete kopya.id;
+      try{
+        await kokRef().collection("odemeler").doc(o.id).delete();
+        toastGeriAlVeri("Ödeme silindi", "odemeler", o.id, kopya);
+        ayDetayKapat();
+        setTimeout(()=> maaslarListCiz(), 400);
+      }catch(err){ hataGoster(err, "ay-detay-odeme-sil"); }
+    });
     liste.appendChild(li);
   });
   $("#modal-perde").classList.add("acik");
@@ -6150,7 +6244,7 @@ document.addEventListener("DOMContentLoaded", ()=>{
   });
 
   /* Neler yeni kartı */
-  const YENILIK_SURUM = "0.0.0.33";
+  const YENILIK_SURUM = "0.0.0.35";
   try{ $("#cekmece-surum").textContent = "Puantaj Defterim " + YENILIK_SURUM; }catch(e){}
   try{
     if(localStorage.getItem("yenilik")!==YENILIK_SURUM) $("#yenilik-kart").classList.remove("gizli");
