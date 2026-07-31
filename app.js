@@ -5390,6 +5390,11 @@ function durumButonYenile(){
 if("serviceWorker" in navigator){
   window.addEventListener("load", ()=>{
     navigator.serviceWorker.register("./sw.js").then(kayit=>{
+      /* Chrome, varsayılan olarak yeni bir sw.js olup olmadığını günde en
+         fazla 1 kez kontrol eder. Biz sık güncelleme yaptığımız için bu,
+         "sürüm hiç değişmiyor" gibi görünen bir soruna yol açıyordu — her
+         açılışta AÇIKÇA kontrol ettirerek bunu aşıyoruz. */
+      kayit.update().catch(()=>{});
       kayit.addEventListener("updatefound", ()=>{
         const yeni = kayit.installing; if(!yeni) return;
         yeni.addEventListener("statechange", ()=>{
@@ -6414,7 +6419,7 @@ document.addEventListener("DOMContentLoaded", ()=>{
   });
 
   /* Neler yeni kartı */
-  const YENILIK_SURUM = "0.0.0.52";
+  const YENILIK_SURUM = "0.0.0.53";
   try{ $("#cekmece-surum").textContent = "Puantaj Defterim " + YENILIK_SURUM; }catch(e){}
   try{
     if(localStorage.getItem("yenilik")!==YENILIK_SURUM) $("#yenilik-kart").classList.remove("gizli");
