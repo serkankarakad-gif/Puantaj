@@ -163,7 +163,6 @@
       <li data-grup="para"><button data-goruntu="kartlar"><span class="ikon">💳</span> Kredi kartlarım</button></li>
       <li data-grup="para"><button data-goruntu="masraf"><span class="ikon">🧾</span> İş masrafları</button></li>
       <li data-grup="para"><button data-goruntu="ozet"><span class="ikon">🧮</span> Hesap özeti</button></li>
-      <li data-grup="para"><button data-goruntu="yil"><span class="ikon">📊</span> Yıl özeti</button></li>
 
       <li class="menu-grup" data-grup-baslik="ekip"><span>👥 EKİP & TOPLULUK</span><span class="menu-grup-ok">▾</span></li>
       <li data-grup="ekip"><button data-goruntu="ekip"><span class="ikon">👥</span> Ekibim</button></li>
@@ -232,10 +231,6 @@
         <div class="alt" id="gunun-soz" style="margin-top:6px;color:var(--sari);font-style:italic"></div>
       </div>
       <div class="gizli" id="hava-uyari-satir" style="background:var(--girdi);border:1.5px solid var(--mesai);border-radius:12px;padding:11px 14px;font-size:13.5px;margin-bottom:14px;cursor:pointer"></div>
-      <div class="kart" id="gunun-karti" style="display:none;padding:14px">
-        <div id="gk-selam" style="font-weight:800;font-size:15.5px;margin-bottom:6px"></div>
-        <div id="gk-icerik" style="font-size:13.5px;line-height:1.7;color:var(--soluk)"></div>
-      </div>
       <div class="kart gizli" id="tatil-kart" style="border:1.5px solid var(--sari);padding:14px">
         <div id="tatil-metin" style="font-size:14px;line-height:1.7"></div>
       </div>
@@ -248,8 +243,7 @@
       <div class="kart gizli" id="yenilik-kart" style="border-color:var(--sari)">
         <h2>🎁 Neler yeni?</h2>
         <ul style="padding-left:18px;font-size:13.5px;line-height:1.9">
-          <li><b>🌤️ Hava durumu artık her girişte görünüyor:</b> Ana ekrandaki satır artık sadece yağmur uyarısında değil, uygulamayı her açtığında güncel sıcaklığı ve durumu gösteriyor</li>
-          <li><b>👉 Şirket Hesap Kartı + Cüzdan yan yana:</b> İki kart artık sağa-sola kaydırarak geçilen tek bir alanda, ana ekranı yukarı-aşağı sürekli kaydırmana gerek kalmadan ikisine de kolayca ulaşabiliyorsun</li>
+          <li><b>🧹 Ana ekran bir kademe daha sadeleşti:</b> "İlerleme" kartı (Seviye + Mesai sınırı + Emeklilik) Ana Ekrandan tamamen kaldırıldı. Seviye artık "Başarımlarım"ın başında, Mesai sınırı ve Emeklilik takibi artık "Araçlar & Bilgi"de — hiçbir bilgi kaybolmadı, sadece doğru yerlerine taşındı</li>
         </ul>
         <button class="btn btn-cizgili" id="btn-yenilik-kapat">Süper, kapat</button>
       </div>
@@ -314,30 +308,6 @@
         <h2 style="margin-bottom:10px">🎯 Bu ayın hedefi</h2>
         <div id="ana-hedef-icerik"></div>
       </div>
-      <div class="kart gizli" id="seviye-kart">
-        <div class="seviye-satir">
-          <div class="buyuk-rozet" id="seviye-ikon">👷</div>
-          <div style="flex:1">
-            <div style="display:flex;justify-content:space-between;align-items:center">
-              <b style="font-family:'Saira Condensed';font-size:20px;text-transform:uppercase" id="seviye-ad">—</b>
-              <button id="btn-rozetler" style="color:var(--sari);font-weight:600;font-size:13px">🏆 Rozetlerim ›</button>
-            </div>
-            <div class="hedef-bar" style="height:12px;margin-top:8px"><div class="dolu" id="seviye-dolu" style="width:0%"></div></div>
-            <div style="font-size:12px;color:var(--soluk);margin-top:6px" id="seviye-alt"></div>
-          </div>
-        </div>
-      </div>
-      <div class="kart gizli" id="mesai-sinir-kart">
-        <h2>⚖️ Yıllık fazla mesai sınırı</h2>
-        <div class="hedef-bar" style="height:14px"><div class="dolu" id="mesai-sinir-dolu" style="width:0%"></div></div>
-        <div style="font-size:13px;color:var(--soluk);margin-top:8px" id="mesai-sinir-yazi"></div>
-      </div>
-      <div class="kart gizli" id="sgk-kart">
-        <h2>🏖️ Emeklilik yolculuğu</h2>
-        <div class="hedef-bar" style="height:14px"><div class="dolu" id="sgk-dolu" style="width:0%"></div></div>
-        <div style="font-size:13px;color:var(--soluk);margin-top:8px" id="sgk-yazi"></div>
-      </div>
-
       <div class="kart">
         <h2>➕ Cüzdan hareketi ekle</h2>
         <div style="display:flex;gap:10px">
@@ -435,9 +405,10 @@
     <!-- ===== GÖRÜNÜM: MAAŞLAR ===== -->
     <section id="goruntu-maaslar" class="gizli">
       <div class="kart">
-        <p style="font-size:13px;color:var(--soluk);margin-bottom:4px;line-height:1.6">
+        <p style="font-size:13px;color:var(--soluk);margin-bottom:10px;line-height:1.6">
           Her ayın kendi hesap kartı burada. Ay bitince otomatik burada birikir — o ayın avansı, askeriyesi, maaşı ne zaman/ne kadar geldi, kaç yevmiye yaptın, hepsi tek ekranda. Bir aya dokun, detayına gir.
         </p>
+        <button class="btn btn-cizgili" data-goruntu="yil" style="padding:11px">📊 Yıllık grafikler & ısı haritası ›</button>
       </div>
       <ul class="liste" id="liste-maaslar"></ul>
     </section>
@@ -715,6 +686,16 @@
 
     <!-- ===== GÖRÜNÜM: BAŞARIMLAR ===== -->
     <section id="goruntu-rozet" class="gizli">
+      <div class="kart gizli" id="seviye-kart-rozet">
+        <div class="seviye-satir">
+          <div class="buyuk-rozet" id="seviye-ikon">👷</div>
+          <div style="flex:1">
+            <b style="font-family:'Saira Condensed';font-size:20px;text-transform:uppercase" id="seviye-ad">—</b>
+            <div class="hedef-bar" style="height:12px;margin-top:8px"><div class="dolu" id="seviye-dolu" style="width:0%"></div></div>
+            <div style="font-size:12px;color:var(--soluk);margin-top:6px" id="seviye-alt"></div>
+          </div>
+        </div>
+      </div>
       <div class="kart">
         <h2>🏆 Başarımlarım <span id="rozet-sayac" style="margin-left:auto;font-size:14px;color:var(--soluk);font-family:Rubik;text-transform:none"></span></h2>
         <div class="rozet-grid" id="rozet-grid"><div class="bos-mesaj">Yükleniyor...</div></div>
@@ -1148,6 +1129,16 @@
         <h2>💪 Emek karnem</h2>
         <div id="emek-karne" style="font-size:13.5px;line-height:1.9">Hesaplanıyor...</div>
       </div>
+      <div class="kart gizli" id="mesai-sinir-satir">
+        <h2 style="font-size:15px">⚖️ Yıllık fazla mesai sınırı</h2>
+        <div class="hedef-bar" style="height:12px;margin-top:4px"><div class="dolu" id="mesai-sinir-dolu" style="width:0%"></div></div>
+        <div style="font-size:13px;color:var(--soluk);margin-top:8px" id="mesai-sinir-yazi"></div>
+      </div>
+      <div class="kart gizli" id="sgk-satir">
+        <h2 style="font-size:15px">🏖️ Emeklilik yolculuğu</h2>
+        <div class="hedef-bar" style="height:12px;margin-top:4px"><div class="dolu" id="sgk-dolu" style="width:0%"></div></div>
+        <div style="font-size:13px;color:var(--soluk);margin-top:8px" id="sgk-yazi"></div>
+      </div>
       <div class="kart">
         <h2>⏱️ Mesai ücreti kontrolü</h2>
         <div class="alan">
@@ -1425,7 +1416,7 @@
         <p style="font-size:13px;color:var(--soluk);margin-bottom:12px">Hata mı gördün, fikrin mi var? Direkt geliştiriciye ulaş:</p>
         <a class="btn btn-cizgili" style="display:block;text-align:center;text-decoration:none;margin-bottom:10px" href="https://wa.me/905051252339?text=Puantaj%20Defterim%20hakkında:" target="_blank">💬 WhatsApp'tan yaz</a>
         <a class="btn btn-cizgili" style="display:block;text-align:center;text-decoration:none" href="tel:05051252339">📞 0505 125 23 39</a>
-        <p style="font-size:11px;color:var(--soluk);margin-top:12px;text-align:center">Sürüm: 0.0.0.42 · Serkan Karakaş</p>
+        <p style="font-size:11px;color:var(--soluk);margin-top:12px;text-align:center">Sürüm: 0.0.0.45 · Serkan Karakaş</p>
       </div>
       <div class="kart">
         <h2>🔒 PIN kilidi</h2>

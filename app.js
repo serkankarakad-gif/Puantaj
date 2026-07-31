@@ -999,6 +999,17 @@ function gununSozCiz(){
   const el = $("#gunun-soz");
   if(el) el.textContent = "“" + SOZLER[g % SOZLER.length] + "”";
 }
+/* Eskiden ayrı bir "gunun-karti" kartında (fıkra/ipucu/söz karışık, daha zengin
+   bir havuz) gösteriliyordu — selam-blok'taki gunun-soz ile aynı işi iki kere
+   yapıyordu. Artık tek yerde, zengin havuzdan. */
+function gununIpucuEkle(){
+  const el = $("#gunun-soz"); if(!el) return;
+  const simdi = new Date();
+  const yilBasi = new Date(simdi.getFullYear(), 0, 1);
+  const gunNo = Math.floor((simdi - yilBasi) / 86400000);
+  const ic2 = GUNUN_ICERIK[gunNo % GUNUN_ICERIK.length];
+  el.textContent = ic2.t + ": " + ic2.m;
+}
 
 /* ---------- Usta seviyesi ---------- */
 const SEVIYELER = [
@@ -1026,7 +1037,7 @@ function seviyeCiz(){
   }
   const gun = Math.floor(tumIstatistik.gunToplam);
   const {s, sonraki} = seviyeBul(gun);
-  $("#seviye-kart").classList.remove("gizli");
+  const skr = $("#seviye-kart-rozet"); if(skr) skr.classList.remove("gizli");
   $("#seviye-ikon").textContent = s.ikon;
   $("#seviye-ad").textContent = s.ad + " · " + gun + " gün";
   if(sonraki){
@@ -1081,7 +1092,7 @@ async function rozetYukle(){
 /* ---------- SGK emeklilik sayacı ---------- */
 function sgkCiz(){
   if(!tumIstatistik) return;
-  const kart = $("#sgk-kart");
+  const kart = $("#sgk-satir");
   const hedef = ayarlar.sgkHedef||0;
   if(!(hedef>0)){ kart.classList.add("gizli"); return; }
   const prim = (ayarlar.sgkGun||0) + Math.floor(tumIstatistik.gunToplam);
@@ -1097,7 +1108,7 @@ function sgkCiz(){
 
 /* ---------- ⚖️ Yıllık fazla mesai sınırı (İş Kanunu m.41: yılda en fazla 270 saat) ---------- */
 function mesaiSinirCiz(buYilMesai){
-  const kart = $("#mesai-sinir-kart"); if(!kart) return;
+  const kart = $("#mesai-sinir-satir"); if(!kart) return;
   const SINIR = 270;
   /* Henüz mesai girilmemişse veya sınırdan çok uzaksa kartı gösterme, gereksiz kalabalık yapmasın */
   if(!(buYilMesai>0) || buYilMesai < SINIR*0.7){ kart.classList.add("gizli"); return; }
@@ -2953,20 +2964,8 @@ const GUNUN_ICERIK = [
   {t:"😄 Günün fıkrası", m:"Kalfa: \"Bu duvar terazisinde mi?\" Çırak: \"Terazide usta ama kefesi hangisi bilmiyorum\" ⚖️"},
   {t:"💡 Günün bilgisi", m:"Kıdem tazminatı her tam yıl için yaklaşık 30 günlük brüt ücrettir — Araçlar'daki hesaplayıcıya yıllarını yaz, gör."}
 ];
-function gununKartiCiz(){
-  const kart = $("#gunun-karti"); if(!kart) return;
-  const simdi = new Date(), sa = simdi.getHours();
-  const ad = (kullanici && kullanici.displayName) ? kullanici.displayName.split(" ")[0] : "usta";
-  const selam = sa < 6 ? "İyi geceler" : sa < 11 ? "Günaydın ☀️" : sa < 18 ? "Kolay gelsin 💪" : "İyi akşamlar 🌙";
-  $("#gk-selam").textContent = selam + " " + ad + "!";
-  /* Gün numarasına göre herkes aynı gün aynı içeriği görür — muhabbet ortak olsun */
-  const yilBasi = new Date(simdi.getFullYear(), 0, 1);
-  const gunNo = Math.floor((simdi - yilBasi) / 86400000);
-  const ic2 = GUNUN_ICERIK[gunNo % GUNUN_ICERIK.length];
-  $("#gk-icerik").innerHTML = "<b>" + ic2.t + ":</b> " + ic2.m;
-  kart.style.display = "block";
-}
-
+/* gununKartiCiz kaldırıldı — anaSelamCiz() zaten aynı zaman-bazlı selamı
+   veriyor, gunun-karti tamamen tekrardı. İçeriği gununIpucuEkle()'ye taşındı. */
 /* ---------- 🎊 Konfeti (kütüphanesiz) ---------- */
 function konfetiPatlat(){
   if(AZ_HAREKET) return;
@@ -3678,8 +3677,6 @@ async function anaYukle(){
         tatilKrt.classList.remove("gizli");
       }else tatilKrt.classList.add("gizli");
     }
-    /* 🌅 Günün kartı */
-    gununKartiCiz();
     aksamDurt(bugunIsli);
     /* 📌 Dün hatırlatıcısı: aktif kullanıcıysa ve dün boşsa */
     const dunKart = $("#dun-kart");
@@ -3878,7 +3875,7 @@ function anaSelamCiz(){
     b.getFullYear()===aktifYil && b.getMonth()===aktifAy ? !!girdiler[tarihId(b)] : !!girdiler[tarihId(b)];
   $("#selam-alt").textContent = b.getDate()+" "+AYLAR[b.getMonth()]+" "+GUNLER[b.getDay()]+
     (girdiler[tarihId(b)] ? " · Bugünü işledin ✅" : " · Bugünü henüz işlemedin");
-  gununSozCiz();
+  gununIpucuEkle();
   /* Ay sonu / ay başı hatırlatması */
   const kEl = $("#kapanis-uyari");
   if(kEl){
@@ -5604,7 +5601,7 @@ document.addEventListener("DOMContentLoaded", ()=>{
       }
       if(g==="ozet") ozetDetayYukle();
       if(g==="ana") anaYukle();
-      if(g==="rozet") rozetYukle();
+      if(g==="rozet"){ rozetYukle(); if(tumIstatistik) seviyeCiz(); }
       if(g==="ekip"){ birKezBaslat("ekip", ekipDinle); ekipYoklamaCiz(); ekipYoklamaYukle(); ekipOzetYukle(); }
       if(g==="kisiler") kisilerYukle();
       if(g==="planlar"){ birKezBaslat("planlar", planlariDinle); planSantiyeSecDoldur(); }
@@ -5623,7 +5620,8 @@ document.addEventListener("DOMContentLoaded", ()=>{
         }
       }
       if(g==="arac"){
-        [yillikIzinCiz, zamAnalizYap, emekKarneCiz, kimlikOzetCiz, kazaListeYukle, acilFormDoldur, vakitIlKur, vakitYukle, hataGunluguCiz]
+        [yillikIzinCiz, zamAnalizYap, emekKarneCiz, kimlikOzetCiz, kazaListeYukle, acilFormDoldur, vakitIlKur, vakitYukle, hataGunluguCiz,
+         ()=>{ if(tumIstatistik){ sgkCiz(); mesaiSinirCiz(tumIstatistik.buYilMesai||0); } }]
           .forEach(f=>{ try{ f(); }catch(e){ console.warn("araç kartı:", e); } });
       }
       if(g==="haber") haberYukle(false);
@@ -6381,7 +6379,7 @@ document.addEventListener("DOMContentLoaded", ()=>{
   });
 
   /* Neler yeni kartı */
-  const YENILIK_SURUM = "0.0.0.43";
+  const YENILIK_SURUM = "0.0.0.45";
   try{ $("#cekmece-surum").textContent = "Puantaj Defterim " + YENILIK_SURUM; }catch(e){}
   try{
     if(localStorage.getItem("yenilik")!==YENILIK_SURUM) $("#yenilik-kart").classList.remove("gizli");
@@ -6567,10 +6565,8 @@ document.addEventListener("DOMContentLoaded", ()=>{
     }catch(e){ hataGoster(e); }
   });
 
-  /* Rozetler kısayolu */
-  $("#btn-rozetler").addEventListener("click", ()=>{
-    document.querySelector('[data-goruntu="rozet"]').click();
-  });
+  /* Not: "Rozetler kısayolu" düğmesi kaldırıldı — seviye kartı artık zaten
+     doğrudan Başarımlarım ekranının içinde, ayrıca bir bağlantıya gerek yok. */
 
   /* Şirket hesap kartı → dokununca "Maaşlar"a git (tüm ayların ayrı ayrı dökümü orada) */
   $("#sirket-alt").style.cursor = "pointer";
