@@ -396,36 +396,11 @@ function kartCiz(){
       else { etiket = "son ödeme: ayın "+k.gun+"'i ("+kalanG+" gün)"; renk = "var(--soluk)"; }
       li.innerHTML =
         '<div class="rozet" style="background:var(--mesai)">💳</div>'+
-        '<div class="orta" style="cursor:pointer"><div class="baslik">'+String(k.ad||"Kart").replace(/</g,"&lt;")+' <span style="font-size:11px;color:var(--soluk)">✏️</span></div>'+
-        '<div class="alt-yazi" style="color:'+renk+'">'+etiket+'</div></div>'+
+        '<div class="orta" style="cursor:pointer"><div class="baslik">'+String(k.ad||"Kart").replace(/</g,"&lt;")+'</div>'+
+        '<div class="alt-yazi" style="color:'+renk+'">'+(k.banka?esc(k.banka)+" · ":"")+etiket+'</div></div>'+
         '<div class="tutar">'+(gizliMod ? "••••" : paraFmt(borc))+'</div>'+
-        (borc > 0 ? '<button class="sil" aria-label="Ode" style="color:var(--tam)">💰</button>' : '')+
-        '<button class="sil" aria-label="Sil">🗑️</button>';
-      li.querySelector(".orta").addEventListener("click", ()=>{
-        duzenlenenKart = k;
-        $("#kart-ad").value = k.ad||"";
-        $("#kart-gun").value = k.gun||"";
-        $("#kart-borc").value = borc||"";
-        $("#btn-kart-ekle").textContent = "✏️ Güncelle";
-        $("#btn-kart-vazgec").classList.remove("gizli");
-        window.scrollTo({top:0, behavior:"smooth"});
-      });
-      const odeBtn = li.querySelector('[aria-label="Ode"]');
-      if(odeBtn) odeBtn.addEventListener("click", async ()=>{
-        const ham = prompt(k.ad+" kartına ne kadar ödedin? (borç: "+paraFmt(borc)+")");
-        if(ham === null) return;
-        const x = sayi(ham);
-        if(!(x > 0)){ toast("Geçerli bir tutar yaz kanka"); return; }
-        const yeni2 = Math.max(0, borc - x);
-        try{
-          await kokRef().collection("kartlar").doc(k.id).update({borc: yeni2});
-          toast(yeni2 === 0 ? "Kart borcu SIFIRLANDI 🎉 Helal!" : paraFmt(x)+" işlendi, kalan "+paraFmt(yeni2));
-        }catch(e){ hataGoster(e); }
-      });
-      li.querySelector('[aria-label="Sil"]').addEventListener("click", ()=>{
-        if(!confirm(k.ad+" kartı silinsin mi?")) return;
-        kokRef().collection("kartlar").doc(k.id).delete().catch(hataGoster);
-      });
+        '<span style="color:var(--soluk);font-size:16px;padding:0 4px">›</span>';
+      li.addEventListener("click", ()=> kartDetayAc(k));
       ul.appendChild(li);
     });
   }
@@ -443,6 +418,41 @@ function kartCiz(){
     }else uy.classList.add("gizli");
   }
 }
+
+/* ---------- 💳 Kart detay modalı: banka, borç, ödeme geçmişi ---------- */
+let aktifKartDetay = null;
+function kartDetayAc(k){
+  aktifKartDetay = k;
+  const borc = Number(k.borc)||0;
+  const kalanG = kartGunKalan(k.gun);
+  $("#kd-baslik").textContent = k.ad||"Kart";
+  $("#kd-banka").textContent = "🏦 " + (k.banka||"Banka belirtilmemiş");
+  $("#kd-borc").textContent = gizliMod ? "••••" : paraFmt(borc);
+  $("#kd-vade").textContent = borc<=0 ? "Borç yok ✨" :
+    (kalanG===0 ? "Son ödeme BUGÜN!" : "Son ödeme: ayın "+k.gun+"'i · "+kalanG+" gün kaldı");
+  $("#kd-odeme-form").classList.add("gizli");
+  $("#kd-odeme-tutar").value = "";
+  const liste = $("#kd-odeme-liste");
+  const odemeler2 = [...(k.odemeler||[])].sort((a,b)=> (b.zaman||0)-(a.zaman||0));
+  if(!odemeler2.length){
+    liste.innerHTML = '<div class="bos-mesaj" style="padding:14px 0">Henüz ödeme kaydı yok.</div>';
+  }else{
+    liste.innerHTML = odemeler2.map(o=>{
+      const t = o.zaman ? new Date(o.zaman) : null;
+      const tarihYazi = t ? t.getDate()+" "+AYLAR[t.getMonth()]+" "+t.getFullYear() : "";
+      return '<li><div class="rozet" style="background:var(--tam)">💰</div>'+
+        '<div class="orta"><div class="baslik">Ödeme yapıldı</div><div class="alt-yazi">'+esc(tarihYazi)+'</div></div>'+
+        '<div class="tutar">'+paraFmt(o.tutar)+'</div></li>';
+    }).join("");
+  }
+  $("#modal-perde").classList.add("acik");
+  $("#kart-detay-modal").classList.add("acik");
+}
+function kartDetayKapat(){
+  $("#modal-perde").classList.remove("acik");
+  $("#kart-detay-modal").classList.remove("acik");
+}
+
 function borcKalan(b){ return Math.max(0, (Number(b.tutar)||0) - (Number(b.odenen)||0)); }
 function vadeEtiket(b, bugunId){
   if(b.odendi || !b.vade) return "";
@@ -5429,6 +5439,8 @@ function acikPencereKapat(){
      sınıfla (acik) açılıyor — onu da geri tuşu listesine dahil et */
   const ayDetay = document.getElementById("ay-detay-modal");
   if(ayDetay && ayDetay.classList.contains("acik")){ ayDetayKapat(); kapandi = true; }
+  const kartDetay = document.getElementById("kart-detay-modal");
+  if(kartDetay && kartDetay.classList.contains("acik")){ kartDetayKapat(); kapandi = true; }
   /* Hava durumu tam ekranı da "gizli" class'ıyla açılıp kapanıyor — aynı şekilde dahil et */
   const havaTE = document.getElementById("hava-tam-ekran");
   if(havaTE && !havaTE.classList.contains("gizli")){ havaTE.classList.add("gizli"); kapandi = true; }
@@ -5817,6 +5829,7 @@ document.addEventListener("DOMContentLoaded", ()=>{
   $("#borc-uyari").addEventListener("click", ()=> gorunumSec("borc"));
   $("#kart-uyari").addEventListener("click", ()=> gorunumSec("kartlar"));
   $("#btn-kart-ekle").addEventListener("click", async ()=>{
+    const banka = $("#kart-banka").value.trim();
     const ad = $("#kart-ad").value.trim();
     const gun = Number(sayi($("#kart-gun").value));
     const borc = sayi($("#kart-borc").value);
@@ -5825,15 +5838,15 @@ document.addEventListener("DOMContentLoaded", ()=>{
     if(/\d{6,}/.test(ad)){ toast("Dur kanka! Kart NUMARASI yazma — sadece takma ad 🔒"); return; }
     try{
       if(duzenlenenKart){
-        await kokRef().collection("kartlar").doc(duzenlenenKart.id).update({ad, gun, borc: borc||0});
+        await kokRef().collection("kartlar").doc(duzenlenenKart.id).update({ad, banka, gun, borc: borc||0});
         toast("Kart güncellendi ✏️");
       }else{
-        await kokRef().collection("kartlar").add({ad, gun, borc: borc||0,
+        await kokRef().collection("kartlar").add({ad, banka, gun, borc: borc||0, odemeler: [],
           olusturma: firebase.firestore.FieldValue.serverTimestamp()});
         toast("Kart eklendi 💳 Son ödeme yaklaşınca haber veririm");
       }
       duzenlenenKart = null;
-      $("#kart-ad").value=""; $("#kart-gun").value=""; $("#kart-borc").value="";
+      $("#kart-banka").value=""; $("#kart-ad").value=""; $("#kart-gun").value=""; $("#kart-borc").value="";
       $("#btn-kart-ekle").textContent = "Kaydet";
       $("#btn-kart-vazgec").classList.add("gizli");
     }catch(e){ hataGoster(e); }
@@ -5867,7 +5880,7 @@ document.addEventListener("DOMContentLoaded", ()=>{
   }
   $("#btn-kart-vazgec").addEventListener("click", ()=>{
     duzenlenenKart = null;
-    $("#kart-ad").value=""; $("#kart-gun").value=""; $("#kart-borc").value="";
+    $("#kart-banka").value=""; $("#kart-ad").value=""; $("#kart-gun").value=""; $("#kart-borc").value="";
     $("#btn-kart-ekle").textContent = "Kaydet";
     $("#btn-kart-vazgec").classList.add("gizli");
   });
@@ -6379,7 +6392,7 @@ document.addEventListener("DOMContentLoaded", ()=>{
   });
 
   /* Neler yeni kartı */
-  const YENILIK_SURUM = "0.0.0.46";
+  const YENILIK_SURUM = "0.0.0.49";
   try{ $("#cekmece-surum").textContent = "Puantaj Defterim " + YENILIK_SURUM; }catch(e){}
   try{
     if(localStorage.getItem("yenilik")!==YENILIK_SURUM) $("#yenilik-kart").classList.remove("gizli");
@@ -6960,6 +6973,12 @@ document.addEventListener("DOMContentLoaded", ()=>{
     kutu.classList.toggle("gizli", acikMi);
     ok.style.transform = acikMi ? "rotate(0deg)" : "rotate(90deg)";
   });
+  $("#btn-cuzdan-hareket-ac").addEventListener("click", ()=>{
+    const kutu = $("#cuzdan-hareket-kutu"), ok = $("#cuzdan-hareket-ok");
+    const acikMi = !kutu.classList.contains("gizli");
+    kutu.classList.toggle("gizli", acikMi);
+    ok.style.transform = acikMi ? "rotate(0deg)" : "rotate(90deg)";
+  });
 
   /* Şirket hesabı / cüzdan kartları — yan yana, sağa-sola kaydırılan slider.
      Kaydırma bitince hangi kart görünüyorsa altındaki noktayı ona göre
@@ -6983,6 +7002,51 @@ document.addEventListener("DOMContentLoaded", ()=>{
 
   /* Ay detay modalı (Maaşlar) */
   $("#btn-ay-detay-kapat").addEventListener("click", ayDetayKapat);
+
+  /* Kart detay modalı */
+  $("#btn-kart-detay-kapat").addEventListener("click", kartDetayKapat);
+  $("#btn-kd-odeme-ekle").addEventListener("click", ()=>{
+    $("#kd-odeme-form").classList.remove("gizli");
+    $("#kd-odeme-tutar").focus();
+  });
+  $("#btn-kd-odeme-vazgec").addEventListener("click", ()=>{
+    $("#kd-odeme-form").classList.add("gizli");
+  });
+  $("#btn-kd-odeme-kaydet").addEventListener("click", async ()=>{
+    const k = aktifKartDetay; if(!k) return;
+    const x = sayi($("#kd-odeme-tutar").value);
+    if(!(x > 0)){ toast("Geçerli bir tutar yaz kanka"); return; }
+    const borc = Number(k.borc)||0;
+    const yeni2 = Math.max(0, borc - x);
+    const yeniOdemeler = [...(k.odemeler||[]), {tutar:x, zaman: Date.now()}];
+    try{
+      await kokRef().collection("kartlar").doc(k.id).update({borc: yeni2, odemeler: yeniOdemeler});
+      toast(yeni2 === 0 ? "Kart borcu SIFIRLANDI 🎉 Helal!" : paraFmt(x)+" işlendi, kalan "+paraFmt(yeni2));
+      kartDetayKapat();
+    }catch(e){ hataGoster(e); }
+  });
+  $("#btn-kd-duzenle").addEventListener("click", ()=>{
+    const k = aktifKartDetay; if(!k) return;
+    kartDetayKapat();
+    document.querySelector('[data-goruntu="kartlar"]').click();
+    setTimeout(()=>{
+      duzenlenenKart = k;
+      $("#kart-banka").value = k.banka||"";
+      $("#kart-ad").value = k.ad||"";
+      $("#kart-gun").value = k.gun||"";
+      $("#kart-borc").value = Number(k.borc)||"";
+      $("#btn-kart-ekle").textContent = "✏️ Güncelle";
+      $("#btn-kart-vazgec").classList.remove("gizli");
+      window.scrollTo({top:0, behavior:"smooth"});
+    }, 250);
+  });
+  $("#btn-kd-sil").addEventListener("click", ()=>{
+    const k = aktifKartDetay; if(!k) return;
+    if(!confirm((k.ad||"Kart")+" kartı silinsin mi?")) return;
+    kokRef().collection("kartlar").doc(k.id).delete()
+      .then(()=>{ kartDetayKapat(); toast("Kart silindi"); })
+      .catch(hataGoster);
+  });
 
   /* Hava durumu tam ekran — doğrudan düğmeye değil, tüm sayfaya bağlı bir
      dinleyici kullanıyoruz (delegasyon). Böylece düğme her ne sebeple olursa

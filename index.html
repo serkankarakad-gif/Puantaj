@@ -241,6 +241,14 @@
             <div class="bakiye" id="sirket-bakiye">—</div>
             <div class="kart-alt" id="sirket-alt">Çalıştıkça artar, avans aldıkça azalır</div>
             <div class="kart-alt" id="kur-satir" style="margin-top:6px;font-weight:700"></div>
+            <div style="margin-top:14px;padding-top:14px;border-top:1px solid rgba(255,255,255,.15)">
+              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+                <span style="font-size:12px;font-weight:700;color:rgba(255,255,255,.7);text-transform:uppercase;letter-spacing:.06em">📆 Bu hafta</span>
+                <button id="btn-takvim-ac" style="color:var(--sari);font-weight:600;font-size:12.5px">Takvimi aç ›</button>
+              </div>
+              <div class="hafta-serit" id="hafta-serit"></div>
+              <div id="tahmin-kart" class="gizli" style="margin-top:10px;background:rgba(0,0,0,.18);border-radius:12px;padding:10px 13px;font-size:13px;line-height:1.6;color:rgba(255,255,255,.85)"></div>
+            </div>
             <button id="btn-sirket-hareket-ac" style="margin-top:14px;width:100%;display:flex;align-items:center;justify-content:space-between;background:rgba(255,255,255,.08);border-radius:12px;padding:11px 13px;color:#fff;font-weight:700;font-size:13.5px">
               <span>📋 Hareketler</span><span id="sirket-hareket-ok" style="transition:transform .2s">›</span>
             </button>
@@ -253,6 +261,41 @@
             <div class="bakiye" id="cuzdan-bakiye">—</div>
             <div id="kumbara-bar" style="display:none;margin-top:8px"></div>
             <div class="kart-alt">Elindeki parayı buradan takip et</div>
+            <button id="btn-cuzdan-hareket-ac" style="margin-top:14px;width:100%;display:flex;align-items:center;justify-content:space-between;background:rgba(255,255,255,.08);border-radius:12px;padding:11px 13px;color:#fff;font-weight:700;font-size:13.5px">
+              <span>💰 Hareket ekle / geçmiş</span><span id="cuzdan-hareket-ok" style="transition:transform .2s">›</span>
+            </button>
+            <div class="gizli" id="cuzdan-hareket-kutu" style="margin-top:10px;background:rgba(0,0,0,.18);border-radius:12px;padding:12px 10px;max-height:420px;overflow-y:auto;text-align:left">
+              <div style="display:flex;gap:10px">
+                <div class="alan" style="flex:1">
+                  <label style="color:rgba(255,255,255,.6)">Tutar (TL)</label>
+                  <input type="text" id="cuzdan-tutar" inputmode="decimal" placeholder="500">
+                  <div style="display:flex;gap:6px;margin-top:8px;flex-wrap:wrap">
+                    <button class="eksik-cip tutar-cip" data-hedef="cuzdan-tutar" data-deger="100" style="font-size:12px;padding:7px 11px">100</button>
+                    <button class="eksik-cip tutar-cip" data-hedef="cuzdan-tutar" data-deger="250" style="font-size:12px;padding:7px 11px">250</button>
+                    <button class="eksik-cip tutar-cip" data-hedef="cuzdan-tutar" data-deger="500" style="font-size:12px;padding:7px 11px">500</button>
+                    <button class="eksik-cip tutar-cip" data-hedef="cuzdan-tutar" data-deger="1000" style="font-size:12px;padding:7px 11px">1.000</button>
+                  </div>
+                </div>
+                <div class="alan" style="flex:1">
+                  <label style="color:rgba(255,255,255,.6)">Tarih</label>
+                  <input type="date" id="cuzdan-tarih">
+                </div>
+              </div>
+              <div class="alan">
+                <label style="color:rgba(255,255,255,.6)">Ne oldu?</label>
+                <select id="cuzdan-tip">
+                  <option value="giris">Para girdi (+)</option>
+                  <option value="cikis">Para çıktı (−)</option>
+                </select>
+              </div>
+              <div class="alan">
+                <label style="color:rgba(255,255,255,.6)">Not (isteğe bağlı)</label>
+                <input type="text" id="cuzdan-not" placeholder="Örn: Market, sigara, eve gönderdim...">
+              </div>
+              <button class="btn btn-sari" id="btn-cuzdan-ekle">Kaydet</button>
+              <div style="font-size:12px;font-weight:700;color:rgba(255,255,255,.6);margin:16px 0 6px;text-transform:uppercase;letter-spacing:.06em">Hareketler</div>
+              <ul class="liste hareket-liste" id="liste-cuzdan-hareket"></ul>
+            </div>
           </div>
         </div>
         <div class="banka-slider-noktalar" id="banka-slider-noktalar">
@@ -288,62 +331,17 @@
       <div class="kart gizli" id="yenilik-kart" style="border-color:var(--sari)">
         <h2>🎁 Neler yeni?</h2>
         <ul style="padding-left:18px;font-size:13.5px;line-height:1.9">
-          <li><b>⬆️ Kartlar en üste alındı:</b> Bugünkü kazanç, Şirket/Cüzdan kartı ve Mesai kronometresi artık selamlamanın hemen altında — uyarı bildirimlerini geçmeden ilk bakışta görünüyorlar</li>
+          <li><b>📆 Haftalık takvim şeridi artık Şirket Hesap Kartı'nın içinde:</b> Ayrı bir "Bu hafta" kartı yerine, kaydırmalı Şirket kartını açtığında hemen orada — kimin ne kadar çalıştığı, ay sonu tahmini hep aynı yerde. Önemli uyarılar (maaş günü, kart borcu vb.) hâlâ Ana Ekranda, kaçırma diye</li>
         </ul>
         <button class="btn btn-cizgili" id="btn-yenilik-kapat">Süper, kapat</button>
       </div>
-      <div class="kart" style="padding:13px 14px">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
-          <h2 style="margin:0;font-size:17px">📆 Bu hafta</h2>
-          <button id="btn-takvim-ac" style="color:var(--sari);font-weight:600;font-size:13px">Takvimi aç ›</button>
-        </div>
-        <div class="hafta-serit" id="hafta-serit"></div>
-        <div id="tahmin-kart" class="gizli" style="margin-top:12px;background:var(--girdi);border:1.5px solid var(--cizgi);border-radius:12px;padding:11px 14px;font-size:13.5px;line-height:1.6"></div>
-        <div id="maas-kart" class="gizli" style="margin-top:10px;background:var(--vurgu-zemin);border:1.5px solid var(--sari);border-radius:12px;padding:11px 14px;font-size:13.5px;font-weight:700"></div>
-        <div id="kart-uyari" class="gizli" style="margin-top:10px;background:var(--girdi);border:1.5px solid var(--sari);border-radius:12px;padding:11px 14px;font-size:13.5px;font-weight:700;cursor:pointer"></div>
-        <div id="borc-uyari" class="gizli" style="margin-top:10px;background:var(--girdi);border:1.5px solid var(--gelmedi);border-radius:12px;padding:11px 14px;font-size:13.5px;font-weight:700;cursor:pointer"></div>
-        <div id="belge-uyari-kart" class="gizli" style="margin-top:10px;background:var(--girdi);border:1.5px solid var(--sari);border-radius:12px;padding:11px 14px;font-size:13.5px;font-weight:700"></div>
-      </div>
+      <div id="maas-kart" class="gizli" style="margin-top:10px;background:var(--vurgu-zemin);border:1.5px solid var(--sari);border-radius:12px;padding:11px 14px;font-size:13.5px;font-weight:700"></div>
+      <div id="kart-uyari" class="gizli" style="margin-top:10px;background:var(--girdi);border:1.5px solid var(--sari);border-radius:12px;padding:11px 14px;font-size:13.5px;font-weight:700;cursor:pointer"></div>
+      <div id="borc-uyari" class="gizli" style="margin-top:10px;background:var(--girdi);border:1.5px solid var(--gelmedi);border-radius:12px;padding:11px 14px;font-size:13.5px;font-weight:700;cursor:pointer"></div>
+      <div id="belge-uyari-kart" class="gizli" style="margin-top:10px;background:var(--girdi);border:1.5px solid var(--sari);border-radius:12px;padding:11px 14px;font-size:13.5px;font-weight:700"></div>
       <div class="kart gizli" id="ana-hedef-kart">
         <h2 style="margin-bottom:10px">🎯 Bu ayın hedefi</h2>
         <div id="ana-hedef-icerik"></div>
-      </div>
-      <div class="kart">
-        <h2>➕ Cüzdan hareketi ekle</h2>
-        <div style="display:flex;gap:10px">
-          <div class="alan" style="flex:1">
-            <label>Tutar (TL)</label>
-            <input type="text" id="cuzdan-tutar" inputmode="decimal" placeholder="500">
-            <div style="display:flex;gap:6px;margin-top:8px;flex-wrap:wrap">
-              <button class="eksik-cip tutar-cip" data-hedef="cuzdan-tutar" data-deger="100" style="font-size:12px;padding:7px 11px">100</button>
-              <button class="eksik-cip tutar-cip" data-hedef="cuzdan-tutar" data-deger="250" style="font-size:12px;padding:7px 11px">250</button>
-              <button class="eksik-cip tutar-cip" data-hedef="cuzdan-tutar" data-deger="500" style="font-size:12px;padding:7px 11px">500</button>
-              <button class="eksik-cip tutar-cip" data-hedef="cuzdan-tutar" data-deger="1000" style="font-size:12px;padding:7px 11px">1.000</button>
-            </div>
-          </div>
-          <div class="alan" style="flex:1">
-            <label>Tarih</label>
-            <input type="date" id="cuzdan-tarih">
-          </div>
-        </div>
-        <div style="display:flex;gap:10px">
-          <div class="alan" style="flex:1">
-            <label>Ne oldu?</label>
-            <select id="cuzdan-tip">
-              <option value="giris">Para girdi (+)</option>
-              <option value="cikis">Para çıktı (−)</option>
-            </select>
-          </div>
-        </div>
-        <div class="alan">
-          <label>Not (isteğe bağlı)</label>
-          <input type="text" id="cuzdan-not" placeholder="Örn: Market, sigara, eve gönderdim...">
-        </div>
-        <button class="btn btn-sari" id="btn-cuzdan-ekle">Kaydet</button>
-      </div>
-      <div class="kart">
-        <h2>💳 Cüzdan hareketleri</h2>
-        <ul class="liste hareket-liste" id="liste-cuzdan-hareket"></ul>
       </div>
       <div style="text-align:center;padding:18px 10px 6px;color:var(--soluk);font-size:12px;line-height:1.9">
         <b style="color:var(--sari)">SERKAN KARAKAŞ</b> tarafından geliştirilmiştir 👷<br>
@@ -818,6 +816,10 @@
         <h2>💳 Kart ekle</h2>
         <p style="font-size:12px;color:var(--soluk);margin-bottom:12px">🔒 Kart NUMARANI değil, sadece takma adını yaz — bu uygulama kart numarası istemez, saklamaz.</p>
         <div style="display:flex;gap:8px">
+          <div class="alan" style="flex:1">
+            <label>Banka</label>
+            <input type="text" id="kart-banka" placeholder="Örn: Garanti BBVA">
+          </div>
           <div class="alan" style="flex:1.4">
             <label>Kartın adı</label>
             <input type="text" id="kart-ad" placeholder="Örn: Bonus, Axess...">
@@ -843,6 +845,37 @@
         </p>
       </div>
     </section>
+
+    <!-- ===== KART DETAY MODALI ===== -->
+    <div class="alt-sayfa" id="kart-detay-modal" style="max-height:88vh;overflow-y:auto">
+      <div class="tutamak"></div>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+        <h3 id="kd-baslik" style="margin:0">Kart detayı</h3>
+        <button id="btn-kart-detay-kapat" style="font-size:20px;color:var(--soluk);min-width:44px;min-height:44px">✕</button>
+      </div>
+      <div class="banka-kart sirket">
+        <div class="kart-ust"><span id="kd-banka">🏦 Banka</span></div>
+        <div class="bakiye" id="kd-borc">—</div>
+        <div class="kart-alt" id="kd-vade"></div>
+      </div>
+      <button class="btn btn-sari" id="btn-kd-odeme-ekle" style="margin-top:14px">💰 Ödeme işle</button>
+      <div class="gizli" id="kd-odeme-form" style="margin-top:12px;background:var(--girdi);border:1.5px solid var(--cizgi);border-radius:12px;padding:14px">
+        <div class="alan">
+          <label>Ne kadar ödedin? (TL)</label>
+          <input type="text" id="kd-odeme-tutar" inputmode="decimal" placeholder="Örn: 2000">
+        </div>
+        <div style="display:flex;gap:8px">
+          <button class="btn btn-sari" id="btn-kd-odeme-kaydet" style="flex:1">Kaydet</button>
+          <button class="btn btn-cizgili" id="btn-kd-odeme-vazgec" style="flex:1">Vazgeç</button>
+        </div>
+      </div>
+      <div style="margin-top:16px">
+        <h2 style="font-size:15px">📋 Ödeme geçmişi</h2>
+        <ul class="liste" id="kd-odeme-liste"></ul>
+      </div>
+      <button class="btn btn-cizgili" id="btn-kd-duzenle" style="margin-top:16px">✏️ Kartı düzenle</button>
+      <button class="btn btn-cizgili" id="btn-kd-sil" style="margin-top:8px;color:var(--gelmedi)">🗑️ Kartı sil</button>
+    </div>
 
     <!-- ===== GÖRÜNÜM: PLANLAR ===== -->
     <section id="goruntu-planlar" class="gizli">
@@ -1416,7 +1449,7 @@
         <p style="font-size:13px;color:var(--soluk);margin-bottom:12px">Hata mı gördün, fikrin mi var? Direkt geliştiriciye ulaş:</p>
         <a class="btn btn-cizgili" style="display:block;text-align:center;text-decoration:none;margin-bottom:10px" href="https://wa.me/905051252339?text=Puantaj%20Defterim%20hakkında:" target="_blank">💬 WhatsApp'tan yaz</a>
         <a class="btn btn-cizgili" style="display:block;text-align:center;text-decoration:none" href="tel:05051252339">📞 0505 125 23 39</a>
-        <p style="font-size:11px;color:var(--soluk);margin-top:12px;text-align:center">Sürüm: 0.0.0.46 · Serkan Karakaş</p>
+        <p style="font-size:11px;color:var(--soluk);margin-top:12px;text-align:center">Sürüm: 0.0.0.49 · Serkan Karakaş</p>
       </div>
       <div class="kart">
         <h2>🔒 PIN kilidi</h2>
