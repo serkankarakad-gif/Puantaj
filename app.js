@@ -41,11 +41,19 @@ const esc = v => String(v==null ? "" : v).replace(/&/g,"&amp;").replace(/</g,"&l
    "1.234.567" → 1234567 · "2.5" → 2.5 · "5.000 TL" → 5000
    iPhone klavyesinde nokta olduğu için işçiler "2.500" diye binlik yazıyor;
    eskiden bu 2,5 TL sanılıyordu. Artık: nokta + tam 3 hane = binlik ayraç. */
-function sayi(v){
+function sayi(v, saatMiktarModu){
   let s = String(v==null ? "" : v).trim();
   if(!s) return 0;
   s = s.replace(/[^0-9.,-]/g, "");                 /* ₺, TL, boşluk vb. temizle */
   if(!s) return 0;
+  if(saatMiktarModu){
+    /* Saat/miktar alanlarında (mesai, artı, parça, gece mesaisi) "2.500" gibi
+       bir yazım HER ZAMAN "2,5" demektir — kimse 2500 saat mesai yapmaz.
+       Binlik ayracı varsayımı burada YAPILMAZ, nokta/virgül direkt ondalık sayılır. */
+    s = s.replace(",", ".");
+    const n2 = Number(s);
+    return isFinite(n2) ? n2 : 0;
+  }
   if(s.indexOf(",") > -1){
     const vParca = s.split(",");
     if(s.indexOf(".") === -1 && vParca.length === 2 && vParca[1].length === 3 && vParca[0] !== "0" && vParca[0] !== ""){
@@ -99,6 +107,7 @@ let ekipOzetSon = null;                // son ekip özeti (toplu rapor için)
 let yilSon = null;                     // son yüklenen yıl özeti (paylaşım için)
 let sirketOzet = null;                 // tüm zamanlar {hakedis, alinan}
 let maaslarVeri = null;                // "Maaşlar" ekranı için ay bazlı veri {ay: {hak, alinan, gun, mesai, odemeler}}
+let havaVeriSon = null;                // en son çekilen hava durumu verisi (tam ekran için)
 let dinleyiciGirdi=null, dinleyiciOdeme=null, dinleyiciAyar=null, dinleyiciBorc=null, dinleyiciCuzdan=null, dinleyiciNot=null, dinleyiciMasraf=null, dinleyiciEkip=null;
 let modalTarih=null, modalDurum=null;
 let aktifGoruntu="puantaj";
@@ -127,7 +136,14 @@ function basla(){
   aktifAy = bugun.getMonth();
 
   auth.onAuthStateChanged(u=>{
-    if(!u || (kullanici && kullanici.uid !== u.uid)) tumVeriBirak();
+    /* Çıkış VEYA farklı bir hesaba geçiş (aynı cihazda ara çıkış yapılmadan
+       doğrudan başka hesaba giriş) — her iki durumda da ESKİ hesabın TÜM
+       dinleyicilerini (sadece "tüm veri" değil, hepsini) kapat; yoksa iki
+       hesabın verisi aynı anda karışabilir. */
+    if(!u || (kullanici && kullanici.uid !== u.uid)){
+      tumVeriBirak();
+      dinleyicileriKapat();
+    }
     kullanici = u;
     $("#ekran-yukleniyor").classList.add("gizli");
     if(u){
@@ -170,7 +186,6 @@ function basla(){
       const anaBtn = document.querySelector('[data-goruntu="ana"]');
       if(anaBtn) anaBtn.click();
     }else{
-      dinleyicileriKapat();
       $("#ekran-uygulama").classList.add("gizli");
       $("#ekran-giris").classList.remove("gizli");
     }
@@ -188,7 +203,7 @@ function dinleyicileriKapat(){
   if(dinleyiciMasraf) dinleyiciMasraf();
   if(dinleyiciEkip) dinleyiciEkip();
   if(dinleyiciPlan) dinleyiciPlan();
-  dinleyiciGirdi=dinleyiciOdeme=dinleyiciAyar=dinleyiciBorc=dinleyiciCuzdan=dinleyiciNot=dinleyiciMasraf=dinleyiciEkip=dinleyiciPlan=null;
+  dinleyiciKart=dinleyiciGirdi=dinleyiciOdeme=dinleyiciAyar=dinleyiciBorc=dinleyiciCuzdan=dinleyiciNot=dinleyiciMasraf=dinleyiciEkip=dinleyiciPlan=null;
   baslatmalariSifirla();  /* ertelenen dinleyiciler bir sonraki girişte tekrar başlayabilsin */
 }
 
@@ -1098,6 +1113,24 @@ function mesaiSinirCiz(buYilMesai){
       : " · Yıllık yasal sınıra <b>"+Math.round(kalan)+" saat</b> kaldı");
 }
 
+/* ---------- 🌤️ Hava durumu (tam ekran, zengin) ---------- */
+const HAVA_KOD = {
+  0:{g:["☀️","Açık"], n:["🌙","Açık (gece)"]},
+  1:{g:["🌤️","Az bulutlu"], n:["🌙","Az bulutlu (gece)"]},
+  2:{g:["⛅","Parçalı bulutlu"], n:["☁️","Parçalı bulutlu (gece)"]},
+  3:{g:["☁️","Kapalı"], n:["☁️","Kapalı"]},
+  45:{g:["🌫️","Sisli"], n:["🌫️","Sisli"]}, 48:{g:["🌫️","Kırağı sisi"], n:["🌫️","Kırağı sisi"]},
+  51:{g:["🌦️","Hafif çisenti"], n:["🌧️","Hafif çisenti"]}, 53:{g:["🌦️","Çisenti"], n:["🌧️","Çisenti"]}, 55:{g:["🌦️","Yoğun çisenti"], n:["🌧️","Yoğun çisenti"]},
+  61:{g:["🌧️","Hafif yağmur"], n:["🌧️","Hafif yağmur"]}, 63:{g:["🌧️","Yağmur"], n:["🌧️","Yağmur"]}, 65:{g:["🌧️","Kuvvetli yağmur"], n:["🌧️","Kuvvetli yağmur"]},
+  71:{g:["🌨️","Hafif kar"], n:["🌨️","Hafif kar"]}, 73:{g:["🌨️","Kar"], n:["🌨️","Kar"]}, 75:{g:["❄️","Yoğun kar"], n:["❄️","Yoğun kar"]},
+  80:{g:["🌦️","Sağanak"], n:["🌧️","Sağanak"]}, 81:{g:["🌧️","Kuvvetli sağanak"], n:["🌧️","Kuvvetli sağanak"]}, 82:{g:["⛈️","Şiddetli sağanak"], n:["⛈️","Şiddetli sağanak"]},
+  95:{g:["⛈️","Gök gürültülü fırtına"], n:["⛈️","Gök gürültülü fırtına"]}, 96:{g:["⛈️","Dolu ile fırtına"], n:["⛈️","Dolu ile fırtına"]}, 99:{g:["⛈️","Şiddetli fırtına"], n:["⛈️","Şiddetli fırtına"]}
+};
+function havaKodEtiket(kod, gunduzMu){
+  const k = HAVA_KOD[kod] || {g:["🌡️","Hava durumu"], n:["🌡️","Hava durumu"]};
+  return (gunduzMu===false) ? k.n : k.g;
+}
+
 function havaYukle(){
   if(!navigator.geolocation) return;
   try{
@@ -1105,23 +1138,112 @@ function havaYukle(){
       try{
         const u = "https://api.open-meteo.com/v1/forecast?latitude="+p.coords.latitude.toFixed(3)+
           "&longitude="+p.coords.longitude.toFixed(3)+
-          "&daily=precipitation_probability_max,temperature_2m_max&timezone=auto&forecast_days=2";
+          "&current=temperature_2m,weather_code,relative_humidity_2m,wind_speed_10m,is_day"+
+          "&hourly=temperature_2m,weather_code,is_day&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max,sunrise,sunset"+
+          "&timezone=auto&forecast_days=4";
         const r = await fetch(u);
         const d = await r.json();
-        const yagmur = d.daily && d.daily.precipitation_probability_max ? d.daily.precipitation_probability_max[1] : null;
-        const sicak = d.daily && d.daily.temperature_2m_max ? Math.round(d.daily.temperature_2m_max[1]) : null;
-        if(yagmur==null) return;
-        const el = $("#hava-kart");
-        el.style.display = "block";
-        if(yagmur>=50){
-          el.innerHTML = "🌧️ Yarın <b>%"+yagmur+" yağmur ihtimali</b> var"+(sicak!=null?" ("+sicak+"°C)":"")+" — şantiye belli olmaz, ustaya sor.";
-          el.style.borderColor = "var(--mesai)";
-        }else{
-          el.innerHTML = "☀️ Yarın hava iş için uygun görünüyor"+(sicak!=null?" — "+sicak+"°C":"")+", yağmur ihtimali %"+yagmur+".";
-        }
+        havaVeriSon = d;
+        havaOzetGoster(d);
       }catch(e){}
     }, ()=>{}, {timeout:8000, maximumAge:3600000});
   }catch(e){}
+}
+/* Ana ekrandaki eski küçük kart yerine — sadece yarın yağmur/uygunsa nazikçe uyarır */
+function havaOzetGoster(d){
+  const el = $("#hava-uyari-satir"); if(!el) return;
+  const yagmur = d.daily && d.daily.precipitation_probability_max ? d.daily.precipitation_probability_max[1] : null;
+  if(yagmur==null) return;
+  if(yagmur>=50){
+    el.innerHTML = "🌧️ Yarın <b>%"+yagmur+" yağmur ihtimali</b> — şantiye belli olmaz, ustaya sor. <span style='text-decoration:underline'>Detay ›</span>";
+    el.classList.remove("gizli");
+  }
+  havaHatirlatTamEkran(d);
+}
+/* Güne ilk giriş: tam ekran hava durumunu göster (günde 1 kez), X ile kapanır */
+function havaHatirlatTamEkran(d){
+  try{
+    const bugun = tarihId(new Date());
+    if(localStorage.getItem("havaGosterildiGun") === bugun) return;
+    localStorage.setItem("havaGosterildiGun", bugun);
+    havaTamEkranDoldur(d);
+    $("#hava-tam-ekran").classList.remove("gizli");
+  }catch(e){}
+}
+function havaTamEkranAc(){
+  if(havaVeriSon){ havaTamEkranDoldur(havaVeriSon); $("#hava-tam-ekran").classList.remove("gizli"); }
+  else{
+    toast("Hava durumu yükleniyor...");
+    if(!navigator.geolocation) return;
+    navigator.geolocation.getCurrentPosition(async p=>{
+      try{
+        const u = "https://api.open-meteo.com/v1/forecast?latitude="+p.coords.latitude.toFixed(3)+
+          "&longitude="+p.coords.longitude.toFixed(3)+
+          "&current=temperature_2m,weather_code,relative_humidity_2m,wind_speed_10m,is_day"+
+          "&hourly=temperature_2m,weather_code,is_day&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max,sunrise,sunset"+
+          "&timezone=auto&forecast_days=4";
+        const r = await fetch(u);
+        const d = await r.json();
+        havaVeriSon = d;
+        havaTamEkranDoldur(d);
+        $("#hava-tam-ekran").classList.remove("gizli");
+      }catch(e){ toast("Hava durumu alınamadı, internete bak 📡"); }
+    }, ()=> toast("Konum izni gerekiyor 📍"), {timeout:8000, maximumAge:3600000});
+  }
+}
+function havaTamEkranDoldur(d){
+  if(!d || !d.current) return;
+  const simdi = d.current;
+  const gunduzMu = simdi.is_day===1;
+  const [ikon, aciklama] = havaKodEtiket(simdi.weather_code, gunduzMu);
+  $("#hte-ikon").textContent = ikon;
+  $("#hte-sicaklik").textContent = Math.round(simdi.temperature_2m)+"°";
+  $("#hte-aciklama").textContent = aciklama;
+  /* Gündüz mavi gökyüzü, gece koyu/yıldızlı gradyan — gerçek saate göre değişir */
+  $("#hava-tam-ekran").style.background = gunduzMu
+    ? "linear-gradient(160deg,#1B4B91,#2F6FCB 45%,#5B93DD)"
+    : "linear-gradient(160deg,#050914,#0E1B33 45%,#1B2C4D)";
+  $("#hte-yildizlar").innerHTML = gunduzMu ? "" : "✨ ⭐ 🌟 ⭐ ✨ ⭐ 🌟 ⭐ ✨";
+  const bugunMin = d.daily ? Math.round(d.daily.temperature_2m_min[0]) : null;
+  const bugunMax = d.daily ? Math.round(d.daily.temperature_2m_max[0]) : null;
+  $("#hte-minmax").textContent = (bugunMin!=null ? bugunMin+"° / "+bugunMax+"°" : "");
+  $("#hte-detay").textContent = "💧 Nem %"+Math.round(simdi.relative_humidity_2m||0)+" · 💨 Rüzgar "+Math.round(simdi.wind_speed_10m||0)+" km/s";
+  /* Saatlik şerit: şu andan sonraki 6 saat — her saatin kendi gündüz/gece bilgisiyle */
+  const saatKap = $("#hte-saatlik");
+  saatKap.innerHTML = "";
+  if(d.hourly && d.hourly.time){
+    const suankiSaat = new Date();
+    let baslangic = d.hourly.time.findIndex(t=> new Date(t) > suankiSaat);
+    if(baslangic<0) baslangic = 0;
+    for(let i=baslangic; i<baslangic+6 && i<d.hourly.time.length; i++){
+      const t = new Date(d.hourly.time[i]);
+      const saatGunduzMu = d.hourly.is_day ? d.hourly.is_day[i]===1 : true;
+      const [ik] = havaKodEtiket(d.hourly.weather_code[i], saatGunduzMu);
+      const kutu = document.createElement("div");
+      kutu.style.cssText = "flex:1;text-align:center;display:flex;flex-direction:column;gap:4px;align-items:center";
+      kutu.innerHTML = "<div style='font-size:11px;color:rgba(255,255,255,.7)'>"+pad(t.getHours())+":00</div>"+
+        "<div style='font-size:20px'>"+ik+"</div>"+
+        "<div style='font-size:13px;font-weight:700'>"+Math.round(d.hourly.temperature_2m[i])+"°</div>";
+      saatKap.appendChild(kutu);
+    }
+  }
+  /* Günlük liste: bugün + sonraki 3 gün */
+  const gunKap = $("#hte-gunluk");
+  gunKap.innerHTML = "";
+  if(d.daily && d.daily.time){
+    d.daily.time.forEach((t,i)=>{
+      const tarih = new Date(t+"T12:00:00");
+      const [ik, ac] = havaKodEtiket(d.daily.weather_code[i]);
+      const etiket = i===0 ? "Bugün" : i===1 ? "Yarın" : GUNLER[tarih.getDay()];
+      const satir = document.createElement("div");
+      satir.style.cssText = "display:flex;align-items:center;justify-content:space-between;padding:9px 0;border-bottom:1px solid rgba(255,255,255,.12)";
+      satir.innerHTML =
+        "<span style='flex:1;font-weight:600'>"+etiket+"</span>"+
+        "<span style='flex:1;text-align:center'>"+ik+" "+ac+"</span>"+
+        "<span style='flex:1;text-align:right'>"+Math.round(d.daily.temperature_2m_min[i])+"° / "+Math.round(d.daily.temperature_2m_max[i])+"°</span>";
+      gunKap.appendChild(satir);
+    });
+  }
 }
 
 /* ---------- İş masrafları ---------- */
@@ -2265,9 +2387,9 @@ function gunPaylasMetni(){
   const tarihYazi = t.getDate()+" "+AYLAR[t.getMonth()]+" "+GUNLER[t.getDay()];
   const durumAd = {tam:"Tam yevmiye ✅", yarim:"Yarım yevmiye 🌗", gelmedi:"Gelmedim 🚫", izin:"İzinli 🏖️", saatlik:"Saatlik çalışma ⏱️"};
   const parcalar = [tarihYazi, durumAd[modalDurum] || modalDurum];
-  const mesai = sayi($("#mesai-saat").value);
+  const mesai = sayi($("#mesai-saat").value, true);
   if(mesai > 0) parcalar.push("+ "+mesai+" saat mesai");
-  const arti = sayi($("#gun-arti").value);
+  const arti = sayi($("#gun-arti").value, true);
   if(arti > 0) parcalar.push("+ "+arti+" gün içi artı");
   const santiye = $("#gun-santiye").value.trim();
   if(santiye) parcalar.push("📍 "+santiye);
@@ -3469,13 +3591,12 @@ async function anaYukle(){
       artiToplam += Number(v.arti)||0;
       if(doc.id.slice(0,4)===buYilOnEk) buYilMesai += Number(v.mesai)||0;
       if(girdiGun(v)>0 && new Date(doc.id+"T12:00:00").getDay()===0) pazarToplam++;
-      if(k>0) hareketler.push({tarih:doc.id, tutar:k, tip:"+", baslik:girisEtiket(v)+(v.santiye?" · "+v.santiye:"")});
+      if(k>0 && doc.id.slice(0,7)===buAyOnEk) hareketler.push({tarih:doc.id, tutar:k, tip:"+", baslik:girisEtiket(v)+(v.santiye?" · "+v.santiye:"")});
     });
     oSnap.forEach(doc=>{
       const v = doc.data();
       alinan += Number(v.tutar)||0;
-      { const ay7 = String(v.tarih||"").slice(0,7); if(ay7) aylikAlinan[ay7] = (aylikAlinan[ay7]||0) + (Number(v.tutar)||0); }
-      hareketler.push({tarih:v.tarih, tutar:Number(v.tutar)||0, tip:"-", baslik:odemeTurEtiket(v.tur)+" aldın"+(v.not?" · "+v.not:"")});
+      { const ay7 = String(v.tarih||"").slice(0,7); if(ay7) aylikAlinan[ay7] = (aylikAlinan[ay7]||0) + (Number(v.tutar)||0); if(ay7===buAyOnEk) hareketler.push({tarih:v.tarih, tutar:Number(v.tutar)||0, tip:"-", baslik:odemeTurEtiket(v.tur)+" aldın"+(v.not?" · "+v.not:"")}); }
     });
     sirketOzet = {hakedis, alinan};
     asistanVeri = {buAyHak, buAyGun, buAyMesai};
@@ -3513,7 +3634,7 @@ async function anaYukle(){
       const kalanTum = hakedis - alinan;
       if(ayarlar.uyariEsik>0 && kalanTum >= ayarlar.uyariEsik){
         esikEl.classList.remove("gizli");
-        esikEl.innerHTML = "💰 Şirkette <b>"+paraFmt(kalanTum)+"</b> biriktin (eşiğin: "+paraFmt(ayarlar.uyariEsik)+"). Hakedişini istemenin vakti gelmiş olabilir 😉";
+        esikEl.innerHTML = "💰 Şirkette <b>toplamda "+paraFmt(kalanTum)+"</b> biriktin (tüm aylar dahil, eşiğin: "+paraFmt(ayarlar.uyariEsik)+"). Hakedişini istemenin vakti gelmiş olabilir — \"Maaşlar\"dan hangi ayların eksik olduğuna bakabilirsin 😉";
       }else esikEl.classList.add("gizli");
     }
     const sirketKart = $("#sirket-bakiye").closest(".banka-kart");
@@ -4195,14 +4316,14 @@ function modalKazancGuncelle(){
     const secId = $("#gun-santiye-sec").value || "";
     const temp = {
       durum: saatlikMod ? "saatlik" : modalDurum,
-      mesai: sayi($("#mesai-saat").value)||0,
-      arti: sayi($("#gun-arti").value)||0,
-      parcaMiktar: sayi($("#gun-parca-miktar").value)||0,
-      geceMesai: sayi($("#gun-gece-mesai").value)||0,
+      mesai: sayi($("#mesai-saat").value, true)||0,
+      arti: sayi($("#gun-arti").value, true)||0,
+      parcaMiktar: sayi($("#gun-parca-miktar").value, true)||0,
+      geceMesai: sayi($("#gun-gece-mesai").value, true)||0,
       santiyeId: secId,
       ...guncelOranlar(secId, modalTarih)
     };
-    if(saatlikMod) temp.saat = sayi($("#gun-saat").value)||0;
+    if(saatlikMod) temp.saat = sayi($("#gun-saat").value, true)||0;
     const toplam = girdiKazanc(temp);
     $("#gun-kazanc-tutar").textContent = paraFmt(toplam);
     /* 🧾 Kalem kalem döküm — adam neyin ne kadar kazandırdığını görsün */
@@ -5301,6 +5422,13 @@ function acikPencereKapat(){
     const el = document.getElementById(id);
     if(el && el.classList.contains("acik")){ el.classList.remove("acik"); kapandi = true; }
   });
+  /* ay-detay-modal ("Maaşlar" ekranındaki ay detayı) alt-sayfa değil, ayrı bir
+     sınıfla (acik) açılıyor — onu da geri tuşu listesine dahil et */
+  const ayDetay = document.getElementById("ay-detay-modal");
+  if(ayDetay && ayDetay.classList.contains("acik")){ ayDetayKapat(); kapandi = true; }
+  /* Hava durumu tam ekranı da "gizli" class'ıyla açılıp kapanıyor — aynı şekilde dahil et */
+  const havaTE = document.getElementById("hava-tam-ekran");
+  if(havaTE && !havaTE.classList.contains("gizli")){ havaTE.classList.add("gizli"); kapandi = true; }
   const cek = document.getElementById("cekmece");
   if(cek && cek.classList.contains("acik")){
     cek.classList.remove("acik");
@@ -5502,7 +5630,10 @@ document.addEventListener("DOMContentLoaded", ()=>{
     });
   });
 
-  $("#btn-geri").addEventListener("click", ()=> gorunumSec("ana"));
+  $("#btn-geri").addEventListener("click", ()=>{
+    if(acikPencereKapat()) return;   /* önce açık bir modal/pencere varsa onu kapat, direkt Ana ekrana atlama */
+    gorunumSec("ana");
+  });
 
   /* 📰 Gündem olayları */
   document.querySelectorAll("#haber-sekmeler button").forEach(b=>{
@@ -5783,28 +5914,28 @@ document.addEventListener("DOMContentLoaded", ()=>{
     b.addEventListener("click", ()=>{ modalDurum=b.dataset.durum; durumButonYenile(); });
   });
   $("#mesai-arti").addEventListener("click", ()=>{
-    $("#mesai-saat").value = Math.min(16, (sayi($("#mesai-saat").value)||0) + 0.5);
+    $("#mesai-saat").value = Math.min(16, (sayi($("#mesai-saat").value, true)||0) + 0.5);
   });
   $("#mesai-eksi").addEventListener("click", ()=>{
-    $("#mesai-saat").value = Math.max(0, (sayi($("#mesai-saat").value)||0) - 0.5);
+    $("#mesai-saat").value = Math.max(0, (sayi($("#mesai-saat").value, true)||0) - 0.5);
   });
   $("#saat-arti").addEventListener("click", ()=>{
-    $("#gun-saat").value = Math.min(16, (sayi($("#gun-saat").value)||0) + 0.5);
+    $("#gun-saat").value = Math.min(16, (sayi($("#gun-saat").value, true)||0) + 0.5);
   });
   $("#saat-eksi").addEventListener("click", ()=>{
-    $("#gun-saat").value = Math.max(0, (sayi($("#gun-saat").value)||0) - 0.5);
+    $("#gun-saat").value = Math.max(0, (sayi($("#gun-saat").value, true)||0) - 0.5);
   });
   $("#arti-arti").addEventListener("click", ()=>{
-    $("#gun-arti").value = Math.min(9, (sayi($("#gun-arti").value)||0) + 0.5);
+    $("#gun-arti").value = Math.min(9, (sayi($("#gun-arti").value, true)||0) + 0.5);
   });
   $("#arti-eksi").addEventListener("click", ()=>{
-    $("#gun-arti").value = Math.max(0, (sayi($("#gun-arti").value)||0) - 0.5);
+    $("#gun-arti").value = Math.max(0, (sayi($("#gun-arti").value, true)||0) - 0.5);
   });
   $("#gece-arti").addEventListener("click", ()=>{
-    $("#gun-gece-mesai").value = Math.min(16, (sayi($("#gun-gece-mesai").value)||0) + 0.5);
+    $("#gun-gece-mesai").value = Math.min(16, (sayi($("#gun-gece-mesai").value, true)||0) + 0.5);
   });
   $("#gece-eksi").addEventListener("click", ()=>{
-    $("#gun-gece-mesai").value = Math.max(0, (sayi($("#gun-gece-mesai").value)||0) - 0.5);
+    $("#gun-gece-mesai").value = Math.max(0, (sayi($("#gun-gece-mesai").value, true)||0) - 0.5);
   });
 
   /* Borç defteri */
@@ -5857,17 +5988,17 @@ document.addEventListener("DOMContentLoaded", ()=>{
     const saatlikMod = ayarlar.calismaTipi==="saatlik";
     const veri = {
       durum: saatlikMod ? "saatlik" : modalDurum,
-      mesai: sayi($("#mesai-saat").value)||0,
-      arti: Math.max(0, Math.round((sayi($("#gun-arti").value)||0)*2)/2),
+      mesai: sayi($("#mesai-saat").value, true)||0,
+      arti: Math.max(0, Math.round((sayi($("#gun-arti").value, true)||0)*2)/2),
       santiyeId: secId,
       santiye: $("#gun-santiye").value.trim() || (s ? s.ad : (ayarlar.santiye||"")),
       not: $("#gun-not").value.trim(),
       ...guncelOranlar(secId, modalTarih),
       guncelleme: firebase.firestore.FieldValue.serverTimestamp()
     };
-    if(saatlikMod) veri.saat = sayi($("#gun-saat").value)||0;
-    if((ayarlar.parcaFiyat||0) > 0) veri.parcaMiktar = Math.max(0, sayi($("#gun-parca-miktar").value)||0);
-    veri.geceMesai = Math.max(0, Math.round((sayi($("#gun-gece-mesai").value)||0)*2)/2);
+    if(saatlikMod) veri.saat = sayi($("#gun-saat").value, true)||0;
+    if((ayarlar.parcaFiyat||0) > 0) veri.parcaMiktar = Math.max(0, sayi($("#gun-parca-miktar").value, true)||0);
+    veri.geceMesai = Math.max(0, Math.round((sayi($("#gun-gece-mesai").value, true)||0)*2)/2);
     if(gunKonum) veri.konum = gunKonum;
     const bs = $("#gun-bas-saat").value, bts = $("#gun-bit-saat").value;
     if(bs) veri.basSaat = bs;
@@ -5969,7 +6100,7 @@ document.addEventListener("DOMContentLoaded", ()=>{
 
     if(ic("kaç para alacağım","ne kadar alacağım","alacağım ne","kalan para","alacak","kaç param","param ne kadar")){
       let m = kalan > 0
-        ? "Şirketten alacağın " + paraFmt(kalan) + " " + ad + " 💰 (Toplam hakediş " + paraFmt(oz.hakedis) + ", aldığın " + paraFmt(oz.alinan) + ")"
+        ? "Toplamda (tüm aylar dahil) şirketten alacağın " + paraFmt(kalan) + " " + ad + " 💰 (Toplam hakediş " + paraFmt(oz.hakedis) + ", aldığın " + paraFmt(oz.alinan) + "). Hangi ayın eksik olduğunu görmek için Maaşlar'a bak."
         : kalan === 0
         ? "Şu an alacağın görünmüyor, hesap sıfır — aldıkların hakedişini karşılamış."
         : "Dikkat: aldığın para hakedişinden " + paraFmt(Math.abs(kalan)) + " fazla görünüyor. Avans borcun var demektir 😬";
@@ -6244,7 +6375,7 @@ document.addEventListener("DOMContentLoaded", ()=>{
   });
 
   /* Neler yeni kartı */
-  const YENILIK_SURUM = "0.0.0.35";
+  const YENILIK_SURUM = "0.0.0.41";
   try{ $("#cekmece-surum").textContent = "Puantaj Defterim " + YENILIK_SURUM; }catch(e){}
   try{
     if(localStorage.getItem("yenilik")!==YENILIK_SURUM) $("#yenilik-kart").classList.remove("gizli");
@@ -6830,6 +6961,14 @@ document.addEventListener("DOMContentLoaded", ()=>{
 
   /* Ay detay modalı (Maaşlar) */
   $("#btn-ay-detay-kapat").addEventListener("click", ayDetayKapat);
+
+  /* Hava durumu tam ekran */
+  $("#btn-hava-menu").addEventListener("click", ()=>{
+    cekmeceAc(false);
+    havaTamEkranAc();
+  });
+  $("#hava-uyari-satir").addEventListener("click", havaTamEkranAc);
+  $("#btn-hava-kapat").addEventListener("click", ()=> $("#hava-tam-ekran").classList.add("gizli"));
   $("#btn-ay-detay-odeme-ekle").addEventListener("click", ()=>{
     const ay = aktifAyDetay;
     ayDetayKapat();
@@ -7182,18 +7321,13 @@ document.addEventListener("DOMContentLoaded", ()=>{
     }catch(e){ hataGoster(e); }
   });
 
-  /* PWA: ana ekrana tam uygulama gibi kurulsun */
-  try{
-    const ikon = 'data:image/svg+xml,' + encodeURIComponent(
-      '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><rect width="512" height="512" rx="100" fill="#FFC400"/><text x="256" y="340" font-size="280" text-anchor="middle">👷</text></svg>');
-    const man = {
-      name:"Puantaj Defterim", short_name:"Puantaj",
-      start_url: location.pathname, scope: location.pathname,
-      display:"standalone", background_color:"#17181C", theme_color:"#17181C",
-      icons:[{src:ikon, sizes:"512x512", type:"image/svg+xml", purpose:"any"}]
-    };
-    $("#manifest-link").href = URL.createObjectURL(new Blob([JSON.stringify(man)],{type:"application/manifest+json"}));
-  }catch(e){}
+  /* Not: Eskiden burada JS ile (#manifest-link üzerinden) ikinci, ayrı bir
+     manifest üretilip sayfaya enjekte ediliyordu — gerçek manifest.webmanifest
+     dosyamız zaten var ve daha eksiksiz (düzgün PNG ikonlar, kısayollar vb).
+     İki farklı manifest'in aynı anda var olması, Android'in kurulu PWA'yı
+     "güvenilir" sayıp saymama kontrolünü şaşırtabiliyordu — bu da ana ekrandan
+     açarken bazen Chrome/Google arayüzünün belirip sonra uygulamaya geçmesine
+     yol açmış olabilir. Kaldırıldı, artık tek ve gerçek manifest kullanılıyor. */
 
   /* PWA: "Ana ekrana ekle" butonu — iOS'ta otomatik kurulum sorusu çıkmadığı için
      elle rehber gösteriyoruz, Android/Chrome'da varsa gerçek kurulum penceresini açıyoruz. */

@@ -20,7 +20,6 @@
 ">
 <meta name="theme-color" content="#17181C">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<link rel="manifest" id="manifest-link">
 <title>Puantaj Defterim</title>
 
 <!-- ================= iOS / Safari "Ana ekrana ekle" desteği ================= -->
@@ -154,6 +153,7 @@
       <li class="menu-grup" data-grup-baslik="gunluk"><span>📅 GÜNLÜK İŞLER</span><span class="menu-grup-ok">▾</span></li>
       <li data-grup="gunluk"><button data-goruntu="puantaj"><span class="ikon">📅</span> Puantaj çizelgesi</button></li>
       <li data-grup="gunluk"><button data-goruntu="notlar"><span class="ikon">📝</span> Not defterim</button></li>
+      <li data-grup="gunluk"><button id="btn-hava-menu"><span class="ikon">🌤️</span> Hava Durumu</button></li>
       <li data-grup="gunluk"><button data-goruntu="arama"><span class="ikon">🔍</span> Kayıt ara</button></li>
 
       <li class="menu-grup" data-grup-baslik="para"><span>💰 PARA İŞLERİ</span><span class="menu-grup-ok">▾</span></li>
@@ -231,7 +231,7 @@
         <div class="alt" id="selam-alt">—</div>
         <div class="alt" id="gunun-soz" style="margin-top:6px;color:var(--sari);font-style:italic"></div>
       </div>
-      <div class="kart" id="hava-kart" style="display:none;padding:12px 14px;font-size:14px;font-weight:600"></div>
+      <div class="gizli" id="hava-uyari-satir" style="background:var(--girdi);border:1.5px solid var(--mesai);border-radius:12px;padding:11px 14px;font-size:13.5px;margin-bottom:14px;cursor:pointer"></div>
       <div class="kart" id="gunun-karti" style="display:none;padding:14px">
         <div id="gk-selam" style="font-weight:800;font-size:15.5px;margin-bottom:6px"></div>
         <div id="gk-icerik" style="font-size:13.5px;line-height:1.7;color:var(--soluk)"></div>
@@ -248,7 +248,7 @@
       <div class="kart gizli" id="yenilik-kart" style="border-color:var(--sari)">
         <h2>🎁 Neler yeni?</h2>
         <ul style="padding-left:18px;font-size:13.5px;line-height:1.9">
-          <li><b>💰 Maaşlar ay detayı zenginleşti:</b> "Çalışma" bölümü artık sadece gün/saat sayısı değil, o ay işlediğin HER GÜNÜ tek tek listeliyor (tarih, durum, mesai, kazanç). Ödeme listesinde artık gün adı, "3 gün önce" gibi göreli tarih ve dekont göstergesi de var</li>
+          <li><b>🌙 Hava durumu artık gündüz/geceyi biliyor:</b> Gerçek saatine göre gündüzse güneş/bulut, geceyse ay ve yıldızlar görünüyor — hem büyük ikon hem arka plan rengi (mavi gökyüzü / koyu gece) hem saatlik tahmin şeridindeki her saat kendi gündüz/gece durumuna göre değişiyor</li>
         </ul>
         <button class="btn btn-cizgili" id="btn-yenilik-kapat">Süper, kapat</button>
       </div>
@@ -432,6 +432,29 @@
       </div>
       <ul class="liste" id="liste-maaslar"></ul>
     </section>
+
+    <!-- ===== TAM EKRAN HAVA DURUMU ===== -->
+    <div class="gizli" id="hava-tam-ekran" style="position:fixed;inset:0;z-index:200;background:linear-gradient(160deg,#1B4B91,#2F6FCB 45%,#5B93DD);color:#fff;overflow-y:auto">
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:18px 18px 0">
+        <div style="font-size:12px;letter-spacing:.08em;text-transform:uppercase;opacity:.8">🌤️ Hava Durumu</div>
+        <button id="btn-hava-kapat" style="color:#fff;font-size:22px;min-width:44px;min-height:44px;background:rgba(255,255,255,.15);border-radius:50%">✕</button>
+      </div>
+      <div id="hte-yildizlar" style="text-align:center;font-size:13px;opacity:.5;letter-spacing:8px;height:16px;overflow:hidden"></div>
+      <div style="text-align:center;padding:8px 20px 10px">
+        <div id="hte-ikon" style="font-size:64px;line-height:1">☀️</div>
+        <div id="hte-sicaklik" style="font-family:'Saira Condensed';font-size:72px;font-weight:800;line-height:1;margin-top:4px">—</div>
+        <div id="hte-aciklama" style="font-size:17px;font-weight:600;margin-top:4px">—</div>
+        <div id="hte-minmax" style="font-size:14px;opacity:.85;margin-top:6px"></div>
+        <div id="hte-detay" style="font-size:13px;opacity:.75;margin-top:8px"></div>
+      </div>
+      <div style="background:rgba(0,0,0,.15);border-radius:18px 18px 0 0;margin-top:16px;padding:16px 18px;min-height:50vh">
+        <div style="font-size:12px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;opacity:.75;margin-bottom:10px">Sonraki saatler</div>
+        <div id="hte-saatlik" style="display:flex;gap:6px;padding-bottom:14px;border-bottom:1px solid rgba(255,255,255,.15);margin-bottom:14px"></div>
+        <div style="font-size:12px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;opacity:.75;margin-bottom:6px">Önümüzdeki günler</div>
+        <div id="hte-gunluk"></div>
+        <p style="font-size:11.5px;opacity:.6;margin-top:16px;text-align:center">Veri: Open-Meteo · Konumuna göre tahmini değerler</p>
+      </div>
+    </div>
 
     <!-- ===== AY DETAY MODALI (Maaşlar) ===== -->
     <div class="alt-sayfa" id="ay-detay-modal" style="max-height:88vh;overflow-y:auto">
@@ -1393,7 +1416,7 @@
         <p style="font-size:13px;color:var(--soluk);margin-bottom:12px">Hata mı gördün, fikrin mi var? Direkt geliştiriciye ulaş:</p>
         <a class="btn btn-cizgili" style="display:block;text-align:center;text-decoration:none;margin-bottom:10px" href="https://wa.me/905051252339?text=Puantaj%20Defterim%20hakkında:" target="_blank">💬 WhatsApp'tan yaz</a>
         <a class="btn btn-cizgili" style="display:block;text-align:center;text-decoration:none" href="tel:05051252339">📞 0505 125 23 39</a>
-        <p style="font-size:11px;color:var(--soluk);margin-top:12px;text-align:center">Sürüm: 0.0.0.35 · Serkan Karakaş</p>
+        <p style="font-size:11px;color:var(--soluk);margin-top:12px;text-align:center">Sürüm: 0.0.0.41 · Serkan Karakaş</p>
       </div>
       <div class="kart">
         <h2>🔒 PIN kilidi</h2>
