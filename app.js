@@ -35,6 +35,20 @@ const pad = n => String(n).padStart(2,"0");
    kaçış (escape) et — başka birinin notu/ismi ekrana zararlı kod olarak
    basılmasın diye (örn. "Herkes" ekranında başka bir hesabın verisi). */
 const esc = v => String(v==null ? "" : v).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
+/* Ana ekrandaki tekil uyarı satırlarını (tatil/dün/eşik/kapanış/maaş/kart/borç/belge)
+   TEK bir "Bildirimler" kutusu içinde birleştirdik — her satır kendi
+   göster/gizle mantığını korur, bu fonksiyon sadece dıştaki kutunun en az
+   bir satır aktifse görünmesini sağlar. Her satırı gösteren/gizleyen kod
+   kendi işini bitirince bunu çağırır. */
+function bildirimKutusuGuncelle(){
+  const kutu = document.querySelector("#bildirim-kutusu"); if(!kutu) return;
+  const satirlar = ["tatil-kart","dun-kart","esik-uyari","kapanis-uyari","maas-kart","kart-uyari","borc-uyari","belge-uyari-kart"];
+  const varMi = satirlar.some(id=>{
+    const el = document.getElementById(id);
+    return el && !el.classList.contains("gizli");
+  });
+  kutu.classList.toggle("gizli", !varMi);
+}
 
 /* iOS/Türkçe klavye dostu sayı okuma:
    "2,5" → 2.5 · "1.250,75" → 1250.75 · "5.000" → 5000 (binlik nokta!)
@@ -416,6 +430,7 @@ function kartCiz(){
         (yakin.length > 1 ? " (+"+(yakin.length-1)+" kart daha)" : "") + " — dokun ›";
       uy.classList.remove("gizli");
     }else uy.classList.add("gizli");
+    bildirimKutusuGuncelle();
   }
 }
 
@@ -552,6 +567,7 @@ function borcCiz(){
         (alacak ? " ("+alacak+" alacağın gecikmiş!)" : "")+" — dokun, borç defterine git ›";
       uy.classList.remove("gizli");
     }else uy.classList.add("gizli");
+    bildirimKutusuGuncelle();
   }
 }
 
@@ -600,7 +616,7 @@ function belgeListCiz(){
   const kart = $("#belge-uyari-kart");
   if(!belgeler.length){
     ul.innerHTML = '<div class="bos-mesaj" style="padding:14px">Henüz belge eklemedin (ehliyet, SRC, MYK ustalık belgesi vb.)</div>';
-    if(kart) kart.classList.add("gizli");
+    if(kart){ kart.classList.add("gizli"); bildirimKutusuGuncelle(); }
     return;
   }
   const sirali = [...belgeler].sort((a,b)=> (a.tarih||"").localeCompare(b.tarih||""));
@@ -632,6 +648,7 @@ function belgeListCiz(){
         kritik.map(b=> esc(b.ad)+" ("+(belgeGunKalan(b.tarih)<0 ? "doldu" : belgeGunKalan(b.tarih)+" gün")+")").join(", ");
       kart.classList.remove("gizli");
     }else kart.classList.add("gizli");
+    bildirimKutusuGuncelle();
   }
 }
 /* Belge süresi yaklaşınca günde 1 kez yerel bildirimle hatırlat */
@@ -3651,6 +3668,7 @@ async function anaYukle(){
         esikEl.classList.remove("gizli");
         esikEl.innerHTML = "💰 Şirkette <b>toplamda "+paraFmt(kalanTum)+"</b> biriktin (tüm aylar dahil, eşiğin: "+paraFmt(ayarlar.uyariEsik)+"). Hakedişini istemenin vakti gelmiş olabilir — \"Maaşlar\"dan hangi ayların eksik olduğuna bakabilirsin 😉";
       }else esikEl.classList.add("gizli");
+      bildirimKutusuGuncelle();
     }
     const sirketKart = $("#sirket-bakiye").closest(".banka-kart");
     if(sirketKart) sirketKart.classList.add("kart-parla");
@@ -3686,6 +3704,7 @@ async function anaYukle(){
           : "🎉 <b>Yarın resmi tatil: " + yarinT + "</b><br>Çalışacaksan zamlı ücret hakkın var; tatil yapacaksan şimdiden iyi bayramlar usta! 🙌";
         tatilKrt.classList.remove("gizli");
       }else tatilKrt.classList.add("gizli");
+      bildirimKutusuGuncelle();
     }
     aksamDurt(bugunIsli);
     /* 📌 Dün hatırlatıcısı: aktif kullanıcıysa ve dün boşsa */
@@ -3699,6 +3718,7 @@ async function anaYukle(){
       const goster = aktifKullanici && islenenSon7.indexOf(dunId) === -1 && (!dunPazar || pazarCalisan);
       dunKart.classList.toggle("gizli", !goster);
       dunKart.dataset.dun = dunId;
+      bildirimKutusuGuncelle();
     }
     /* 🎉 İşe giriş yıldönümü */
     const ydKart = $("#yildonumu-kart");
@@ -3728,6 +3748,7 @@ async function anaYukle(){
           : "💸 Maaş gününe <b style='color:var(--sari)'>"+kg+" gün</b> kaldı";
         mKart.classList.remove("gizli");
       }
+      bildirimKutusuGuncelle();
     }
     if(buAyGun>0 && buAyHak<=0 && !(ayarlar.yevmiye>0) && !(ayarlar.saatUcret>0)){
       $("#sirket-alt").innerHTML = "⚠️ <b>"+buAyGun+" günün işli ama yevmiyen girili değil!</b> Ayarlar → Ücret ayarları'ndan günlük yevmiyeni yaz, paraların hemen görünsün.";
@@ -3899,6 +3920,7 @@ function anaSelamCiz(){
       kEl.classList.remove("gizli");
       kEl.innerHTML = "🔒 <b>Geçen ay hâlâ açık.</b> Hesabı bittiyse "+AYLAR[oncekiAy.getMonth()]+" ayını kilitlemeyi unutma (Hesap özeti sayfasından).";
     }else kEl.classList.add("gizli");
+    bildirimKutusuGuncelle();
   }
 }
 
@@ -6392,7 +6414,7 @@ document.addEventListener("DOMContentLoaded", ()=>{
   });
 
   /* Neler yeni kartı */
-  const YENILIK_SURUM = "0.0.0.49";
+  const YENILIK_SURUM = "0.0.0.51";
   try{ $("#cekmece-surum").textContent = "Puantaj Defterim " + YENILIK_SURUM; }catch(e){}
   try{
     if(localStorage.getItem("yenilik")!==YENILIK_SURUM) $("#yenilik-kart").classList.remove("gizli");
@@ -6969,12 +6991,6 @@ document.addEventListener("DOMContentLoaded", ()=>{
   /* Şirket hesap hareketleri: kart içinde aç/kapa */
   $("#btn-sirket-hareket-ac").addEventListener("click", ()=>{
     const kutu = $("#sirket-hareket-kutu"), ok = $("#sirket-hareket-ok");
-    const acikMi = !kutu.classList.contains("gizli");
-    kutu.classList.toggle("gizli", acikMi);
-    ok.style.transform = acikMi ? "rotate(0deg)" : "rotate(90deg)";
-  });
-  $("#btn-cuzdan-hareket-ac").addEventListener("click", ()=>{
-    const kutu = $("#cuzdan-hareket-kutu"), ok = $("#cuzdan-hareket-ok");
     const acikMi = !kutu.classList.contains("gizli");
     kutu.classList.toggle("gizli", acikMi);
     ok.style.transform = acikMi ? "rotate(0deg)" : "rotate(90deg)";
