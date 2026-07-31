@@ -1149,15 +1149,21 @@ function havaYukle(){
     }, ()=>{}, {timeout:8000, maximumAge:3600000});
   }catch(e){}
 }
-/* Ana ekrandaki eski küçük kart yerine — sadece yarın yağmur/uygunsa nazikçe uyarır */
+/* Ana ekranda, uygulamaya her girişte görünen hava satırı: güncel sıcaklık +
+   ikon her zaman gösterilir; yarın yağmur ihtimali yüksekse (>=%50) onun
+   yerine uyarı metni gösterilir (dokununca yine tam ekran detay açılır). */
 function havaOzetGoster(d){
-  const el = $("#hava-uyari-satir"); if(!el) return;
+  const el = $("#hava-uyari-satir"); if(!el || !d.current) return;
+  const gunduzMu = d.current.is_day===1;
+  const [ikon] = havaKodEtiket(d.current.weather_code, gunduzMu);
+  const sicaklik = Math.round(d.current.temperature_2m);
   const yagmur = d.daily && d.daily.precipitation_probability_max ? d.daily.precipitation_probability_max[1] : null;
-  if(yagmur==null) return;
-  if(yagmur>=50){
+  if(yagmur!=null && yagmur>=50){
     el.innerHTML = "🌧️ Yarın <b>%"+yagmur+" yağmur ihtimali</b> — şantiye belli olmaz, ustaya sor. <span style='text-decoration:underline'>Detay ›</span>";
-    el.classList.remove("gizli");
+  }else{
+    el.innerHTML = ikon+" Şu an <b>"+sicaklik+"°</b> <span style='text-decoration:underline'>Detay ›</span>";
   }
+  el.classList.remove("gizli");
   havaHatirlatTamEkran(d);
 }
 /* Güne ilk giriş: tam ekran hava durumunu göster (günde 1 kez), X ile kapanır */
@@ -6375,7 +6381,7 @@ document.addEventListener("DOMContentLoaded", ()=>{
   });
 
   /* Neler yeni kartı */
-  const YENILIK_SURUM = "0.0.0.42";
+  const YENILIK_SURUM = "0.0.0.43";
   try{ $("#cekmece-surum").textContent = "Puantaj Defterim " + YENILIK_SURUM; }catch(e){}
   try{
     if(localStorage.getItem("yenilik")!==YENILIK_SURUM) $("#yenilik-kart").classList.remove("gizli");
@@ -6958,6 +6964,26 @@ document.addEventListener("DOMContentLoaded", ()=>{
     kutu.classList.toggle("gizli", acikMi);
     ok.style.transform = acikMi ? "rotate(0deg)" : "rotate(90deg)";
   });
+
+  /* Şirket hesabı / cüzdan kartları — yan yana, sağa-sola kaydırılan slider.
+     Kaydırma bitince hangi kart görünüyorsa altındaki noktayı ona göre
+     günceller; bir noktaya dokununca da o karta kaydırır. */
+  (function(){
+    const iz = $("#banka-slider-track"), noktalar = $$("#banka-slider-noktalar .banka-nokta");
+    if(!iz || !noktalar.length) return;
+    let zamanlayici = null;
+    iz.addEventListener("scroll", ()=>{
+      clearTimeout(zamanlayici);
+      zamanlayici = setTimeout(()=>{
+        const aktifIndeks = Math.round(iz.scrollLeft / iz.clientWidth);
+        noktalar.forEach((n,i)=> n.classList.toggle("aktif", i===aktifIndeks));
+      }, 80);
+    }, {passive:true});
+    noktalar.forEach(n=> n.addEventListener("click", ()=>{
+      const i = Number(n.dataset.slayt)||0;
+      iz.scrollTo({left: i*iz.clientWidth, behavior:"smooth"});
+    }));
+  })();
 
   /* Ay detay modalı (Maaşlar) */
   $("#btn-ay-detay-kapat").addEventListener("click", ayDetayKapat);

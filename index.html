@@ -248,7 +248,8 @@
       <div class="kart gizli" id="yenilik-kart" style="border-color:var(--sari)">
         <h2>🎁 Neler yeni?</h2>
         <ul style="padding-left:18px;font-size:13.5px;line-height:1.9">
-          <li><b>🐞 Hava Durumu menü tıklaması düzeltildi:</b> Menüden "Hava Durumu"na dokunulduğunda hiçbir şey olmuyordu — düğmenin bağlantı yöntemini daha sağlam bir yapıya (sayfa geneline bağlı, "hangi öğeye tıklandı" kontrolü) çevirdim, artık çalışması gerekiyor</li>
+          <li><b>🌤️ Hava durumu artık her girişte görünüyor:</b> Ana ekrandaki satır artık sadece yağmur uyarısında değil, uygulamayı her açtığında güncel sıcaklığı ve durumu gösteriyor</li>
+          <li><b>👉 Şirket Hesap Kartı + Cüzdan yan yana:</b> İki kart artık sağa-sola kaydırarak geçilen tek bir alanda, ana ekranı yukarı-aşağı sürekli kaydırmana gerek kalmadan ikisine de kolayca ulaşabiliyorsun</li>
         </ul>
         <button class="btn btn-cizgili" id="btn-yenilik-kapat">Süper, kapat</button>
       </div>
@@ -271,16 +272,30 @@
           <button class="btn btn-sari" id="btn-krono" style="width:auto;padding:12px 18px;font-size:14px">▶ Başlat</button>
         </div>
       </div>
-      <div class="banka-kart sirket" id="sirket-kart">
-        <div class="kart-ust"><span>🏢 Şirket Hesap Kartı</span><button id="btn-goz" style="color:#fff;font-size:17px">👁️</button></div>
-        <div class="bakiye" id="sirket-bakiye">—</div>
-        <div class="kart-alt" id="sirket-alt">Çalıştıkça artar, avans aldıkça azalır</div>
-        <div class="kart-alt" id="kur-satir" style="margin-top:6px;font-weight:700"></div>
-        <button id="btn-sirket-hareket-ac" style="margin-top:14px;width:100%;display:flex;align-items:center;justify-content:space-between;background:rgba(255,255,255,.08);border-radius:12px;padding:11px 13px;color:#fff;font-weight:700;font-size:13.5px">
-          <span>📋 Hareketler</span><span id="sirket-hareket-ok" style="transition:transform .2s">›</span>
-        </button>
-        <div class="gizli" id="sirket-hareket-kutu" style="margin-top:10px;background:rgba(0,0,0,.18);border-radius:12px;padding:6px 10px;max-height:340px;overflow-y:auto">
-          <ul class="liste hareket-liste" id="liste-sirket-hareket"></ul>
+      <div class="banka-slider" id="banka-slider">
+        <div class="banka-slider-track" id="banka-slider-track">
+          <div class="banka-kart sirket banka-slayt" id="sirket-kart">
+            <div class="kart-ust"><span>🏢 Şirket Hesap Kartı</span><button id="btn-goz" style="color:#fff;font-size:17px">👁️</button></div>
+            <div class="bakiye" id="sirket-bakiye">—</div>
+            <div class="kart-alt" id="sirket-alt">Çalıştıkça artar, avans aldıkça azalır</div>
+            <div class="kart-alt" id="kur-satir" style="margin-top:6px;font-weight:700"></div>
+            <button id="btn-sirket-hareket-ac" style="margin-top:14px;width:100%;display:flex;align-items:center;justify-content:space-between;background:rgba(255,255,255,.08);border-radius:12px;padding:11px 13px;color:#fff;font-weight:700;font-size:13.5px">
+              <span>📋 Hareketler</span><span id="sirket-hareket-ok" style="transition:transform .2s">›</span>
+            </button>
+            <div class="gizli" id="sirket-hareket-kutu" style="margin-top:10px;background:rgba(0,0,0,.18);border-radius:12px;padding:6px 10px;max-height:340px;overflow-y:auto">
+              <ul class="liste hareket-liste" id="liste-sirket-hareket"></ul>
+            </div>
+          </div>
+          <div class="banka-kart cuzdan-k banka-slayt">
+            <div class="kart-ust"><span>💳 Cebimdeki Para</span><span>CÜZDAN</span></div>
+            <div class="bakiye" id="cuzdan-bakiye">—</div>
+            <div id="kumbara-bar" style="display:none;margin-top:8px"></div>
+            <div class="kart-alt">Elindeki parayı buradan takip et</div>
+          </div>
+        </div>
+        <div class="banka-slider-noktalar" id="banka-slider-noktalar">
+          <span class="banka-nokta aktif" data-slayt="0"></span>
+          <span class="banka-nokta" data-slayt="1"></span>
         </div>
       </div>
       <div class="kart" style="padding:13px 14px">
@@ -323,12 +338,6 @@
         <div style="font-size:13px;color:var(--soluk);margin-top:8px" id="sgk-yazi"></div>
       </div>
 
-      <div class="banka-kart cuzdan-k">
-        <div class="kart-ust"><span>💳 Cebimdeki Para</span><span>CÜZDAN</span></div>
-        <div class="bakiye" id="cuzdan-bakiye">—</div>
-        <div id="kumbara-bar" style="display:none;margin-top:8px"></div>
-        <div class="kart-alt">Elindeki parayı buradan takip et</div>
-      </div>
       <div class="kart">
         <h2>➕ Cüzdan hareketi ekle</h2>
         <div style="display:flex;gap:10px">
