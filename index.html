@@ -339,7 +339,7 @@
       <div class="kart gizli" id="yenilik-kart" style="border-color:var(--sari)">
         <h2>🎁 Neler yeni?</h2>
         <ul style="padding-left:18px;font-size:13.5px;line-height:1.9">
-          <li><b>🐞 "Sürüm hiç güncellenmiyor" hatası düzeltildi:</b> Chrome, yeni bir sürüm olup olmadığını günde en fazla 1 kez kontrol ediyor — biz sık güncelleme yaptığımız için bu kontrol atlanıyordu. Artık her açılışta açıkça kontrol ettiriyoruz, güncellemeler artık gecikmeden görünmeli</li>
+          <li><b>🔄 Güncelleme ekranı yenilendi:</b> Alttaki küçük bant yerine artık ortada, dönen bir ikon ve 5 saniyelik yükleme çizgisiyle animasyonlu bir ekran açılıyor — üstelik neyin değiştiğini de (bu listeyi) doğrudan içinde gösteriyor</li>
         </ul>
         <button class="btn btn-cizgili" id="btn-yenilik-kapat">Süper, kapat</button>
       </div>
@@ -416,6 +416,19 @@
     </section>
 
     <!-- ===== TAM EKRAN HAVA DURUMU ===== -->
+    <!-- ===== GÜNCELLEME EKRANI (ortalanmış, animasyonlu) ===== -->
+    <div class="gizli" id="guncelleme-ekrani" style="position:fixed;inset:0;z-index:99999;background:rgba(0,0,0,.72);display:flex;align-items:center;justify-content:center;padding:20px">
+      <div style="background:var(--kart);border-radius:20px;padding:28px 22px 22px;max-width:340px;width:100%;text-align:center;box-shadow:0 14px 44px rgba(0,0,0,.5)">
+        <div style="font-size:46px;animation:guncelleme-donsun 1.4s linear infinite;display:inline-block">🔄</div>
+        <h2 style="margin-top:10px;font-size:19px">Yeni sürüm hazır!</h2>
+        <ul id="guncelleme-yenilik-liste" style="text-align:left;font-size:13px;line-height:1.7;color:var(--soluk);margin-top:14px;max-height:180px;overflow-y:auto;padding-left:18px"></ul>
+        <div style="background:var(--girdi);border-radius:8px;height:6px;margin-top:18px;overflow:hidden">
+          <div id="guncelleme-cubuk" style="height:100%;background:var(--sari);width:0%"></div>
+        </div>
+        <button class="btn btn-sari gizli" id="btn-guncelleme-yenile" style="margin-top:16px">🚀 Şimdi Yenile</button>
+      </div>
+    </div>
+
     <div class="gizli" id="hava-tam-ekran" style="position:fixed;inset:0;z-index:200;background:linear-gradient(160deg,#1B4B91,#2F6FCB 45%,#5B93DD);color:#fff;overflow-y:auto">
       <div style="display:flex;justify-content:space-between;align-items:center;padding:18px 18px 0">
         <div style="font-size:12px;letter-spacing:.08em;text-transform:uppercase;opacity:.8">🌤️ Hava Durumu</div>
@@ -1453,7 +1466,7 @@
         <p style="font-size:13px;color:var(--soluk);margin-bottom:12px">Hata mı gördün, fikrin mi var? Direkt geliştiriciye ulaş:</p>
         <a class="btn btn-cizgili" style="display:block;text-align:center;text-decoration:none;margin-bottom:10px" href="https://wa.me/905051252339?text=Puantaj%20Defterim%20hakkında:" target="_blank">💬 WhatsApp'tan yaz</a>
         <a class="btn btn-cizgili" style="display:block;text-align:center;text-decoration:none" href="tel:05051252339">📞 0505 125 23 39</a>
-        <p style="font-size:11px;color:var(--soluk);margin-top:12px;text-align:center">Sürüm: 0.0.0.53 · Serkan Karakaş</p>
+        <p style="font-size:11px;color:var(--soluk);margin-top:12px;text-align:center">Sürüm: 0.0.0.54 · Serkan Karakaş</p>
       </div>
       <div class="kart">
         <h2>🔒 PIN kilidi</h2>

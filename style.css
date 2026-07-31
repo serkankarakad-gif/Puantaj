@@ -729,6 +729,9 @@ section:not(.gizli){
   from{opacity:0;transform:translateY(6px)}
   to{opacity:1;transform:translateY(0)}
 }
+@keyframes guncelleme-donsun{
+  to{ transform:rotate(360deg); }
+}
 
 @media (prefers-reduced-motion: reduce){
   *{transition:none!important;animation:none!important}

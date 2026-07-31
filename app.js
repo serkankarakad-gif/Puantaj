@@ -5411,21 +5411,38 @@ if("serviceWorker" in navigator){
     window._swYenile = ()=>{ yenilendiMi = true; };
   });
 }
-function guncellemeBandiGoster(){
-  if($("#guncelleme-bandi")) return;   /* zaten gösteriliyor */
-  const b = document.createElement("div");
-  b.id = "guncelleme-bandi";
-  b.textContent = "🔄 Yeni sürüm hazır — yenilemek için dokun";
-  b.style.cssText = "position:fixed;left:12px;right:12px;bottom:90px;z-index:99999;"+
-    "background:var(--sari);color:#111;text-align:center;padding:13px 16px;"+
-    "border-radius:14px;font-weight:700;font-size:13.5px;cursor:pointer;"+
-    "box-shadow:0 6px 18px rgba(0,0,0,.35)";
-  b.addEventListener("click", ()=>{
-    b.textContent = "Yenileniyor…";
+async function guncellemeBandiGoster(){
+  const ekran = $("#guncelleme-ekrani");
+  if(!ekran || !ekran.classList.contains("gizli")) return;   /* zaten gösteriliyor ya da HTML yok */
+  /* "Neler yeni?" listesini bu (eski) sayfadan değil, az önce önbelleğe
+     inen YENİ index.html'den okuyoruz — yoksa hâlâ eski sürümün listesini
+     gösterirdik, kafa karıştırırdı. */
+  let liste_html = "<li>Küçük iyileştirmeler ve hata düzeltmeleri</li>";
+  try{
+    const r = await fetch("./index.html?guncelleme=" + Date.now());
+    const metin = await r.text();
+    const gecici = document.createElement("div");
+    gecici.innerHTML = metin;
+    const yeniListe = gecici.querySelector("#yenilik-kart ul");
+    if(yeniListe) liste_html = yeniListe.innerHTML;
+  }catch(e){}
+  $("#guncelleme-yenilik-liste").innerHTML = liste_html;
+  ekran.classList.remove("gizli");
+  const cubuk = $("#guncelleme-cubuk");
+  const btn = $("#btn-guncelleme-yenile");
+  cubuk.style.transition = "none";
+  cubuk.style.width = "0%";
+  btn.classList.add("gizli");
+  requestAnimationFrame(()=> requestAnimationFrame(()=>{
+    cubuk.style.transition = "width 5s linear";
+    cubuk.style.width = "100%";
+  }));
+  setTimeout(()=> btn.classList.remove("gizli"), 5000);
+  btn.onclick = ()=>{
+    btn.textContent = "Yenileniyor…";
     window._swYenile();
     location.reload();
-  });
-  document.body.appendChild(b);
+  };
 }
 
 /* Android geri tuşu: açık pencereyi kapat, uygulamadan çıkma */
@@ -5471,6 +5488,8 @@ function acikPencereKapat(){
   /* Hava durumu tam ekranı da "gizli" class'ıyla açılıp kapanıyor — aynı şekilde dahil et */
   const havaTE = document.getElementById("hava-tam-ekran");
   if(havaTE && !havaTE.classList.contains("gizli")){ havaTE.classList.add("gizli"); kapandi = true; }
+  const guncTE = document.getElementById("guncelleme-ekrani");
+  if(guncTE && !guncTE.classList.contains("gizli")){ guncTE.classList.add("gizli"); kapandi = true; }
   const cek = document.getElementById("cekmece");
   if(cek && cek.classList.contains("acik")){
     cek.classList.remove("acik");
@@ -6419,7 +6438,7 @@ document.addEventListener("DOMContentLoaded", ()=>{
   });
 
   /* Neler yeni kartı */
-  const YENILIK_SURUM = "0.0.0.53";
+  const YENILIK_SURUM = "0.0.0.54";
   try{ $("#cekmece-surum").textContent = "Puantaj Defterim " + YENILIK_SURUM; }catch(e){}
   try{
     if(localStorage.getItem("yenilik")!==YENILIK_SURUM) $("#yenilik-kart").classList.remove("gizli");
