@@ -230,41 +230,9 @@
         <div class="alt" id="selam-alt">—</div>
         <div class="alt" id="gunun-soz" style="margin-top:6px;color:var(--sari);font-style:italic"></div>
       </div>
-      <div class="gizli" id="hava-uyari-satir" style="background:var(--girdi);border:1.5px solid var(--mesai);border-radius:12px;padding:11px 14px;font-size:13.5px;margin-bottom:14px;cursor:pointer"></div>
-      <div class="kart gizli" id="tatil-kart" style="border:1.5px solid var(--sari);padding:14px">
-        <div id="tatil-metin" style="font-size:14px;line-height:1.7"></div>
-      </div>
-      <div class="kart gizli" id="dun-kart" style="border:1.5px solid var(--mesai);padding:14px">
-        <div style="font-size:14px;line-height:1.6">📌 <b>Dün işlenmemiş görünüyor.</b> Çalıştıysan unutma, iki dokunuşla işle:</div>
-        <button class="eksik-cip" id="btn-dun-isle" style="margin-top:10px">📅 Dünü aç ve işle</button>
-      </div>
-      <div class="kart gizli" id="esik-uyari" style="border-color:var(--tam);padding:12px 14px;font-size:14px;font-weight:600"></div>
-      <div class="kart gizli" id="kapanis-uyari" style="border-color:#E8C871;padding:12px 14px;font-size:13.5px"></div>
-      <div class="kart gizli" id="yenilik-kart" style="border-color:var(--sari)">
-        <h2>🎁 Neler yeni?</h2>
-        <ul style="padding-left:18px;font-size:13.5px;line-height:1.9">
-          <li><b>🧹 Ana ekran bir kademe daha sadeleşti:</b> "İlerleme" kartı (Seviye + Mesai sınırı + Emeklilik) Ana Ekrandan tamamen kaldırıldı. Seviye artık "Başarımlarım"ın başında, Mesai sınırı ve Emeklilik takibi artık "Araçlar & Bilgi"de — hiçbir bilgi kaybolmadı, sadece doğru yerlerine taşındı</li>
-        </ul>
-        <button class="btn btn-cizgili" id="btn-yenilik-kapat">Süper, kapat</button>
-      </div>
-      <div style="display:flex;gap:8px;margin-bottom:14px">
-        <button class="btn btn-sari" id="btn-ana-bugun" style="flex:1;padding:12px 4px;font-size:13px">✚ Bugünü işle</button>
-        <button class="btn btn-cizgili" id="btn-ana-avans" style="flex:1;padding:12px 4px;font-size:13px">💵 Avans</button>
-        <button class="btn btn-cizgili" id="btn-ana-paylas" style="flex:1;padding:12px 4px;font-size:13px">📤 Paylaş</button>
-        <button class="btn btn-cizgili" id="btn-ana-not" style="flex:1;padding:12px 4px;font-size:13px">📝 Not</button>
-      </div>
       <div class="kart" id="bugun-kazanc-kart" style="padding:13px 14px">
         <div style="font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--soluk);font-weight:700">📅 Bugün</div>
         <div id="bugun-kazanc-icerik" style="margin-top:6px"></div>
-      </div>
-      <div class="kart" id="krono-kart" style="padding:13px 14px">
-        <div style="display:flex;align-items:center;gap:12px">
-          <div style="flex:1">
-            <div style="font-weight:700;font-size:14px">⏱️ Mesai kronometresi</div>
-            <div id="krono-yazi" style="font-family:'Saira Condensed';font-size:26px;font-weight:800;color:var(--sari)">00:00:00</div>
-          </div>
-          <button class="btn btn-sari" id="btn-krono" style="width:auto;padding:12px 18px;font-size:14px">▶ Başlat</button>
-        </div>
       </div>
       <div class="banka-slider" id="banka-slider">
         <div class="banka-slider-track" id="banka-slider-track">
@@ -291,6 +259,38 @@
           <span class="banka-nokta aktif" data-slayt="0"></span>
           <span class="banka-nokta" data-slayt="1"></span>
         </div>
+      </div>
+      <div class="kart" id="krono-kart" style="padding:13px 14px">
+        <div style="display:flex;align-items:center;gap:12px">
+          <div style="flex:1">
+            <div style="font-weight:700;font-size:14px">⏱️ Mesai kronometresi</div>
+            <div id="krono-yazi" style="font-family:'Saira Condensed';font-size:26px;font-weight:800;color:var(--sari)">00:00:00</div>
+          </div>
+          <button class="btn btn-sari" id="btn-krono" style="width:auto;padding:12px 18px;font-size:14px">▶ Başlat</button>
+        </div>
+      </div>
+      <div style="display:flex;gap:8px;margin-bottom:14px">
+        <button class="btn btn-sari" id="btn-ana-bugun" style="flex:1;padding:12px 4px;font-size:13px">✚ Bugünü işle</button>
+        <button class="btn btn-cizgili" id="btn-ana-avans" style="flex:1;padding:12px 4px;font-size:13px">💵 Avans</button>
+        <button class="btn btn-cizgili" id="btn-ana-paylas" style="flex:1;padding:12px 4px;font-size:13px">📤 Paylaş</button>
+        <button class="btn btn-cizgili" id="btn-ana-not" style="flex:1;padding:12px 4px;font-size:13px">📝 Not</button>
+      </div>
+      <div class="gizli" id="hava-uyari-satir" style="background:var(--girdi);border:1.5px solid var(--mesai);border-radius:12px;padding:11px 14px;font-size:13.5px;margin-bottom:14px;cursor:pointer"></div>
+      <div class="kart gizli" id="tatil-kart" style="border:1.5px solid var(--sari);padding:14px">
+        <div id="tatil-metin" style="font-size:14px;line-height:1.7"></div>
+      </div>
+      <div class="kart gizli" id="dun-kart" style="border:1.5px solid var(--mesai);padding:14px">
+        <div style="font-size:14px;line-height:1.6">📌 <b>Dün işlenmemiş görünüyor.</b> Çalıştıysan unutma, iki dokunuşla işle:</div>
+        <button class="eksik-cip" id="btn-dun-isle" style="margin-top:10px">📅 Dünü aç ve işle</button>
+      </div>
+      <div class="kart gizli" id="esik-uyari" style="border-color:var(--tam);padding:12px 14px;font-size:14px;font-weight:600"></div>
+      <div class="kart gizli" id="kapanis-uyari" style="border-color:#E8C871;padding:12px 14px;font-size:13.5px"></div>
+      <div class="kart gizli" id="yenilik-kart" style="border-color:var(--sari)">
+        <h2>🎁 Neler yeni?</h2>
+        <ul style="padding-left:18px;font-size:13.5px;line-height:1.9">
+          <li><b>⬆️ Kartlar en üste alındı:</b> Bugünkü kazanç, Şirket/Cüzdan kartı ve Mesai kronometresi artık selamlamanın hemen altında — uyarı bildirimlerini geçmeden ilk bakışta görünüyorlar</li>
+        </ul>
+        <button class="btn btn-cizgili" id="btn-yenilik-kapat">Süper, kapat</button>
       </div>
       <div class="kart" style="padding:13px 14px">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
@@ -1416,7 +1416,7 @@
         <p style="font-size:13px;color:var(--soluk);margin-bottom:12px">Hata mı gördün, fikrin mi var? Direkt geliştiriciye ulaş:</p>
         <a class="btn btn-cizgili" style="display:block;text-align:center;text-decoration:none;margin-bottom:10px" href="https://wa.me/905051252339?text=Puantaj%20Defterim%20hakkında:" target="_blank">💬 WhatsApp'tan yaz</a>
         <a class="btn btn-cizgili" style="display:block;text-align:center;text-decoration:none" href="tel:05051252339">📞 0505 125 23 39</a>
-        <p style="font-size:11px;color:var(--soluk);margin-top:12px;text-align:center">Sürüm: 0.0.0.45 · Serkan Karakaş</p>
+        <p style="font-size:11px;color:var(--soluk);margin-top:12px;text-align:center">Sürüm: 0.0.0.46 · Serkan Karakaş</p>
       </div>
       <div class="kart">
         <h2>🔒 PIN kilidi</h2>
