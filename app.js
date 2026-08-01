@@ -695,6 +695,29 @@ function masrafTarihVarsayilaniAyarla(){
 /* 💵 "Bu ödeme hangi ayın hesabına yazılsın?" seçicisi.
    Parayı fiilen ne zaman aldığın değil, hangi ayın alacağını kapattığı önemli —
    bu yüzden kullanıcıya doğrudan ay seçtiriyoruz, "tarih"i biz arkada ayarlıyoruz. */
+/* İnşaatta (ve çoğu sektörde) işveren "ay kapandı, hesap sıfırlandı" demez —
+   yeni gelen her avans/askeriye/maaş, ÖNCE en eski ödenmemiş ayın borcuna
+   yazılır. Bu fonksiyon, tüm aylar arasında (Maaşlar ekranındaki mantığın
+   aynısıyla) en eski "kalanı olan" ayı bulur. Hiçbiri yoksa null döner
+   (yani her şey ödenmiş, yeni gelen para bu ayın hesabına yazılabilir). */
+function enEskiOdenmemisAy(){
+  const gSnap = tumGirdilerQS, oSnap = tumOdemelerQS;
+  if(!gSnap || !oSnap) return null;
+  const aylar = {};
+  gSnap.forEach(doc=>{
+    const v = doc.data(), ay = doc.id.slice(0,7);
+    if(!aylar[ay]) aylar[ay] = {hak:0, alinan:0};
+    aylar[ay].hak += girdiKazanc(v);
+  });
+  oSnap.forEach(doc=>{
+    const v = doc.data(), ay = String(v.tarih||"").slice(0,7);
+    if(!ay) return;
+    if(!aylar[ay]) aylar[ay] = {hak:0, alinan:0};
+    aylar[ay].alinan += Number(v.tutar)||0;
+  });
+  const enEskiler = Object.keys(aylar).filter(ay=> (aylar[ay].hak - aylar[ay].alinan) > 50).sort();
+  return enEskiler.length ? enEskiler[0] : null;
+}
 function odemeAitAySecDoldur(){
   const sel = $("#odeme-ait-ay"); if(!sel || duzenlenenOdeme) return;
   const simdi = new Date();
@@ -707,9 +730,19 @@ function odemeAitAySecDoldur(){
     const [deger, etiket] = s.split("|");
     return '<option value="'+deger+'">'+etiket+'</option>';
   }).join("");
-  const goruntulenen = aktifYil+"-"+pad(aktifAy+1);
-  sel.value = goruntulenen;
-  if(sel.value !== goruntulenen) sel.value = simdi.getFullYear()+"-"+pad(simdi.getMonth()+1); /* 12 aydan eskiyse bugüne düş */
+  /* Varsayılan: bulunduğun ay değil, EN ESKİ ödenmemiş ay (FIFO) — hepsi
+     ödenmişse bulunduğun aya (ya da bugüne) düş. */
+  const enEski = enEskiOdenmemisAy();
+  let hedefAy = enEski || (aktifYil+"-"+pad(aktifAy+1));
+  if(enEski && ![...sel.options].some(o=>o.value===enEski)){
+    const [yy,aa] = enEski.split("-").map(Number);
+    const op = document.createElement("option");
+    op.value = enEski; op.textContent = AYLAR[aa-1]+" "+yy+" (en eski, ödenmemiş)";
+    sel.insertBefore(op, sel.firstChild);
+  }
+  sel.value = hedefAy;
+  if(sel.value !== hedefAy) sel.value = simdi.getFullYear()+"-"+pad(simdi.getMonth()+1); /* olmayan bir değerse bugüne düş */
+  if(enEski) toast("💡 "+AYLAR[Number(enEski.split("-")[1])-1]+" ayının ödenmemiş bakiyesi var — bu ödeme oraya yazılacak şekilde ayarlandı");
   odemeTarihiAyaGoreAyarla();
 }
 function odemeTarihiAyaGoreAyarla(){
@@ -1002,30 +1035,9 @@ function notCiz(){
   });
 }
 
-/* ---------- Günün sözü ---------- */
-const SOZLER = [
-  "Alın teri yalan söylemez.",
-  "Bugün döktüğün ter, yarın cebindeki paradır.",
-  "İyi usta, hesabını da sağlam tutar.",
-  "Duvar tuğla tuğla, servet gün gün örülür.",
-  "Beton bekler, hesap beklemez.",
-  "En sağlam temel, dürüst kazanılan paradır.",
-  "İskele kurulur, iş biter; emek asla boşa gitmez.",
-  "Mesai saati değil, alın teri konuşur.",
-  "Çalışan demir pas tutmaz.",
-  "Küçük birikim, büyük temelin ilk harcıdır.",
-  "Sabır ve mala, ikisi de düz duvar örer.",
-  "Bugünkü yorgunluk, yarınki rahatlıktır.",
-  "Hesabını bilen işçinin sırtı yere gelmez.",
-  "Vinç yükü kaldırır, azim adamı kaldırır.",
-  "Erken kalkan yol alır, puantaj tutan hakkını alır.",
-  "Her X işareti, bir tuğla daha demektir."
-];
-function gununSozCiz(){
-  const g = Math.floor(Date.now()/86400000);
-  const el = $("#gunun-soz");
-  if(el) el.textContent = "“" + SOZLER[g % SOZLER.length] + "”";
-}
+/* Not: "Günün sözü" havuzu (eski SOZLER dizisi ve gununSozCiz()) kaldırıldı —
+   içeriği aşağıdaki GUNUN_ICERIK havuzuna taşındı, artık gununIpucuEkle() tek
+   noktadan (daha zengin: söz + fıkra + bilgi karışık) besleniyor. */
 /* Eskiden ayrı bir "gunun-karti" kartında (fıkra/ipucu/söz karışık, daha zengin
    bir havuz) gösteriliyordu — selam-blok'taki gunun-soz ile aynı işi iki kere
    yapıyordu. Artık tek yerde, zengin havuzdan. */
@@ -2989,10 +3001,20 @@ const GUNUN_ICERIK = [
   {t:"💡 Günün bilgisi", m:"Avans alırken tarihi ve tutarı hemen işle — ay sonu hesap tartışmasının ilacı kayıttır 📲"},
   {t:"💬 Günün sözü", m:"Bugün kimse görmese de sen gördün: emeğini deftere yaz, defter unutmaz."},
   {t:"😄 Günün fıkrası", m:"Kalfa: \"Bu duvar terazisinde mi?\" Çırak: \"Terazide usta ama kefesi hangisi bilmiyorum\" ⚖️"},
-  {t:"💡 Günün bilgisi", m:"Kıdem tazminatı her tam yıl için yaklaşık 30 günlük brüt ücrettir — Araçlar'daki hesaplayıcıya yıllarını yaz, gör."}
+  {t:"💡 Günün bilgisi", m:"Kıdem tazminatı her tam yıl için yaklaşık 30 günlük brüt ücrettir — Araçlar'daki hesaplayıcıya yıllarını yaz, gör."},
+  {t:"💬 Günün sözü", m:"Bugün döktüğün ter, yarın cebindeki paradır."},
+  {t:"💬 Günün sözü", m:"Duvar tuğla tuğla, servet gün gün örülür."},
+  {t:"💬 Günün sözü", m:"Beton bekler, hesap beklemez."},
+  {t:"💬 Günün sözü", m:"İskele kurulur, iş biter; emek asla boşa gitmez."},
+  {t:"💬 Günün sözü", m:"Çalışan demir pas tutmaz."},
+  {t:"💬 Günün sözü", m:"Sabır ve mala, ikisi de düz duvar örer."},
+  {t:"💬 Günün sözü", m:"Vinç yükü kaldırır, azim adamı kaldırır."},
+  {t:"💬 Günün sözü", m:"Erken kalkan yol alır, puantaj tutan hakkını alır."}
 ];
 /* gununKartiCiz kaldırıldı — anaSelamCiz() zaten aynı zaman-bazlı selamı
-   veriyor, gunun-karti tamamen tekrardı. İçeriği gununIpucuEkle()'ye taşındı. */
+   veriyor, gunun-karti tamamen tekrardı. İçeriği gununIpucuEkle()'ye taşındı.
+   Eski SOZLER dizisi/gununSozCiz() de kaldırıldı — benzersiz sözler yukarıdaki
+   havuza taşındı, artık tek yerden (daha zengin) rotasyon dönüyor. */
 /* ---------- 🎊 Konfeti (kütüphanesiz) ---------- */
 function konfetiPatlat(){
   if(AZ_HAREKET) return;
@@ -6438,7 +6460,7 @@ document.addEventListener("DOMContentLoaded", ()=>{
   });
 
   /* Neler yeni kartı */
-  const YENILIK_SURUM = "0.0.0.54";
+  const YENILIK_SURUM = "0.0.0.57";
   try{ $("#cekmece-surum").textContent = "Puantaj Defterim " + YENILIK_SURUM; }catch(e){}
   try{
     if(localStorage.getItem("yenilik")!==YENILIK_SURUM) $("#yenilik-kart").classList.remove("gizli");
@@ -7258,7 +7280,12 @@ document.addEventListener("DOMContentLoaded", ()=>{
     const tarih = $("#odeme-tarih").value;
     const tutar = sayi($("#odeme-tutar").value);
     if(!tarih || !tutar || tutar<=0){ toast("Tarih ve tutarı doldur kanka"); return; }
-    if(ayKilitli(tarih)){ toast("O ay kilitli 🔒 Önce hesap özetinden kilidini aç"); return; }
+    /* Not: "Ay kilitli" kontrolü BİLEREK burada yok — kilit, sadece o ayın
+       ÇALIŞMA kayıtlarını (gün işaretlemelerini) korumak için var. Avans/
+       askeriye/maaş gibi ödemeler ise ayın kapanmasından SONRA da gelebilir
+       (inşaatta normal bir şey) — bu yeni ödemeyi engellemek, "ay bitti ama
+       parası hâlâ yatmadı" gerçek hayat senaryosunda parayı hiç
+       kaydedemeyeceğin, kritik bir hataya yol açıyordu. */
     try{
       if(duzenlenenOdeme){
         if(ayKilitli(duzenlenenOdeme.tarih)){ toast("Kaydın eski ayı kilitli 🔒"); return; }

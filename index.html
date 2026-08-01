@@ -339,7 +339,8 @@
       <div class="kart gizli" id="yenilik-kart" style="border-color:var(--sari)">
         <h2>🎁 Neler yeni?</h2>
         <ul style="padding-left:18px;font-size:13.5px;line-height:1.9">
-          <li><b>🔄 Güncelleme ekranı yenilendi:</b> Alttaki küçük bant yerine artık ortada, dönen bir ikon ve 5 saniyelik yükleme çizgisiyle animasyonlu bir ekran açılıyor — üstelik neyin değiştiğini de (bu listeyi) doğrudan içinde gösteriyor</li>
+          <li><b>🐞 KRİTİK: Avans/maaş artık doğru aya otomatik yazılıyor:</b> Yeni bir ödeme eklerken sistem artık bulunduğun ayı değil, ödenmemiş bakiyesi olan EN ESKİ ayı otomatik seçiyor (inşaatta standart uygulama — ay kapansa da borç ödenene kadar oradan düşülür)</li>
+          <li><b>🐞 KRİTİK: Kilitli aya ödeme eklenememe hatası düzeltildi:</b> Bir ayı kilitlesen bile (çalışma kayıtlarını korumak için), o aya artık avans/maaş kaydedebiliyorsun — kilit sadece "gün işaretlemelerini" korur, gelen parayı engellemez</li>
         </ul>
         <button class="btn btn-cizgili" id="btn-yenilik-kapat">Süper, kapat</button>
       </div>
@@ -419,13 +420,17 @@
     <!-- ===== GÜNCELLEME EKRANI (ortalanmış, animasyonlu) ===== -->
     <div class="gizli" id="guncelleme-ekrani" style="position:fixed;inset:0;z-index:99999;background:rgba(0,0,0,.72);display:flex;align-items:center;justify-content:center;padding:20px">
       <div style="background:var(--kart);border-radius:20px;padding:28px 22px 22px;max-width:340px;width:100%;text-align:center;box-shadow:0 14px 44px rgba(0,0,0,.5)">
-        <div style="font-size:46px;animation:guncelleme-donsun 1.4s linear infinite;display:inline-block">🔄</div>
+        <div style="font-size:46px">🔄</div>
         <h2 style="margin-top:10px;font-size:19px">Yeni sürüm hazır!</h2>
         <ul id="guncelleme-yenilik-liste" style="text-align:left;font-size:13px;line-height:1.7;color:var(--soluk);margin-top:14px;max-height:180px;overflow-y:auto;padding-left:18px"></ul>
         <div style="background:var(--girdi);border-radius:8px;height:6px;margin-top:18px;overflow:hidden">
           <div id="guncelleme-cubuk" style="height:100%;background:var(--sari);width:0%"></div>
         </div>
         <button class="btn btn-sari gizli" id="btn-guncelleme-yenile" style="margin-top:16px">🚀 Şimdi Yenile</button>
+        <p style="font-size:11px;color:var(--soluk);margin-top:16px;line-height:1.7">
+          <b style="color:var(--sari)">SERKAN KARAKAŞ</b> tarafından geliştirilmiştir 👷<br>
+          Bir sorun mu var? <a href="tel:05051252339" style="color:var(--sari);font-weight:700">0505 125 23 39</a>
+        </p>
       </div>
     </div>
 
@@ -1466,7 +1471,7 @@
         <p style="font-size:13px;color:var(--soluk);margin-bottom:12px">Hata mı gördün, fikrin mi var? Direkt geliştiriciye ulaş:</p>
         <a class="btn btn-cizgili" style="display:block;text-align:center;text-decoration:none;margin-bottom:10px" href="https://wa.me/905051252339?text=Puantaj%20Defterim%20hakkında:" target="_blank">💬 WhatsApp'tan yaz</a>
         <a class="btn btn-cizgili" style="display:block;text-align:center;text-decoration:none" href="tel:05051252339">📞 0505 125 23 39</a>
-        <p style="font-size:11px;color:var(--soluk);margin-top:12px;text-align:center">Sürüm: 0.0.0.54 · Serkan Karakaş</p>
+        <p style="font-size:11px;color:var(--soluk);margin-top:12px;text-align:center">Sürüm: 0.0.0.57 · Serkan Karakaş</p>
       </div>
       <div class="kart">
         <h2>🔒 PIN kilidi</h2>
