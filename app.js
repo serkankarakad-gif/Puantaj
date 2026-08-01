@@ -112,6 +112,7 @@ let notlar = [];                       // not defteri
 let gizliMod = false;                  // bakiye gizleme
 let odemeFiltre = "";                  // ödeme tür filtresi
 let duzenlenenOdeme = null;            // düzenlenen ödeme kaydı
+let odemeManuelAySecimi = null;        // "Maaşlar"dan gelen bilinçli ay seçimi — otomatik FIFO varsayılanı bunu EZEMEZ
 let duzenlenenSantiyeId = null;        // düzenlenen şantiye
 let takvimPara = false;                // takvimde kazanç göster
 let seciciYil = null;                  // ay seçici yılı
@@ -700,9 +701,21 @@ function masrafTarihVarsayilaniAyarla(){
    yazılır. Bu fonksiyon, tüm aylar arasında (Maaşlar ekranındaki mantığın
    aynısıyla) en eski "kalanı olan" ayı bulur. Hiçbiri yoksa null döner
    (yani her şey ödenmiş, yeni gelen para bu ayın hesabına yazılabilir). */
-function enEskiOdenmemisAy(){
-  const gSnap = tumGirdilerQS, oSnap = tumOdemelerQS;
-  if(!gSnap || !oSnap) return null;
+async function enEskiOdenmemisAy(){
+  let gSnap = tumGirdilerQS, oSnap = tumOdemelerQS;
+  if(!gSnap || !oSnap){
+    /* Dinleyiciler henüz ilk veriyi getirmediyse (ör. uygulamayı yeni açtın,
+       hemen Avans'a bastın) — anaYukle()'deki gibi tek seferlik bir çekme
+       yaparak "boş veriyle yanlış aya düşme" riskini ortadan kaldırıyoruz. */
+    try{
+      const r = await Promise.all([
+        kokRef().collection("girdiler").get(),
+        kokRef().collection("odemeler").get()
+      ]);
+      gSnap = tumGirdilerQS || r[0];
+      oSnap = tumOdemelerQS || r[1];
+    }catch(e){ return null; }
+  }
   const aylar = {};
   gSnap.forEach(doc=>{
     const v = doc.data(), ay = doc.id.slice(0,7);
@@ -718,7 +731,7 @@ function enEskiOdenmemisAy(){
   const enEskiler = Object.keys(aylar).filter(ay=> (aylar[ay].hak - aylar[ay].alinan) > 50).sort();
   return enEskiler.length ? enEskiler[0] : null;
 }
-function odemeAitAySecDoldur(){
+async function odemeAitAySecDoldur(){
   const sel = $("#odeme-ait-ay"); if(!sel || duzenlenenOdeme) return;
   const simdi = new Date();
   const secenekler = [];
@@ -730,9 +743,27 @@ function odemeAitAySecDoldur(){
     const [deger, etiket] = s.split("|");
     return '<option value="'+deger+'">'+etiket+'</option>';
   }).join("");
+  /* Önce makul bir varsayılanla başla (aktif ay), veri gelince aşağıda düzeltilecek */
+  sel.value = aktifYil+"-"+pad(aktifAy+1);
+  odemeTarihiAyaGoreAyarla();
   /* Varsayılan: bulunduğun ay değil, EN ESKİ ödenmemiş ay (FIFO) — hepsi
-     ödenmişse bulunduğun aya (ya da bugüne) düş. */
-  const enEski = enEskiOdenmemisAy();
+     ödenmişse bulunduğun aya (ya da bugüne) düş. Veri az sonra gelirse
+     (async), kullanıcı henüz formu değiştirmediyse üzerine yazarız. */
+  const enEski = await enEskiOdenmemisAy();
+  if(duzenlenenOdeme) return;   /* bu arada bir kaydı düzenlemeye başlamışsa dokunma */
+  if(odemeManuelAySecimi){
+    /* "Maaşlar" ekranından bilinçli bir ay seçilmiş — FIFO varsayılanı bunu geçersiz kılmasın */
+    if(![...sel.options].some(o=>o.value===odemeManuelAySecimi)){
+      const [yy,aa] = odemeManuelAySecimi.split("-").map(Number);
+      const op = document.createElement("option");
+      op.value = odemeManuelAySecimi; op.textContent = AYLAR[aa-1]+" "+yy;
+      sel.appendChild(op);
+    }
+    sel.value = odemeManuelAySecimi;
+    odemeManuelAySecimi = null;
+    odemeTarihiAyaGoreAyarla();
+    return;
+  }
   let hedefAy = enEski || (aktifYil+"-"+pad(aktifAy+1));
   if(enEski && ![...sel.options].some(o=>o.value===enEski)){
     const [yy,aa] = enEski.split("-").map(Number);
@@ -6460,7 +6491,7 @@ document.addEventListener("DOMContentLoaded", ()=>{
   });
 
   /* Neler yeni kartı */
-  const YENILIK_SURUM = "0.0.0.57";
+  const YENILIK_SURUM = "0.0.0.59";
   try{ $("#cekmece-surum").textContent = "Puantaj Defterim " + YENILIK_SURUM; }catch(e){}
   try{
     if(localStorage.getItem("yenilik")!==YENILIK_SURUM) $("#yenilik-kart").classList.remove("gizli");
@@ -6661,7 +6692,10 @@ document.addEventListener("DOMContentLoaded", ()=>{
     const tutar = sayi($("#masraf-tutar").value);
     const tarih = $("#masraf-tarih").value || tarihId(new Date());
     if(!tutar || tutar<=0){ toast("Tutarı yaz kanka"); return; }
-    if(ayKilitli(tarih)){ toast("O ay kilitli 🔒"); return; }
+    /* Not: ödemelerde olduğu gibi burada da "ay kilitli" engeli BİLEREK yok —
+       kilit sadece ÇALIŞMA kayıtlarını korur; bir masrafı (fiş, malzeme
+       parası) o ayı kapattıktan sonra fark edip girmek gayet normal, bunu
+       engellemek gereksiz bir kısıtlamaydı. */
     try{
       const veri = {
         tarih, tutar,
@@ -7121,6 +7155,7 @@ document.addEventListener("DOMContentLoaded", ()=>{
   });
   $("#btn-ay-detay-odeme-ekle").addEventListener("click", ()=>{
     const ay = aktifAyDetay;
+    odemeManuelAySecimi = ay;   /* FIFO otomatik varsayılanı bunu ezmesin */
     ayDetayKapat();
     document.querySelector('[data-goruntu="odemeler"]').click();
     setTimeout(()=>{
