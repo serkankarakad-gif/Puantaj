@@ -35,6 +35,14 @@ const pad = n => String(n).padStart(2,"0");
    kaçış (escape) et — başka birinin notu/ismi ekrana zararlı kod olarak
    basılmasın diye (örn. "Herkes" ekranında başka bir hesabın verisi). */
 const esc = v => String(v==null ? "" : v).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
+/* Bir ödemenin "hangi ayın hesabına sayıldığını" bulur. Yeni kayıtlarda
+   ayrı bir "aitAy" alanı tutulur (gerçek alım tarihinden BAĞIMSIZ) — çünkü
+   parayı bugün alsan bile o, geçen ayın borcunun karşılığı olabilir. Eski
+   kayıtlarda bu alan yoksa, geriye dönük uyumluluk için tarih'in ayına
+   düşer (eskiden zaten öyle davranıyordu). */
+function odemeAyi(v){
+  return v.aitAy || String(v.tarih||"").slice(0,7);
+}
 /* Ana ekrandaki tekil uyarı satırlarını (tatil/dün/eşik/kapanış/maaş/kart/borç/belge)
    TEK bir "Bildirimler" kutusu içinde birleştirdik — her satır kendi
    göster/gizle mantığını korur, bu fonksiyon sadece dıştaki kutunun en az
@@ -101,7 +109,7 @@ let odemeler = [];                     // bu ayın ödemeleri
 let borclar = [];                      // tüm borç kayıtları
 let kartlar = [], dinleyiciKart = null, duzenlenenKart = null; // 💳 kredi kartları
 let planlar = [], dinleyiciPlan = null; // 📐 plan/proje linkleri
-let cuzdan = [];                       // cüzdan hareketleri
+/* let cuzdan kaldırıldı — Cüzdan özelliği tamamen kaldırıldı */
 let masraflar = [];                    // bu ayın iş masrafları
 let ekipListe = [];                    // ekipteki işçiler
 let yoklama = {};                      // seçili günün yoklaması {iscId:{durum,mesai}}
@@ -112,7 +120,6 @@ let notlar = [];                       // not defteri
 let gizliMod = false;                  // bakiye gizleme
 let odemeFiltre = "";                  // ödeme tür filtresi
 let duzenlenenOdeme = null;            // düzenlenen ödeme kaydı
-let odemeManuelAySecimi = null;        // "Maaşlar"dan gelen bilinçli ay seçimi — otomatik FIFO varsayılanı bunu EZEMEZ
 let duzenlenenSantiyeId = null;        // düzenlenen şantiye
 let takvimPara = false;                // takvimde kazanç göster
 let seciciYil = null;                  // ay seçici yılı
@@ -194,7 +201,7 @@ function basla(){
       ayarlariDinle();
       ayiYukle();
       borclariDinle();     /* Ana ekrandaki kart/borç vade uyarı kutuları buna bağlı, ertelenemez */
-      cuzdaniDinle();      /* Ana ekranda gösterildiği için hemen gerekli */
+      /* cuzdaniDinle() kaldırıldı — Cüzdan özelliği tamamen kaldırıldı */
       anaYukle();
       havaYukle();
       yedekHatirlat();
@@ -247,7 +254,7 @@ function ayarlariDinle(){
     ayarlar.sgkGun    = Number(d.sgkGun)||0;
     ayarlar.sgkHedef  = Number(d.sgkHedef)||0;
     ayarlar.uyariEsik = Number(d.uyariEsik)||0;
-    ayarlar.kumbara   = Number(d.kumbara)||0;
+    /* ayarlar.kumbara kaldırıldı — Cüzdan özelliği tamamen kaldırıldı */
     ayarlar.notCipler = Array.isArray(d.notCipler)&&d.notCipler.length ? d.notCipler : ["🌧 Yağmur","📦 Malzeme gelmedi","🕐 Erken paydos","🚚 Başka şantiye"];
     ayarlar.santiye   = d.santiye||"";
     ayarlar.santiyeler= Array.isArray(d.santiyeler) ? d.santiyeler : [];
@@ -271,7 +278,7 @@ function ayarlariDinle(){
     $("#ayar-sgk").value = ayarlar.sgkGun||"";
     $("#ayar-sgk-hedef").value = ayarlar.sgkHedef||"";
     $("#ayar-esik").value = ayarlar.uyariEsik||"";
-    $("#ayar-kumbara").value = ayarlar.kumbara||"";
+    /* $("#ayar-kumbara") kaldırıldı — element artık HTML'de yok */
     $("#ayar-cipler").value = ayarlar.notCipler.join(", ");
     $("#ayar-pazar-zam").value = ayarlar.pazarZam||"";
     $("#ayar-tatil-zam").value = ayarlar.tatilZam||"";
@@ -723,7 +730,7 @@ async function enEskiOdenmemisAy(){
     aylar[ay].hak += girdiKazanc(v);
   });
   oSnap.forEach(doc=>{
-    const v = doc.data(), ay = String(v.tarih||"").slice(0,7);
+    const v = doc.data(), ay = odemeAyi(v);
     if(!ay) return;
     if(!aylar[ay]) aylar[ay] = {hak:0, alinan:0};
     aylar[ay].alinan += Number(v.tutar)||0;
@@ -751,19 +758,6 @@ async function odemeAitAySecDoldur(){
      (async), kullanıcı henüz formu değiştirmediyse üzerine yazarız. */
   const enEski = await enEskiOdenmemisAy();
   if(duzenlenenOdeme) return;   /* bu arada bir kaydı düzenlemeye başlamışsa dokunma */
-  if(odemeManuelAySecimi){
-    /* "Maaşlar" ekranından bilinçli bir ay seçilmiş — FIFO varsayılanı bunu geçersiz kılmasın */
-    if(![...sel.options].some(o=>o.value===odemeManuelAySecimi)){
-      const [yy,aa] = odemeManuelAySecimi.split("-").map(Number);
-      const op = document.createElement("option");
-      op.value = odemeManuelAySecimi; op.textContent = AYLAR[aa-1]+" "+yy;
-      sel.appendChild(op);
-    }
-    sel.value = odemeManuelAySecimi;
-    odemeManuelAySecimi = null;
-    odemeTarihiAyaGoreAyarla();
-    return;
-  }
   let hedefAy = enEski || (aktifYil+"-"+pad(aktifAy+1));
   if(enEski && ![...sel.options].some(o=>o.value===enEski)){
     const [yy,aa] = enEski.split("-").map(Number);
@@ -788,9 +782,25 @@ function odemeTarihiAyaGoreAyarla(){
     el.value = y+"-"+pad(a)+"-"+pad(ayinSonGunu);
   }
 }
+/* "Paralar" ekranındaki (o an görüntülenen ay) ödeme listesini, ağa yeni bir
+   sorgu atmadan — zaten yüklü olan tumOdemelerQS'ten, "aitAy" alanına göre
+   süzerek doldurur. Eskiden burada "tarih" alanına göre ayrı bir Firestore
+   sorgusu vardı; bu, bir ödeme (FIFO gereği) farklı bir aya sayılınca o ayı
+   HİÇ görememesine yol açıyordu — artık ikisi (görüntü ve hesaplama) aynı
+   kaynaktan, aynı mantıkla besleniyor. */
+function odemeleriAyaGoreDoldur(){
+  if(!tumOdemelerQS) return;
+  const hedefAy = aktifYil + "-" + pad(aktifAy+1);
+  odemeler = [];
+  tumOdemelerQS.forEach(doc=>{
+    const v = doc.data();
+    if(odemeAyi(v) === hedefAy) odemeler.push({id:doc.id, ...v});
+  });
+  odemeler.sort((a,b)=> a.tarih < b.tarih ? 1 : -1);
+  hepsiniCiz();
+}
 function ayiYukle(){
   if(dinleyiciGirdi) dinleyiciGirdi();
-  if(dinleyiciOdeme) dinleyiciOdeme();
   odemeAitAySecDoldur();
   masrafTarihVarsayilaniAyarla();
 
@@ -822,15 +832,16 @@ function ayiYukle(){
   if(aktifGoruntu==="ekip") ekipOzetYukle();
   if(aktifGoruntu==="kisiler" && seciliKisi) kisiVeriYukle();
 
-  dinleyiciOdeme = kokRef().collection("odemeler")
-    .where("tarih", ">=", bas).where("tarih", "<=", son)
-    .onSnapshot(qs=>{
-      odemeler = [];
-      qs.forEach(doc=> odemeler.push({id:doc.id, ...doc.data()}));
-      odemeler.sort((a,b)=> a.tarih < b.tarih ? 1 : -1);
-      hepsiniCiz();
-      anaTazele();   /* avans girilince ana ekrandaki para da anında güncellensin */
-    }, hataGoster);
+  /* Ödemeler artık ayrı bir ağ sorgusuyla değil, zaten yüklü olan
+     tumOdemelerQS'ten "aitAy"a göre süzülerek doldurulur (yukarıdaki not) */
+  if(tumOdemelerQS){
+    odemeleriAyaGoreDoldur();
+  }else{
+    kokRef().collection("odemeler").get().then(qs=>{
+      if(!tumOdemelerQS){ tumOdemelerQS = qs; }
+      odemeleriAyaGoreDoldur();
+    }).catch(hataGoster);
+  }
 }
 /* 💸 Maaş gününe kaç gün kaldı? (kısa aylarda ay sonuna çekilir, geçtiyse gelecek ay) */
 function maasKacGun(maasGunu, simdi){
@@ -937,66 +948,10 @@ window.addEventListener("unhandledrejection", (ev)=>{
 });
 
 /* ---------- Çizimler ---------- */
-/* ---------- Cüzdan ---------- */
-function cuzdaniDinle(){
-  dinleyiciCuzdan = kokRef().collection("cuzdan").onSnapshot(qs=>{
-    cuzdan = [];
-    qs.forEach(doc=> cuzdan.push({id:doc.id, ...doc.data()}));
-    cuzdan.sort((a,b)=> a.tarih < b.tarih ? 1 : -1);
-    cuzdanCiz();
-  }, hataGoster);
-}
+/* Not: Cüzdan (Cebimdeki Para) özelliği tamamen kaldırıldı — sadece Şirket
+   Hesap Kartı ve onun avans hareketleri kaldı. */
 
 const gizliPara = n => gizliMod ? "•••• ₺" : paraFmt(n);
-
-function cuzdanCiz(){
-  const bakiye = cuzdan.reduce((s,h)=> s + (h.tip==="giris" ? 1 : -1)*(Number(h.tutar)||0), 0);
-  const cuzdanKart = $("#cuzdan-bakiye").closest(".banka-kart");
-  if(cuzdanKart) cuzdanKart.classList.add("kart-parla");
-  sayacAnim($("#cuzdan-bakiye"), bakiye);
-  const kumEl = $("#kumbara-bar");
-  if(kumEl){
-    if(ayarlar.kumbara>0){
-      const y = Math.max(0, Math.min(100, Math.round(bakiye/ayarlar.kumbara*100)));
-      kumEl.style.display = "block";
-      kumEl.innerHTML = '<div style="display:flex;justify-content:space-between;font-size:11.5px;margin-bottom:4px"><span>🐷 Kumbara hedefi</span><span>%'+y+'</span></div>'+
-        '<div class="hedef-bar" style="height:9px"><div class="dolu'+(y>=100?' tamamlandi':'')+'" style="width:'+y+'%"></div></div>'+
-        (y>=100 ? '<div style="font-size:11.5px;margin-top:4px">Hedefi vurdun usta! 🎉</div>' : '');
-    }else kumEl.style.display = "none";
-  }
-  /* Bu ay giren-çıkan özeti */
-  const buAy = tarihId(new Date()).slice(0,7);
-  let giren=0, cikan=0;
-  cuzdan.forEach(h=>{
-    if(String(h.tarih||"").slice(0,7)!==buAy) return;
-    if(h.tip==="giris") giren += Number(h.tutar)||0; else cikan += Number(h.tutar)||0;
-  });
-  const altYazi = document.querySelector(".banka-kart.cuzdan-k .kart-alt");
-  if(altYazi) altYazi.textContent = gizliMod ? "Bu ay: •••• girdi · •••• çıktı"
-    : "Bu ay: +"+paraFmt(giren)+" girdi · −"+paraFmt(cikan)+" çıktı";
-  const ul = $("#liste-cuzdan-hareket");
-  if(!cuzdan.length){
-    ul.innerHTML = '<div class="bos-mesaj">💳 Henüz hareket yok. Elindeki parayı yukarıdan ekle.</div>';
-    return;
-  }
-  ul.innerHTML = "";
-  cuzdan.slice(0,15).forEach(h=>{
-    const t = new Date((h.tarih||tarihId(new Date()))+"T12:00:00");
-    const giris = h.tip==="giris";
-    const li = document.createElement("li");
-    li.innerHTML =
-      '<div class="rozet" style="background:'+(giris?"var(--tam)":"var(--gelmedi)")+'">'+(giris?"＋":"−")+'</div>'+
-      '<div class="orta"><div class="baslik">'+esc(h.not||(giris?"Para girişi":"Harcama"))+'</div>'+
-      '<div class="alt-yazi">'+t.getDate()+' '+AYLAR[t.getMonth()]+' '+t.getFullYear()+'</div></div>'+
-      '<div class="tutar" style="color:'+(giris?"var(--tam)":"var(--gelmedi)")+'">'+(giris?"+":"−")+paraFmt(h.tutar)+'</div>'+
-      '<button class="sil" aria-label="Sil">🗑️</button>';
-    li.querySelector(".sil").addEventListener("click", ()=>{
-      if(confirm("Bu hareketi silmek istiyor musun?"))
-        kokRef().collection("cuzdan").doc(h.id).delete().then(()=>toast("Silindi")).catch(hataGoster);
-    });
-    ul.appendChild(li);
-  });
-}
 
 /* ---------- Not defteri ---------- */
 function notlariDinle(){
@@ -3611,7 +3566,7 @@ function tumVeriDinle(){
     tumGirdilerQS = qs; anaTazele();
   }, ()=>{ /* dinleme düşerse get() yedeği devrede */ });
   dinleyiciTumO = kokRef().collection("odemeler").onSnapshot(qs=>{
-    tumOdemelerQS = qs; anaTazele();
+    tumOdemelerQS = qs; anaTazele(); odemeleriAyaGoreDoldur();
   }, ()=>{});
 }
 function tumVeriBirak(){
@@ -4537,7 +4492,7 @@ function maaslarListCiz(){
     aylar[ay].gunler.push({id:doc.id, ...v, kazanc});
   });
   oSnap.forEach(doc=>{
-    const v = doc.data(), ay = String(v.tarih||"").slice(0,7);
+    const v = doc.data(), ay = odemeAyi(v);
     if(!ay) return;
     if(!aylar[ay]) aylar[ay] = {hak:0, alinan:0, gun:0, mesai:0, odemeler:[], gunler:[]};
     aylar[ay].alinan += Number(v.tutar)||0;
@@ -5667,7 +5622,7 @@ document.addEventListener("DOMContentLoaded", ()=>{
 
   /* Görünüm değiştirme */
   const basliklar = {
-    ana:["Ana ekran","Cüzdanın ve şirket hesabın"],
+    ana:["Ana ekran","Bu ayki hesabın"],
     puantaj:["Puantaj","Bu ayki çizelgen"],
     odemeler:["Paralar","Avans ve ödemeler"],
     borc:["Borçlar","Verdiğin ve aldığın"],
@@ -6491,7 +6446,7 @@ document.addEventListener("DOMContentLoaded", ()=>{
   });
 
   /* Neler yeni kartı */
-  const YENILIK_SURUM = "0.0.0.59";
+  const YENILIK_SURUM = "0.0.0.62";
   try{ $("#cekmece-surum").textContent = "Puantaj Defterim " + YENILIK_SURUM; }catch(e){}
   try{
     if(localStorage.getItem("yenilik")!==YENILIK_SURUM) $("#yenilik-kart").classList.remove("gizli");
@@ -6659,7 +6614,7 @@ document.addEventListener("DOMContentLoaded", ()=>{
   });
 
   /* ---- Cüzdan tarihi varsayılanı ---- */
-  $("#cuzdan-tarih").value = tarihId(new Date());
+  /* $("#cuzdan-tarih") kaldırıldı — Cüzdan özelliği tamamen kaldırıldı */
 
   /* ---- Not arama ---- */
   $("#not-ara").addEventListener("input", notCiz);
@@ -6712,7 +6667,14 @@ document.addEventListener("DOMContentLoaded", ()=>{
       masrafFoto = null;
       $("#masraf-foto-onizle").classList.add("gizli");
       $("#masraf-tutar").value=""; $("#masraf-aciklama").value="";
-      toast("Masraf kaydedildi 🧾 Hesabına alacak olarak eklendi");
+      const t2 = new Date(tarih+"T12:00:00");
+      if(t2.getFullYear()!==aktifYil || t2.getMonth()!==aktifAy){
+        toast("🧾 Masraf "+AYLAR[t2.getMonth()]+" "+t2.getFullYear()+" ayına yazıldı ✓");
+        aktifYil = t2.getFullYear(); aktifAy = t2.getMonth();
+        ayiYukle(); ayBarCiz();
+      }else{
+        toast("Masraf kaydedildi 🧾 Hesabına alacak olarak eklendi");
+      }
     }catch(e){ hataGoster(e); }
   });
   let masrafFoto = null;
@@ -7064,7 +7026,7 @@ document.addEventListener("DOMContentLoaded", ()=>{
   $("#btn-goz").addEventListener("click", ()=>{
     gizliMod = !gizliMod;
     try{ localStorage.setItem("gizli", gizliMod?"1":"0"); }catch(e){}
-    cuzdanCiz(); anaYukle();
+    anaYukle();
     toast(gizliMod ? "Bakiyeler gizlendi 🙈" : "Bakiyeler görünür 👁️");
   });
 
@@ -7076,25 +7038,9 @@ document.addEventListener("DOMContentLoaded", ()=>{
     ok.style.transform = acikMi ? "rotate(0deg)" : "rotate(90deg)";
   });
 
-  /* Şirket hesabı / cüzdan kartları — yan yana, sağa-sola kaydırılan slider.
-     Kaydırma bitince hangi kart görünüyorsa altındaki noktayı ona göre
-     günceller; bir noktaya dokununca da o karta kaydırır. */
-  (function(){
-    const iz = $("#banka-slider-track"), noktalar = $$("#banka-slider-noktalar .banka-nokta");
-    if(!iz || !noktalar.length) return;
-    let zamanlayici = null;
-    iz.addEventListener("scroll", ()=>{
-      clearTimeout(zamanlayici);
-      zamanlayici = setTimeout(()=>{
-        const aktifIndeks = Math.round(iz.scrollLeft / iz.clientWidth);
-        noktalar.forEach((n,i)=> n.classList.toggle("aktif", i===aktifIndeks));
-      }, 80);
-    }, {passive:true});
-    noktalar.forEach(n=> n.addEventListener("click", ()=>{
-      const i = Number(n.dataset.slayt)||0;
-      iz.scrollTo({left: i*iz.clientWidth, behavior:"smooth"});
-    }));
-  })();
+  /* Not: Banka slider (Şirket/Cüzdan kaydırma) kodu kaldırıldı — Cüzdan
+     özelliği kalktığı için Şirket Hesap Kartı artık tek başına, kaydırma
+     mekanizmasına gerek kalmadı. */
 
   /* Ay detay modalı (Maaşlar) */
   $("#btn-ay-detay-kapat").addEventListener("click", ayDetayKapat);
@@ -7154,24 +7100,15 @@ document.addEventListener("DOMContentLoaded", ()=>{
     if(e.target.closest("#btn-hava-kapat")){ $("#hava-tam-ekran").classList.add("gizli"); return; }
   });
   $("#btn-ay-detay-odeme-ekle").addEventListener("click", ()=>{
-    const ay = aktifAyDetay;
-    odemeManuelAySecimi = ay;   /* FIFO otomatik varsayılanı bunu ezmesin */
+    /* Not: Eskiden bu düğme, o an baktığın ayı (ör. Ağustos) ZORLA seçiyordu
+       — hangi ayı görüntülüyorsan ödeme oraya gidiyordu. Ama gerçek hayatta
+       (inşaatta) yeni gelen para HER ZAMAN en eski ödenmemiş aya yazılmalı,
+       hangi ayın sayfasında olduğun önemli değil. Artık bu düğme de, Ana
+       ekrandaki "Avans" düğmesiyle birebir aynı otomatik mantığı kullanıyor —
+       en eski ödenmemiş ayı kendisi bulup oraya yönlendiriyor. */
     ayDetayKapat();
     document.querySelector('[data-goruntu="odemeler"]').click();
-    setTimeout(()=>{
-      const sel = $("#odeme-ait-ay");
-      if(sel && ay){
-        if(![...sel.options].some(o=>o.value===ay)){
-          const [yy,aa] = ay.split("-").map(Number);
-          const op = document.createElement("option");
-          op.value = ay; op.textContent = AYLAR[aa-1]+" "+yy;
-          sel.appendChild(op);
-        }
-        sel.value = ay;
-        odemeTarihiAyaGoreAyarla();
-      }
-      const tutarEl = $("#odeme-tutar"); if(tutarEl) tutarEl.focus();
-    }, 250);
+    setTimeout(()=> $("#odeme-tutar").focus(), 300);
   });
 
   /* Dünü kopyala */
@@ -7269,22 +7206,7 @@ document.addEventListener("DOMContentLoaded", ()=>{
     try{ localStorage.setItem("titresim", $("#ayar-titresim").checked?"1":"0"); }catch(e){}
   });
 
-  /* Cüzdan hareketi ekle */
-  $("#btn-cuzdan-ekle").addEventListener("click", async ()=>{
-    const tutar = sayi($("#cuzdan-tutar").value);
-    if(!tutar || tutar<=0){ toast("Tutarı yaz kanka"); return; }
-    try{
-      await kokRef().collection("cuzdan").add({
-        tarih: $("#cuzdan-tarih").value || tarihId(new Date()),
-        tutar,
-        tip: $("#cuzdan-tip").value,
-        not: $("#cuzdan-not").value.trim(),
-        olusturma: firebase.firestore.FieldValue.serverTimestamp()
-      });
-      $("#cuzdan-tutar").value=""; $("#cuzdan-not").value="";
-      toast("Cüzdan hareketi kaydedildi 💳");
-    }catch(e){ hataGoster(e); }
-  });
+  /* "Cüzdan hareketi ekle" handler'ı kaldırıldı — Cüzdan özelliği tamamen kaldırıldı */
 
   /* Ödeme ekle / güncelle */
   $("#odeme-tarih").value = tarihId(new Date());
@@ -7314,6 +7236,7 @@ document.addEventListener("DOMContentLoaded", ()=>{
   $("#btn-odeme-ekle").addEventListener("click", async ()=>{
     const tarih = $("#odeme-tarih").value;
     const tutar = sayi($("#odeme-tutar").value);
+    const aitAy = ($("#odeme-ait-ay") && $("#odeme-ait-ay").value) || (tarih ? tarih.slice(0,7) : "");
     if(!tarih || !tutar || tutar<=0){ toast("Tarih ve tutarı doldur kanka"); return; }
     /* Not: "Ay kilitli" kontrolü BİLEREK burada yok — kilit, sadece o ayın
        ÇALIŞMA kayıtlarını (gün işaretlemelerini) korumak için var. Avans/
@@ -7325,7 +7248,7 @@ document.addEventListener("DOMContentLoaded", ()=>{
       if(duzenlenenOdeme){
         if(ayKilitli(duzenlenenOdeme.tarih)){ toast("Kaydın eski ayı kilitli 🔒"); return; }
         await kokRef().collection("odemeler").doc(duzenlenenOdeme.id).update({
-          tarih, tutar,
+          tarih, tutar, aitAy,
           tur: $("#odeme-tur").value,
           not: $("#odeme-not").value.trim()
         });
@@ -7334,7 +7257,7 @@ document.addEventListener("DOMContentLoaded", ()=>{
         return;
       }
       const oVeri = {
-        tarih, tutar,
+        tarih, tutar, aitAy,
         tur: $("#odeme-tur").value,
         not: $("#odeme-not").value.trim(),
         olusturma: firebase.firestore.FieldValue.serverTimestamp()
@@ -7347,19 +7270,21 @@ document.addEventListener("DOMContentLoaded", ()=>{
       }
       dekontFoto = null;
       const dOn = $("#dekont-onizle"); if(dOn) dOn.classList.add("gizli");
-      if($("#odeme-cuzdan").checked){
-        await kokRef().collection("cuzdan").add({
-          tarih, tutar, tip:"giris",
-          not: odemeTurEtiket($("#odeme-tur").value) + " aldım",
-          olusturma: firebase.firestore.FieldValue.serverTimestamp()
-        });
-      }
       $("#odeme-tutar").value=""; $("#odeme-not").value="";
-      toast("Para girişi kaydedildi 💵" + ($("#odeme-cuzdan").checked ? " + cüzdana eklendi" : ""));
-      const t = new Date(tarih+"T12:00:00");
-      if(t.getFullYear()!==aktifYil || t.getMonth()!==aktifAy){
-        toast("Kaydedildi ama başka bir aya ait, o aya geçince görürsün");
-        anaTazele();  /* dinleyici o ayı görmüyor, kartı elle tazele */
+      const [ay_yy, ay_aa] = aitAy.split("-").map(Number);
+      if(ay_yy!==aktifYil || (ay_aa-1)!==aktifAy){
+        /* Ödeme (FIFO gereği) başka bir AYA sayıldı — kullanıcıyı orada
+           bırakıp sadece toast göstermek yetmiyordu, "hiçbir şey olmadı"
+           gibi görünüyordu. Artık doğrudan o ayın ekranına geçiyoruz,
+           kullanıcı kaydın gerçekten oraya yazıldığını gözüyle görsün.
+           Not: burada TARİH değil AİT AY'a bakıyoruz — parayı bugün alsan
+           bile (tarih=bugün), geçen ayın borcuna sayılıyorsa (aitAy=geçen ay)
+           doğru olan geçen aya gitmek. */
+        toast("💵 "+paraFmt(tutar)+" "+AYLAR[ay_aa-1]+" "+ay_yy+" ayının hesabına yazıldı ✓");
+        aktifYil = ay_yy; aktifAy = ay_aa-1;
+        ayiYukle(); ayBarCiz();
+      }else{
+        toast("Para girişi kaydedildi 💵");
       }
     }catch(e){ hataGoster(e); }
   });
@@ -7428,7 +7353,7 @@ document.addEventListener("DOMContentLoaded", ()=>{
         calismaTipi: $("#ayar-tip").value,
         hedef: sayi($("#ayar-hedef").value)||0,
         uyariEsik: sayi($("#ayar-esik").value)||0,
-        kumbara: sayi($("#ayar-kumbara").value)||0,
+        /* kumbara alanı kaldırıldı — Cüzdan özelliği tamamen kaldırıldı */
         notCipler: $("#ayar-cipler").value.split(",").map(x=>x.trim()).filter(Boolean).slice(0,8),
         santiye: $("#ayar-santiye").value.trim(),
         iseGiris: $("#ayar-giris").value || "",

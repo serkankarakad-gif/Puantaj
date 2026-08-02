@@ -234,30 +234,16 @@
         <div style="font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--soluk);font-weight:700">📅 Bugün</div>
         <div id="bugun-kazanc-icerik" style="margin-top:6px"></div>
       </div>
-      <div class="banka-slider" id="banka-slider">
-        <div class="banka-slider-track" id="banka-slider-track">
-          <div class="banka-kart sirket banka-slayt" id="sirket-kart">
-            <div class="kart-ust"><span>🏢 Şirket Hesap Kartı</span><button id="btn-goz" style="color:#fff;font-size:17px">👁️</button></div>
-            <div class="bakiye" id="sirket-bakiye">—</div>
-            <div class="kart-alt" id="sirket-alt">Çalıştıkça artar, avans aldıkça azalır</div>
-            <div class="kart-alt" id="kur-satir" style="margin-top:6px;font-weight:700"></div>
-            <button id="btn-sirket-hareket-ac" style="margin-top:14px;width:100%;display:flex;align-items:center;justify-content:space-between;background:rgba(255,255,255,.08);border-radius:12px;padding:11px 13px;color:#fff;font-weight:700;font-size:13.5px">
-              <span>📋 Hareketler</span><span id="sirket-hareket-ok" style="transition:transform .2s">›</span>
-            </button>
-            <div class="gizli" id="sirket-hareket-kutu" style="margin-top:10px;background:rgba(0,0,0,.18);border-radius:12px;padding:6px 10px;max-height:340px;overflow-y:auto">
-              <ul class="liste hareket-liste" id="liste-sirket-hareket"></ul>
-            </div>
-          </div>
-          <div class="banka-kart cuzdan-k banka-slayt">
-            <div class="kart-ust"><span>💳 Cebimdeki Para</span><span>CÜZDAN</span></div>
-            <div class="bakiye" id="cuzdan-bakiye">—</div>
-            <div id="kumbara-bar" style="display:none;margin-top:8px"></div>
-            <div class="kart-alt">Elindeki parayı buradan takip et</div>
-          </div>
-        </div>
-        <div class="banka-slider-noktalar" id="banka-slider-noktalar">
-          <span class="banka-nokta aktif" data-slayt="0"></span>
-          <span class="banka-nokta" data-slayt="1"></span>
+      <div class="banka-kart sirket" id="sirket-kart">
+        <div class="kart-ust"><span>🏢 Şirket Hesap Kartı</span><button id="btn-goz" style="color:#fff;font-size:17px">👁️</button></div>
+        <div class="bakiye" id="sirket-bakiye">—</div>
+        <div class="kart-alt" id="sirket-alt">Çalıştıkça artar, avans aldıkça azalır</div>
+        <div class="kart-alt" id="kur-satir" style="margin-top:6px;font-weight:700"></div>
+        <button id="btn-sirket-hareket-ac" style="margin-top:14px;width:100%;display:flex;align-items:center;justify-content:space-between;background:rgba(255,255,255,.08);border-radius:12px;padding:11px 13px;color:#fff;font-weight:700;font-size:13.5px">
+          <span>📋 Avans hareketleri</span><span id="sirket-hareket-ok" style="transition:transform .2s">›</span>
+        </button>
+        <div class="gizli" id="sirket-hareket-kutu" style="margin-top:10px;background:rgba(0,0,0,.18);border-radius:12px;padding:6px 10px;max-height:340px;overflow-y:auto">
+          <ul class="liste hareket-liste" id="liste-sirket-hareket"></ul>
         </div>
       </div>
       <div class="kart" style="padding:13px 14px">
@@ -267,43 +253,6 @@
         </div>
         <div class="hafta-serit" id="hafta-serit"></div>
         <div id="tahmin-kart" class="gizli" style="margin-top:12px;background:var(--girdi);border:1.5px solid var(--cizgi);border-radius:12px;padding:11px 14px;font-size:13.5px;line-height:1.6"></div>
-      </div>
-      <div class="kart">
-        <h2>➕ Cüzdan hareketi ekle</h2>
-        <div style="display:flex;gap:10px">
-          <div class="alan" style="flex:1">
-            <label>Tutar (TL)</label>
-            <input type="text" id="cuzdan-tutar" inputmode="decimal" placeholder="500">
-            <div style="display:flex;gap:6px;margin-top:8px;flex-wrap:wrap">
-              <button class="eksik-cip tutar-cip" data-hedef="cuzdan-tutar" data-deger="100" style="font-size:12px;padding:7px 11px">100</button>
-              <button class="eksik-cip tutar-cip" data-hedef="cuzdan-tutar" data-deger="250" style="font-size:12px;padding:7px 11px">250</button>
-              <button class="eksik-cip tutar-cip" data-hedef="cuzdan-tutar" data-deger="500" style="font-size:12px;padding:7px 11px">500</button>
-              <button class="eksik-cip tutar-cip" data-hedef="cuzdan-tutar" data-deger="1000" style="font-size:12px;padding:7px 11px">1.000</button>
-            </div>
-          </div>
-          <div class="alan" style="flex:1">
-            <label>Tarih</label>
-            <input type="date" id="cuzdan-tarih">
-          </div>
-        </div>
-        <div style="display:flex;gap:10px">
-          <div class="alan" style="flex:1">
-            <label>Ne oldu?</label>
-            <select id="cuzdan-tip">
-              <option value="giris">Para girdi (+)</option>
-              <option value="cikis">Para çıktı (−)</option>
-            </select>
-          </div>
-        </div>
-        <div class="alan">
-          <label>Not (isteğe bağlı)</label>
-          <input type="text" id="cuzdan-not" placeholder="Örn: Market, sigara, eve gönderdim...">
-        </div>
-        <button class="btn btn-sari" id="btn-cuzdan-ekle">Kaydet</button>
-      </div>
-      <div class="kart">
-        <h2>💳 Cüzdan hareketleri</h2>
-        <ul class="liste hareket-liste" id="liste-cuzdan-hareket"></ul>
       </div>
       <div class="kart" id="krono-kart" style="padding:13px 14px">
         <div style="display:flex;align-items:center;gap:12px">
@@ -339,7 +288,8 @@
       <div class="kart gizli" id="yenilik-kart" style="border-color:var(--sari)">
         <h2>🎁 Neler yeni?</h2>
         <ul style="padding-left:18px;font-size:13.5px;line-height:1.9">
-          <li><b>🐞 Aynı hatanın eşi bulundu: masraf ekleme de kilitli aya engelleniyordu.</b> Ödemelerdeki gibi, bir masrafı (yol/malzeme parası, fiş) kapanmış bir aya kaydetmen de engelleniyordu — bu da düzeltildi. Sadece gün kayıtları (kronometre, işaretleme) kilitli kalmaya devam ediyor, doğru olan bu</li>
+          <li><b>🐞 KRİTİK: "Tarih" ile "hangi aya sayılacağı" artık tamamen ayrı.</b> Bir avansı bugün alsan bile (tarih=bugün), Temmuz'un borcuna sayılıyorsa artık gerçekten Temmuz'a yazılıyor — kendi girdiğin tarih, otomatik ay seçimini bir daha bozmuyor</li>
+          <li><b>💳 Cüzdan (Cebimdeki Para) özelliği tamamen kaldırıldı:</b> Artık sadece Şirket Hesap Kartı ve "Avans hareketleri" var, ekran sadeleşti</li>
         </ul>
         <button class="btn btn-cizgili" id="btn-yenilik-kapat">Süper, kapat</button>
       </div>
@@ -528,9 +478,6 @@
           <button class="eksik-cip" id="btn-dekont-foto">🏦 Dekont fotoğrafı ekle</button>
           <img id="dekont-onizle" class="gizli" style="width:100%;border-radius:12px;margin-top:8px;border:1.5px solid var(--cizgi)" alt="">
         </div>
-        <label style="display:flex;align-items:center;gap:10px;font-size:14px;margin-bottom:14px">
-          <input type="checkbox" id="odeme-cuzdan" checked style="width:20px;height:20px;accent-color:var(--sari)"> Cüzdanıma da ekle (elime geçti)
-        </label>
         <button class="btn btn-sari" id="btn-odeme-ekle">Kaydet</button>
         <button class="btn btn-cizgili gizli" id="btn-odeme-vazgec" style="margin-top:10px">Vazgeç (düzenlemeyi iptal et)</button>
       </div>
@@ -1304,10 +1251,6 @@
           <input type="text" id="ayar-hedef" inputmode="decimal" placeholder="Örn: 45000">
         </div>
         <div class="alan">
-          <label>Kumbara hedefi (TL — cüzdanda biriktirmek istediğin para, istemezsen 0)</label>
-          <input type="text" id="ayar-kumbara" inputmode="decimal" placeholder="Örn: 50000">
-        </div>
-        <div class="alan">
           <label>Alacak uyarı eşiği (TL — şirkette bu kadar birikince uyar, istemezsen 0)</label>
           <input type="text" id="ayar-esik" inputmode="decimal" placeholder="Örn: 20000">
         </div>
@@ -1470,7 +1413,7 @@
         <p style="font-size:13px;color:var(--soluk);margin-bottom:12px">Hata mı gördün, fikrin mi var? Direkt geliştiriciye ulaş:</p>
         <a class="btn btn-cizgili" style="display:block;text-align:center;text-decoration:none;margin-bottom:10px" href="https://wa.me/905051252339?text=Puantaj%20Defterim%20hakkında:" target="_blank">💬 WhatsApp'tan yaz</a>
         <a class="btn btn-cizgili" style="display:block;text-align:center;text-decoration:none" href="tel:05051252339">📞 0505 125 23 39</a>
-        <p style="font-size:11px;color:var(--soluk);margin-top:12px;text-align:center">Sürüm: 0.0.0.59 · Serkan Karakaş</p>
+        <p style="font-size:11px;color:var(--soluk);margin-top:12px;text-align:center">Sürüm: 0.0.0.62 · Serkan Karakaş</p>
       </div>
       <div class="kart">
         <h2>🔒 PIN kilidi</h2>
