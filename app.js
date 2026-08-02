@@ -4241,7 +4241,7 @@ function odemeListesiCiz(){
       }catch(err){ dkBtn.textContent = "🏦"; toast("Dekont yüklenemedi, internete bak"); }
     });
     li.querySelector(".orta").addEventListener("click", ()=>{
-      if(ayKilitli(o.tarih)){ toast("Bu ay kilitli 🔒 Hesap özetinden açabilirsin"); return; }
+      if(ayKilitli(odemeAyi(o)+"-15")){ toast("Bu ay kilitli 🔒 Hesap özetinden açabilirsin"); return; }
       duzenlenenOdeme = o;
       $("#odeme-tarih").value = o.tarih;
       const aaSel = $("#odeme-ait-ay");
@@ -4264,7 +4264,7 @@ function odemeListesiCiz(){
       toast("Düzenleme modu: bilgileri değiştir, Güncelle'ye bas");
     });
     li.querySelector('[aria-label="Sil"]').addEventListener("click", async ()=>{
-      if(ayKilitli(o.tarih)){ toast("Bu ay kilitli 🔒 Hesap özetinden açabilirsin"); return; }
+      if(ayKilitli(odemeAyi(o)+"-15")){ toast("Bu ay kilitli 🔒 Hesap özetinden açabilirsin"); return; }
       if(o.dekontlu) kokRef().collection("dekontlar").doc(o.id).delete().catch(()=>{});
       const kopya = {...o}; delete kopya.id;
       try{
@@ -4617,7 +4617,7 @@ function ayDetayAc(ay){
       }catch(err){ dkBtn.textContent = "🏦"; toast("Dekont yüklenemedi, internete bak"); }
     });
     li.querySelector(".orta").addEventListener("click", ()=>{
-      if(ayKilitli(o.tarih)){ toast("Bu ay kilitli 🔒 Hesap özetinden açabilirsin"); return; }
+      if(ayKilitli(odemeAyi(o)+"-15")){ toast("Bu ay kilitli 🔒 Hesap özetinden açabilirsin"); return; }
       ayDetayKapat();
       document.querySelector('[data-goruntu="odemeler"]').click();
       setTimeout(()=>{
@@ -4643,7 +4643,7 @@ function ayDetayAc(ay){
       }, 250);
     });
     li.querySelector('[aria-label="Sil"]').addEventListener("click", async ()=>{
-      if(ayKilitli(o.tarih)){ toast("Bu ay kilitli 🔒 Hesap özetinden açabilirsin"); return; }
+      if(ayKilitli(odemeAyi(o)+"-15")){ toast("Bu ay kilitli 🔒 Hesap özetinden açabilirsin"); return; }
       if(!confirm("Bu ödeme kaydı silinsin mi?")) return;
       if(o.dekontlu) kokRef().collection("dekontlar").doc(o.id).delete().catch(()=>{});
       const kopya = {...o}; delete kopya.id;
@@ -6457,7 +6457,7 @@ document.addEventListener("DOMContentLoaded", ()=>{
   });
 
   /* Neler yeni kartı */
-  const YENILIK_SURUM = "0.0.0.63";
+  const YENILIK_SURUM = "0.0.0.64";
   try{ $("#cekmece-surum").textContent = "Puantaj Defterim " + YENILIK_SURUM; }catch(e){}
   try{
     if(localStorage.getItem("yenilik")!==YENILIK_SURUM) $("#yenilik-kart").classList.remove("gizli");
@@ -7257,7 +7257,11 @@ document.addEventListener("DOMContentLoaded", ()=>{
        kaydedemeyeceğin, kritik bir hataya yol açıyordu. */
     try{
       if(duzenlenenOdeme){
-        if(ayKilitli(duzenlenenOdeme.tarih)){ toast("Kaydın eski ayı kilitli 🔒"); return; }
+        /* Not: burada duzenlenenOdeme.tarih değil aitAy'a bakıyoruz — kilit,
+           bu ödemenin GERÇEKTEN etkilediği ayı (hangi ayın bakiyesini
+           değiştirdiğini) korumalı. Bir ödemenin tarihi Ağustos olup
+           aitAy'ı Temmuz olabilir; o zaman korunması gereken Temmuz'dur. */
+        if(ayKilitli(odemeAyi(duzenlenenOdeme)+"-15")){ toast("Kaydın sayıldığı ay kilitli 🔒"); return; }
         await kokRef().collection("odemeler").doc(duzenlenenOdeme.id).update({
           tarih, tutar, aitAy,
           tur: $("#odeme-tur").value,
