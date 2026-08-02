@@ -3636,7 +3636,7 @@ async function anaYukle(){
     oSnap.forEach(doc=>{
       const v = doc.data();
       alinan += Number(v.tutar)||0;
-      { const ay7 = String(v.tarih||"").slice(0,7); if(ay7) aylikAlinan[ay7] = (aylikAlinan[ay7]||0) + (Number(v.tutar)||0); if(ay7===buAyOnEk) hareketler.push({tarih:v.tarih, tutar:Number(v.tutar)||0, tip:"-", baslik:odemeTurEtiket(v.tur)+" aldın"+(v.not?" · "+v.not:"")}); }
+      { const ay7 = odemeAyi(v); if(ay7) aylikAlinan[ay7] = (aylikAlinan[ay7]||0) + (Number(v.tutar)||0); if(ay7===buAyOnEk) hareketler.push({tarih:v.tarih, tutar:Number(v.tutar)||0, tip:"-", baslik:odemeTurEtiket(v.tur)+" aldın"+(v.not?" · "+v.not:"")}); }
     });
     sirketOzet = {hakedis, alinan};
     asistanVeri = {buAyHak, buAyGun, buAyMesai};
@@ -4244,7 +4244,17 @@ function odemeListesiCiz(){
       if(ayKilitli(o.tarih)){ toast("Bu ay kilitli 🔒 Hesap özetinden açabilirsin"); return; }
       duzenlenenOdeme = o;
       $("#odeme-tarih").value = o.tarih;
-      const aaSel = $("#odeme-ait-ay"); if(aaSel) aaSel.value = String(o.tarih).slice(0,7);
+      const aaSel = $("#odeme-ait-ay");
+      if(aaSel){
+        const gercekAy = odemeAyi(o);
+        if(![...aaSel.options].some(op=>op.value===gercekAy)){
+          const [yy,aa2] = gercekAy.split("-").map(Number);
+          const op2 = document.createElement("option");
+          op2.value = gercekAy; op2.textContent = AYLAR[aa2-1]+" "+yy;
+          aaSel.appendChild(op2);
+        }
+        aaSel.value = gercekAy;
+      }
       $("#odeme-tutar").value = o.tutar;
       $("#odeme-tur").value = o.tur||"diger";
       $("#odeme-not").value = o.not||"";
@@ -4615,13 +4625,14 @@ function ayDetayAc(ay){
         $("#odeme-tarih").value = o.tarih;
         const aaSel = $("#odeme-ait-ay");
         if(aaSel){
-          if(![...aaSel.options].some(op=>op.value===String(o.tarih).slice(0,7))){
-            const [yy,aa2] = String(o.tarih).slice(0,7).split("-").map(Number);
+          const gercekAy = odemeAyi(o);
+          if(![...aaSel.options].some(op=>op.value===gercekAy)){
+            const [yy,aa2] = gercekAy.split("-").map(Number);
             const op2 = document.createElement("option");
-            op2.value = String(o.tarih).slice(0,7); op2.textContent = AYLAR[aa2-1]+" "+yy;
+            op2.value = gercekAy; op2.textContent = AYLAR[aa2-1]+" "+yy;
             aaSel.appendChild(op2);
           }
-          aaSel.value = String(o.tarih).slice(0,7);
+          aaSel.value = gercekAy;
         }
         $("#odeme-tutar").value = o.tutar;
         $("#odeme-tur").value = o.tur||"diger";
@@ -4711,7 +4722,7 @@ async function ozetDetayYukle(){
     oSnap.forEach(doc=>{
       const v = doc.data(), t = Number(v.tutar)||0;
       alinan += t;
-      const k = String(v.tarih||"").slice(0,7);
+      const k = odemeAyi(v);
       if(k.length===7) ayAlinan[k] = (ayAlinan[k]||0) + t;
     });
     $("#genel-grid").innerHTML =
@@ -5025,7 +5036,7 @@ function isiHaritaCiz(gunKazanc){
     });
     isiHaritaCiz(gunKazanc);
     oSnap.forEach(doc=>{
-      const v=doc.data(), ay=Number(String(v.tarih).slice(5,7))-1;
+      const v=doc.data(), ay=Number(odemeAyi(v).slice(5,7))-1;
       if(ay>=0 && ay<12) aylik[ay].alinan += Number(v.tutar)||0;
     });
     let T={gun:0,mesai:0,hak:0,alinan:0}, satirlar="";
@@ -6446,7 +6457,7 @@ document.addEventListener("DOMContentLoaded", ()=>{
   });
 
   /* Neler yeni kartı */
-  const YENILIK_SURUM = "0.0.0.62";
+  const YENILIK_SURUM = "0.0.0.63";
   try{ $("#cekmece-surum").textContent = "Puantaj Defterim " + YENILIK_SURUM; }catch(e){}
   try{
     if(localStorage.getItem("yenilik")!==YENILIK_SURUM) $("#yenilik-kart").classList.remove("gizli");
