@@ -5336,6 +5336,141 @@ function pdfYazdir(gBas, gSon){
   setTimeout(()=> w.print(), 500);
 }
 
+/* ---------- Gerçek PDF DOSYASI üretme (WhatsApp'a metin değil, dosya olarak paylaşmak için) ----------
+   pdfYazdir() bir tarayıcı sekmesi açıp yazdırma diyaloğu gösterir — kullanıcı isterse
+   "PDF olarak kaydet" seçebilir ama bu, uygulamanın ELİNDE gerçek bir dosya olmaz, o yüzden
+   WhatsApp paylaşımına otomatik EKLENEMEZ. Bunun yerine jsPDF ile hafızada gerçek bir PDF
+   dosyası (Blob) üretip, Web Share API'ye (navigator.share) dosya olarak veriyoruz — telefonun
+   paylaşım ekranı açılıyor ve WhatsApp seçilince gerçek bir PDF eki gidiyor (yazı değil). */
+function pdfBlobOlustur(gBas, gSon){
+  if(!window.jspdf || !window.jspdf.jsPDF) return null;
+  const { jsPDF } = window.jspdf;
+  const t = hesaplaAralik(gBas, gSon);
+  const ad = (kullanici && kullanici.displayName) || "";
+  const doc = new jsPDF({unit:"pt", format:"a4"});
+  const solX = 40, sagX = 555;
+  let y = 46;
+
+  doc.setFont("helvetica","bold"); doc.setFontSize(15);
+  doc.text("PUANTAJ ÇİZELGESİ — "+AYLAR[aktifAy]+" "+aktifYil+t.etiket, solX, y);
+  y += 8;
+  doc.setDrawColor(255,196,0); doc.setLineWidth(2.5);
+  doc.line(solX, y, sagX, y);
+  y += 16;
+  if(ad || ayarlar.santiye){
+    doc.setFont("helvetica","normal"); doc.setFontSize(9.5); doc.setTextColor(60);
+    doc.text("İşçi: "+(ad||"—")+(ayarlar.santiye ? "   ·   Şantiye: "+ayarlar.santiye : ""), solX, y);
+    doc.setTextColor(0);
+  }
+
+  /* Ana çizelge tablosu */
+  const gunSatir = [];
+  for(let g=t.gBas; g<=t.gSon; g++){
+    const id = aktifYil+"-"+pad(aktifAy+1)+"-"+pad(g);
+    const d = new Date(aktifYil, aktifAy, g);
+    const v = girdiler[id];
+    const i = gunIsaret(v);
+    const kazancVar = i.yev!=="0" || (v && Number(v.mesai)>0);
+    gunSatir.push([
+      pad(g)+" / "+pad(aktifAy+1)+" / "+aktifYil+" — "+GUNLER[d.getDay()],
+      i.yev, i.arti, i.mesai,
+      kazancVar ? paraFmt(girdiKazanc(v)) : ""
+    ]);
+  }
+  doc.autoTable({
+    startY: y+8, margin:{left:solX, right: 595-sagX},
+    head: [["TARİH","YEVMİYE","GÜN İÇİ ARTI","MESAİ","KAZANÇ"]],
+    body: gunSatir,
+    styles:{fontSize:8, cellPadding:4, lineColor:[200,200,200], lineWidth:0.5},
+    headStyles:{fillColor:[242,242,242], textColor:20, fontStyle:"bold"},
+    columnStyles:{1:{halign:"center"},2:{halign:"center"},3:{halign:"center"},4:{halign:"right"}},
+    foot:[
+      ["TOPLAM: "+t.gunSayisi+" gün"+(t.artiToplam>0?" · "+t.artiToplam+" artı":"")+" · "+t.mesaiToplam+" saat mesai","","HAKEDİŞ","",paraFmt(t.hakedis)],
+      ["","","ALINAN (avans/ödeme)","",paraFmt(t.alinan)],
+      ...(t.masrafToplam>0 ? [["","","MASRAF ALACAĞI","",paraFmt(t.masrafToplam)]] : []),
+      ["","","KALAN","",paraFmt(t.kalan)]
+    ],
+    footStyles:{fillColor:[255,247,220], textColor:20, fontStyle:"bold", fontSize:8.5}
+  });
+  let y2 = doc.lastAutoTable.finalY + 22;
+
+  /* Para girişleri: avans/hakediş/kesinti/diğer — türlere göre ayrı bölümler */
+  const donemOdeme = donemOdemeSec(t.bId, t.sId).sort((a,b)=> a.tarih<b.tarih?-1:1);
+  const tSec = t2 => donemOdeme.filter(o=> (o.tur||"diger")===t2);
+  function odemeBolumPdf(baslik, liste2){
+    if(!liste2.length) return;
+    if(y2 > 740){ doc.addPage(); y2 = 50; }
+    doc.setFont("helvetica","bold"); doc.setFontSize(11); doc.setTextColor(0);
+    doc.text(baslik+" ("+liste2.length+" adet)", solX, y2);
+    const araToplam = liste2.reduce((s,o)=>s+(Number(o.tutar)||0),0);
+    const body = liste2.map((o,idx)=>{
+      const d2 = new Date(o.tarih+"T12:00:00");
+      return [String(idx+1), pad(d2.getDate())+" / "+pad(d2.getMonth()+1)+" / "+d2.getFullYear()+" — "+GUNLER[d2.getDay()], o.not||"", paraFmt(o.tutar)];
+    });
+    doc.autoTable({
+      startY: y2+8, margin:{left:solX, right: 595-sagX},
+      head: [["#","TARİH","NOT","TUTAR"]],
+      body,
+      foot: [["", "", baslik+" TOPLAMI", paraFmt(araToplam)]],
+      styles:{fontSize:8, cellPadding:4, lineColor:[200,200,200], lineWidth:0.5},
+      headStyles:{fillColor:[242,242,242], textColor:20, fontStyle:"bold"},
+      footStyles:{fillColor:[255,247,220], textColor:20, fontStyle:"bold"},
+      columnStyles:{0:{halign:"center", cellWidth:24}, 3:{halign:"right"}}
+    });
+    y2 = doc.lastAutoTable.finalY + 18;
+  }
+  odemeBolumPdf("AVANSLAR", tSec("avans"));
+  odemeBolumPdf("HAKEDİŞ ÖDEMELERİ", tSec("hakedis"));
+  odemeBolumPdf("KESİNTİLER", tSec("kesinti"));
+  odemeBolumPdf("DİĞER ÖDEMELER", tSec("diger"));
+  if(!donemOdeme.length){
+    if(y2 > 740){ doc.addPage(); y2 = 50; }
+    doc.setFont("helvetica","bold"); doc.setFontSize(11);
+    doc.text("ALINAN PARALAR", solX, y2); y2 += 16;
+    doc.setFont("helvetica","normal"); doc.setFontSize(9); doc.setTextColor(100);
+    doc.text("Bu dönemde kayıtlı para girişi yok.", solX, y2);
+    doc.setTextColor(0);
+    y2 += 20;
+  }
+
+  /* İmza satırları */
+  if(y2 > 720){ doc.addPage(); y2 = 60; } else { y2 += 40; }
+  doc.setDrawColor(30); doc.setLineWidth(1);
+  doc.line(solX, y2, solX+180, y2);
+  doc.line(sagX-180, y2, sagX, y2);
+  doc.setFont("helvetica","normal"); doc.setFontSize(9);
+  doc.text("İşçi", solX, y2+14); doc.text("Ad Soyad / İmza", solX, y2+26);
+  doc.text("İşveren", sagX-180, y2+14); doc.text("Ad Soyad / İmza", sagX-180, y2+26);
+
+  return doc.output("blob");
+}
+
+async function pdfPaylas(gBas, gSon){
+  const blob = pdfBlobOlustur(gBas, gSon);
+  const dosyaAdi = "Puantaj-"+AYLAR[aktifAy]+"-"+aktifYil+".pdf";
+  if(!blob){
+    /* jsPDF yüklenemedi (örn. internet yok) — eski yazdırma ekranına düş */
+    toast("PDF motoru yüklenemedi, yazdırma ekranı açılıyor 🖨️");
+    pdfYazdir(gBas, gSon);
+    return;
+  }
+  try{
+    const dosya = new File([blob], dosyaAdi, {type:"application/pdf"});
+    if(navigator.canShare && navigator.canShare({files:[dosya]})){
+      await navigator.share({files:[dosya], title:"Puantaj Çizelgesi — "+AYLAR[aktifAy]+" "+aktifYil});
+    }else{
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url; a.download = dosyaAdi; a.click();
+      setTimeout(()=> URL.revokeObjectURL(url), 15000);
+      toast("Tarayıcın dosya paylaşımını desteklemiyor, PDF indirildi — WhatsApp'a elle ekleyebilirsin 📎");
+    }
+  }catch(e){
+    if(e && e.name==="AbortError") return; /* kullanıcı paylaşım ekranını iptal etti */
+    hataGoster(e);
+  }
+}
+
 /* ---------- Gün modalı ---------- */
 function modalAc(id){
   modalTarih = id;
@@ -6462,7 +6597,8 @@ document.addEventListener("DOMContentLoaded", ()=>{
   $("#donem-wp").addEventListener("click", ()=>{
     $("#modal-perde").classList.remove("acik");
     $("#donem-modal").classList.remove("acik");
-    raporPaylas(null,null);   /* PDF/Görsel ekranındayken de tek dokunuşla WhatsApp'a paylaşabilsin diye — hep tüm ay */
+    if(donemMod==="pdf") pdfPaylas(null,null);   /* PDF modundayken gerçek PDF DOSYASI paylaşılır */
+    else raporPaylas(null,null);                  /* diğer modlarda kısa metin özeti paylaşılır */
   });
 
   /* Canlı kazanç güncelleme kancaları */
@@ -6481,7 +6617,7 @@ document.addEventListener("DOMContentLoaded", ()=>{
   });
 
   /* Neler yeni kartı */
-  const YENILIK_SURUM = "0.0.0.67";
+  const YENILIK_SURUM = "0.0.0.69";
   try{ $("#cekmece-surum").textContent = "Puantaj Defterim " + YENILIK_SURUM; }catch(e){}
   try{
     if(localStorage.getItem("yenilik")!==YENILIK_SURUM) $("#yenilik-kart").classList.remove("gizli");
