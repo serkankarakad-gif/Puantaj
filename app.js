@@ -5351,6 +5351,30 @@ function pdfBlobOlustur(gBas, gSon){
   const solX = 40, sagX = 555;
   let y = 46;
 
+  /* jsPDF'in standart (helvetica) fontu, PDF'in temel 14 fontunun WinAnsi
+     kodlamasını kullanıyor — bu kodlamada Türkçe'ye özgü İ, ı, Ş/ş, Ğ/ğ ve ₺
+     işareti YOK, bu yüzden çıktıda bunların yerine "0", "1" gibi anlamsız
+     karakterler basılıyordu (kullanıcı ekran görüntüsüyle bildirdi). Gerçek bir
+     Türkçe/Unicode font gömmek internet + büyük dosya boyutu gerektirir; onun
+     yerine en yakın okunabilir Latin karşılıklarına çeviriyoruz — %100 doğru
+     Türkçe olmasa da (İ→I, ı→i, ş→s, ğ→g, ₺→TL) HER ZAMAN okunabilir çıkıyor,
+     hiç bozuk karakter basmıyor. doc.text ve autoTable hücrelerinin HEPSİNDEN
+     otomatik geçtiği için, aşağıdaki tüm metinler tek tek elle çevrilmiyor. */
+  const turkce = s => String(s==null?"":s)
+    .replace(/İ/g,"I").replace(/ı/g,"i")
+    .replace(/Ş/g,"S").replace(/ş/g,"s")
+    .replace(/Ğ/g,"G").replace(/ğ/g,"g")
+    .replace(/₺/g,"TL");
+  const _text = doc.text.bind(doc);
+  doc.text = (txt, x, yy, opt) => _text(Array.isArray(txt) ? txt.map(turkce) : turkce(txt), x, yy, opt);
+  const _autoTable = doc.autoTable.bind(doc);
+  doc.autoTable = (ayar)=>{
+    ayar.didParseCell = (veri)=>{
+      veri.cell.text = Array.isArray(veri.cell.text) ? veri.cell.text.map(turkce) : turkce(veri.cell.text);
+    };
+    return _autoTable(ayar);
+  };
+
   doc.setFont("helvetica","bold"); doc.setFontSize(15);
   doc.text("PUANTAJ ÇİZELGESİ — "+AYLAR[aktifAy]+" "+aktifYil+t.etiket, solX, y);
   y += 8;
@@ -5454,20 +5478,27 @@ async function pdfPaylas(gBas, gSon){
     pdfYazdir(gBas, gSon);
     return;
   }
+  /* ÖNCE PDF'i telefona GERÇEK, kalıcı bir dosya olarak indir (İndirilenler klasörü).
+     Sebep: navigator.share() ile WhatsApp'a gönderilen dosya, tarayıcının SİLİNEBİLEN
+     geçici bir alanındaki kaynağa bakıyor — zayıf bağlantıda WhatsApp'ın yükleme işi
+     yarıda kalırsa, o geçici kaynak zaten kaybolmuş olabileceğinden "yeniden gönder"
+     de işe yaramıyor (kullanıcıdan gelen gerçek şikayet buydu). Dosyayı önce kalıcı
+     olarak kaydedince, paylaşım penceresi ne olursa olsun elde GERÇEK bir PDF kalıyor
+     ve WhatsApp'tan ataç (📎) → Belge ile elle eklenebiliyor — bu asla başarısız olmaz. */
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url; a.download = dosyaAdi; a.click();
+  setTimeout(()=> URL.revokeObjectURL(url), 15000);
+  toast("PDF telefonuna kaydedildi 📥 (İndirilenler)");
+
   try{
     const dosya = new File([blob], dosyaAdi, {type:"application/pdf"});
     if(navigator.canShare && navigator.canShare({files:[dosya]})){
       await navigator.share({files:[dosya], title:"Puantaj Çizelgesi — "+AYLAR[aktifAy]+" "+aktifYil});
-    }else{
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url; a.download = dosyaAdi; a.click();
-      setTimeout(()=> URL.revokeObjectURL(url), 15000);
-      toast("Tarayıcın dosya paylaşımını desteklemiyor, PDF indirildi — WhatsApp'a elle ekleyebilirsin 📎");
     }
   }catch(e){
-    if(e && e.name==="AbortError") return; /* kullanıcı paylaşım ekranını iptal etti */
-    hataGoster(e);
+    /* Paylaşım penceresi iptal edildi ya da başarısız oldu — sorun değil, PDF zaten
+       kalıcı olarak kaydedildi; WhatsApp'tan ataç (📎) → Belge ile elle eklenebilir. */
   }
 }
 
@@ -6617,7 +6648,7 @@ document.addEventListener("DOMContentLoaded", ()=>{
   });
 
   /* Neler yeni kartı */
-  const YENILIK_SURUM = "0.0.0.69";
+  const YENILIK_SURUM = "0.0.0.71";
   try{ $("#cekmece-surum").textContent = "Puantaj Defterim " + YENILIK_SURUM; }catch(e){}
   try{
     if(localStorage.getItem("yenilik")!==YENILIK_SURUM) $("#yenilik-kart").classList.remove("gizli");
