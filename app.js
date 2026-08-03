@@ -5119,21 +5119,6 @@ function gunIsaret(v){
   return {yev, arti, mesai};
 }
 
-/* Bir dönem (gün aralığı) için gösterilecek ödemeleri seçer. NOT: `odemeler`
-   dizisi zaten aitAy'a göre BU AYA süzülmüş halde gelir (odemeleriAyaGoreDoldur).
-   Burada sadece gün-aralığı (1-15 / 16-son gibi kısmi dönem) filtresi uygulanır.
-   Eğer ödeme FARKLI bir ayda alınıp FIFO gereği bu aya sayıldıysa (aitAy bu ay
-   ama gerçek tarih başka ay), gün aralığı kıyası anlamsız kalır — o yüzden
-   böyle ödemeler her zaman dahil edilir, hiçbir dönemde "kaybolmaz". */
-function donemOdemeSec(bId, sId){
-  const buAy = aktifYil + "-" + pad(aktifAy+1);
-  return odemeler.filter(o=>{
-    const tarihAy = String(o.tarih||"").slice(0,7);
-    if(tarihAy !== buAy) return true;
-    return o.tarih>=bId && o.tarih<=sId;
-  });
-}
-
 /* ---------- Alınan paraların dökümü (rapor metni için) ---------- */
 function masrafDokum(t){
   const liste = masraflar.filter(m=> !m.odendi && m.tarih>=t.bId && m.tarih<=t.sId)
@@ -5147,7 +5132,7 @@ function masrafDokum(t){
   return s;
 }
 function alinanDokum(t){
-  const liste = donemOdemeSec(t.bId, t.sId)
+  const liste = odemeler.filter(o=> o.tarih>=t.bId && o.tarih<=t.sId)
                         .sort((a,b)=> a.tarih<b.tarih ? -1 : 1);
   if(!liste.length) return "";
   let m = "┈┈ Alınanların dökümü ┈┈\n";
@@ -5177,7 +5162,7 @@ function hesaplaAralik(gBas, gSon){
   });
   const bId = aktifYil+"-"+pad(aktifAy+1)+"-"+pad(gBas);
   const sId = aktifYil+"-"+pad(aktifAy+1)+"-"+pad(gSon);
-  const alinan = donemOdemeSec(bId, sId)
+  const alinan = odemeler.filter(o=> o.tarih>=bId && o.tarih<=sId)
                          .reduce((s,o)=> s+(Number(o.tutar)||0), 0);
   const masrafToplam = masraflar.filter(m=> !m.odendi && m.tarih>=bId && m.tarih<=sId)
                                 .reduce((s,m)=> s+(Number(m.tutar)||0), 0);
@@ -5265,12 +5250,7 @@ function toastGeriAl(mesaj, islem){
 }
 
 /* ---------- PDF hakediş raporu (patron formatı, dönem destekli) ---------- */
-/* Hem yazdırma sekmesi (pdfYazdir) hem de "resim gibi PDF" (pdfResimBlobOlustur) için
-   AYNI HTML içeriğini üretir — tek bir yerden bakım yapılır, ikisi de birbirini tutar.
-   Seçiciler ".pdf-rapor" ile öneklenir ki bir <style> etiketi olarak ana uygulama
-   sayfasına geçici eklendiğinde (resim alma akışında) app'in kendi tablo/başlık
-   stillerini ezmesin. */
-function raporIcerikUret(gBas, gSon){
+function pdfYazdir(gBas, gSon){
   const t = hesaplaAralik(gBas, gSon);
   const ad = (kullanici && kullanici.displayName) || "";
   let satirlar = "";
@@ -5286,7 +5266,7 @@ function raporIcerikUret(gBas, gSon){
       "</td><td class='sag'>"+(kazancVar ? paraFmt(girdiKazanc(v)) : "")+"</td></tr>";
   }
   /* 💰 Para girişleri: türlere göre AYRI bölümler — avanslar tek tek görünür */
-  const donemOdeme = donemOdemeSec(t.bId, t.sId)
+  const donemOdeme = odemeler.filter(o=> o.tarih>=t.bId && o.tarih<=t.sId)
                              .sort((a,b)=> a.tarih<b.tarih?-1:1);
   function odemeBolum(baslik, liste2){
     if(!liste2.length) return "";
@@ -5315,18 +5295,17 @@ function raporIcerikUret(gBas, gSon){
       '<p style="font-size:12px;color:#666">Bu dönemde kayıtlı para girişi yok.</p>';
   }
 
-  const css =
-    '.pdf-rapor{font-family:Arial,sans-serif;font-size:12.5px;color:#111;padding:24px;max-width:720px;margin:auto;background:#fff}'+
-    '.pdf-rapor h1{font-size:19px;border-bottom:4px solid #FFC400;padding-bottom:8px}'+
-    '.pdf-rapor table{width:100%;border-collapse:collapse;margin-top:12px}'+
-    '.pdf-rapor th,.pdf-rapor td{border:1px solid #999;padding:5px 8px;text-align:left}'+
-    '.pdf-rapor th{background:#f2f2f2;font-size:11px}'+
-    '.pdf-rapor .sag{text-align:right}.pdf-rapor .orta-h{text-align:center;font-weight:bold}'+
-    '.pdf-rapor .ozet td{font-weight:bold;background:#FFF7DC}'+
-    '.pdf-rapor .imza{display:flex;justify-content:space-between;margin-top:55px}'+
-    '.pdf-rapor .imza div{width:40%;border-top:1.5px solid #111;padding-top:6px;text-align:center;font-size:12px}';
-
-  const govde = '<div class="pdf-rapor">'+
+  const w = window.open("", "_blank");
+  if(!w){ toast("Tarayıcı yeni pencereyi engelledi, izin ver"); return; }
+  w.document.write('<html><head><meta charset="UTF-8"><title>Puantaj - '+AYLAR[aktifAy]+' '+aktifYil+'</title>'+
+    '<style>body{font-family:Arial,sans-serif;font-size:12.5px;color:#111;padding:24px;max-width:720px;margin:auto}'+
+    'h1{font-size:19px;border-bottom:4px solid #FFC400;padding-bottom:8px}'+
+    'table{width:100%;border-collapse:collapse;margin-top:12px}'+
+    'th,td{border:1px solid #999;padding:5px 8px;text-align:left}th{background:#f2f2f2;font-size:11px}'+
+    '.sag{text-align:right}.orta-h{text-align:center;font-weight:bold}'+
+    '.ozet td{font-weight:bold;background:#FFF7DC}'+
+    '.imza{display:flex;justify-content:space-between;margin-top:55px}'+
+    '.imza div{width:40%;border-top:1.5px solid #111;padding-top:6px;text-align:center;font-size:12px}</style></head><body>'+
     '<h1>PUANTAJ ÇİZELGESİ — '+AYLAR[aktifAy]+' '+aktifYil+t.etiket+'</h1>'+
     (ad ? '<p><b>İşçi:</b> '+esc(ad)+(ayarlar.santiye?' &nbsp;·&nbsp; <b>Şantiye:</b> '+esc(ayarlar.santiye):'')+'</p>' : '')+
     '<table><tr><th>TARİH</th><th style="text-align:center">YEVMİYE</th><th style="text-align:center">GÜN İÇİ ARTI</th><th style="text-align:center">MESAİ</th><th class="sag">KAZANÇ</th></tr>'+
@@ -5337,220 +5316,9 @@ function raporIcerikUret(gBas, gSon){
     '<tr class="ozet"><td></td><td colspan="3">KALAN</td><td class="sag">'+paraFmt(t.kalan)+'</td></tr></table>'+
     odemeHtml+
     '<div class="imza"><div>İşçi<br>Ad Soyad / İmza</div><div>İşveren<br>Ad Soyad / İmza</div></div>'+
-    '</div>';
-
-  return {t, css, govde};
-}
-
-function pdfYazdir(gBas, gSon){
-  const {css, govde} = raporIcerikUret(gBas, gSon);
-  const w = window.open("", "_blank");
-  if(!w){ toast("Tarayıcı yeni pencereyi engelledi, izin ver"); return; }
-  w.document.write('<html><head><meta charset="UTF-8"><title>Puantaj - '+AYLAR[aktifAy]+' '+aktifYil+'</title>'+
-    '<style>body{margin:0}'+css+'</style></head><body>'+govde+'</body></html>');
+    '</body></html>');
   w.document.close(); w.focus();
   setTimeout(()=> w.print(), 500);
-}
-
-/* ---------- Gerçek PDF DOSYASI üretme (WhatsApp'a metin değil, dosya olarak paylaşmak için) ----------
-   pdfYazdir() bir tarayıcı sekmesi açıp yazdırma diyaloğu gösterir — kullanıcı isterse
-   "PDF olarak kaydet" seçebilir ama bu, uygulamanın ELİNDE gerçek bir dosya olmaz, o yüzden
-   WhatsApp paylaşımına otomatik EKLENEMEZ. Bunun yerine jsPDF ile hafızada gerçek bir PDF
-   dosyası (Blob) üretip, Web Share API'ye (navigator.share) dosya olarak veriyoruz — telefonun
-   paylaşım ekranı açılıyor ve WhatsApp seçilince gerçek bir PDF eki gidiyor (yazı değil). */
-function pdfBlobOlustur(gBas, gSon){
-  if(!window.jspdf || !window.jspdf.jsPDF) return null;
-  const { jsPDF } = window.jspdf;
-  const t = hesaplaAralik(gBas, gSon);
-  const ad = (kullanici && kullanici.displayName) || "";
-  const doc = new jsPDF({unit:"pt", format:"a4"});
-  const solX = 40, sagX = 555;
-  let y = 46;
-
-  /* jsPDF'in standart (helvetica) fontu, PDF'in temel 14 fontunun WinAnsi
-     kodlamasını kullanıyor — bu kodlamada Türkçe'ye özgü İ, ı, Ş/ş, Ğ/ğ ve ₺
-     işareti YOK, bu yüzden çıktıda bunların yerine "0", "1" gibi anlamsız
-     karakterler basılıyordu (kullanıcı ekran görüntüsüyle bildirdi). Gerçek bir
-     Türkçe/Unicode font gömmek internet + büyük dosya boyutu gerektirir; onun
-     yerine en yakın okunabilir Latin karşılıklarına çeviriyoruz — %100 doğru
-     Türkçe olmasa da (İ→I, ı→i, ş→s, ğ→g, ₺→TL) HER ZAMAN okunabilir çıkıyor,
-     hiç bozuk karakter basmıyor. doc.text ve autoTable hücrelerinin HEPSİNDEN
-     otomatik geçtiği için, aşağıdaki tüm metinler tek tek elle çevrilmiyor. */
-  const turkce = s => String(s==null?"":s)
-    .replace(/İ/g,"I").replace(/ı/g,"i")
-    .replace(/Ş/g,"S").replace(/ş/g,"s")
-    .replace(/Ğ/g,"G").replace(/ğ/g,"g")
-    .replace(/₺/g,"TL");
-  const _text = doc.text.bind(doc);
-  doc.text = (txt, x, yy, opt) => _text(Array.isArray(txt) ? txt.map(turkce) : turkce(txt), x, yy, opt);
-  const _autoTable = doc.autoTable.bind(doc);
-  doc.autoTable = (ayar)=>{
-    ayar.didParseCell = (veri)=>{
-      veri.cell.text = Array.isArray(veri.cell.text) ? veri.cell.text.map(turkce) : turkce(veri.cell.text);
-    };
-    return _autoTable(ayar);
-  };
-
-  doc.setFont("helvetica","bold"); doc.setFontSize(15);
-  doc.text("PUANTAJ ÇİZELGESİ — "+AYLAR[aktifAy]+" "+aktifYil+t.etiket, solX, y);
-  y += 8;
-  doc.setDrawColor(255,196,0); doc.setLineWidth(2.5);
-  doc.line(solX, y, sagX, y);
-  y += 16;
-  if(ad || ayarlar.santiye){
-    doc.setFont("helvetica","normal"); doc.setFontSize(9.5); doc.setTextColor(60);
-    doc.text("İşçi: "+(ad||"—")+(ayarlar.santiye ? "   ·   Şantiye: "+ayarlar.santiye : ""), solX, y);
-    doc.setTextColor(0);
-  }
-
-  /* Ana çizelge tablosu */
-  const gunSatir = [];
-  for(let g=t.gBas; g<=t.gSon; g++){
-    const id = aktifYil+"-"+pad(aktifAy+1)+"-"+pad(g);
-    const d = new Date(aktifYil, aktifAy, g);
-    const v = girdiler[id];
-    const i = gunIsaret(v);
-    const kazancVar = i.yev!=="0" || (v && Number(v.mesai)>0);
-    gunSatir.push([
-      pad(g)+" / "+pad(aktifAy+1)+" / "+aktifYil+" — "+GUNLER[d.getDay()],
-      i.yev, i.arti, i.mesai,
-      kazancVar ? paraFmt(girdiKazanc(v)) : ""
-    ]);
-  }
-  doc.autoTable({
-    startY: y+8, margin:{left:solX, right: 595-sagX},
-    head: [["TARİH","YEVMİYE","GÜN İÇİ ARTI","MESAİ","KAZANÇ"]],
-    body: gunSatir,
-    styles:{fontSize:8, cellPadding:4, lineColor:[200,200,200], lineWidth:0.5},
-    headStyles:{fillColor:[242,242,242], textColor:20, fontStyle:"bold"},
-    columnStyles:{1:{halign:"center"},2:{halign:"center"},3:{halign:"center"},4:{halign:"right"}},
-    foot:[
-      ["TOPLAM: "+t.gunSayisi+" gün"+(t.artiToplam>0?" · "+t.artiToplam+" artı":"")+" · "+t.mesaiToplam+" saat mesai","","HAKEDİŞ","",paraFmt(t.hakedis)],
-      ["","","ALINAN (avans/ödeme)","",paraFmt(t.alinan)],
-      ...(t.masrafToplam>0 ? [["","","MASRAF ALACAĞI","",paraFmt(t.masrafToplam)]] : []),
-      ["","","KALAN","",paraFmt(t.kalan)]
-    ],
-    footStyles:{fillColor:[255,247,220], textColor:20, fontStyle:"bold", fontSize:8.5}
-  });
-  let y2 = doc.lastAutoTable.finalY + 22;
-
-  /* Para girişleri: avans/hakediş/kesinti/diğer — türlere göre ayrı bölümler */
-  const donemOdeme = donemOdemeSec(t.bId, t.sId).sort((a,b)=> a.tarih<b.tarih?-1:1);
-  const tSec = t2 => donemOdeme.filter(o=> (o.tur||"diger")===t2);
-  function odemeBolumPdf(baslik, liste2){
-    if(!liste2.length) return;
-    if(y2 > 740){ doc.addPage(); y2 = 50; }
-    doc.setFont("helvetica","bold"); doc.setFontSize(11); doc.setTextColor(0);
-    doc.text(baslik+" ("+liste2.length+" adet)", solX, y2);
-    const araToplam = liste2.reduce((s,o)=>s+(Number(o.tutar)||0),0);
-    const body = liste2.map((o,idx)=>{
-      const d2 = new Date(o.tarih+"T12:00:00");
-      return [String(idx+1), pad(d2.getDate())+" / "+pad(d2.getMonth()+1)+" / "+d2.getFullYear()+" — "+GUNLER[d2.getDay()], o.not||"", paraFmt(o.tutar)];
-    });
-    doc.autoTable({
-      startY: y2+8, margin:{left:solX, right: 595-sagX},
-      head: [["#","TARİH","NOT","TUTAR"]],
-      body,
-      foot: [["", "", baslik+" TOPLAMI", paraFmt(araToplam)]],
-      styles:{fontSize:8, cellPadding:4, lineColor:[200,200,200], lineWidth:0.5},
-      headStyles:{fillColor:[242,242,242], textColor:20, fontStyle:"bold"},
-      footStyles:{fillColor:[255,247,220], textColor:20, fontStyle:"bold"},
-      columnStyles:{0:{halign:"center", cellWidth:24}, 3:{halign:"right"}}
-    });
-    y2 = doc.lastAutoTable.finalY + 18;
-  }
-  odemeBolumPdf("AVANSLAR", tSec("avans"));
-  odemeBolumPdf("HAKEDİŞ ÖDEMELERİ", tSec("hakedis"));
-  odemeBolumPdf("KESİNTİLER", tSec("kesinti"));
-  odemeBolumPdf("DİĞER ÖDEMELER", tSec("diger"));
-  if(!donemOdeme.length){
-    if(y2 > 740){ doc.addPage(); y2 = 50; }
-    doc.setFont("helvetica","bold"); doc.setFontSize(11);
-    doc.text("ALINAN PARALAR", solX, y2); y2 += 16;
-    doc.setFont("helvetica","normal"); doc.setFontSize(9); doc.setTextColor(100);
-    doc.text("Bu dönemde kayıtlı para girişi yok.", solX, y2);
-    doc.setTextColor(0);
-    y2 += 20;
-  }
-
-  /* İmza satırları */
-  if(y2 > 720){ doc.addPage(); y2 = 60; } else { y2 += 40; }
-  doc.setDrawColor(30); doc.setLineWidth(1);
-  doc.line(solX, y2, solX+180, y2);
-  doc.line(sagX-180, y2, sagX, y2);
-  doc.setFont("helvetica","normal"); doc.setFontSize(9);
-  doc.text("İşçi", solX, y2+14); doc.text("Ad Soyad / İmza", solX, y2+26);
-  doc.text("İşveren", sagX-180, y2+14); doc.text("Ad Soyad / İmza", sagX-180, y2+26);
-
-  return doc.output("blob");
-}
-
-/* ---------- "Resim gibi" PDF: yazdırma sekmesindeki HTML'in BİREBİR görüntüsünü
-   alıp PDF'e gömüyor (ekran görüntüsü gibi ama gerçek bir PDF dosyası içinde).
-   jsPDF'in metin motoru yerine tarayıcının KENDİ font render motorunu kullandığı
-   için Türkçe karakterler (İ, ı, ş, ğ, ₺ dahil) HER ZAMAN doğru ve net çıkıyor —
-   yazdırıp kaydettiğin PDF'le birebir aynı görünür. */
-async function pdfResimBlobOlustur(gBas, gSon){
-  if(!window.html2canvas || !window.jspdf || !window.jspdf.jsPDF) return null;
-  const { jsPDF } = window.jspdf;
-  const {css, govde} = raporIcerikUret(gBas, gSon);
-  const kutu = document.createElement("div");
-  kutu.style.cssText = "position:fixed;left:-9999px;top:0;width:720px;background:#fff;z-index:-1";
-  kutu.innerHTML = "<style>"+css+"</style>"+govde;
-  document.body.appendChild(kutu);
-  try{
-    await new Promise(r=> setTimeout(r, 80));   /* tablo/font oturması için kısa nefes */
-    const canvas = await html2canvas(kutu, {scale:2, backgroundColor:"#ffffff", useCORS:true});
-    const dokPdf = new jsPDF({unit:"pt", format:"a4"});
-    const sayfaGenislik = dokPdf.internal.pageSize.getWidth();
-    const sayfaYukseklik = dokPdf.internal.pageSize.getHeight();
-    const oran = sayfaGenislik / canvas.width;
-    const toplamYukseklikPt = canvas.height * oran;
-    const resim = canvas.toDataURL("image/jpeg", 0.92);
-    const sayfaSayisi = Math.max(1, Math.ceil(toplamYukseklikPt / sayfaYukseklik));
-    for(let i=0; i<sayfaSayisi; i++){
-      if(i>0) dokPdf.addPage();
-      dokPdf.addImage(resim, "JPEG", 0, -(i*sayfaYukseklik), sayfaGenislik, toplamYukseklikPt);
-    }
-    return dokPdf.output("blob");
-  }finally{
-    if(document.body.contains(kutu)) document.body.removeChild(kutu);
-  }
-}
-
-async function pdfPaylas(gBas, gSon){
-  let blob = null;
-  try{ blob = await pdfResimBlobOlustur(gBas, gSon); }catch(e){ /* aşağıdaki yedek yönteme düşülecek */ }
-  if(!blob) blob = pdfBlobOlustur(gBas, gSon);   /* html2canvas yoksa/başarısız olursa metin tabanlı PDF'e düş */
-  const dosyaAdi = "Puantaj-"+AYLAR[aktifAy]+"-"+aktifYil+".pdf";
-  if(!blob){
-    /* jsPDF yüklenemedi (örn. internet yok) — eski yazdırma ekranına düş */
-    toast("PDF motoru yüklenemedi, yazdırma ekranı açılıyor 🖨️");
-    pdfYazdir(gBas, gSon);
-    return;
-  }
-  /* ÖNCE PDF'i telefona GERÇEK, kalıcı bir dosya olarak indir (İndirilenler klasörü).
-     Sebep: navigator.share() ile WhatsApp'a gönderilen dosya, tarayıcının SİLİNEBİLEN
-     geçici bir alanındaki kaynağa bakıyor — zayıf bağlantıda WhatsApp'ın yükleme işi
-     yarıda kalırsa, o geçici kaynak zaten kaybolmuş olabileceğinden "yeniden gönder"
-     de işe yaramıyor (kullanıcıdan gelen gerçek şikayet buydu). Dosyayı önce kalıcı
-     olarak kaydedince, paylaşım penceresi ne olursa olsun elde GERÇEK bir PDF kalıyor
-     ve WhatsApp'tan ataç (📎) → Belge ile elle eklenebiliyor — bu asla başarısız olmaz. */
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url; a.download = dosyaAdi; a.click();
-  setTimeout(()=> URL.revokeObjectURL(url), 15000);
-  toast("PDF telefonuna kaydedildi 📥 (İndirilenler)");
-
-  try{
-    const dosya = new File([blob], dosyaAdi, {type:"application/pdf"});
-    if(navigator.canShare && navigator.canShare({files:[dosya]})){
-      await navigator.share({files:[dosya], title:"Puantaj Çizelgesi — "+AYLAR[aktifAy]+" "+aktifYil});
-    }
-  }catch(e){
-    /* Paylaşım penceresi iptal edildi ya da başarısız oldu — sorun değil, PDF zaten
-       kalıcı olarak kaydedildi; WhatsApp'tan ataç (📎) → Belge ile elle eklenebilir. */
-  }
 }
 
 /* ---------- Gün modalı ---------- */
@@ -6660,7 +6428,6 @@ document.addEventListener("DOMContentLoaded", ()=>{
   const donemAc = mod=>{
     donemMod = mod;
     $("#donem-baslik").textContent = mod==="pdf" ? "🖨️ PDF dönemi" : mod==="png" ? "🖼️ Görsel dönemi" : "📤 Paylaşım dönemi";
-    $("#donem-wp").classList.toggle("gizli", mod==="paylas");   /* zaten Paylaş modundaysa bu buton gereksiz tekrar olur */
     geriKaydet();
     $("#modal-perde").classList.add("acik");
     $("#donem-modal").classList.add("acik");
@@ -6676,12 +6443,6 @@ document.addEventListener("DOMContentLoaded", ()=>{
   $("#donem-tum").addEventListener("click", ()=> donemSec(null,null));
   $("#donem-ilk").addEventListener("click", ()=> donemSec(1,15));
   $("#donem-ikinci").addEventListener("click", ()=> donemSec(16,null));
-  $("#donem-wp").addEventListener("click", ()=>{
-    $("#modal-perde").classList.remove("acik");
-    $("#donem-modal").classList.remove("acik");
-    if(donemMod==="pdf") pdfPaylas(null,null);   /* PDF modundayken gerçek PDF DOSYASI paylaşılır */
-    else raporPaylas(null,null);                  /* diğer modlarda kısa metin özeti paylaşılır */
-  });
 
   /* Canlı kazanç güncelleme kancaları */
   ["mesai-saat","gun-saat","gun-arti","gun-gece-mesai"].forEach(id=>
@@ -6699,7 +6460,7 @@ document.addEventListener("DOMContentLoaded", ()=>{
   });
 
   /* Neler yeni kartı */
-  const YENILIK_SURUM = "0.0.0.72";
+  const YENILIK_SURUM = "0.0.0.65";
   try{ $("#cekmece-surum").textContent = "Puantaj Defterim " + YENILIK_SURUM; }catch(e){}
   try{
     if(localStorage.getItem("yenilik")!==YENILIK_SURUM) $("#yenilik-kart").classList.remove("gizli");

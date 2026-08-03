@@ -6,7 +6,7 @@
 <meta name="referrer" content="strict-origin-when-cross-origin">
 <meta http-equiv="Content-Security-Policy" content="
   default-src 'self';
-  script-src 'self' https://www.gstatic.com https://www.google.com https://cdn.sheetjs.com https://cdnjs.cloudflare.com;
+  script-src 'self' https://www.gstatic.com https://www.google.com https://cdn.sheetjs.com;
   style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;
   font-src 'self' https://fonts.gstatic.com data:;
   img-src 'self' data: https:;
@@ -47,10 +47,6 @@
 <script src="firebase-config.js"></script>
 <script src="sabitler.js"></script>
 <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js"></script>
-<!-- Gerçek PDF dosyası üretmek için (WhatsApp'a metin yerine dosya olarak paylaşabilmek adına) -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 
 <link rel="stylesheet" href="style.css">
 </head>
@@ -292,12 +288,6 @@
       <div class="kart gizli" id="yenilik-kart" style="border-color:var(--sari)">
         <h2>🎁 Neler yeni?</h2>
         <ul style="padding-left:18px;font-size:13.5px;line-height:1.9">
-          <li><b>📸 WhatsApp'a giden PDF artık gerçek PDF'in BİREBİR aynısı:</b> Önceki yöntem (jsPDF metin motoru) Türkçe karakterlerde hâlâ sorun çıkarabiliyordu — artık yazdırdığın/kaydettiğin o güzel PDF sayfasının görüntüsü alınıp (tarayıcının kendi font motoruyla, Türkçe dahil kusursuz) gerçek bir PDF dosyasının içine gömülüyor. Görünüm birebir aynı, karakter sorunu kalmadı</li>
-          <li><b>🐞 PDF'teki bozuk Türkçe karakterler düzeltildi:</b> WhatsApp'a giden gerçek PDF dosyasında İ, ı, Ş/ş, Ğ/ğ ve ₺ işareti "0", "1" gibi anlamsız karakterlere dönüşüyordu (jsPDF'in standart fontu Türkçe'ye özgü karakterleri desteklemiyor) — artık bu karakterler okunabilir Latin karşılıklarına (İ→I, ş→s, ₺→TL gibi) otomatik çevriliyor, PDF hiç bozuk çıkmıyor</li>
-          <li><b>🐞 "Gönderilemedi" takılan PDF sorunu düzeltildi:</b> WhatsApp paylaşımı bazen "gönderiliyor" saatinde takılıp kalıyor, "yeniden gönder" de işe yaramıyordu — sebebi, paylaşılan dosyanın tarayıcının silinebilen geçici alanına bağlı olmasıydı. Artık PDF, paylaşım penceresi açılmadan ÖNCE telefonun İndirilenler klasörüne GERÇEK ve kalıcı bir dosya olarak kaydediliyor — paylaşım ne olursa olsun, WhatsApp'tan ataç (📎) → Belge ile elle eklenebilecek bir dosyan her zaman oluyor</li>
-          <li><b>📄 WhatsApp artık gerçek PDF dosyası gönderiyor:</b> "PDF" ekranındaki WhatsApp düğmesi eskiden sadece bir metin özeti paylaşıyordu — şimdi hafızada gerçek bir PDF dosyası (jsPDF ile) üretilip WhatsApp'a DOSYA olarak ekleniyor, tıpkı yazdırıp kaydettiğin PDF gibi ama tek dokunuşla</li>
-          <li><b>📲 PDF ekranına direkt WhatsApp paylaşım eklendi:</b> "PDF" düğmesine basınca açılan dönem seçme ekranına yeşil bir "WhatsApp'ta paylaş" düğmesi eklendi — artık PDF almak için bu ekrana girdiğinde, geri çıkıp ayrıca "Paylaş" düğmesini aramana gerek yok, aynı yerden tek dokunuşla WhatsApp'a da paylaşabilirsin</li>
-          <li><b>🐞 PDF/paylaşım raporunda kaybolan avanslar bulundu:</b> Bir avans farklı ayda alınıp (FIFO gereği) önceki aya sayılınca, PDF çıktısı ve WhatsApp paylaşımı onu HİÇBİR ayda göstermiyordu — ne alındığı ayda (çünkü artık o aya sayılmıyor) ne de sayıldığı ayda (çünkü gün-aralığı filtresi gerçek tarihe bakıyordu). Artık böyle ödemeler, hangi aya sayıldıysa o ayın raporunda eksiksiz görünüyor</li>
           <li><b>🐞 "Herkes" ekranı da artık doğru aya bakıyor:</b> Bir işçinin aldığı avans/ödeme, önceki ayın kapanmamış hesabına sayılması gerekirken "Herkes" ekranı bunu hâlâ alındığı güne göre gösteriyordu. Artık burası da diğer ekranlarla aynı kurala (aitAy) uyuyor — hangi ayda görünmesi gerekiyorsa orada görünüyor</li>
           <li><b>🐞 Ödeme kilit kontrolleri de artık doğru ayı koruyor:</b> Bir ödemeyi düzenlerken/silerken "bu ay kilitli" kontrolü, ödemenin tarihine değil GERÇEKTEN etkilediği aya (aitAy) bakıyor artık — 5 farklı yerde bulundu, hepsi düzeltildi. Gün kayıtlarındaki (kronometre, işaretleme) kilit kontrolleri zaten doğruydu, onlara dokunmadım</li>
         </ul>
@@ -1423,7 +1413,7 @@
         <p style="font-size:13px;color:var(--soluk);margin-bottom:12px">Hata mı gördün, fikrin mi var? Direkt geliştiriciye ulaş:</p>
         <a class="btn btn-cizgili" style="display:block;text-align:center;text-decoration:none;margin-bottom:10px" href="https://wa.me/905051252339?text=Puantaj%20Defterim%20hakkında:" target="_blank">💬 WhatsApp'tan yaz</a>
         <a class="btn btn-cizgili" style="display:block;text-align:center;text-decoration:none" href="tel:05051252339">📞 0505 125 23 39</a>
-        <p style="font-size:11px;color:var(--soluk);margin-top:12px;text-align:center">Sürüm: 0.0.0.72 · Serkan Karakaş</p>
+        <p style="font-size:11px;color:var(--soluk);margin-top:12px;text-align:center">Sürüm: 0.0.0.65 · Serkan Karakaş</p>
       </div>
       <div class="kart">
         <h2>🔒 PIN kilidi</h2>
@@ -1673,8 +1663,7 @@
   <div class="tarih-yazi">Hangi dönemin çizelgesini istiyorsun? (Yarım ay hakedişi alanlar için 1–15 ve 16–ay sonu seçenekleri var)</div>
   <button class="btn btn-cizgili" id="donem-tum" style="margin-bottom:10px">📅 Tüm ay</button>
   <button class="btn btn-cizgili" id="donem-ilk" style="margin-bottom:10px">🌓 İlk yarı (1 – 15)</button>
-  <button class="btn btn-cizgili" id="donem-ikinci" style="margin-bottom:10px">🌗 İkinci yarı (16 – ay sonu)</button>
-  <button class="btn" id="donem-wp" style="background:#25D366;color:#fff;font-weight:800">📲 WhatsApp'ta paylaş</button>
+  <button class="btn btn-cizgili" id="donem-ikinci">🌗 İkinci yarı (16 – ay sonu)</button>
 </div>
 
 <!-- ============ AY SEÇİCİ ============ -->
