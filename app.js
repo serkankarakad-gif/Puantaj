@@ -5265,7 +5265,12 @@ function toastGeriAl(mesaj, islem){
 }
 
 /* ---------- PDF hakediş raporu (patron formatı, dönem destekli) ---------- */
-function pdfYazdir(gBas, gSon){
+/* Hem yazdırma sekmesi (pdfYazdir) hem de "resim gibi PDF" (pdfResimBlobOlustur) için
+   AYNI HTML içeriğini üretir — tek bir yerden bakım yapılır, ikisi de birbirini tutar.
+   Seçiciler ".pdf-rapor" ile öneklenir ki bir <style> etiketi olarak ana uygulama
+   sayfasına geçici eklendiğinde (resim alma akışında) app'in kendi tablo/başlık
+   stillerini ezmesin. */
+function raporIcerikUret(gBas, gSon){
   const t = hesaplaAralik(gBas, gSon);
   const ad = (kullanici && kullanici.displayName) || "";
   let satirlar = "";
@@ -5310,17 +5315,18 @@ function pdfYazdir(gBas, gSon){
       '<p style="font-size:12px;color:#666">Bu dönemde kayıtlı para girişi yok.</p>';
   }
 
-  const w = window.open("", "_blank");
-  if(!w){ toast("Tarayıcı yeni pencereyi engelledi, izin ver"); return; }
-  w.document.write('<html><head><meta charset="UTF-8"><title>Puantaj - '+AYLAR[aktifAy]+' '+aktifYil+'</title>'+
-    '<style>body{font-family:Arial,sans-serif;font-size:12.5px;color:#111;padding:24px;max-width:720px;margin:auto}'+
-    'h1{font-size:19px;border-bottom:4px solid #FFC400;padding-bottom:8px}'+
-    'table{width:100%;border-collapse:collapse;margin-top:12px}'+
-    'th,td{border:1px solid #999;padding:5px 8px;text-align:left}th{background:#f2f2f2;font-size:11px}'+
-    '.sag{text-align:right}.orta-h{text-align:center;font-weight:bold}'+
-    '.ozet td{font-weight:bold;background:#FFF7DC}'+
-    '.imza{display:flex;justify-content:space-between;margin-top:55px}'+
-    '.imza div{width:40%;border-top:1.5px solid #111;padding-top:6px;text-align:center;font-size:12px}</style></head><body>'+
+  const css =
+    '.pdf-rapor{font-family:Arial,sans-serif;font-size:12.5px;color:#111;padding:24px;max-width:720px;margin:auto;background:#fff}'+
+    '.pdf-rapor h1{font-size:19px;border-bottom:4px solid #FFC400;padding-bottom:8px}'+
+    '.pdf-rapor table{width:100%;border-collapse:collapse;margin-top:12px}'+
+    '.pdf-rapor th,.pdf-rapor td{border:1px solid #999;padding:5px 8px;text-align:left}'+
+    '.pdf-rapor th{background:#f2f2f2;font-size:11px}'+
+    '.pdf-rapor .sag{text-align:right}.pdf-rapor .orta-h{text-align:center;font-weight:bold}'+
+    '.pdf-rapor .ozet td{font-weight:bold;background:#FFF7DC}'+
+    '.pdf-rapor .imza{display:flex;justify-content:space-between;margin-top:55px}'+
+    '.pdf-rapor .imza div{width:40%;border-top:1.5px solid #111;padding-top:6px;text-align:center;font-size:12px}';
+
+  const govde = '<div class="pdf-rapor">'+
     '<h1>PUANTAJ ÇİZELGESİ — '+AYLAR[aktifAy]+' '+aktifYil+t.etiket+'</h1>'+
     (ad ? '<p><b>İşçi:</b> '+esc(ad)+(ayarlar.santiye?' &nbsp;·&nbsp; <b>Şantiye:</b> '+esc(ayarlar.santiye):'')+'</p>' : '')+
     '<table><tr><th>TARİH</th><th style="text-align:center">YEVMİYE</th><th style="text-align:center">GÜN İÇİ ARTI</th><th style="text-align:center">MESAİ</th><th class="sag">KAZANÇ</th></tr>'+
@@ -5331,7 +5337,17 @@ function pdfYazdir(gBas, gSon){
     '<tr class="ozet"><td></td><td colspan="3">KALAN</td><td class="sag">'+paraFmt(t.kalan)+'</td></tr></table>'+
     odemeHtml+
     '<div class="imza"><div>İşçi<br>Ad Soyad / İmza</div><div>İşveren<br>Ad Soyad / İmza</div></div>'+
-    '</body></html>');
+    '</div>';
+
+  return {t, css, govde};
+}
+
+function pdfYazdir(gBas, gSon){
+  const {css, govde} = raporIcerikUret(gBas, gSon);
+  const w = window.open("", "_blank");
+  if(!w){ toast("Tarayıcı yeni pencereyi engelledi, izin ver"); return; }
+  w.document.write('<html><head><meta charset="UTF-8"><title>Puantaj - '+AYLAR[aktifAy]+' '+aktifYil+'</title>'+
+    '<style>body{margin:0}'+css+'</style></head><body>'+govde+'</body></html>');
   w.document.close(); w.focus();
   setTimeout(()=> w.print(), 500);
 }
@@ -5469,8 +5485,43 @@ function pdfBlobOlustur(gBas, gSon){
   return doc.output("blob");
 }
 
+/* ---------- "Resim gibi" PDF: yazdırma sekmesindeki HTML'in BİREBİR görüntüsünü
+   alıp PDF'e gömüyor (ekran görüntüsü gibi ama gerçek bir PDF dosyası içinde).
+   jsPDF'in metin motoru yerine tarayıcının KENDİ font render motorunu kullandığı
+   için Türkçe karakterler (İ, ı, ş, ğ, ₺ dahil) HER ZAMAN doğru ve net çıkıyor —
+   yazdırıp kaydettiğin PDF'le birebir aynı görünür. */
+async function pdfResimBlobOlustur(gBas, gSon){
+  if(!window.html2canvas || !window.jspdf || !window.jspdf.jsPDF) return null;
+  const { jsPDF } = window.jspdf;
+  const {css, govde} = raporIcerikUret(gBas, gSon);
+  const kutu = document.createElement("div");
+  kutu.style.cssText = "position:fixed;left:-9999px;top:0;width:720px;background:#fff;z-index:-1";
+  kutu.innerHTML = "<style>"+css+"</style>"+govde;
+  document.body.appendChild(kutu);
+  try{
+    await new Promise(r=> setTimeout(r, 80));   /* tablo/font oturması için kısa nefes */
+    const canvas = await html2canvas(kutu, {scale:2, backgroundColor:"#ffffff", useCORS:true});
+    const dokPdf = new jsPDF({unit:"pt", format:"a4"});
+    const sayfaGenislik = dokPdf.internal.pageSize.getWidth();
+    const sayfaYukseklik = dokPdf.internal.pageSize.getHeight();
+    const oran = sayfaGenislik / canvas.width;
+    const toplamYukseklikPt = canvas.height * oran;
+    const resim = canvas.toDataURL("image/jpeg", 0.92);
+    const sayfaSayisi = Math.max(1, Math.ceil(toplamYukseklikPt / sayfaYukseklik));
+    for(let i=0; i<sayfaSayisi; i++){
+      if(i>0) dokPdf.addPage();
+      dokPdf.addImage(resim, "JPEG", 0, -(i*sayfaYukseklik), sayfaGenislik, toplamYukseklikPt);
+    }
+    return dokPdf.output("blob");
+  }finally{
+    if(document.body.contains(kutu)) document.body.removeChild(kutu);
+  }
+}
+
 async function pdfPaylas(gBas, gSon){
-  const blob = pdfBlobOlustur(gBas, gSon);
+  let blob = null;
+  try{ blob = await pdfResimBlobOlustur(gBas, gSon); }catch(e){ /* aşağıdaki yedek yönteme düşülecek */ }
+  if(!blob) blob = pdfBlobOlustur(gBas, gSon);   /* html2canvas yoksa/başarısız olursa metin tabanlı PDF'e düş */
   const dosyaAdi = "Puantaj-"+AYLAR[aktifAy]+"-"+aktifYil+".pdf";
   if(!blob){
     /* jsPDF yüklenemedi (örn. internet yok) — eski yazdırma ekranına düş */
@@ -6648,7 +6699,7 @@ document.addEventListener("DOMContentLoaded", ()=>{
   });
 
   /* Neler yeni kartı */
-  const YENILIK_SURUM = "0.0.0.71";
+  const YENILIK_SURUM = "0.0.0.72";
   try{ $("#cekmece-surum").textContent = "Puantaj Defterim " + YENILIK_SURUM; }catch(e){}
   try{
     if(localStorage.getItem("yenilik")!==YENILIK_SURUM) $("#yenilik-kart").classList.remove("gizli");
