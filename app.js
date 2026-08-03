@@ -1577,8 +1577,7 @@ async function kisiVeriYukle(){
       ref.collection("girdiler")
         .where(firebase.firestore.FieldPath.documentId(), ">=", bas)
         .where(firebase.firestore.FieldPath.documentId(), "<=", son).get(),
-      ref.collection("odemeler")
-        .where("tarih", ">=", bas).where("tarih", "<=", son).get()
+      ref.collection("odemeler").get()
     ]);
     let gun=0, mesai=0, hak=0;
     const gunUl = $("#kisi-gunler"); gunUl.innerHTML = "";
@@ -1602,8 +1601,12 @@ async function kisiVeriYukle(){
     if(!kayitlar.length) gunUl.innerHTML = '<div class="bos-mesaj">Bu ay kaydı yok.</div>';
     let alinan = 0;
     const odUl = $("#kisi-odemeler"); odUl.innerHTML = "";
+    const buAy = aktifYil + "-" + pad(aktifAy+1);
     const odListe = [];
-    oSnap.forEach(doc=> odListe.push(doc.data()));
+    oSnap.forEach(doc=>{
+      const d = doc.data();
+      if(odemeAyi(d) === buAy) odListe.push(d);
+    });
     odListe.sort((a,b)=> a.tarih<b.tarih?1:-1);
     odListe.forEach(o=>{
       alinan += Number(o.tutar)||0;
@@ -5116,6 +5119,21 @@ function gunIsaret(v){
   return {yev, arti, mesai};
 }
 
+/* Bir dönem (gün aralığı) için gösterilecek ödemeleri seçer. NOT: `odemeler`
+   dizisi zaten aitAy'a göre BU AYA süzülmüş halde gelir (odemeleriAyaGoreDoldur).
+   Burada sadece gün-aralığı (1-15 / 16-son gibi kısmi dönem) filtresi uygulanır.
+   Eğer ödeme FARKLI bir ayda alınıp FIFO gereği bu aya sayıldıysa (aitAy bu ay
+   ama gerçek tarih başka ay), gün aralığı kıyası anlamsız kalır — o yüzden
+   böyle ödemeler her zaman dahil edilir, hiçbir dönemde "kaybolmaz". */
+function donemOdemeSec(bId, sId){
+  const buAy = aktifYil + "-" + pad(aktifAy+1);
+  return odemeler.filter(o=>{
+    const tarihAy = String(o.tarih||"").slice(0,7);
+    if(tarihAy !== buAy) return true;
+    return o.tarih>=bId && o.tarih<=sId;
+  });
+}
+
 /* ---------- Alınan paraların dökümü (rapor metni için) ---------- */
 function masrafDokum(t){
   const liste = masraflar.filter(m=> !m.odendi && m.tarih>=t.bId && m.tarih<=t.sId)
@@ -5129,7 +5147,7 @@ function masrafDokum(t){
   return s;
 }
 function alinanDokum(t){
-  const liste = odemeler.filter(o=> o.tarih>=t.bId && o.tarih<=t.sId)
+  const liste = donemOdemeSec(t.bId, t.sId)
                         .sort((a,b)=> a.tarih<b.tarih ? -1 : 1);
   if(!liste.length) return "";
   let m = "┈┈ Alınanların dökümü ┈┈\n";
@@ -5159,7 +5177,7 @@ function hesaplaAralik(gBas, gSon){
   });
   const bId = aktifYil+"-"+pad(aktifAy+1)+"-"+pad(gBas);
   const sId = aktifYil+"-"+pad(aktifAy+1)+"-"+pad(gSon);
-  const alinan = odemeler.filter(o=> o.tarih>=bId && o.tarih<=sId)
+  const alinan = donemOdemeSec(bId, sId)
                          .reduce((s,o)=> s+(Number(o.tutar)||0), 0);
   const masrafToplam = masraflar.filter(m=> !m.odendi && m.tarih>=bId && m.tarih<=sId)
                                 .reduce((s,m)=> s+(Number(m.tutar)||0), 0);
@@ -5263,7 +5281,7 @@ function pdfYazdir(gBas, gSon){
       "</td><td class='sag'>"+(kazancVar ? paraFmt(girdiKazanc(v)) : "")+"</td></tr>";
   }
   /* 💰 Para girişleri: türlere göre AYRI bölümler — avanslar tek tek görünür */
-  const donemOdeme = odemeler.filter(o=> o.tarih>=t.bId && o.tarih<=t.sId)
+  const donemOdeme = donemOdemeSec(t.bId, t.sId)
                              .sort((a,b)=> a.tarih<b.tarih?-1:1);
   function odemeBolum(baslik, liste2){
     if(!liste2.length) return "";
@@ -6425,6 +6443,7 @@ document.addEventListener("DOMContentLoaded", ()=>{
   const donemAc = mod=>{
     donemMod = mod;
     $("#donem-baslik").textContent = mod==="pdf" ? "🖨️ PDF dönemi" : mod==="png" ? "🖼️ Görsel dönemi" : "📤 Paylaşım dönemi";
+    $("#donem-wp").classList.toggle("gizli", mod==="paylas");   /* zaten Paylaş modundaysa bu buton gereksiz tekrar olur */
     geriKaydet();
     $("#modal-perde").classList.add("acik");
     $("#donem-modal").classList.add("acik");
@@ -6440,6 +6459,11 @@ document.addEventListener("DOMContentLoaded", ()=>{
   $("#donem-tum").addEventListener("click", ()=> donemSec(null,null));
   $("#donem-ilk").addEventListener("click", ()=> donemSec(1,15));
   $("#donem-ikinci").addEventListener("click", ()=> donemSec(16,null));
+  $("#donem-wp").addEventListener("click", ()=>{
+    $("#modal-perde").classList.remove("acik");
+    $("#donem-modal").classList.remove("acik");
+    raporPaylas(null,null);   /* PDF/Görsel ekranındayken de tek dokunuşla WhatsApp'a paylaşabilsin diye — hep tüm ay */
+  });
 
   /* Canlı kazanç güncelleme kancaları */
   ["mesai-saat","gun-saat","gun-arti","gun-gece-mesai"].forEach(id=>
@@ -6457,7 +6481,7 @@ document.addEventListener("DOMContentLoaded", ()=>{
   });
 
   /* Neler yeni kartı */
-  const YENILIK_SURUM = "0.0.0.64";
+  const YENILIK_SURUM = "0.0.0.67";
   try{ $("#cekmece-surum").textContent = "Puantaj Defterim " + YENILIK_SURUM; }catch(e){}
   try{
     if(localStorage.getItem("yenilik")!==YENILIK_SURUM) $("#yenilik-kart").classList.remove("gizli");
