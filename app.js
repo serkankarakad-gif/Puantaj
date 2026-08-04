@@ -5664,6 +5664,89 @@ function yilPdfBlobOlustur(){
     footStyles:{fillColor:[255,247,220], textColor:20, fontStyle:"bold", fontSize:10}
   });
 
+  /* ---- Her ay için TAM detay: gün gün çizelge + avans/ödeme dökümü ----
+     Kullanıcı isteği: WhatsApp'a paylaşılınca sadece aylık toplamlar değil,
+     hangi gün çalışıldığı, artılar, avanslar TARİH TARİH — hepsi görünsün.
+     tumGirdilerQS/tumOdemelerQS (tüm zamanların önbelleğe alınmış canlı verisi)
+     kullanılıyor — ay değiştirmeye/yeniden sorgu atmaya gerek kalmadan. */
+  const girdilerHarita = {};
+  if(tumGirdilerQS) tumGirdilerQS.forEach(d=>{ girdilerHarita[d.id] = d.data(); });
+  const tumOdemeListesi = [];
+  if(tumOdemelerQS) tumOdemelerQS.forEach(d=> tumOdemeListesi.push(d.data()));
+
+  yilSon.aylar.forEach(ayOzet=>{
+    const ayIndex = AYLAR.indexOf(ayOzet.ad);
+    if(ayIndex<0) return;
+    doc.addPage();
+    let y2 = 46;
+    const ayinSonGunu = new Date(yilSon.yil, ayIndex+1, 0).getDate();
+    doc.setFont(yaziTipi,"bold"); doc.setFontSize(15);
+    doc.text(ayOzet.ad.toUpperCase()+" "+yilSon.yil+" — DETAY", solX, y2);
+    y2 += 8;
+    doc.setDrawColor(255,196,0); doc.setLineWidth(2.5);
+    doc.line(solX, y2, sagX, y2);
+    y2 += 16;
+
+    const gunSatir = [];
+    for(let g=1; g<=ayinSonGunu; g++){
+      const id = yilSon.yil+"-"+pad(ayIndex+1)+"-"+pad(g);
+      const d = new Date(yilSon.yil, ayIndex, g);
+      const v = girdilerHarita[id];
+      const i = gunIsaret(v);
+      const kazancVar = i.yev!=="0" || (v && Number(v.mesai)>0);
+      gunSatir.push([
+        pad(g)+" / "+pad(ayIndex+1)+" — "+GUNLER[d.getDay()],
+        i.yev, i.arti, i.mesai,
+        kazancVar ? paraFmt(girdiKazanc(v)) : ""
+      ]);
+    }
+    doc.autoTable({
+      startY: y2+4, margin:{left:solX, right: 595-sagX},
+      head: [["TARİH","YEVMİYE","GÜN İÇİ ARTI","MESAİ","KAZANÇ"]],
+      body: gunSatir,
+      styles:{fontSize:7.5, cellPadding:3, lineColor:[200,200,200], lineWidth:0.4},
+      headStyles:{fillColor:[242,242,242], textColor:20, fontStyle:"bold"},
+      columnStyles:{1:{halign:"center"},2:{halign:"center"},3:{halign:"center"},4:{halign:"right"}},
+      foot:[
+        ["TOPLAM: "+ayOzet.gun+" gün · "+ayOzet.mesai+" saat mesai","","HAKEDİŞ","",paraFmt(ayOzet.hak)],
+        ["","","ALINAN (avans/ödeme)","",paraFmt(ayOzet.alinan)],
+        ["","","KALAN","",paraFmt(ayOzet.hak-ayOzet.alinan)]
+      ],
+      footStyles:{fillColor:[255,247,220], textColor:20, fontStyle:"bold", fontSize:8}
+    });
+    let y3 = doc.lastAutoTable.finalY + 18;
+
+    const buAyStr = yilSon.yil+"-"+pad(ayIndex+1);
+    const donemOdeme = tumOdemeListesi.filter(o=> odemeAyi(o)===buAyStr).sort((a,b)=> a.tarih<b.tarih?-1:1);
+    const tSec = t2 => donemOdeme.filter(o=> (o.tur||"diger")===t2);
+    function odemeBolumPdf(baslik, liste2){
+      if(!liste2.length) return;
+      if(y3 > 740){ doc.addPage(); y3 = 50; }
+      doc.setFont(yaziTipi,"bold"); doc.setFontSize(10.5); doc.setTextColor(0);
+      doc.text(baslik+" ("+liste2.length+" adet)", solX, y3);
+      const araToplam = liste2.reduce((s,o)=>s+(Number(o.tutar)||0),0);
+      const govdeSat = liste2.map((o,idx)=>{
+        const d2 = new Date(o.tarih+"T12:00:00");
+        return [String(idx+1), pad(d2.getDate())+" / "+pad(d2.getMonth()+1)+" / "+d2.getFullYear()+" — "+GUNLER[d2.getDay()], o.not||"", paraFmt(o.tutar)];
+      });
+      doc.autoTable({
+        startY: y3+6, margin:{left:solX, right: 595-sagX},
+        head: [["#","TARİH","NOT","TUTAR"]],
+        body: govdeSat,
+        foot: [["", "", baslik+" TOPLAMI", paraFmt(araToplam)]],
+        styles:{fontSize:7.5, cellPadding:3, lineColor:[200,200,200], lineWidth:0.4},
+        headStyles:{fillColor:[242,242,242], textColor:20, fontStyle:"bold"},
+        footStyles:{fillColor:[255,247,220], textColor:20, fontStyle:"bold"},
+        columnStyles:{0:{halign:"center", cellWidth:24}, 3:{halign:"right"}}
+      });
+      y3 = doc.lastAutoTable.finalY + 14;
+    }
+    odemeBolumPdf("AVANSLAR", tSec("avans"));
+    odemeBolumPdf("HAKEDİŞ ÖDEMELERİ", tSec("hakedis"));
+    odemeBolumPdf("KESİNTİLER", tSec("kesinti"));
+    odemeBolumPdf("DİĞER ÖDEMELER", tSec("diger"));
+  });
+
   return doc.output("blob");
 }
 
@@ -6832,7 +6915,7 @@ document.addEventListener("DOMContentLoaded", ()=>{
   });
 
   /* Neler yeni kartı */
-  const YENILIK_SURUM = "0.0.0.75";
+  const YENILIK_SURUM = "0.0.0.76";
   try{ $("#cekmece-surum").textContent = "Puantaj Defterim " + YENILIK_SURUM; }catch(e){}
   try{
     if(localStorage.getItem("yenilik")!==YENILIK_SURUM) $("#yenilik-kart").classList.remove("gizli");
@@ -8009,7 +8092,10 @@ document.addEventListener("DOMContentLoaded", ()=>{
   /* CSV & yedek */
   $("#btn-csv").addEventListener("click", csvIndir);
   $("#btn-xlsx").addEventListener("click", excelIndir);
-  $("#btn-yil-pdf").addEventListener("click", yilPdfPaylas);
+  $("#btn-yil-pdf").addEventListener("click", async ()=>{
+    try{ await yilPdfPaylas(); }
+    catch(e){ hataGoster(e); }   /* önceden sessizce başarısız oluyordu — artık hata görünür */
+  });
   $("#btn-yedek").addEventListener("click", yedekAl);
 
   /* Önbelleği temizle */

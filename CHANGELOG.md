@@ -5,6 +5,12 @@ kullanır: `0.0.0.X` — X, her güncellemede 1 artar. Uygulama içindeki sürü
 (alt bilgi + "Neler yeni" kartı) ve dağıtılan zip dosyasının adı her zaman
 birebir aynıdır.
 
+## 0.0.0.76 — Yıl PDF'i tam detaylı + "tepki vermiyor" hatası düzeltildi
+- Kullanıcı bildirdi: "Gerçek PDF indir" düğmesine basınca hiçbir tepki yoktu (ekran görüntüsüyle) — düğme artık `try/catch` ile sarmalandı, herhangi bir hata olursa `hataGoster()` ile görünür şekilde bildiriliyor, sessizce yutulmuyor
+- Kullanıcı geri bildirimi (kritik olarak işaretlendi): yıl PDF'i WhatsApp'tan birine paylaşıldığında sadece aylık toplamlar (Gün/Mesai/Hakediş/Alınan/Kalan) yetmiyor — hangi GÜN çalışıldığı, artılar, ve avanslar TARİH TARİH de görünmesi gerekiyor, ekrandaki Yıl Özeti sayfasında olmasa da PDF'te olmalı
+- `yilPdfBlobOlustur()` genişletildi: 1. sayfa yıl özet tablosu (değişmedi), sonrasında veri olan HER AY için ayrı bir sayfa — aylık PDF'teki (`pdfBlobOlustur`) ile birebir aynı yapıda gün gün çizelge (TARİH/YEVMİYE/GÜN İÇİ ARTI/MESAİ/KAZANÇ) ve avans/hakediş/kesinti/diğer ödeme dökümü (# · Tarih · Not · Tutar)
+- Bunun için yeni bir Firestore sorgusu atılmadı — zaten bellekte canlı tutulan `tumGirdilerQS`/`tumOdemelerQS` (tüm zamanların önbelleği) kullanıldı, `odemeAyi()` ile ay bazında süzülerek. Gerçek koddan çekilen mantık Node.js'te test edildi: 1 Ağustos'ta alınıp Temmuz'a sayılan avans, Temmuz'un detay sayfasında doğru çıkıyor
+
 ## 0.0.0.75 — Yıl Özeti'ne gerçek PDF eklendi
 - Kullanıcı isteği: Puantaj ekranındaki "gerçek PDF" özelliği Yıl Özeti'ne de eklensin
 - Font gömme kodu (`pdfTurkceFontKur()`) tek bir yardımcı fonksiyona çıkarıldı — hem `pdfBlobOlustur()` (aylık rapor) hem de yeni `yilPdfBlobOlustur()` (yıllık rapor) aynı Türkçe destekli fontu kullanıyor, kod tekrarı yok
