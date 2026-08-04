@@ -5418,24 +5418,10 @@ function pdfYazdir(gBas, gSon){
    WhatsApp paylaşımına otomatik EKLENEMEZ. Bunun yerine jsPDF ile hafızada gerçek bir PDF
    dosyası (Blob) üretip, Web Share API'ye (navigator.share) dosya olarak veriyoruz — telefonun
    paylaşım ekranı açılıyor ve WhatsApp seçilince gerçek bir PDF eki gidiyor (yazı değil). */
-function pdfBlobOlustur(gBas, gSon){
-  if(!window.jspdf || !window.jspdf.jsPDF) return null;
-  const { jsPDF } = window.jspdf;
-  const t = hesaplaAralik(gBas, gSon);
-  const ad = (kullanici && kullanici.displayName) || "";
-  const doc = new jsPDF({unit:"pt", format:"a4"});
-  const solX = 40, sagX = 555;
-  let y = 46;
-
-  /* jsPDF'in standart (helvetica) fontu, PDF'in temel 14 fontunun WinAnsi
-     kodlamasını kullanıyor — bu kodlamada Türkçe'ye özgü İ, ı, Ş/ş, Ğ/ğ
-     harfleri YOK, bu yüzden çıktıda bunların yerine "0", "1" gibi anlamsız
-     karakterler basılıyordu (kullanıcı ekran görüntüsüyle bildirdi). Bunu
-     karakter ÇEVİRME (İ→I gibi) ile "idare etmek" yerine, Türkçe'yi TAM
-     destekleyen gerçek bir font (Liberation Sans — Arial ile ölçü uyumlu,
-     internet gerekmeden index.html'den önceden yüklü) PDF'in içine gömüyoruz.
-     Tek istisna: ₺ (Lira) işareti bu fontta da yok (çok yeni bir Unicode
-     karakter, çoğu fontta bulunmuyor) — sadece o "TL" olarak yazılıyor. */
+/* Bir jsPDF dokümanına Türkçe destekli gerçek fontu gömer, doc.text/doc.autoTable'ı
+   otomatik bu fontu kullanacak şekilde sarar. Her PDF üreten fonksiyon bunu çağırır
+   (tek yerden bakım — ileride yeni bir PDF raporu eklenirse tekrar yazılmaz). */
+function pdfTurkceFontKur(doc){
   if(window.PDF_FONT_REGULAR_B64){
     doc.addFileToVFS("LiberationSans-Regular.ttf", window.PDF_FONT_REGULAR_B64);
     doc.addFont("LiberationSans-Regular.ttf", "LiberationSans", "normal");
@@ -5458,6 +5444,21 @@ function pdfBlobOlustur(gBas, gSon){
     };
     return _autoTable(ayar);
   };
+  return yaziTipi;
+}
+
+function pdfBlobOlustur(gBas, gSon){
+  if(!window.jspdf || !window.jspdf.jsPDF) return null;
+  const { jsPDF } = window.jspdf;
+  const t = hesaplaAralik(gBas, gSon);
+  const ad = (kullanici && kullanici.displayName) || "";
+  const doc = new jsPDF({unit:"pt", format:"a4"});
+  const solX = 40, sagX = 555;
+  let y = 46;
+
+  /* jsPDF'in standart (helvetica) fontu Türkçe'ye özgü İ, ı, Ş/ş, Ğ/ğ harflerini
+     desteklemiyor — gerçek Türkçe destekli fontu (Liberation Sans) gömüyoruz. */
+  const yaziTipi = pdfTurkceFontKur(doc);
 
   doc.setFont(yaziTipi,"bold"); doc.setFontSize(15);
   doc.text("PUANTAJ ÇİZELGESİ — "+AYLAR[aktifAy]+" "+aktifYil+t.etiket, solX, y);
@@ -5624,6 +5625,65 @@ async function pdfPaylas(gBas, gSon){
     /* Paylaşım penceresi iptal edildi ya da başarısız oldu — sorun değil, PDF zaten
        kalıcı olarak kaydedildi; WhatsApp'tan ataç (📎) → Belge ile elle eklenebilir. */
   }
+}
+
+/* ---------- Yıl Özeti: gerçek (metin tabanlı) PDF raporu ----------
+   Ekrandaki 12 aylık dökümün ("AY · GÜN · MESAİ · HAKEDİŞ · ALINAN · KALAN")
+   aynısını gerçek, seçilebilir/aranabilir metinli bir PDF'e döker. */
+function yilPdfBlobOlustur(){
+  if(!window.jspdf || !window.jspdf.jsPDF) return null;
+  if(!yilSon || !yilSon.aylar.length) return null;
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF({unit:"pt", format:"a4"});
+  const yaziTipi = pdfTurkceFontKur(doc);
+  const solX = 40, sagX = 555;
+  let y = 46;
+
+  doc.setFont(yaziTipi,"bold"); doc.setFontSize(17);
+  doc.text("YIL RAPORU — "+yilSon.yil, solX, y);
+  y += 8;
+  doc.setDrawColor(255,196,0); doc.setLineWidth(2.5);
+  doc.line(solX, y, sagX, y);
+  y += 16;
+  const ad = (kullanici && kullanici.displayName) || "";
+  if(ad){
+    doc.setFont(yaziTipi,"normal"); doc.setFontSize(9.5); doc.setTextColor(60);
+    doc.text("İşçi: "+ad, solX, y);
+    doc.setTextColor(0);
+  }
+
+  const body = yilSon.aylar.map(a=> [a.ad, String(a.gun), String(a.mesai), paraFmt(a.hak), paraFmt(a.alinan), paraFmt(a.hak-a.alinan)]);
+  doc.autoTable({
+    startY: y+8, margin:{left:solX, right: 595-sagX},
+    head: [["AY","GÜN","MESAİ","HAKEDİŞ","ALINAN","KALAN"]],
+    body,
+    styles:{fontSize:9.5, cellPadding:6, lineColor:[200,200,200], lineWidth:0.5},
+    headStyles:{fillColor:[242,242,242], textColor:20, fontStyle:"bold"},
+    columnStyles:{1:{halign:"center"},2:{halign:"center"},3:{halign:"right"},4:{halign:"right"},5:{halign:"right"}},
+    foot:[["TOPLAM", String(yilSon.T.gun), String(yilSon.T.mesai), paraFmt(yilSon.T.hak), paraFmt(yilSon.T.alinan), paraFmt(yilSon.T.hak-yilSon.T.alinan)]],
+    footStyles:{fillColor:[255,247,220], textColor:20, fontStyle:"bold", fontSize:10}
+  });
+
+  return doc.output("blob");
+}
+
+async function yilPdfPaylas(){
+  const blob = yilPdfBlobOlustur();
+  if(!blob){ toast("Önce yıl verisi yüklensin"); return; }
+  const dosyaAdi = "Yil-Raporu-"+yilSon.yil+".pdf";
+  /* Diğer PDF paylaşımlarıyla aynı desen: önce kalıcı dosya olarak indir,
+     sonra paylaşım penceresini dene — WhatsApp'ta takılıp kalma sorununu önler. */
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url; a.download = dosyaAdi; a.click();
+  setTimeout(()=> URL.revokeObjectURL(url), 15000);
+  toast("PDF telefonuna kaydedildi 📥 (İndirilenler)");
+  try{
+    const dosya = new File([blob], dosyaAdi, {type:"application/pdf"});
+    if(navigator.canShare && navigator.canShare({files:[dosya]})){
+      await navigator.share({files:[dosya], title:"Yıl Raporu — "+yilSon.yil});
+    }
+  }catch(e){ /* iptal/başarısız oldu — sorun değil, PDF zaten kaydedildi */ }
 }
 
 /* ---------- Gün modalı ---------- */
@@ -6772,7 +6832,7 @@ document.addEventListener("DOMContentLoaded", ()=>{
   });
 
   /* Neler yeni kartı */
-  const YENILIK_SURUM = "0.0.0.74";
+  const YENILIK_SURUM = "0.0.0.75";
   try{ $("#cekmece-surum").textContent = "Puantaj Defterim " + YENILIK_SURUM; }catch(e){}
   try{
     if(localStorage.getItem("yenilik")!==YENILIK_SURUM) $("#yenilik-kart").classList.remove("gizli");
@@ -7949,6 +8009,7 @@ document.addEventListener("DOMContentLoaded", ()=>{
   /* CSV & yedek */
   $("#btn-csv").addEventListener("click", csvIndir);
   $("#btn-xlsx").addEventListener("click", excelIndir);
+  $("#btn-yil-pdf").addEventListener("click", yilPdfPaylas);
   $("#btn-yedek").addEventListener("click", yedekAl);
 
   /* Önbelleği temizle */

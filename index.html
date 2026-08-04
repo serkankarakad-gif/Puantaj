@@ -297,6 +297,7 @@
       <div class="kart gizli" id="yenilik-kart" style="border-color:var(--sari)">
         <h2>🎁 Neler yeni?</h2>
         <ul style="padding-left:18px;font-size:13.5px;line-height:1.9">
+          <li><b>📄 Yıl Özeti'ne gerçek PDF indirme eklendi:</b> "Yıl raporunu paylaş" düğmesinin altına yeni bir "Gerçek PDF indir" düğmesi geldi — 12 aylık dökümü (Ay/Gün/Mesai/Hakediş/Alınan/Kalan) gerçek, Türkçe karakterleri doğru gösteren bir PDF dosyası olarak indirip WhatsApp'tan paylaşabilirsin, tıpkı Puantaj ekranındaki PDF gibi</li>
           <li><b>📄 PDF artık GERÇEK bir PDF — resim değil, gerçek yazı:</b> Bir önceki yöntem (sayfanın ekran görüntüsünü PDF'e gömmek) yerine, PDF'in içine Türkçe'yi tam destekleyen gerçek bir font (Liberation Sans) gömüldü — artık PDF'teki yazılar SEÇİLEBİLİR/ARANABİLİR gerçek metin, İ/ı/Ş/ş/Ğ/ğ dahil hiçbir karakter bozulmuyor, dosya boyutu da küçülüyor (resim değil yazı olduğu için)</li>
           <li><b>🖼️ Görsel paylaşımına 2. resim eklendi — Alınan Avanslar:</b> "Görsel" düğmesiyle paylaştığında artık İKİ resim birden gidiyor: 1) özet çizelge (eskisi gibi), 2) o dönemde alınan avans/ödemelerin TARİH TARİH, tek tek listelendiği yeni bir resim (# · Tarih · Not · Tutar, en altta toplam). O dönemde hiç ödeme yoksa ikinci resim otomatik eklenmiyor</li>
           <li><b>📸 WhatsApp'a giden PDF artık gerçek PDF'in BİREBİR aynısı:</b> Önceki yöntem (jsPDF metin motoru) Türkçe karakterlerde hâlâ sorun çıkarabiliyordu — artık yazdırdığın/kaydettiğin o güzel PDF sayfasının görüntüsü alınıp (tarayıcının kendi font motoruyla, Türkçe dahil kusursuz) gerçek bir PDF dosyasının içine gömülüyor. Görünüm birebir aynı, karakter sorunu kalmadı</li>
@@ -633,6 +634,7 @@
         <div id="isi-harita" style="margin-bottom:14px"></div>
         <div id="yil-icerik"><div class="bos-mesaj">Yükleniyor...</div></div>
         <button class="btn btn-cizgili" id="btn-yil-paylas" style="margin-top:14px">📤 Yıl raporunu paylaş</button>
+        <button class="btn btn-cizgili" id="btn-yil-pdf" style="margin-top:10px">📄 Gerçek PDF indir</button>
         <button class="btn btn-cizgili" id="btn-csv" style="margin-top:10px">⬇️ Excel için CSV indir</button>
         <button class="btn btn-cizgili" id="btn-xlsx" style="margin-top:10px">📗 Gerçek Excel (.xlsx) indir</button>
       </div>
@@ -1430,7 +1432,7 @@
         <p style="font-size:13px;color:var(--soluk);margin-bottom:12px">Hata mı gördün, fikrin mi var? Direkt geliştiriciye ulaş:</p>
         <a class="btn btn-cizgili" style="display:block;text-align:center;text-decoration:none;margin-bottom:10px" href="https://wa.me/905051252339?text=Puantaj%20Defterim%20hakkında:" target="_blank">💬 WhatsApp'tan yaz</a>
         <a class="btn btn-cizgili" style="display:block;text-align:center;text-decoration:none" href="tel:05051252339">📞 0505 125 23 39</a>
-        <p style="font-size:11px;color:var(--soluk);margin-top:12px;text-align:center">Sürüm: 0.0.0.74 · Serkan Karakaş</p>
+        <p style="font-size:11px;color:var(--soluk);margin-top:12px;text-align:center">Sürüm: 0.0.0.75 · Serkan Karakaş</p>
       </div>
       <div class="kart">
         <h2>🔒 PIN kilidi</h2>

@@ -5,6 +5,13 @@ kullanır: `0.0.0.X` — X, her güncellemede 1 artar. Uygulama içindeki sürü
 (alt bilgi + "Neler yeni" kartı) ve dağıtılan zip dosyasının adı her zaman
 birebir aynıdır.
 
+## 0.0.0.75 — Yıl Özeti'ne gerçek PDF eklendi
+- Kullanıcı isteği: Puantaj ekranındaki "gerçek PDF" özelliği Yıl Özeti'ne de eklensin
+- Font gömme kodu (`pdfTurkceFontKur()`) tek bir yardımcı fonksiyona çıkarıldı — hem `pdfBlobOlustur()` (aylık rapor) hem de yeni `yilPdfBlobOlustur()` (yıllık rapor) aynı Türkçe destekli fontu kullanıyor, kod tekrarı yok
+- Yeni `yilPdfBlobOlustur()`: ekrandaki 12 aylık dökümü (AY · GÜN · MESAİ · HAKEDİŞ · ALINAN · KALAN, TOPLAM satırı dahil) gerçek metin tabanlı bir PDF tablosuna döküyor
+- Yeni `yilPdfPaylas()`: diğer PDF paylaşımlarıyla aynı güvenli desen — önce PDF'i telefona kalıcı dosya olarak indirir, sonra paylaşım penceresini dener
+- Yıl Özeti ekranına "📄 Gerçek PDF indir" düğmesi eklendi (mevcut "Yıl raporunu paylaş" ve Excel düğmelerinin arasına)
+
 ## 0.0.0.74 — PDF artık gerçek (metin tabanlı) PDF, resim değil
 - Kullanıcı isteği: görsel paylaşımı çalıştı, PDF için "resim değil gerçek PDF" istendi — bir önceki turdaki html2canvas yaklaşımı (sayfanın ekran görüntüsünü PDF'e gömmek) yerine gerçek, seçilebilir/aranabilir METİN içeren bir PDF isteniyordu
 - Sandbox'ta Türkçe'nin tamamını (İ, ı, Ş, ş, Ğ, ğ dahil — cmap ile doğrulandı, python fontTools ile test edildi) destekleyen Liberation Sans fontu (Arial ile ölçü uyumlu, Apache lisanslı, açık kaynak) bulundu, Regular + Bold ağırlıkları base64'e çevrilip `font-liberationsans-regular.js` ve `font-liberationsans-bold.js` olarak projeye eklendi (toplam ~1.1 MB, uygulamayla birlikte bir kere önbelleğe alınıyor, internet gerektirmiyor)
