@@ -5,6 +5,20 @@ kullanır: `0.0.0.X` — X, her güncellemede 1 artar. Uygulama içindeki sürü
 (alt bilgi + "Neler yeni" kartı) ve dağıtılan zip dosyasının adı her zaman
 birebir aynıdır.
 
+## 0.0.0.78 — KRİTİK: yeni şantiyeye geçince eski ücret kullanılıyordu
+- Kullanıcı netleştirdi: sorun sadece raporlarda görünüm değil, GERÇEK bir hesaplama hatasıydı — 20 Temmuz'da tamamen farklı bir firmada işe başlayınca, o günden sonraki kayıtlar hâlâ eski firmanın yevmiyesiyle hesaplanıyordu
+- `oranBul()`/`guncelOranlar()` mekanizması Node.js'te izole test edildi ve DOĞRU çalıştığı kanıtlandı (Firma A: 1.250₺, Firma B: 1.800₺ — doğru ayrıştı) — yani hesaplama motorunda bug yoktu
+- Gerçek kök sebep bulundu: yeni bir şantiye eklendiğinde `localStorage.sonSantiye` (son kullanılan şantiye, yeni gün kayıtlarının varsayılan seçimi) otomatik güncellenmiyordu. Kullanıcı yeni eklediği şantiyeyi en az bir kez elle seçip kaydetmezse, sonraki tüm gün kayıtları sessizce ESKİ şantiyeyi (ve onun donmuş ücretini) kullanmaya devam ediyordu — hiçbir uyarı olmadan
+- Çözüm: `btn-santiye-ekle` handler'ında, YENİ bir şantiye eklendiğinde (düzenleme değil) bu otomatik olarak `sonSantiye` yapılıyor artık — "🏗️ [Ad] eklendi — bundan sonraki gün kayıtların otomatik buraya yazılacak" bildirimiyle birlikte. İşe yeni başlayınca doğal ilk adım zaten şantiyeyi eklemek olduğundan, akış artık güvenli
+- Not: bu düzeltmeden önce yanlış ücretle kaydedilmiş günler otomatik düzeltilmiyor (geçmişe dönük veri değişikliği risklidir) — kullanıcıya, etkilenen günleri açıp doğru şantiyeyi seçip yeniden kaydetmesi gerektiği bildirildi
+
+## 0.0.0.77 — Şantiye geçmişi kalıcı: eski şantiyenin adı artık kaybolmuyor
+- Kritik kullanıcı bildirimi: biri Temmuz'un 1'inde bir şantiyede işe başlayıp, ayın 15'inde başka bir şantiyeye geçtiğinde, raporlar (PDF, Yıl PDF) hep GÜNCEL şantiyenin adını gösteriyordu — eski şantiyede geçirilen günler sanki hiç çalışılmamış gibi görünüyordu, çünkü rapor başlığı tek bir global `ayarlar.santiye` değerine bakıyordu
+- Netleştirme soruları sonrası karar: (1) şantiye seçimi ZORUNLU değil, son kullanılan otomatik gelsin — bu zaten `localStorage.sonSantiye` ile hazırmış, dokunulmadı (2) raporlarda hem her günün yanında hangi şantiyede olduğu YAZSIN hem de dönem başında "1–14 Temmuz: A Şantiyesi · 15–31: B Şantiyesi" gibi bir özet olsun (3) bu özellikten önceki, şantiyesi boş eski günler için KESİNLİKLE bir isim yazsın (boş/"Bilinmiyor" değil) — o zaman ayarlarda kayıtlı olan güncel şantiye adına geriye dönük düşülüyor
+- Yeni yardımcı fonksiyonlar: `gunSantiyeAdi(v)` (bir günün şantiyesini üç aşamalı çözer: kayıtlı ad → şantiyeId'den ad → geriye dönük ayarlar.santiye), `santiyeBloklariCiz()` (bir tarih aralığındaki ardışık aynı-şantiye günlerini tek bloğa birleştirir), `santiyeOzetMetni()` (blokları "1–14 Tem: A · 15–31: B" formatında okunabilir tek satıra çevirir)
+- Hem aylık PDF (`pdfBlobOlustur`/`raporIcerikUret`) hem Yıl PDF'inin her aylık detay sayfası (`yilPdfBlobOlustur`) güncellendi: çizelgeye yeni bir ŞANTİYE sütunu eklendi, başlıkta tek "Şantiye: X" yerine (birden fazlaysa) tarih aralıklı özet gösteriliyor
+- Gerçek koddan çekilen mantık Node.js'te test edildi: 1-14 Temmuz A Şantiyesi, 15-25 Temmuz B Şantiyesi, 26-28 Temmuz (eski, şantiyesi boş kayıt) senaryosunda üç blok da doğru ayrıştı, boş kayıt geriye dönük güncel şantiye adını aldı
+
 ## 0.0.0.76 — Yıl PDF'i tam detaylı + "tepki vermiyor" hatası düzeltildi
 - Kullanıcı bildirdi: "Gerçek PDF indir" düğmesine basınca hiçbir tepki yoktu (ekran görüntüsüyle) — düğme artık `try/catch` ile sarmalandı, herhangi bir hata olursa `hataGoster()` ile görünür şekilde bildiriliyor, sessizce yutulmuyor
 - Kullanıcı geri bildirimi (kritik olarak işaretlendi): yıl PDF'i WhatsApp'tan birine paylaşıldığında sadece aylık toplamlar (Gün/Mesai/Hakediş/Alınan/Kalan) yetmiyor — hangi GÜN çalışıldığı, artılar, ve avanslar TARİH TARİH de görünmesi gerekiyor, ekrandaki Yıl Özeti sayfasında olmasa da PDF'te olmalı

@@ -5157,6 +5157,45 @@ function isiHaritaCiz(gunKazanc){
    Çalışılan gün → YEVMİYE: X tam · / yarım · Ns saatlik
    ARTI: X tam artı · / yarım artı · 0 yok
    MESAİ: varsa saat (örn 3s) · yoksa 0 */
+/* Bir günün hangi şantiyede geçtiğini çözer. Öncelik: o güne kaydedilmiş
+   şantiye adı (varsa) → şantiyeId üzerinden şantiyeler listesinden ad →
+   hiçbiri yoksa (özellik eklenmeden önceki eski kayıtlar) ayarlardaki GÜNCEL
+   şantiye adına geriye dönük düşer, boş/"Bilinmiyor" göstermek yerine. */
+function gunSantiyeAdi(v){
+  if(v && v.santiye) return v.santiye;
+  if(v && v.santiyeId){
+    const s = (ayarlar.santiyeler||[]).find(x=>x.id===v.santiyeId);
+    if(s) return s.ad;
+  }
+  return ayarlar.santiye || "";
+}
+/* Bir ay içindeki [gBas,gSon] gün aralığında hangi şantiyelerde çalışıldığını,
+   ardışık aynı-şantiye günlerini TEK bloğa birleştirerek listeler. Örn: biri
+   1-14 Temmuz'da A Şantiyesi'nde, 15-31'inde B Şantiyesi'nde çalıştıysa iki
+   blok döner. Sadece kazancı olan (fiilen çalışılan) günler dikkate alınır. */
+function santiyeBloklariCiz(yil, ay, gBas, gSon, girdilerHarita){
+  const bloklar = [];
+  for(let g=gBas; g<=gSon; g++){
+    const id = yil+"-"+pad(ay+1)+"-"+pad(g);
+    const v = girdilerHarita[id];
+    const i = gunIsaret(v);
+    const kazancVar = i.yev!=="0" || (v && Number(v.mesai)>0);
+    if(!kazancVar) continue;
+    const ad = gunSantiyeAdi(v) || "Belirtilmemiş";
+    const son = bloklar[bloklar.length-1];
+    if(son && son.ad===ad) son.son = g;
+    else bloklar.push({ad, ilk:g, son:g});
+  }
+  return bloklar;
+}
+/* santiyeBloklariCiz()'in çıktısını okunabilir tek satıra çevirir.
+   Tek şantiye varsa sadece adı döner (eski davranışla uyumlu, sade kalsın). */
+function santiyeOzetMetni(bloklar, ay){
+  if(!bloklar.length) return "";
+  if(bloklar.length===1) return bloklar[0].ad;
+  return bloklar.map(b=> (b.ilk===b.son ? b.ilk : b.ilk+"–"+b.son)+" "+AYLAR[ay].slice(0,3)+": "+b.ad).join(" · ");
+}
+
 function gunIsaret(v){
   const calisti = v && (v.durum==="tam" || v.durum==="yarim" ||
     (v.durum==="saatlik" && (Number(v.saat)||0)>0));
@@ -5343,8 +5382,14 @@ function raporIcerikUret(gBas, gSon){
     const pazar = d.getDay()===0 ? " style='background:#F4F4F4;color:#999'" : "";
     satirlar += "<tr"+pazar+"><td>"+pad(g)+" / "+pad(aktifAy+1)+" / "+aktifYil+" — "+GUNLER[d.getDay()]+
       "</td><td class='orta-h'>"+i.yev+"</td><td class='orta-h'>"+i.arti+"</td><td class='orta-h'>"+i.mesai+
+      "</td><td>"+(kazancVar ? esc(gunSantiyeAdi(v)) : "")+
       "</td><td class='sag'>"+(kazancVar ? paraFmt(girdiKazanc(v)) : "")+"</td></tr>";
   }
+  /* 🏗️ Dönem içinde birden fazla şantiyede çalışılmışsa (biri bırakılıp
+     diğerine geçilmişse), her ikisi de tarih aralığıyla birlikte görünsün diye
+     — tek bir "güncel şantiye" adı yazıp eskisini kaybetmeyelim. */
+  const santiyeBloklar = santiyeBloklariCiz(aktifYil, aktifAy, t.gBas, t.gSon, girdiler);
+  const santiyeOzeti = santiyeOzetMetni(santiyeBloklar, aktifAy);
   /* 💰 Para girişleri: türlere göre AYRI bölümler — avanslar tek tek görünür */
   const donemOdeme = donemOdemeSec(t.bId, t.sId)
                              .sort((a,b)=> a.tarih<b.tarih?-1:1);
@@ -5388,13 +5433,13 @@ function raporIcerikUret(gBas, gSon){
 
   const govde = '<div class="pdf-rapor">'+
     '<h1>PUANTAJ ÇİZELGESİ — '+AYLAR[aktifAy]+' '+aktifYil+t.etiket+'</h1>'+
-    (ad ? '<p><b>İşçi:</b> '+esc(ad)+(ayarlar.santiye?' &nbsp;·&nbsp; <b>Şantiye:</b> '+esc(ayarlar.santiye):'')+'</p>' : '')+
-    '<table><tr><th>TARİH</th><th style="text-align:center">YEVMİYE</th><th style="text-align:center">GÜN İÇİ ARTI</th><th style="text-align:center">MESAİ</th><th class="sag">KAZANÇ</th></tr>'+
+    (ad ? '<p><b>İşçi:</b> '+esc(ad)+(santiyeOzeti?' &nbsp;·&nbsp; <b>Şantiye:</b> '+esc(santiyeOzeti):'')+'</p>' : '')+
+    '<table><tr><th>TARİH</th><th style="text-align:center">YEVMİYE</th><th style="text-align:center">GÜN İÇİ ARTI</th><th style="text-align:center">MESAİ</th><th>ŞANTİYE</th><th class="sag">KAZANÇ</th></tr>'+
     satirlar+
-    '<tr class="ozet"><td>TOPLAM: '+t.gunSayisi+' gün'+(t.artiToplam>0?' · '+t.artiToplam+' artı':'')+' · '+t.mesaiToplam+' saat mesai</td><td colspan="3">HAKEDİŞ</td><td class="sag">'+paraFmt(t.hakedis)+'</td></tr>'+
-    '<tr class="ozet"><td></td><td colspan="3">ALINAN (avans/ödeme)</td><td class="sag">'+paraFmt(t.alinan)+'</td></tr>'+
-    (t.masrafToplam>0 ? '<tr class="ozet"><td></td><td colspan="3">MASRAF ALACAĞI</td><td class="sag">'+paraFmt(t.masrafToplam)+'</td></tr>' : '')+
-    '<tr class="ozet"><td></td><td colspan="3">KALAN</td><td class="sag">'+paraFmt(t.kalan)+'</td></tr></table>'+
+    '<tr class="ozet"><td>TOPLAM: '+t.gunSayisi+' gün'+(t.artiToplam>0?' · '+t.artiToplam+' artı':'')+' · '+t.mesaiToplam+' saat mesai</td><td colspan="4">HAKEDİŞ</td><td class="sag">'+paraFmt(t.hakedis)+'</td></tr>'+
+    '<tr class="ozet"><td></td><td colspan="4">ALINAN (avans/ödeme)</td><td class="sag">'+paraFmt(t.alinan)+'</td></tr>'+
+    (t.masrafToplam>0 ? '<tr class="ozet"><td></td><td colspan="4">MASRAF ALACAĞI</td><td class="sag">'+paraFmt(t.masrafToplam)+'</td></tr>' : '')+
+    '<tr class="ozet"><td></td><td colspan="4">KALAN</td><td class="sag">'+paraFmt(t.kalan)+'</td></tr></table>'+
     odemeHtml+
     '<div class="imza"><div>İşçi<br>Ad Soyad / İmza</div><div>İşveren<br>Ad Soyad / İmza</div></div>'+
     '</div>';
@@ -5452,6 +5497,7 @@ function pdfBlobOlustur(gBas, gSon){
   const { jsPDF } = window.jspdf;
   const t = hesaplaAralik(gBas, gSon);
   const ad = (kullanici && kullanici.displayName) || "";
+  const santiyeOzeti = santiyeOzetMetni(santiyeBloklariCiz(aktifYil, aktifAy, t.gBas, t.gSon, girdiler), aktifAy);
   const doc = new jsPDF({unit:"pt", format:"a4"});
   const solX = 40, sagX = 555;
   let y = 46;
@@ -5466,9 +5512,9 @@ function pdfBlobOlustur(gBas, gSon){
   doc.setDrawColor(255,196,0); doc.setLineWidth(2.5);
   doc.line(solX, y, sagX, y);
   y += 16;
-  if(ad || ayarlar.santiye){
+  if(ad || santiyeOzeti){
     doc.setFont(yaziTipi,"normal"); doc.setFontSize(9.5); doc.setTextColor(60);
-    doc.text("İşçi: "+(ad||"—")+(ayarlar.santiye ? "   ·   Şantiye: "+ayarlar.santiye : ""), solX, y);
+    doc.text("İşçi: "+(ad||"—")+(santiyeOzeti ? "   ·   Şantiye: "+santiyeOzeti : ""), solX, y);
     doc.setTextColor(0);
   }
 
@@ -5483,21 +5529,22 @@ function pdfBlobOlustur(gBas, gSon){
     gunSatir.push([
       pad(g)+" / "+pad(aktifAy+1)+" / "+aktifYil+" — "+GUNLER[d.getDay()],
       i.yev, i.arti, i.mesai,
+      kazancVar ? gunSantiyeAdi(v) : "",
       kazancVar ? paraFmt(girdiKazanc(v)) : ""
     ]);
   }
   doc.autoTable({
     startY: y+8, margin:{left:solX, right: 595-sagX},
-    head: [["TARİH","YEVMİYE","GÜN İÇİ ARTI","MESAİ","KAZANÇ"]],
+    head: [["TARİH","YEVMİYE","GÜN İÇİ ARTI","MESAİ","ŞANTİYE","KAZANÇ"]],
     body: gunSatir,
     styles:{fontSize:8, cellPadding:4, lineColor:[200,200,200], lineWidth:0.5},
     headStyles:{fillColor:[242,242,242], textColor:20, fontStyle:"bold"},
-    columnStyles:{1:{halign:"center"},2:{halign:"center"},3:{halign:"center"},4:{halign:"right"}},
+    columnStyles:{1:{halign:"center"},2:{halign:"center"},3:{halign:"center"},5:{halign:"right"}},
     foot:[
-      ["TOPLAM: "+t.gunSayisi+" gün"+(t.artiToplam>0?" · "+t.artiToplam+" artı":"")+" · "+t.mesaiToplam+" saat mesai","","HAKEDİŞ","",paraFmt(t.hakedis)],
-      ["","","ALINAN (avans/ödeme)","",paraFmt(t.alinan)],
-      ...(t.masrafToplam>0 ? [["","","MASRAF ALACAĞI","",paraFmt(t.masrafToplam)]] : []),
-      ["","","KALAN","",paraFmt(t.kalan)]
+      ["TOPLAM: "+t.gunSayisi+" gün"+(t.artiToplam>0?" · "+t.artiToplam+" artı":"")+" · "+t.mesaiToplam+" saat mesai","","HAKEDİŞ","","",paraFmt(t.hakedis)],
+      ["","","ALINAN (avans/ödeme)","","",paraFmt(t.alinan)],
+      ...(t.masrafToplam>0 ? [["","","MASRAF ALACAĞI","","",paraFmt(t.masrafToplam)]] : []),
+      ["","","KALAN","","",paraFmt(t.kalan)]
     ],
     footStyles:{fillColor:[255,247,220], textColor:20, fontStyle:"bold", fontSize:8.5}
   });
@@ -5686,6 +5733,15 @@ function yilPdfBlobOlustur(){
     doc.setDrawColor(255,196,0); doc.setLineWidth(2.5);
     doc.line(solX, y2, sagX, y2);
     y2 += 16;
+    /* Bu ay içinde birden fazla şantiyede çalışılmışsa (biri bırakılıp
+       diğerine geçilmişse) ikisi de tarih aralığıyla birlikte görünsün. */
+    const ayinSantiyeOzeti = santiyeOzetMetni(santiyeBloklariCiz(yilSon.yil, ayIndex, 1, ayinSonGunu, girdilerHarita), ayIndex);
+    if(ayinSantiyeOzeti){
+      doc.setFont(yaziTipi,"normal"); doc.setFontSize(9); doc.setTextColor(60);
+      doc.text("Şantiye: "+ayinSantiyeOzeti, solX, y2);
+      doc.setTextColor(0);
+      y2 += 12;
+    }
 
     const gunSatir = [];
     for(let g=1; g<=ayinSonGunu; g++){
@@ -5697,20 +5753,21 @@ function yilPdfBlobOlustur(){
       gunSatir.push([
         pad(g)+" / "+pad(ayIndex+1)+" — "+GUNLER[d.getDay()],
         i.yev, i.arti, i.mesai,
+        kazancVar ? gunSantiyeAdi(v) : "",
         kazancVar ? paraFmt(girdiKazanc(v)) : ""
       ]);
     }
     doc.autoTable({
       startY: y2+4, margin:{left:solX, right: 595-sagX},
-      head: [["TARİH","YEVMİYE","GÜN İÇİ ARTI","MESAİ","KAZANÇ"]],
+      head: [["TARİH","YEVMİYE","GÜN İÇİ ARTI","MESAİ","ŞANTİYE","KAZANÇ"]],
       body: gunSatir,
       styles:{fontSize:7.5, cellPadding:3, lineColor:[200,200,200], lineWidth:0.4},
       headStyles:{fillColor:[242,242,242], textColor:20, fontStyle:"bold"},
-      columnStyles:{1:{halign:"center"},2:{halign:"center"},3:{halign:"center"},4:{halign:"right"}},
+      columnStyles:{1:{halign:"center"},2:{halign:"center"},3:{halign:"center"},5:{halign:"right"}},
       foot:[
-        ["TOPLAM: "+ayOzet.gun+" gün · "+ayOzet.mesai+" saat mesai","","HAKEDİŞ","",paraFmt(ayOzet.hak)],
-        ["","","ALINAN (avans/ödeme)","",paraFmt(ayOzet.alinan)],
-        ["","","KALAN","",paraFmt(ayOzet.hak-ayOzet.alinan)]
+        ["TOPLAM: "+ayOzet.gun+" gün · "+ayOzet.mesai+" saat mesai","","HAKEDİŞ","","",paraFmt(ayOzet.hak)],
+        ["","","ALINAN (avans/ödeme)","","",paraFmt(ayOzet.alinan)],
+        ["","","KALAN","","",paraFmt(ayOzet.hak-ayOzet.alinan)]
       ],
       footStyles:{fillColor:[255,247,220], textColor:20, fontStyle:"bold", fontSize:8}
     });
@@ -6915,7 +6972,7 @@ document.addEventListener("DOMContentLoaded", ()=>{
   });
 
   /* Neler yeni kartı */
-  const YENILIK_SURUM = "0.0.0.76";
+  const YENILIK_SURUM = "0.0.0.78";
   try{ $("#cekmece-surum").textContent = "Puantaj Defterim " + YENILIK_SURUM; }catch(e){}
   try{
     if(localStorage.getItem("yenilik")!==YENILIK_SURUM) $("#yenilik-kart").classList.remove("gizli");
@@ -7866,14 +7923,25 @@ document.addEventListener("DOMContentLoaded", ()=>{
     const mesaiUcret = sayi($("#yeni-santiye-mesai").value)||0;
     if(!ad || !yevmiye){ toast("Şantiye adı ve yevmiyesini yaz kanka"); return; }
     try{
-      let yeni;
+      let yeni, yeniId = null;
       if(duzenlenenSantiyeId){
         yeni = ayarlar.santiyeler.map(x=> x.id===duzenlenenSantiyeId ? {...x, ad, yevmiye, mesaiUcret} : x);
       }else{
-        yeni = [...ayarlar.santiyeler, {id: Date.now().toString(36), ad, yevmiye, mesaiUcret}];
+        yeniId = Date.now().toString(36);
+        yeni = [...ayarlar.santiyeler, {id: yeniId, ad, yevmiye, mesaiUcret}];
       }
       await kokRef().set({santiyeler: yeni},{merge:true});
-      toast(duzenlenenSantiyeId ? "Şantiye güncellendi ✏️ (yeni günler yeni ücretten)" : "Şantiye eklendi 🏗️");
+      if(yeniId){
+        /* Yeni bir şantiye/patron eklendiğinde bunu otomatik "son kullanılan"
+           yap — aksi halde bir sonraki gün kaydı hâlâ ESKİ şantiyeyi hatırlar
+           (kullanıcı elle seçmeyi unutursa yanlış şantiyeye/ücrete kaydolur,
+           bildirilen kritik sorun tam buydu). İşe yeni başlayınca ilk iş
+           şantiyeyi eklemek olacağından, akış artık doğal ve güvenli. */
+        try{ localStorage.setItem("sonSantiye", yeniId); }catch(e){}
+        toast("🏗️ "+ad+" eklendi — bundan sonraki gün kayıtların otomatik buraya yazılacak");
+      }else{
+        toast("Şantiye güncellendi ✏️ (yeni günler yeni ücretten)");
+      }
       duzenlenenSantiyeId = null;
       $("#btn-santiye-ekle").textContent = "➕ Şantiye ekle";
       $("#yeni-santiye-ad").value=""; $("#yeni-santiye-yevmiye").value=""; $("#yeni-santiye-mesai").value="";
