@@ -5,6 +5,13 @@ kullanır: `0.0.0.X` — X, her güncellemede 1 artar. Uygulama içindeki sürü
 (alt bilgi + "Neler yeni" kartı) ve dağıtılan zip dosyasının adı her zaman
 birebir aynıdır.
 
+## 0.0.0.74 — PDF artık gerçek (metin tabanlı) PDF, resim değil
+- Kullanıcı isteği: görsel paylaşımı çalıştı, PDF için "resim değil gerçek PDF" istendi — bir önceki turdaki html2canvas yaklaşımı (sayfanın ekran görüntüsünü PDF'e gömmek) yerine gerçek, seçilebilir/aranabilir METİN içeren bir PDF isteniyordu
+- Sandbox'ta Türkçe'nin tamamını (İ, ı, Ş, ş, Ğ, ğ dahil — cmap ile doğrulandı, python fontTools ile test edildi) destekleyen Liberation Sans fontu (Arial ile ölçü uyumlu, Apache lisanslı, açık kaynak) bulundu, Regular + Bold ağırlıkları base64'e çevrilip `font-liberationsans-regular.js` ve `font-liberationsans-bold.js` olarak projeye eklendi (toplam ~1.1 MB, uygulamayla birlikte bir kere önbelleğe alınıyor, internet gerektirmiyor)
+- `pdfBlobOlustur()` artık bu fontu `doc.addFileToVFS()` + `doc.addFont()` ile PDF'in içine gömüyor, tüm `doc.text()` ve `doc.autoTable()` çağrıları bu fontu kullanıyor — önceki turdaki karakter ÇEVİRME (İ→I, ş→s gibi) yöntemi kaldırıldı, artık gerçek Türkçe karakterler doğru çıkıyor. Tek istisna: ₺ (Lira) işareti bu fontta da yok (çok yeni bir Unicode karakter), o "TL" olarak yazılmaya devam ediyor
+- `pdfPaylas()` artık önce bu gerçek metin tabanlı PDF'i deniyor; sadece font/jsPDF hiç yüklenemezse (örn. ilk açılışta internet yoksa) bir önceki turun html2canvas'lı "resim" yöntemine, o da olmazsa yazdırma ekranına düşüyor
+- `sw.js` önbellek listesine yeni font dosyaları eklendi, CSP değişikliğine gerek kalmadı (aynı sunucudan geldikleri için zaten 'self' kapsamında)
+
 ## 0.0.0.73 — Görsel paylaşımına 2. resim: Alınan Avanslar (tarih tarih)
 - Kullanıcı isteği: PDF'i bırakıp mevcut "Görsel" (PNG) özelliğine, avansların TARİH TARİH listelendiği ikinci bir resim eklensin
 - `pngRapor()` ikiye bölündü: `pngOzetBlobOlustur()` (eski tek resim, değişmedi) ve yeni `pngAvansBlobOlustur()` (o dönemde alınan avans/ödemeleri `donemOdemeSec()` ile aynı FIFO-doğru mantıkla çekip # · Tarih (gün/ay/yıl — gün adı) · Not · Tutar şeklinde tek tek çizen, en altta toplamı gösteren yeni bir canvas). Dönemde hiç ödeme yoksa bu fonksiyon `null` döner

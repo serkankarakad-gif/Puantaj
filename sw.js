@@ -1,6 +1,6 @@
 /* Puantaj Defterim — service worker (çevrimdışı kabuk) */
-const KASA = "puantaj-0.0.0.73";
-const DOSYALAR = ["./", "./index.html", "./manifest.webmanifest", "./style.css", "./app.js", "./firebase-config.js", "./sabitler.js"];
+const KASA = "puantaj-0.0.0.74";
+const DOSYALAR = ["./", "./index.html", "./manifest.webmanifest", "./style.css", "./app.js", "./firebase-config.js", "./sabitler.js", "./font-liberationsans-regular.js", "./font-liberationsans-bold.js"];
 
 self.addEventListener("install", e => {
   e.waitUntil(
