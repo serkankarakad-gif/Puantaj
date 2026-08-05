@@ -5,6 +5,16 @@ kullanır: `0.0.0.X` — X, her güncellemede 1 artar. Uygulama içindeki sürü
 (alt bilgi + "Neler yeni" kartı) ve dağıtılan zip dosyasının adı her zaman
 birebir aynıdır.
 
+## 0.0.0.79 — "İşlerim": işe giriş/çıkış sistemi
+- Uzun bir sohbet sonucu netleşen kritik özellik: bir işten çıkıp bambaşka bir firmaya geçince (aynı inşaat sektörü içinde farklı, alakasız firmalar), o iki dönemin puantajının/raporunun kesinlikle karışmaması gerekiyordu
+- Yeni veri modeli: `ayarlar.isler` dizisi — her kayıt {id, ad, soyad, santiyeAdi, patronAdi, girisTarihi, cikisTarihi}. `cikisTarihi` boşsa o iş hâlâ "aktif" sayılır
+- Yeni yardımcı fonksiyonlar: `aktifIs()` (çıkışı olmayan işi bulur), `isBul(tarih)` (bir tarihin hangi işe ait olduğunu bulur), `isVerileriHesapla(is)` (bir işin giriş-çıkış aralığındaki TÜM günlerini — ay sınırını aşsa bile — tumGirdilerQS/tumOdemelerQS'ten gün gün hesaplar)
+- Hamburger menüye yeni "💼 İŞ GEÇMİŞİ" grubu eklendi: "🏗️ İşe Giriş Yap" (ad/soyad/şantiye/patron/giriş tarihi — KESİNLİKLE hepsi zorunlu, boş geçilemiyor), "🚪 İşten Çıkış Yap" (çıkış tarihi zorunlu; kaydedince hemen "📲 Bu işin PDF'ini WhatsApp'ta paylaş" seçeneği çıkıyor), "📋 İşlerim" (geçmiş+aktif tüm işlerin kart listesi)
+- Aynı anda sadece TEK aktif iş olabilir — zaten aktif bir iş varken "İşe Giriş Yap" denenirse engellenip önce çıkış yapması isteniyor (yanlışlıkla iki işi aynı anda açık bırakmasın diye)
+- Bir işe dokununca (İşlerim listesinden) sadece o dönemin günleri/avansları görünen bir detay ekranı açılıyor, ve oradan da aynı gerçek (Türkçe fontlu, gömülü) PDF raporu paylaşılabiliyor — `pdfTurkceFontKur()` altyapısı burada da yeniden kullanıldı
+- Gerçek koddan çekilen `aktifIs()`/`isBul()` mantığı Node.js'te test edildi: Ahmet'in işi (1-15 Temmuz) ve Ali'nin işi (20 Temmuz-) doğru ayrıştı, aradaki boşluk günü (17 Temmuz) hiçbir işe ait çıkmadı (doğru davranış)
+- Not: bu sistem sadece RAPOR/DOKÜMANTASYON ayrımı içindir — ücret hesaplaması hâlâ "Ayarlar → Şantiyeler" listesindeki kayıtlara bağlıdır (0.0.0.78'de düzeltilen sistem), ikisi paralel çalışır
+
 ## 0.0.0.78 — KRİTİK: yeni şantiyeye geçince eski ücret kullanılıyordu
 - Kullanıcı netleştirdi: sorun sadece raporlarda görünüm değil, GERÇEK bir hesaplama hatasıydı — 20 Temmuz'da tamamen farklı bir firmada işe başlayınca, o günden sonraki kayıtlar hâlâ eski firmanın yevmiyesiyle hesaplanıyordu
 - `oranBul()`/`guncelOranlar()` mekanizması Node.js'te izole test edildi ve DOĞRU çalıştığı kanıtlandı (Firma A: 1.250₺, Firma B: 1.800₺ — doğru ayrıştı) — yani hesaplama motorunda bug yoktu

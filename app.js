@@ -103,7 +103,7 @@ let db=null, auth=null, kullanici=null;
 let aktifYil, aktifAy;                 // gösterilen ay
 let ayarlar = { yevmiye:0, mesaiUcret:0, ekGunluk:0, saatUcret:0, gunlukSaat:8,
                 calismaTipi:"yevmiye", hedef:0, kapali:[], santiye:"", santiyeler:[],
-                pazarZam:0, tatilZam:0, parcaBirim:"adet", parcaFiyat:0, belgeler:[], geceZam:0 };
+                pazarZam:0, tatilZam:0, parcaBirim:"adet", parcaFiyat:0, belgeler:[], geceZam:0, isler:[] };
 let girdiler = {};                     // { "2026-07-08": {...} }
 let odemeler = [];                     // bu ayın ödemeleri
 let borclar = [];                      // tüm borç kayıtları
@@ -264,6 +264,9 @@ function ayarlariDinle(){
     ayarlar.parcaBirim = d.parcaBirim || "adet";
     ayarlar.parcaFiyat = Number(d.parcaFiyat)||0;
     ayarlar.belgeler = Array.isArray(d.belgeler) ? d.belgeler : [];
+    /* 💼 İşlerim: her işten girişi/çıkışı ayrı ayrı bir kayıt — birden fazla
+       şantiye/patron değişince eski işin adı/ücreti kaybolmasın diye */
+    ayarlar.isler = Array.isArray(d.isler) ? d.isler : [];
     $("#ayar-yevmiye").value = ayarlar.yevmiye||"";
     $("#ayar-mesai").value   = ayarlar.mesaiUcret||"";
     $("#ayar-ek").value      = ayarlar.ekGunluk||"";
@@ -288,6 +291,7 @@ function ayarlariDinle(){
     notCipCiz();
     sgkCiz();
     santiyeListCiz();
+    islerListCiz();
     planListCiz();
     belgeListCiz();
     belgeDurt();
@@ -5161,6 +5165,47 @@ function isiHaritaCiz(gunKazanc){
    şantiye adı (varsa) → şantiyeId üzerinden şantiyeler listesinden ad →
    hiçbiri yoksa (özellik eklenmeden önceki eski kayıtlar) ayarlardaki GÜNCEL
    şantiye adına geriye dönük düşer, boş/"Bilinmiyor" göstermek yerine. */
+/* ---------- 💼 İşlerim: her işten girişi/çıkışı ayrı bir kayıt ----------
+   "Şantiyeler" (yukarıda) sadece ÜCRET hesaplama içindi. "İşler" bambaşka bir
+   şey: bir işten çıkıp bambaşka bir firmaya/patrona geçince, o iki dönemin
+   raporlarının/PDF'lerinin KESİNLİKLE karışmaması, her birinin kendi ayrı
+   kartı ve ayrı raporu olması için. Zorunlu alanlar: ad, soyad, şantiye adı,
+   patron adı, giriş tarihi (çıkış tarihi işten ayrılınca girilir). */
+function aktifIs(){
+  return (ayarlar.isler||[]).find(x=> !x.cikisTarihi) || null;
+}
+function isBul(id){
+  return (ayarlar.isler||[]).find(x=> id>=x.girisTarihi && (!x.cikisTarihi || id<=x.cikisTarihi)) || null;
+}
+function isSirali(){
+  return [...(ayarlar.isler||[])].sort((a,b)=> a.girisTarihi<b.girisTarihi?1:-1);  // en yeni üstte
+}
+function islerListCiz(){
+  const kutu = $("#isler-liste");
+  if(!kutu) return;
+  const liste = isSirali();
+  if(!liste.length){ kutu.innerHTML = '<div class="bos-mesaj" style="padding:14px">Henüz bir iş kaydın yok. Aşağıdan ilk işini ekle.</div>'; return; }
+  kutu.innerHTML = "";
+  liste.forEach(is=>{
+    const aktif = !is.cikisTarihi;
+    const aralik = tarihFormatla(is.girisTarihi) + " – " + (aktif ? "devam ediyor" : tarihFormatla(is.cikisTarihi));
+    const li = document.createElement("li");
+    li.innerHTML =
+      '<div class="rozet" style="background:'+(aktif ? "var(--sari)" : "var(--mesai)")+'">'+(aktif ? "●" : "🏗️")+'</div>'+
+      '<div class="orta" style="cursor:pointer">'+
+        '<div class="baslik">'+esc(is.patronAdi)+(aktif ? ' <span style="color:var(--sari);font-size:11px">AKTİF</span>' : '')+'</div>'+
+        '<div class="alt-yazi">🏗️ '+esc(is.santiyeAdi)+' · 📅 '+aralik+'</div>'+
+      '</div><span style="opacity:.5;padding:0 4px">›</span>';
+    li.querySelector(".orta").addEventListener("click", ()=> isDetayAc(is.id));
+    kutu.appendChild(li);
+  });
+}
+function tarihFormatla(id){
+  if(!id) return "—";
+  const [y,a,g] = id.split("-");
+  return g+"/"+a+"/"+y;
+}
+
 function gunSantiyeAdi(v){
   if(v && v.santiye) return v.santiye;
   if(v && v.santiyeId){
@@ -5677,6 +5722,156 @@ async function pdfPaylas(gBas, gSon){
 /* ---------- Yıl Özeti: gerçek (metin tabanlı) PDF raporu ----------
    Ekrandaki 12 aylık dökümün ("AY · GÜN · MESAİ · HAKEDİŞ · ALINAN · KALAN")
    aynısını gerçek, seçilebilir/aranabilir metinli bir PDF'e döker. */
+/* ---------- 💼 Bir işin (giriş-çıkış aralığının) verilerini hesaplar ----------
+   Ay sınırını aşabilir (örn. 20 Temmuz - 5 Ağustos gibi), o yüzden aktifAy/
+   aktifYil'e bağlı hesaplaAralik() değil, gün gün elle ilerleyen bu fonksiyon
+   kullanılıyor. tumGirdilerQS/tumOdemelerQS (tüm zamanların önbelleği) okur,
+   yeni bir Firestore sorgusu atmaz. */
+function isVerileriHesapla(is){
+  const bas = is.girisTarihi;
+  const son = is.cikisTarihi || tarihId(new Date());
+  const girdilerHarita = {};
+  if(tumGirdilerQS) tumGirdilerQS.forEach(d=>{ girdilerHarita[d.id] = d.data(); });
+  const gunler = [];
+  let gunSayisi=0, mesaiToplam=0, hakedis=0;
+  const d = new Date(bas+"T12:00:00");
+  const dSon = new Date(son+"T12:00:00");
+  while(d <= dSon){
+    const id = tarihId(d);
+    const v = girdilerHarita[id];
+    const i = gunIsaret(v);
+    const kazancVar = i.yev!=="0" || (v && Number(v.mesai)>0);
+    if(kazancVar){
+      gunSayisi += girdiGun(v);
+      mesaiToplam += Number(v.mesai)||0;
+      hakedis += girdiKazanc(v);
+    }
+    gunler.push({id, d:new Date(d), v, i, kazancVar});
+    d.setDate(d.getDate()+1);
+  }
+  const tumOdemeListesi = [];
+  if(tumOdemelerQS) tumOdemelerQS.forEach(doc=> tumOdemeListesi.push(doc.data()));
+  /* Not: burada aitAy/FIFO değil, gerçek alım tarihi kullanılıyor — FIFO
+     mantığı TEK bir işverenin ay geçişleri içindi, farklı iki işveren arasında
+     anlamsız kalır. Bu dönemde fiilen alınan ödemeler bunlar. */
+  const odemelerBu = tumOdemeListesi.filter(o=> o.tarih>=bas && o.tarih<=son).sort((a,b)=> a.tarih<b.tarih?-1:1);
+  const alinan = odemelerBu.reduce((s,o)=> s+(Number(o.tutar)||0),0);
+  return {gunler, gunSayisi, mesaiToplam, hakedis, alinan, kalan:hakedis-alinan, odemeler:odemelerBu};
+}
+
+let isDetayAktif = null;
+function isDetayAc(isId){
+  const is = (ayarlar.isler||[]).find(x=>x.id===isId);
+  if(!is) return;
+  isDetayAktif = is;
+  $("#is-detay-baslik").textContent = is.patronAdi;
+  $("#is-detay-alt").textContent = is.santiyeAdi+" · "+tarihFormatla(is.girisTarihi)+" – "+(is.cikisTarihi?tarihFormatla(is.cikisTarihi):"devam ediyor");
+  const t = isVerileriHesapla(is);
+  const calisilanlar = t.gunler.filter(g=>g.kazancVar);
+  $("#is-detay-icerik").innerHTML =
+    '<div style="display:flex;gap:8px;margin:12px 0">'+
+      '<div style="flex:1;background:var(--girdi);border:1.5px solid var(--cizgi);border-radius:12px;padding:10px;text-align:center"><div style="font-size:10.5px;color:var(--soluk)">HAKEDİŞ</div><div style="font-weight:800;font-size:15px">'+paraFmt(t.hakedis)+'</div></div>'+
+      '<div style="flex:1;background:var(--girdi);border:1.5px solid var(--cizgi);border-radius:12px;padding:10px;text-align:center"><div style="font-size:10.5px;color:var(--soluk)">ALINAN</div><div style="font-weight:800;font-size:15px">'+paraFmt(t.alinan)+'</div></div>'+
+      '<div style="flex:1;background:var(--girdi);border:1.5px solid var(--cizgi);border-radius:12px;padding:10px;text-align:center"><div style="font-size:10.5px;color:var(--soluk)">KALAN</div><div style="font-weight:800;font-size:15px;color:var(--sari)">'+paraFmt(t.kalan)+'</div></div>'+
+    '</div>'+
+    '<div style="font-size:12.5px;color:var(--soluk);margin:10px 0 6px">📋 '+calisilanlar.length+' gün çalışıldı</div>'+
+    '<ul class="liste">'+
+      calisilanlar.map(g=> '<li><div class="rozet" style="background:var(--mesai)">'+g.d.getDate()+'</div><div class="orta"><div class="baslik">'+g.i.yev+' · '+g.i.mesai+' saat mesai</div><div class="alt-yazi">'+tarihFormatla(g.id)+'</div></div><div class="tutar">'+paraFmt(girdiKazanc(g.v))+'</div></li>').join("")+
+    '</ul>'+
+    (t.odemeler.length ? '<h3 style="margin:16px 0 6px;font-size:14px">💵 Alınan paralar ('+t.odemeler.length+')</h3><ul class="liste">'+
+      t.odemeler.map(o=> '<li><div class="rozet" style="background:var(--altin,#FFC400)">💵</div><div class="orta"><div class="baslik">'+esc(o.not||"Ödeme")+'</div><div class="alt-yazi">'+tarihFormatla(o.tarih)+'</div></div><div class="tutar">'+paraFmt(o.tutar)+'</div></li>').join("")+'</ul>' : '');
+  $("#modal-perde").classList.add("acik");
+  $("#is-detay-modal").classList.add("acik");
+}
+
+/* ---------- 💼 Bir işin PDF raporu: gerçek metin, gömülü Türkçe font ---------- */
+function isPdfBlobOlustur(is){
+  if(!window.jspdf || !window.jspdf.jsPDF) return null;
+  const { jsPDF } = window.jspdf;
+  const t = isVerileriHesapla(is);
+  const doc = new jsPDF({unit:"pt", format:"a4"});
+  const yaziTipi = pdfTurkceFontKur(doc);
+  const solX = 40, sagX = 555;
+  let y = 46;
+  doc.setFont(yaziTipi,"bold"); doc.setFontSize(16);
+  doc.text("İŞ RAPORU", solX, y);
+  y += 8;
+  doc.setDrawColor(255,196,0); doc.setLineWidth(2.5);
+  doc.line(solX, y, sagX, y);
+  y += 18;
+  doc.setFont(yaziTipi,"normal"); doc.setFontSize(10);
+  doc.text("İşçi: "+is.ad+" "+is.soyad, solX, y); y += 15;
+  doc.text("Patron / Firma: "+is.patronAdi, solX, y); y += 15;
+  doc.text("Şantiye: "+is.santiyeAdi, solX, y); y += 15;
+  doc.text("Giriş: "+tarihFormatla(is.girisTarihi)+"   ·   Çıkış: "+(is.cikisTarihi?tarihFormatla(is.cikisTarihi):"devam ediyor"), solX, y);
+  y += 18;
+
+  const gunSatir = t.gunler.filter(g=>g.kazancVar).map(g=> [
+    tarihFormatla(g.id)+" — "+GUNLER[g.d.getDay()],
+    g.i.yev, g.i.arti, g.i.mesai,
+    paraFmt(girdiKazanc(g.v))
+  ]);
+  doc.autoTable({
+    startY: y+4, margin:{left:solX, right: 595-sagX},
+    head: [["TARİH","YEVMİYE","GÜN İÇİ ARTI","MESAİ","KAZANÇ"]],
+    body: gunSatir,
+    styles:{fontSize:8, cellPadding:4, lineColor:[200,200,200], lineWidth:0.5},
+    headStyles:{fillColor:[242,242,242], textColor:20, fontStyle:"bold"},
+    columnStyles:{1:{halign:"center"},2:{halign:"center"},3:{halign:"center"},4:{halign:"right"}},
+    foot:[
+      ["TOPLAM: "+t.gunSayisi+" gün · "+t.mesaiToplam+" saat mesai","","HAKEDİŞ","",paraFmt(t.hakedis)],
+      ["","","ALINAN","",paraFmt(t.alinan)],
+      ["","","KALAN","",paraFmt(t.kalan)]
+    ],
+    footStyles:{fillColor:[255,247,220], textColor:20, fontStyle:"bold", fontSize:8.5}
+  });
+  let y2 = doc.lastAutoTable.finalY + 20;
+
+  if(t.odemeler.length){
+    if(y2>740){ doc.addPage(); y2=50; }
+    doc.setFont(yaziTipi,"bold"); doc.setFontSize(11);
+    doc.text("ALINAN PARALAR ("+t.odemeler.length+" adet)", solX, y2);
+    const body = t.odemeler.map((o,idx)=> [String(idx+1), tarihFormatla(o.tarih), o.not||"", paraFmt(o.tutar)]);
+    doc.autoTable({
+      startY: y2+6, margin:{left:solX, right: 595-sagX},
+      head: [["#","TARİH","NOT","TUTAR"]],
+      body,
+      foot: [["","","TOPLAM",paraFmt(t.alinan)]],
+      styles:{fontSize:8, cellPadding:4, lineColor:[200,200,200], lineWidth:0.5},
+      headStyles:{fillColor:[242,242,242], textColor:20, fontStyle:"bold"},
+      footStyles:{fillColor:[255,247,220], textColor:20, fontStyle:"bold"},
+      columnStyles:{0:{halign:"center", cellWidth:24}, 3:{halign:"right"}}
+    });
+    y2 = doc.lastAutoTable.finalY + 20;
+  }
+  if(y2>720){ doc.addPage(); y2=60; } else y2 += 30;
+  doc.setDrawColor(30); doc.setLineWidth(1);
+  doc.line(solX, y2, solX+180, y2);
+  doc.line(sagX-180, y2, sagX, y2);
+  doc.setFont(yaziTipi,"normal"); doc.setFontSize(9);
+  doc.text("İşçi", solX, y2+14); doc.text("Ad Soyad / İmza", solX, y2+26);
+  doc.text("İşveren", sagX-180, y2+14); doc.text("Ad Soyad / İmza", sagX-180, y2+26);
+
+  return doc.output("blob");
+}
+
+async function isPdfPaylas(is){
+  const blob = isPdfBlobOlustur(is);
+  if(!blob){ toast("PDF motoru yüklenemedi, internetini kontrol et"); return; }
+  const dosyaAdi = "Is-Raporu-"+String(is.patronAdi).replace(/[^a-zA-Z0-9ğüşıöçĞÜŞİÖÇ]+/g,"-")+".pdf";
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url; a.download = dosyaAdi; a.click();
+  setTimeout(()=> URL.revokeObjectURL(url), 15000);
+  toast("PDF telefonuna kaydedildi 📥 (İndirilenler)");
+  try{
+    const dosya = new File([blob], dosyaAdi, {type:"application/pdf"});
+    if(navigator.canShare && navigator.canShare({files:[dosya]})){
+      await navigator.share({files:[dosya], title:"İş Raporu — "+is.patronAdi});
+    }
+  }catch(e){ /* iptal/başarısız oldu — sorun değil, PDF zaten kaydedildi */ }
+}
+
 function yilPdfBlobOlustur(){
   if(!window.jspdf || !window.jspdf.jsPDF) return null;
   if(!yilSon || !yilSon.aylar.length) return null;
@@ -6160,7 +6355,8 @@ document.addEventListener("DOMContentLoaded", ()=>{
     kartlar:["Kredi kartlarım","Borç ve son ödeme takibi"],
     arama:["Kayıt ara","Tüm defterde bul"],
     planlar:["Planlarım","Proje ve plan linklerin"],
-    maaslar:["Maaşlar","Her ayın kendi hesap kartı"]
+    maaslar:["Maaşlar","Her ayın kendi hesap kartı"],
+    isler:["İşlerim","İşe giriş/çıkış geçmişin"]
   };
   $$("[data-goruntu]").forEach(b=>{
     b.addEventListener("click", ()=>{
@@ -6169,10 +6365,10 @@ document.addEventListener("DOMContentLoaded", ()=>{
       aktifGoruntu = g;
       $("#btn-geri").classList.toggle("gizli", g==="ana");
       $$("[data-goruntu]").forEach(x=>x.classList.toggle("aktif", x===b));
-      ["ana","puantaj","odemeler","masraf","borc","ozet","yil","notlar","rozet","ekip","kisiler","arac","ayarlar","haber","tv","video","kartlar","arama","planlar","maaslar"].forEach(x=>{
+      ["ana","puantaj","odemeler","masraf","borc","ozet","yil","notlar","rozet","ekip","kisiler","arac","ayarlar","haber","tv","video","kartlar","arama","planlar","maaslar","isler"].forEach(x=>{
         $("#goruntu-"+x).classList.toggle("gizli", x!==g);
       });
-      $("#ay-bar").style.display = (g==="ayarlar"||g==="borc"||g==="ana"||g==="notlar"||g==="rozet"||g==="arac"||g==="haber"||g==="tv"||g==="video"||g==="kartlar"||g==="arama"||g==="planlar"||g==="maaslar") ? "none" : "flex";
+      $("#ay-bar").style.display = (g==="ayarlar"||g==="borc"||g==="ana"||g==="notlar"||g==="rozet"||g==="arac"||g==="haber"||g==="tv"||g==="video"||g==="kartlar"||g==="arama"||g==="planlar"||g==="maaslar"||g==="isler") ? "none" : "flex";
       $("#topbar-baslik").firstChild.textContent = basliklar[g][0];
       $("#topbar-alt").textContent = basliklar[g][1];
       $("#btn-bugun").style.display = g==="puantaj" ? "flex" : "none";
@@ -6498,6 +6694,9 @@ document.addEventListener("DOMContentLoaded", ()=>{
     $("#kur-modal").classList.remove("acik");
     $("#donem-modal").classList.remove("acik");
     $("#ay-modal").classList.remove("acik");
+    $("#is-giris-modal").classList.remove("acik");
+    $("#is-cikis-modal").classList.remove("acik");
+    $("#is-detay-modal").classList.remove("acik");
     $("#modal-perde").classList.remove("acik");
   });
   $$(".durum-secim button").forEach(b=>{
@@ -6972,7 +7171,7 @@ document.addEventListener("DOMContentLoaded", ()=>{
   });
 
   /* Neler yeni kartı */
-  const YENILIK_SURUM = "0.0.0.78";
+  const YENILIK_SURUM = "0.0.0.79";
   try{ $("#cekmece-surum").textContent = "Puantaj Defterim " + YENILIK_SURUM; }catch(e){}
   try{
     if(localStorage.getItem("yenilik")!==YENILIK_SURUM) $("#yenilik-kart").classList.remove("gizli");
@@ -8164,6 +8363,70 @@ document.addEventListener("DOMContentLoaded", ()=>{
     try{ await yilPdfPaylas(); }
     catch(e){ hataGoster(e); }   /* önceden sessizce başarısız oluyordu — artık hata görünür */
   });
+
+  /* ---------- 💼 İşlerim: giriş / çıkış / detay ---------- */
+  $("#btn-menu-is-giris").addEventListener("click", ()=>{
+    cekmeceAc(false);
+    if(aktifIs()){ toast("Zaten aktif bir işin var (" + aktifIs().patronAdi + ") — önce ondan çıkış yapmalısın 🚪"); return; }
+    const adSoyad = ((kullanici && kullanici.displayName) || "").trim().split(/\s+/);
+    $("#is-giris-ad").value = adSoyad.length>1 ? adSoyad.slice(0,-1).join(" ") : (adSoyad[0]||"");
+    $("#is-giris-soyad").value = adSoyad.length>1 ? adSoyad[adSoyad.length-1] : "";
+    $("#is-giris-santiye").value = "";
+    $("#is-giris-patron").value = "";
+    $("#is-giris-tarih").value = tarihId(new Date());
+    $("#modal-perde").classList.add("acik");
+    $("#is-giris-modal").classList.add("acik");
+  });
+  $("#btn-isler-giris").addEventListener("click", ()=> $("#btn-menu-is-giris").click());
+  $("#btn-is-giris-kaydet").addEventListener("click", async ()=>{
+    if(aktifIs()){ toast("Zaten aktif bir işin var — önce ondan çıkış yapmalısın 🚪"); return; }
+    const ad = $("#is-giris-ad").value.trim();
+    const soyad = $("#is-giris-soyad").value.trim();
+    const santiyeAdi = $("#is-giris-santiye").value.trim();
+    const patronAdi = $("#is-giris-patron").value.trim();
+    const girisTarihi = $("#is-giris-tarih").value;
+    /* Kullanıcı isteği: bu alanlar KESİNLİKLE zorunlu — hiçbiri boş geçilemez */
+    if(!ad || !soyad || !santiyeAdi || !patronAdi || !girisTarihi){
+      toast("Ad, soyad, şantiye, patron ve giriş tarihi — hepsi zorunlu kanka ⚠️");
+      return;
+    }
+    try{
+      const yeni = {id: Date.now().toString(36), ad, soyad, santiyeAdi, patronAdi, girisTarihi, cikisTarihi: null};
+      await kokRef().set({isler: [...(ayarlar.isler||[]), yeni]}, {merge:true});
+      toast("🏗️ İşe giriş kaydedildi: "+patronAdi);
+      $("#is-giris-modal").classList.remove("acik");
+      $("#modal-perde").classList.remove("acik");
+    }catch(e){ hataGoster(e); }
+  });
+
+  $("#btn-menu-is-cikis").addEventListener("click", ()=>{
+    cekmeceAc(false);
+    const is = aktifIs();
+    if(!is){ toast("Aktif bir işin yok, çıkış yapılacak bir şey bulunamadı"); return; }
+    $("#is-cikis-bilgi").innerHTML = "<b>"+esc(is.patronAdi)+"</b> — "+esc(is.santiyeAdi)+"<br>Giriş: "+tarihFormatla(is.girisTarihi);
+    $("#is-cikis-tarih").value = tarihId(new Date());
+    $("#is-cikis-tarih").min = is.girisTarihi;
+    $("#is-cikis-sonrasi").classList.add("gizli");
+    $("#modal-perde").classList.add("acik");
+    $("#is-cikis-modal").classList.add("acik");
+  });
+  $("#btn-is-cikis-kaydet").addEventListener("click", async ()=>{
+    const is = aktifIs();
+    if(!is){ toast("Aktif iş bulunamadı"); return; }
+    const cikisTarihi = $("#is-cikis-tarih").value;
+    if(!cikisTarihi){ toast("Çıkış tarihi zorunlu ⚠️"); return; }
+    if(cikisTarihi < is.girisTarihi){ toast("Çıkış tarihi girişten önce olamaz"); return; }
+    try{
+      const yeni = (ayarlar.isler||[]).map(x=> x.id===is.id ? {...x, cikisTarihi} : x);
+      await kokRef().set({isler: yeni}, {merge:true});
+      isDetayAktif = {...is, cikisTarihi};
+      toast("🚪 İşten çıkış kaydedildi");
+      $("#is-cikis-sonrasi").classList.remove("gizli");
+    }catch(e){ hataGoster(e); }
+  });
+  $("#btn-is-cikis-pdf").addEventListener("click", ()=>{ if(isDetayAktif) isPdfPaylas(isDetayAktif); });
+  $("#btn-is-detay-pdf").addEventListener("click", ()=>{ if(isDetayAktif) isPdfPaylas(isDetayAktif); });
+
   $("#btn-yedek").addEventListener("click", yedekAl);
 
   /* Önbelleği temizle */
