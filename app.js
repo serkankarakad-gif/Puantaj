@@ -103,7 +103,7 @@ let db=null, auth=null, kullanici=null;
 let aktifYil, aktifAy;                 // gösterilen ay
 let ayarlar = { yevmiye:0, mesaiUcret:0, ekGunluk:0, saatUcret:0, gunlukSaat:8,
                 calismaTipi:"yevmiye", hedef:0, kapali:[], santiye:"", santiyeler:[],
-                pazarZam:0, tatilZam:0, parcaBirim:"adet", parcaFiyat:0, belgeler:[], geceZam:0, isler:[] };
+                pazarZam:0, tatilZam:0, parcaBirim:"adet", parcaFiyat:0, belgeler:[], geceZam:0, isler:[], profilFoto:"" };
 let girdiler = {};                     // { "2026-07-08": {...} }
 let odemeler = [];                     // bu ayın ödemeleri
 let borclar = [];                      // tüm borç kayıtları
@@ -233,8 +233,51 @@ function kullaniciBilgiYaz(){
   const ad = kullanici.displayName || "İşçi kardeşim";
   $("#menu-ad").textContent = ad;
   $("#menu-eposta").textContent = kullanici.email || "";
-  $("#menu-avatar").textContent = ad.trim().charAt(0).toUpperCase() || "?";
   $("#ayar-ad").value = kullanici.displayName || "";
+  avatarCiz();
+}
+
+/* ---------- 📷 Profil fotoğrafı: kendi ad harfimizin yerine gerçek fotoğraf ----------
+   Firebase Storage kurmak yerine (ekstra kurulum gerektirir), küçük/sıkıştırılmış bir
+   kare fotoğrafı base64 olarak doğrudan Firestore'daki ayarlar belgesine kaydediyoruz
+   — 200x200 JPEG %75 kalite genelde 15-30 KB civarı kalıyor, Firestore'un 1 MB belge
+   sınırının çok altında, ekstra bir kurulum/masraf gerektirmiyor. */
+function avatarCiz(){
+  const el = $("#menu-avatar");
+  if(!el) return;
+  if(ayarlar.profilFoto){
+    el.style.backgroundImage = "url("+ayarlar.profilFoto+")";
+    el.textContent = "";
+  }else{
+    el.style.backgroundImage = "";
+    const ad = (kullanici && kullanici.displayName) || "";
+    el.textContent = ad.trim().charAt(0).toUpperCase() || "?";
+  }
+}
+
+function profilFotoSecildi(dosya){
+  if(!dosya || !dosya.type.startsWith("image/")){ toast("Bu bir resim dosyası değil"); return; }
+  const okuyucu = new FileReader();
+  okuyucu.onload = e=>{
+    const img = new Image();
+    img.onload = async ()=>{
+      /* Kare kırp + 200x200'e küçült, dosya boyutunu makul tutmak için */
+      const boyut = 200;
+      const cv = document.createElement("canvas");
+      cv.width = boyut; cv.height = boyut;
+      const c = cv.getContext("2d");
+      const kenar = Math.min(img.width, img.height);
+      const sx = (img.width-kenar)/2, sy = (img.height-kenar)/2;
+      c.drawImage(img, sx, sy, kenar, kenar, 0, 0, boyut, boyut);
+      const base64 = cv.toDataURL("image/jpeg", 0.8);
+      try{
+        await kokRef().set({profilFoto: base64}, {merge:true});
+        toast("📷 Profil fotoğrafı güncellendi");
+      }catch(e2){ hataGoster(e2); }
+    };
+    img.src = e.target.result;
+  };
+  okuyucu.readAsDataURL(dosya);
 }
 
 /* ---------- Firestore yolları ---------- */
@@ -267,6 +310,8 @@ function ayarlariDinle(){
     /* 💼 İşlerim: her işten girişi/çıkışı ayrı ayrı bir kayıt — birden fazla
        şantiye/patron değişince eski işin adı/ücreti kaybolmasın diye */
     ayarlar.isler = Array.isArray(d.isler) ? d.isler : [];
+    ayarlar.profilFoto = d.profilFoto || "";
+    avatarCiz();
     $("#ayar-yevmiye").value = ayarlar.yevmiye||"";
     $("#ayar-mesai").value   = ayarlar.mesaiUcret||"";
     $("#ayar-ek").value      = ayarlar.ekGunluk||"";
@@ -5835,7 +5880,7 @@ function isDetayAc(isId){
 /* ---------- 💼 Bir işin PDF raporu: gerçek metin, gömülü Türkçe font ----------
    aySecim={yil,ay} verilirse SADECE o ayı kapsayan bir PDF üretir (başlıkta
    belirtilir); verilmezse işin TÜM giriş-çıkış aralığını, ay ay bölümlere
-   ayrılmış halde kapsar (0.0.0.83'deki davranış). */
+   ayrılmış halde kapsar (0.0.0.85'deki davranış). */
 function isPdfBlobOlustur(is, aySecim){
   if(!window.jspdf || !window.jspdf.jsPDF) return null;
   const { jsPDF } = window.jspdf;
@@ -5857,12 +5902,13 @@ function isPdfBlobOlustur(is, aySecim){
   doc.text("Giriş: "+tarihFormatla(is.girisTarihi)+"   ·   Çıkış: "+(is.cikisTarihi?tarihFormatla(is.cikisTarihi):"devam ediyor"), solX, y);
   y += 18;
 
-  /* Kullanıcı isteği: birden fazla ayı kapsayan bir iş raporunda, günler tek
-     uzun karışık tabloda değil, HER AYIN kendi başlığı ve kendi alt toplamıyla
-     ayrı ayrı görünsün ("Temmuz 2026" tablosu, sonra "Ağustos 2026" tablosu vb). */
-  const calisilanGunler = t.gunler.filter(g=>g.kazancVar);
+  /* Kullanıcı isteği: sadece çalışılan günler değil, İZİNLİ/BOŞ günler de dahil
+     TÜM günler görünsün (normal aylık PDF'teki gibi eksiksiz bir çizelge).
+     Yine de tek uzun karışık tabloda değil, HER AYIN kendi başlığı ve kendi
+     alt toplamıyla ayrı ayrı görünüyor ("Temmuz 2026" tablosu, sonra "Ağustos
+     2026" tablosu vb). */
   const aylikGruplar = {}, aySirasi = [];
-  calisilanGunler.forEach(g=>{
+  t.gunler.forEach(g=>{
     const anahtar = g.d.getFullYear()+"-"+pad(g.d.getMonth()+1);
     if(!aylikGruplar[anahtar]){ aylikGruplar[anahtar] = []; aySirasi.push(anahtar); }
     aylikGruplar[anahtar].push(g);
@@ -5874,13 +5920,13 @@ function isPdfBlobOlustur(is, aySecim){
     doc.setFont(yaziTipi,"bold"); doc.setFontSize(12.5); doc.setTextColor(0);
     doc.text(AYLAR[aa-1].toUpperCase()+" "+yy, solX, y);
     y += 6;
-    const ayGun = gunlerBuAy.reduce((s,g)=> s+girdiGun(g.v), 0);
-    const ayMesai = gunlerBuAy.reduce((s,g)=> s+(Number(g.v.mesai)||0), 0);
-    const ayHakedis = gunlerBuAy.reduce((s,g)=> s+girdiKazanc(g.v), 0);
+    const ayGun = gunlerBuAy.reduce((s,g)=> s+(g.v?girdiGun(g.v):0), 0);
+    const ayMesai = gunlerBuAy.reduce((s,g)=> s+(g.v?(Number(g.v.mesai)||0):0), 0);
+    const ayHakedis = gunlerBuAy.reduce((s,g)=> s+(g.v?girdiKazanc(g.v):0), 0);
     const gunSatir = gunlerBuAy.map(g=> [
       tarihFormatla(g.id)+" — "+GUNLER[g.d.getDay()],
       g.i.yev, g.i.arti, g.i.mesai,
-      paraFmt(girdiKazanc(g.v))
+      g.kazancVar ? paraFmt(girdiKazanc(g.v)) : ""
     ]);
     doc.autoTable({
       startY: y+4, margin:{left:solX, right: 595-sagX},
@@ -7264,7 +7310,7 @@ document.addEventListener("DOMContentLoaded", ()=>{
   });
 
   /* Neler yeni kartı */
-  const YENILIK_SURUM = "0.0.0.83";
+  const YENILIK_SURUM = "0.0.0.85";
   try{ $("#cekmece-surum").textContent = "Puantaj Defterim " + YENILIK_SURUM; }catch(e){}
   try{
     if(localStorage.getItem("yenilik")!==YENILIK_SURUM) $("#yenilik-kart").classList.remove("gizli");
@@ -8458,6 +8504,13 @@ document.addEventListener("DOMContentLoaded", ()=>{
   });
 
   /* ---------- 💼 İşlerim: giriş / çıkış / detay ---------- */
+  $("#avatar-sarmal").addEventListener("click", ()=> $("#profil-foto-input").click());
+  $("#profil-foto-input").addEventListener("change", e=>{
+    const dosya = e.target.files && e.target.files[0];
+    if(dosya) profilFotoSecildi(dosya);
+    e.target.value = "";   /* aynı dosyayı art arda seçebilsin diye sıfırla */
+  });
+
   $("#btn-menu-is-giris").addEventListener("click", ()=>{
     cekmeceAc(false);
     if(aktifIs()){ toast("Zaten aktif bir işin var (" + aktifIs().patronAdi + ") — önce ondan çıkış yapmalısın 🚪"); return; }

@@ -229,7 +229,14 @@ nav.cekmece.acik{transform:translateX(0)}
 .cekmece-bas .avatar{
   width:56px;height:56px;border-radius:14px;background:var(--sari);color:var(--asfalt);
   display:flex;align-items:center;justify-content:center;
-  font-family:'Saira Condensed';font-size:26px;font-weight:800;margin-bottom:10px;
+  font-family:'Saira Condensed';font-size:26px;font-weight:800;
+  background-size:cover;background-position:center;overflow:hidden;
+}
+.avatar-sarmal{position:relative;width:56px;height:56px;margin-bottom:10px;cursor:pointer}
+.avatar-kamera{
+  position:absolute;bottom:-4px;right:-4px;width:22px;height:22px;border-radius:50%;
+  background:var(--asfalt2);border:2px solid var(--asfalt);display:flex;align-items:center;justify-content:center;
+  font-size:11px;
 }
 .cekmece-bas .ad{font-weight:600;font-size:16px}
 .cekmece-bas .eposta{font-size:12px;color:#9EA0A9;word-break:break-all}

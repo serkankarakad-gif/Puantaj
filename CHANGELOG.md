@@ -5,6 +5,20 @@ kullanır: `0.0.0.X` — X, her güncellemede 1 artar. Uygulama içindeki sürü
 (alt bilgi + "Neler yeni" kartı) ve dağıtılan zip dosyasının adı her zaman
 birebir aynıdır.
 
+## 0.0.0.85 — Profil fotoğrafı ekleme özelliği
+- Kullanıcı isteği: hamburger menüdeki profil avatarına dokununca kendi fotoğrafını koyabilsin
+- Firebase Storage kurmaya gerek kalmadan: seçilen fotoğraf tarayıcıda kare kırpılıp 200x200'e küçültülüyor, JPEG %75 kalitede base64'e çevrilip doğrudan Firestore'daki ayarlar belgesine (`profilFoto` alanı) kaydediliyor — genelde 15-30 KB civarı kalıyor, Firestore'un 1 MB belge sınırının çok altında
+- Yeni `avatarCiz()` fonksiyonu: `ayarlar.profilFoto` doluysa avatarı o fotoğrafla dolduruyor, boşsa eskisi gibi adın baş harfini gösteriyor
+- Avatarın köşesine küçük bir 📷 rozeti eklendi (dokunulabilir olduğunu belli etsin diye)
+- Profil başlığına "Profili ve ayarları düzenle ›" bağlantısı eklendi — direkt Ayarlar ekranına götürüyor
+- CSP zaten `img-src` için `data:` URI'lara izin veriyordu, ek bir CSP değişikliği gerekmedi
+
+## 0.0.0.84 — İşlerim PDF'inde boş/izinli günler eksikti
+- Kullanıcı ekran görüntüsüyle bildirdi: bir işin PDF çizelgesinde (TEMMUZ 2026 tablosu) 16, 21, 25 Temmuz gibi günler hiç görünmüyordu — bu günler işaretlenmemiş/boş günlerdi, "izin" kaydı da değildi
+- Kök sebep: `isPdfBlobOlustur()`'daki ay-gruplama kodu `t.gunler.filter(g=>g.kazancVar)` ile SADECE kazancı olan (çalışılan) günleri tabloya alıyordu — boş/kayıtsız günler baştan filtreleniyordu. (İzin günleri zaten `kazancVar` sayıldığından bu filtreden etkilenmiyordu, ama tamamen boş günler etkileniyordu)
+- Düzeltildi: artık filtre kaldırıldı, `t.gunler` (o dönemdeki HER gün) doğrudan kullanılıyor — normal aylık Puantaj PDF'iyle tutarlı, boş günler "0" olarak, izin günleri "İ" olarak, çalışılan günler kazancıyla birlikte tabloda görünüyor
+- Gerçek koddan çekilen `gunIsaret()` mantığı Node.js'te test edildi: hiç kaydı olmayan bir gün eski kodda tablodan düşüyordu, yeni kodda düşmüyor
+
 ## 0.0.0.83 — PDF'lerdeki avans tabloları artık asla ortadan bölünmüyor
 - Kullanıcı 0.0.0.82'de bile bir avans satırının PDF'te "kaybolduğunu" bildirdi (başlıkta "3 adet" yazıyordu, TOPLAM doğruydu, ama listede sadece 2 satır görünüyordu)
 - `isVerileriHesapla()`/`odemeAyi()` mantığı Node.js'te tam bu senaryoyla (aynı 3 avans) test edildi ve KOD SEVİYESİNDE doğru sonuç verdiği doğrulandı (3/3 satır, doğru toplam) — yani hesaplama tarafında bug yoktu

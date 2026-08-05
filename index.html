@@ -150,9 +150,14 @@
   <div class="perde" id="perde"></div>
   <nav class="cekmece" id="cekmece">
     <div class="cekmece-bas">
-      <div class="avatar" id="menu-avatar">?</div>
+      <div class="avatar-sarmal" id="avatar-sarmal">
+        <div class="avatar" id="menu-avatar">?</div>
+        <div class="avatar-kamera">📷</div>
+      </div>
+      <input type="file" accept="image/*" id="profil-foto-input" style="display:none">
       <div class="ad" id="menu-ad">—</div>
       <div class="eposta" id="menu-eposta">—</div>
+      <button id="btn-profili-duzenle" data-goruntu="ayarlar" style="margin-top:8px;font-size:12px;color:var(--sari);font-weight:700;background:none;border:none;padding:0">Profili ve ayarları düzenle ›</button>
     </div>
     <div class="serit"></div>
     <ul>
@@ -302,6 +307,8 @@
       <div class="kart gizli" id="yenilik-kart" style="border-color:var(--sari)">
         <h2>🎁 Neler yeni?</h2>
         <ul style="padding-left:18px;font-size:13.5px;line-height:1.9">
+          <li><b>📷 YENİ: Profil fotoğrafı ekleme:</b> Hamburger menüsünün en üstündeki avatar artık dokunulabilir — kendi fotoğrafını seçip profil resmi olarak koyabiliyorsun (otomatik kare kırpılıp küçültülüyor, ekstra kurulum gerektirmiyor). Fotoğraf yoksa eskisi gibi adının baş harfi görünmeye devam ediyor. Ayrıca profil başlığına "Profili ve ayarları düzenle ›" bağlantısı eklendi, direkt Ayarlar'a götürüyor</li>
+          <li><b>🐞 İşlerim PDF'inde boş/izinli günler eksikti, düzeltildi:</b> Kullanıcı bildirdi — bir işin PDF çizelgesinde sadece ÇALIŞILAN günler listeleniyordu, hiç kayıt girilmeyen (boş) günler tablodan tamamen düşüyordu (örn. 16, 21, 25 Temmuz görünmüyordu). Artık normal aylık PDF'teki gibi ayın/dönemin HER günü tabloda görünüyor — boşsa "0" olarak, izinliyse "İ" olarak, çalışıldıysa kazancıyla birlikte</li>
           <li><b>🐞 PDF'lerdeki avans/ödeme tabloları artık asla ortadan bölünmüyor:</b> Kullanıcı bildirdi — bir işin "tüm işi paylaş" PDF'inde 3 avans olduğu yazıyordu ("3 adet") ama listede sadece 2'si görünüyordu, sanki biri kaybolmuş gibi. En olası sebep bulundu: tablo sayfa sonuna çok yakın başlayınca, jsPDF bir satırı görünmeyen bir sonraki sayfaya kaydırabiliyordu. Artık her avans/ödeme tablosundan ÖNCE gereken yükseklik kabaca hesaplanıp sığmıyorsa TÜM bölüm (başlık+tablo+toplam) birlikte yeni sayfaya alınıyor, `rowPageBreak:"avoid"` ile de tek bir satırın ortadan bölünmesi engellendi. Bu düzeltme hem "İşlerim" PDF'inde hem normal aylık PDF'te hem Yıl PDF'inde geçerli</li>
           <li><b>🐞 KRİTİK: İşlerim'de avans yanlış aya sayılıyordu:</b> Kullanıcı ekran görüntüsüyle bildirdi — bir işin PDF raporunda, Ağustos'ta alınan ama FIFO gereği Temmuz'un ödenmemiş hesabından düşülmesi gereken bir avans, yanlışlıkla Ağustos'a yazılıyordu. Sebep: "İşlerim" sistemi ödemeleri ham tarihe göre filtreliyordu, ana Puantaj sisteminde çoktan düzeltilmiş olan aitAy/FIFO mantığını kullanmıyordu. Artık `odemeAyi()` (aitAy/FIFO) kullanılıyor — İşlerim'deki raporlar da ana sistemle tutarlı</li>
           <li><b>🐞 "(tüm aylar)" yanıltıcı yazısı düzeltildi:</b> Sadece bir ayı (örn. Ağustos) ayrı paylaşınca, alt toplam kutusu hâlâ "(tüm aylar)" yazıyordu — bu da Temmuz'un günleri sanki PDF'ten kaybolmuş gibi bir kafa karışıklığına yol açıyordu. Artık sadece gerçekten TÜM işi kapsayan raporda bu ibare çıkıyor</li>
@@ -1459,7 +1466,7 @@
         <p style="font-size:13px;color:var(--soluk);margin-bottom:12px">Hata mı gördün, fikrin mi var? Direkt geliştiriciye ulaş:</p>
         <a class="btn btn-cizgili" style="display:block;text-align:center;text-decoration:none;margin-bottom:10px" href="https://wa.me/905051252339?text=Puantaj%20Defterim%20hakkında:" target="_blank">💬 WhatsApp'tan yaz</a>
         <a class="btn btn-cizgili" style="display:block;text-align:center;text-decoration:none" href="tel:05051252339">📞 0505 125 23 39</a>
-        <p style="font-size:11px;color:var(--soluk);margin-top:12px;text-align:center">Sürüm: 0.0.0.83 · Serkan Karakaş</p>
+        <p style="font-size:11px;color:var(--soluk);margin-top:12px;text-align:center">Sürüm: 0.0.0.85 · Serkan Karakaş</p>
       </div>
       <div class="kart">
         <h2>🔒 PIN kilidi</h2>
