@@ -5600,7 +5600,8 @@ function pdfBlobOlustur(gBas, gSon){
   const tSec = t2 => donemOdeme.filter(o=> (o.tur||"diger")===t2);
   function odemeBolumPdf(baslik, liste2){
     if(!liste2.length) return;
-    if(y2 > 740){ doc.addPage(); y2 = 50; }
+    const tahminiYukseklik = 24 + 22 + liste2.length*17 + 20;
+    if(y2 + tahminiYukseklik > 780){ doc.addPage(); y2 = 50; }
     doc.setFont(yaziTipi,"bold"); doc.setFontSize(11); doc.setTextColor(0);
     doc.text(baslik+" ("+liste2.length+" adet)", solX, y2);
     const araToplam = liste2.reduce((s,o)=>s+(Number(o.tutar)||0),0);
@@ -5616,7 +5617,8 @@ function pdfBlobOlustur(gBas, gSon){
       styles:{fontSize:8, cellPadding:4, lineColor:[200,200,200], lineWidth:0.5},
       headStyles:{fillColor:[242,242,242], textColor:20, fontStyle:"bold"},
       footStyles:{fillColor:[255,247,220], textColor:20, fontStyle:"bold"},
-      columnStyles:{0:{halign:"center", cellWidth:24}, 3:{halign:"right"}}
+      columnStyles:{0:{halign:"center", cellWidth:24}, 3:{halign:"right"}},
+      rowPageBreak: "avoid"
     });
     y2 = doc.lastAutoTable.finalY + 18;
   }
@@ -5833,7 +5835,7 @@ function isDetayAc(isId){
 /* ---------- 💼 Bir işin PDF raporu: gerçek metin, gömülü Türkçe font ----------
    aySecim={yil,ay} verilirse SADECE o ayı kapsayan bir PDF üretir (başlıkta
    belirtilir); verilmezse işin TÜM giriş-çıkış aralığını, ay ay bölümlere
-   ayrılmış halde kapsar (0.0.0.82'deki davranış). */
+   ayrılmış halde kapsar (0.0.0.83'deki davranış). */
 function isPdfBlobOlustur(is, aySecim){
   if(!window.jspdf || !window.jspdf.jsPDF) return null;
   const { jsPDF } = window.jspdf;
@@ -5909,7 +5911,13 @@ function isPdfBlobOlustur(is, aySecim){
   let y2 = doc.lastAutoTable.finalY + 20;
 
   if(t.odemeler.length){
-    if(y2>740){ doc.addPage(); y2=50; }
+    /* Bu tablo sayfa sonuna çok yakın başlarsa ortadan bölünüp bir satır
+       görünmeyen bir sonraki sayfaya kayabiliyordu (kullanıcı bildirdi: satır
+       kaybolmuş gibi görünüyordu, aslında sayfa 2'ye kaymıştı). Artık gereken
+       yüksekliği ÖNCEDEN kabaca hesaplayıp sığmıyorsa TÜM bölüm bir sonraki
+       sayfaya baştan alınıyor, tablo asla ortadan bölünmüyor. */
+    const tahminiYukseklik = 24 + 22 + t.odemeler.length*17 + 20;
+    if(y2 + tahminiYukseklik > 780){ doc.addPage(); y2 = 50; }
     doc.setFont(yaziTipi,"bold"); doc.setFontSize(11);
     doc.text("ALINAN PARALAR ("+t.odemeler.length+" adet)", solX, y2);
     const body = t.odemeler.map((o,idx)=> [String(idx+1), tarihFormatla(o.tarih), o.not||"", paraFmt(o.tutar)]);
@@ -5921,7 +5929,8 @@ function isPdfBlobOlustur(is, aySecim){
       styles:{fontSize:8, cellPadding:4, lineColor:[200,200,200], lineWidth:0.5},
       headStyles:{fillColor:[242,242,242], textColor:20, fontStyle:"bold"},
       footStyles:{fillColor:[255,247,220], textColor:20, fontStyle:"bold"},
-      columnStyles:{0:{halign:"center", cellWidth:24}, 3:{halign:"right"}}
+      columnStyles:{0:{halign:"center", cellWidth:24}, 3:{halign:"right"}},
+      rowPageBreak: "avoid"
     });
     y2 = doc.lastAutoTable.finalY + 20;
   }
@@ -6055,7 +6064,8 @@ function yilPdfBlobOlustur(){
     const tSec = t2 => donemOdeme.filter(o=> (o.tur||"diger")===t2);
     function odemeBolumPdf(baslik, liste2){
       if(!liste2.length) return;
-      if(y3 > 740){ doc.addPage(); y3 = 50; }
+      const tahminiYukseklik = 20 + 20 + liste2.length*15 + 16;
+      if(y3 + tahminiYukseklik > 780){ doc.addPage(); y3 = 50; }
       doc.setFont(yaziTipi,"bold"); doc.setFontSize(10.5); doc.setTextColor(0);
       doc.text(baslik+" ("+liste2.length+" adet)", solX, y3);
       const araToplam = liste2.reduce((s,o)=>s+(Number(o.tutar)||0),0);
@@ -6071,7 +6081,8 @@ function yilPdfBlobOlustur(){
         styles:{fontSize:7.5, cellPadding:3, lineColor:[200,200,200], lineWidth:0.4},
         headStyles:{fillColor:[242,242,242], textColor:20, fontStyle:"bold"},
         footStyles:{fillColor:[255,247,220], textColor:20, fontStyle:"bold"},
-        columnStyles:{0:{halign:"center", cellWidth:24}, 3:{halign:"right"}}
+        columnStyles:{0:{halign:"center", cellWidth:24}, 3:{halign:"right"}},
+        rowPageBreak: "avoid"
       });
       y3 = doc.lastAutoTable.finalY + 14;
     }
@@ -7253,7 +7264,7 @@ document.addEventListener("DOMContentLoaded", ()=>{
   });
 
   /* Neler yeni kartı */
-  const YENILIK_SURUM = "0.0.0.82";
+  const YENILIK_SURUM = "0.0.0.83";
   try{ $("#cekmece-surum").textContent = "Puantaj Defterim " + YENILIK_SURUM; }catch(e){}
   try{
     if(localStorage.getItem("yenilik")!==YENILIK_SURUM) $("#yenilik-kart").classList.remove("gizli");

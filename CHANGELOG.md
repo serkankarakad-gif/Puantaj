@@ -5,6 +5,12 @@ kullanır: `0.0.0.X` — X, her güncellemede 1 artar. Uygulama içindeki sürü
 (alt bilgi + "Neler yeni" kartı) ve dağıtılan zip dosyasının adı her zaman
 birebir aynıdır.
 
+## 0.0.0.83 — PDF'lerdeki avans tabloları artık asla ortadan bölünmüyor
+- Kullanıcı 0.0.0.82'de bile bir avans satırının PDF'te "kaybolduğunu" bildirdi (başlıkta "3 adet" yazıyordu, TOPLAM doğruydu, ama listede sadece 2 satır görünüyordu)
+- `isVerileriHesapla()`/`odemeAyi()` mantığı Node.js'te tam bu senaryoyla (aynı 3 avans) test edildi ve KOD SEVİYESİNDE doğru sonuç verdiği doğrulandı (3/3 satır, doğru toplam) — yani hesaplama tarafında bug yoktu
+- En olası açıklama: tablo sayfa sonuna yakın başlayınca jsPDF-autotable bir satırı sessizce bir sonraki (görünmeyen/kaydırılmamış) sayfaya itebiliyordu — veri kaybolmuyordu ama kullanıcı fark etmiyordu
+- Önlem alındı (kanıtlanamasa da, tekrar olmasın diye): `isPdfBlobOlustur()`, `pdfBlobOlustur()` ve `yilPdfBlobOlustur()`'daki TÜM avans/ödeme tabloları artık çizilmeden ÖNCE gereken yükseklik (satır sayısına göre) hesaplanıyor; sığmayacaksa tüm bölüm (başlık+tablo+toplam) BİRLİKTE yeni sayfaya alınıyor. Ayrıca `rowPageBreak:"avoid"` eklendi — bir satır artık hiçbir zaman ortadan bölünemez, ya tamamı bu sayfada ya tamamı sonrakinde
+
 ## 0.0.0.82 — İşlerim'de avans FIFO düzeltmesi + "(tüm aylar)" yazı hatası
 - Kullanıcı ekran görüntüsüyle bildirdi: bir işin (Orhan Oypan Semadem, 12 Temmuz - devam ediyor) sadece Ağustos'u paylaşınca, 1 Ağustos'ta alınan avans (5.000₺) Ağustos'un "ALINAN PARALAR" listesinde çıkıyordu — halbuki bu avans, Temmuz'da çalışılıp ödenmeyen hakedişten (FIFO gereği) düşülmesi gerekiyordu, yani Temmuz'a sayılmalıydı
 - Kök sebep: `isVerileriHesapla()` (0.0.0.79'da "İşlerim" için yazılan yeni fonksiyon) ödemeleri ham `tarih` alanına göre filtreliyordu — ana Puantaj sisteminde aylar önce düzeltilmiş olan `odemeAyi()`/aitAy/FIFO mantığı buraya hiç taşınmamıştı. Yorum satırında "FIFO farklı işverenler arası anlamsız kalır" denilse de, kod yanlışlıkla AYNI işveren içindeki ay geçişlerinde de ham tarihi kullanıyordu — oysa bu senaryo tam olarak FIFO'nun var olma sebebiydi
