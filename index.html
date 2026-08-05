@@ -302,6 +302,8 @@
       <div class="kart gizli" id="yenilik-kart" style="border-color:var(--sari)">
         <h2>🎁 Neler yeni?</h2>
         <ul style="padding-left:18px;font-size:13.5px;line-height:1.9">
+          <li><b>📆 Belirli bir ayı AYRI paylaşma seçeneği eklendi:</b> "İşlerim" → bir işin detayında ve işten çıkış sonrasında, artık sadece o işin belirli bir ayını (örn. sadece Ağustos) tek başına PDF olarak WhatsApp'a paylaşabiliyorsun — "Tüm işi paylaş" düğmesinin altında ay çipleri (Tem 2026 · Ağu 2026 gibi) çıkıyor, birine dokununca sadece o ayın PDF'i gidiyor. İş tek bir ayı kapsıyorsa bu çipler hiç görünmüyor (gerek yok çünkü)</li>
+          <li><b>📅 İş PDF'i artık ay ay ayrı bölümler halinde:</b> Kullanıcı bildirdi — bir iş birden fazla ayı kapsıyorsa (örn. 12 Temmuz - 5 Ağustos), PDF'teki çizelge tek uzun karışık tablo halindeydi. Artık her ayın kendi başlığı ("TEMMUZ 2026", "AĞUSTOS 2026") ve kendi ay-bazlı alt toplamı (gün/mesai/hakediş) var, en altta da tüm ayların GENEL toplamı ayrı bir kutuda gösteriliyor</li>
           <li><b>💼 YENİ: "İşlerim" — işe giriş/çıkış sistemi:</b> Bir işten çıkıp bambaşka bir firmaya/patrona geçtiğinde artık ikisi KESİNLİKLE karışmıyor. Hamburger menüye 3 yeni seçenek eklendi: "🏗️ İşe Giriş Yap" (ad, soyad, şantiye adı, patron adı, giriş tarihi — hepsi zorunlu), "🚪 İşten Çıkış Yap" (çıkış tarihi zorunlu, kaydedince direkt "bu işin PDF'ini WhatsApp'ta paylaş" seçeneği çıkıyor), ve "📋 İşlerim" (geçmiş tüm işlerin listesi — her birine dokununca SADECE o dönemin gün gün çizelgesi, avansları ve gerçek PDF raporu görünüyor, diğer işlerin verisi hiç karışmıyor)</li>
           <li><b>🐞 KRİTİK: Yeni şantiyeye geçince eski şantiyenin ÜCRETİ kullanılıyordu:</b> Kullanıcı bildirdi — biri 20 Temmuz'da tamamen farklı bir firmada işe başladığında, o günden sonraki kayıtlar hâlâ ESKİ firmanın yevmiyesiyle hesaplanıyordu. Sebep bulundu: yeni bir şantiye eklendiğinde bu otomatik olarak "aktif" hale gelmiyordu — kullanıcı yeni şantiyeyi en az bir kez elle seçmezse, gün kaydı sessizce eski (son kullanılan) şantiyeyi ve onun ücretini kullanmaya devam ediyordu. Artık bir şantiye eklendiği AN otomatik olarak aktif/son kullanılan yapılıyor — işe yeni başlayınca ilk iş zaten şantiyeyi eklemek olduğundan, akış artık doğal ve güvenli. Not: bu düzeltmeden önce yanlış ücretle kaydedilmiş günler varsa, o günleri açıp doğru şantiyeyi seçip yeniden kaydetmek gerekiyor — ücret o an yeniden hesaplanıp düzelir</li>
           <li><b>🏗️ Şantiye değişince eski şantiyenin adı artık kaybolmuyor:</b> Kritik bir sorun bildirildi — biri bir şantiyede çalışıp başka bir şantiyeye geçtiğinde, raporlar hep GÜNCEL şantiyenin adını gösteriyordu, eski şantiye sanki hiç çalışılmamış gibi görünüyordu. Artık her gün, o günün kaydedildiği şantiyeyi hatırlıyor: PDF'lerde çizelgeye ŞANTİYE sütunu eklendi, ve bir ay içinde birden fazla şantiyede çalışıldıysa başlıkta "1–14 Temmuz: A Şantiyesi · 15–31: B Şantiyesi" gibi net bir özet çıkıyor. Bu özellikten önce girilmiş, şantiyesi boş olan eski günler de artık boş görünmüyor — geriye dönük olarak güncel şantiye adını gösteriyor. Yeni gün eklerken şantiye seçmek zorunlu değil, son kullandığın şantiye otomatik geliyor</li>
@@ -1454,7 +1456,7 @@
         <p style="font-size:13px;color:var(--soluk);margin-bottom:12px">Hata mı gördün, fikrin mi var? Direkt geliştiriciye ulaş:</p>
         <a class="btn btn-cizgili" style="display:block;text-align:center;text-decoration:none;margin-bottom:10px" href="https://wa.me/905051252339?text=Puantaj%20Defterim%20hakkında:" target="_blank">💬 WhatsApp'tan yaz</a>
         <a class="btn btn-cizgili" style="display:block;text-align:center;text-decoration:none" href="tel:05051252339">📞 0505 125 23 39</a>
-        <p style="font-size:11px;color:var(--soluk);margin-top:12px;text-align:center">Sürüm: 0.0.0.79 · Serkan Karakaş</p>
+        <p style="font-size:11px;color:var(--soluk);margin-top:12px;text-align:center">Sürüm: 0.0.0.81 · Serkan Karakaş</p>
       </div>
       <div class="kart">
         <h2>🔒 PIN kilidi</h2>
@@ -1749,7 +1751,8 @@
   <button class="btn btn-sari" id="btn-is-cikis-kaydet">✅ Çıkışı kaydet</button>
   <div class="gizli" id="is-cikis-sonrasi" style="margin-top:16px;padding-top:16px;border-top:1.5px dashed var(--cizgi)">
     <p style="font-size:13px;color:var(--soluk);margin-bottom:10px">Çıkış kaydedildi 👍 Bu işin tam raporunu (giriş gününden çıkış gününe kadar, gün gün + avanslar) WhatsApp'a paylaşmak ister misin?</p>
-    <button class="btn" id="btn-is-cikis-pdf" style="background:#25D366;color:#fff;font-weight:800">📲 Bu işin PDF'ini WhatsApp'ta paylaş</button>
+    <button class="btn" id="btn-is-cikis-pdf" style="background:#25D366;color:#fff;font-weight:800">📲 Tüm işi WhatsApp'ta paylaş</button>
+    <div id="is-cikis-aylar"></div>
   </div>
 </div>
 
@@ -1759,7 +1762,8 @@
   <h3 id="is-detay-baslik">İş detayı</h3>
   <div class="tarih-yazi" id="is-detay-alt">—</div>
   <div id="is-detay-icerik"><div class="bos-mesaj">Yükleniyor...</div></div>
-  <button class="btn" id="btn-is-detay-pdf" style="background:#25D366;color:#fff;font-weight:800;margin-top:14px">📲 Bu işin PDF'ini WhatsApp'ta paylaş</button>
+  <button class="btn" id="btn-is-detay-pdf" style="background:#25D366;color:#fff;font-weight:800;margin-top:14px">📲 Tüm işi WhatsApp'ta paylaş</button>
+  <div id="is-detay-aylar"></div>
 </div>
 
 <!-- ============ AY SEÇİCİ ============ -->

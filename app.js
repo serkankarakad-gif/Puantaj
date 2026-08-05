@@ -5727,9 +5727,18 @@ async function pdfPaylas(gBas, gSon){
    aktifYil'e bağlı hesaplaAralik() değil, gün gün elle ilerleyen bu fonksiyon
    kullanılıyor. tumGirdilerQS/tumOdemelerQS (tüm zamanların önbelleği) okur,
    yeni bir Firestore sorgusu atmaz. */
-function isVerileriHesapla(is){
-  const bas = is.girisTarihi;
-  const son = is.cikisTarihi || tarihId(new Date());
+function isVerileriHesapla(is, aySecim){
+  let bas = is.girisTarihi;
+  let son = is.cikisTarihi || tarihId(new Date());
+  /* aySecim={yil,ay} verilirse (belirli bir ayı paylaşmak için), aralık o aya
+     kısıtlanır — ama işin gerçek giriş/çıkış sınırlarının dışına taşmaz. */
+  if(aySecim){
+    const ayBas = aySecim.yil+"-"+pad(aySecim.ay+1)+"-01";
+    const ayninSonGunu = new Date(aySecim.yil, aySecim.ay+1, 0).getDate();
+    const aySon = aySecim.yil+"-"+pad(aySecim.ay+1)+"-"+pad(ayninSonGunu);
+    if(ayBas > bas) bas = ayBas;
+    if(aySon < son) son = aySon;
+  }
   const girdilerHarita = {};
   if(tumGirdilerQS) tumGirdilerQS.forEach(d=>{ girdilerHarita[d.id] = d.data(); });
   const gunler = [];
@@ -5759,7 +5768,37 @@ function isVerileriHesapla(is){
   return {gunler, gunSayisi, mesaiToplam, hakedis, alinan, kalan:hakedis-alinan, odemeler:odemelerBu};
 }
 
+/* Bir işin kapsadığı, en az bir gün çalışılmış ayları listeler — "belirli bir
+   ayı paylaş" seçenekleri için (her zaman işin TAM aralığına göre, seçime göre değil). */
+function isAylarListele(is){
+  const t = isVerileriHesapla(is);
+  const gruplar = {};
+  t.gunler.filter(g=>g.kazancVar).forEach(g=>{
+    gruplar[g.d.getFullYear()+"-"+pad(g.d.getMonth()+1)] = true;
+  });
+  return Object.keys(gruplar).sort();
+}
+
 let isDetayAktif = null;
+/* Bir işin "belirli bir ayı ayrı paylaş" çip düğmelerini bir kutuya çizer.
+   İşte sadece 1 ay varsa (bölünecek bir şey yok) hiçbir şey göstermez. */
+function isAySecenekleriCiz(kutuSecici, is){
+  const kutu = $(kutuSecici);
+  if(!kutu) return;
+  const aylar = isAylarListele(is);
+  if(aylar.length<=1){ kutu.innerHTML=""; return; }
+  kutu.innerHTML = '<div style="font-size:11.5px;color:var(--soluk);margin:12px 0 6px">📆 Sadece belirli bir ayı ayrı paylaş:</div>'+
+    '<div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:6px">'+
+    aylar.map(anahtar=>{
+      const [yy,aa] = anahtar.split("-").map(Number);
+      return '<button data-yil="'+yy+'" data-ay="'+(aa-1)+'" style="padding:7px 12px;border-radius:20px;border:1.5px solid var(--cizgi);background:var(--girdi);color:var(--yazi);font-size:12.5px;font-weight:700">'+AYLAR[aa-1].slice(0,3)+" "+yy+'</button>';
+    }).join("")+
+    '</div>';
+  kutu.querySelectorAll("button").forEach(b=>{
+    b.addEventListener("click", ()=> isPdfPaylas(is, {yil:Number(b.dataset.yil), ay:Number(b.dataset.ay)}));
+  });
+}
+
 function isDetayAc(isId){
   const is = (ayarlar.isler||[]).find(x=>x.id===isId);
   if(!is) return;
@@ -5780,21 +5819,25 @@ function isDetayAc(isId){
     '</ul>'+
     (t.odemeler.length ? '<h3 style="margin:16px 0 6px;font-size:14px">💵 Alınan paralar ('+t.odemeler.length+')</h3><ul class="liste">'+
       t.odemeler.map(o=> '<li><div class="rozet" style="background:var(--altin,#FFC400)">💵</div><div class="orta"><div class="baslik">'+esc(o.not||"Ödeme")+'</div><div class="alt-yazi">'+tarihFormatla(o.tarih)+'</div></div><div class="tutar">'+paraFmt(o.tutar)+'</div></li>').join("")+'</ul>' : '');
+  isAySecenekleriCiz("#is-detay-aylar", is);
   $("#modal-perde").classList.add("acik");
   $("#is-detay-modal").classList.add("acik");
 }
 
-/* ---------- 💼 Bir işin PDF raporu: gerçek metin, gömülü Türkçe font ---------- */
-function isPdfBlobOlustur(is){
+/* ---------- 💼 Bir işin PDF raporu: gerçek metin, gömülü Türkçe font ----------
+   aySecim={yil,ay} verilirse SADECE o ayı kapsayan bir PDF üretir (başlıkta
+   belirtilir); verilmezse işin TÜM giriş-çıkış aralığını, ay ay bölümlere
+   ayrılmış halde kapsar (0.0.0.81'deki davranış). */
+function isPdfBlobOlustur(is, aySecim){
   if(!window.jspdf || !window.jspdf.jsPDF) return null;
   const { jsPDF } = window.jspdf;
-  const t = isVerileriHesapla(is);
+  const t = isVerileriHesapla(is, aySecim);
   const doc = new jsPDF({unit:"pt", format:"a4"});
   const yaziTipi = pdfTurkceFontKur(doc);
   const solX = 40, sagX = 555;
   let y = 46;
   doc.setFont(yaziTipi,"bold"); doc.setFontSize(16);
-  doc.text("İŞ RAPORU", solX, y);
+  doc.text("İŞ RAPORU"+(aySecim ? " — "+AYLAR[aySecim.ay].toUpperCase()+" "+aySecim.yil : ""), solX, y);
   y += 8;
   doc.setDrawColor(255,196,0); doc.setLineWidth(2.5);
   doc.line(solX, y, sagX, y);
@@ -5806,24 +5849,56 @@ function isPdfBlobOlustur(is){
   doc.text("Giriş: "+tarihFormatla(is.girisTarihi)+"   ·   Çıkış: "+(is.cikisTarihi?tarihFormatla(is.cikisTarihi):"devam ediyor"), solX, y);
   y += 18;
 
-  const gunSatir = t.gunler.filter(g=>g.kazancVar).map(g=> [
-    tarihFormatla(g.id)+" — "+GUNLER[g.d.getDay()],
-    g.i.yev, g.i.arti, g.i.mesai,
-    paraFmt(girdiKazanc(g.v))
-  ]);
+  /* Kullanıcı isteği: birden fazla ayı kapsayan bir iş raporunda, günler tek
+     uzun karışık tabloda değil, HER AYIN kendi başlığı ve kendi alt toplamıyla
+     ayrı ayrı görünsün ("Temmuz 2026" tablosu, sonra "Ağustos 2026" tablosu vb). */
+  const calisilanGunler = t.gunler.filter(g=>g.kazancVar);
+  const aylikGruplar = {}, aySirasi = [];
+  calisilanGunler.forEach(g=>{
+    const anahtar = g.d.getFullYear()+"-"+pad(g.d.getMonth()+1);
+    if(!aylikGruplar[anahtar]){ aylikGruplar[anahtar] = []; aySirasi.push(anahtar); }
+    aylikGruplar[anahtar].push(g);
+  });
+  aySirasi.forEach(anahtar=>{
+    const [yy, aa] = anahtar.split("-").map(Number);
+    const gunlerBuAy = aylikGruplar[anahtar];
+    if(y > 700){ doc.addPage(); y = 50; }
+    doc.setFont(yaziTipi,"bold"); doc.setFontSize(12.5); doc.setTextColor(0);
+    doc.text(AYLAR[aa-1].toUpperCase()+" "+yy, solX, y);
+    y += 6;
+    const ayGun = gunlerBuAy.reduce((s,g)=> s+girdiGun(g.v), 0);
+    const ayMesai = gunlerBuAy.reduce((s,g)=> s+(Number(g.v.mesai)||0), 0);
+    const ayHakedis = gunlerBuAy.reduce((s,g)=> s+girdiKazanc(g.v), 0);
+    const gunSatir = gunlerBuAy.map(g=> [
+      tarihFormatla(g.id)+" — "+GUNLER[g.d.getDay()],
+      g.i.yev, g.i.arti, g.i.mesai,
+      paraFmt(girdiKazanc(g.v))
+    ]);
+    doc.autoTable({
+      startY: y+4, margin:{left:solX, right: 595-sagX},
+      head: [["TARİH","YEVMİYE","GÜN İÇİ ARTI","MESAİ","KAZANÇ"]],
+      body: gunSatir,
+      styles:{fontSize:8, cellPadding:4, lineColor:[200,200,200], lineWidth:0.5},
+      headStyles:{fillColor:[242,242,242], textColor:20, fontStyle:"bold"},
+      columnStyles:{1:{halign:"center"},2:{halign:"center"},3:{halign:"center"},4:{halign:"right"}},
+      foot:[["TOPLAM: "+ayGun+" gün · "+ayMesai+" saat mesai","","","",paraFmt(ayHakedis)]],
+      footStyles:{fillColor:[255,247,220], textColor:20, fontStyle:"bold", fontSize:8.5}
+    });
+    y = doc.lastAutoTable.finalY + 20;
+  });
+
+  /* Tüm ayların GENEL toplamı — ayrı, tek bir özet kutusu */
+  if(y > 720){ doc.addPage(); y = 50; }
   doc.autoTable({
-    startY: y+4, margin:{left:solX, right: 595-sagX},
-    head: [["TARİH","YEVMİYE","GÜN İÇİ ARTI","MESAİ","KAZANÇ"]],
-    body: gunSatir,
-    styles:{fontSize:8, cellPadding:4, lineColor:[200,200,200], lineWidth:0.5},
-    headStyles:{fillColor:[242,242,242], textColor:20, fontStyle:"bold"},
-    columnStyles:{1:{halign:"center"},2:{halign:"center"},3:{halign:"center"},4:{halign:"right"}},
-    foot:[
-      ["TOPLAM: "+t.gunSayisi+" gün · "+t.mesaiToplam+" saat mesai","","HAKEDİŞ","",paraFmt(t.hakedis)],
-      ["","","ALINAN","",paraFmt(t.alinan)],
-      ["","","KALAN","",paraFmt(t.kalan)]
+    startY: y, margin:{left:solX, right: 595-sagX},
+    body: [
+      ["TOPLAM: "+t.gunSayisi+" gün · "+t.mesaiToplam+" saat mesai (tüm aylar)", "HAKEDİŞ", paraFmt(t.hakedis)],
+      ["", "ALINAN", paraFmt(t.alinan)],
+      ["", "KALAN", paraFmt(t.kalan)]
     ],
-    footStyles:{fillColor:[255,247,220], textColor:20, fontStyle:"bold", fontSize:8.5}
+    theme: "plain",
+    styles:{fontSize:9.5, cellPadding:5, fontStyle:"bold", fillColor:[255,247,220], textColor:20},
+    columnStyles:{2:{halign:"right"}}
   });
   let y2 = doc.lastAutoTable.finalY + 20;
 
@@ -5855,10 +5930,11 @@ function isPdfBlobOlustur(is){
   return doc.output("blob");
 }
 
-async function isPdfPaylas(is){
-  const blob = isPdfBlobOlustur(is);
+async function isPdfPaylas(is, aySecim){
+  const blob = isPdfBlobOlustur(is, aySecim);
   if(!blob){ toast("PDF motoru yüklenemedi, internetini kontrol et"); return; }
-  const dosyaAdi = "Is-Raporu-"+String(is.patronAdi).replace(/[^a-zA-Z0-9ğüşıöçĞÜŞİÖÇ]+/g,"-")+".pdf";
+  const ayEki = aySecim ? "-"+AYLAR[aySecim.ay]+"-"+aySecim.yil : "";
+  const dosyaAdi = "Is-Raporu-"+String(is.patronAdi).replace(/[^a-zA-Z0-9ğüşıöçĞÜŞİÖÇ]+/g,"-")+ayEki+".pdf";
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
   a.href = url; a.download = dosyaAdi; a.click();
@@ -5867,7 +5943,7 @@ async function isPdfPaylas(is){
   try{
     const dosya = new File([blob], dosyaAdi, {type:"application/pdf"});
     if(navigator.canShare && navigator.canShare({files:[dosya]})){
-      await navigator.share({files:[dosya], title:"İş Raporu — "+is.patronAdi});
+      await navigator.share({files:[dosya], title:"İş Raporu — "+is.patronAdi+(aySecim ? " ("+AYLAR[aySecim.ay]+" "+aySecim.yil+")" : "")});
     }
   }catch(e){ /* iptal/başarısız oldu — sorun değil, PDF zaten kaydedildi */ }
 }
@@ -7171,7 +7247,7 @@ document.addEventListener("DOMContentLoaded", ()=>{
   });
 
   /* Neler yeni kartı */
-  const YENILIK_SURUM = "0.0.0.79";
+  const YENILIK_SURUM = "0.0.0.81";
   try{ $("#cekmece-surum").textContent = "Puantaj Defterim " + YENILIK_SURUM; }catch(e){}
   try{
     if(localStorage.getItem("yenilik")!==YENILIK_SURUM) $("#yenilik-kart").classList.remove("gizli");
@@ -8422,6 +8498,7 @@ document.addEventListener("DOMContentLoaded", ()=>{
       isDetayAktif = {...is, cikisTarihi};
       toast("🚪 İşten çıkış kaydedildi");
       $("#is-cikis-sonrasi").classList.remove("gizli");
+      isAySecenekleriCiz("#is-cikis-aylar", isDetayAktif);
     }catch(e){ hataGoster(e); }
   });
   $("#btn-is-cikis-pdf").addEventListener("click", ()=>{ if(isDetayAktif) isPdfPaylas(isDetayAktif); });

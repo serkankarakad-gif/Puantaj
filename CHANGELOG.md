@@ -5,6 +5,19 @@ kullanır: `0.0.0.X` — X, her güncellemede 1 artar. Uygulama içindeki sürü
 (alt bilgi + "Neler yeni" kartı) ve dağıtılan zip dosyasının adı her zaman
 birebir aynıdır.
 
+## 0.0.0.81 — Belirli bir ayı ayrı paylaşma seçeneği
+- Kullanıcı sorusu: "İşlerim" PDF'i sadece bir kerede hepsini mi atıyor, yoksa ay ay ayrı da atılabiliyor mu? — o an sadece "hepsi bir arada" mümkündü, ayrı ay seçeneği istendi
+- `isVerileriHesapla(is, aySecim)` artık isteğe bağlı `{yil,ay}` parametresi alıyor — verilirse hesaplama, işin gerçek giriş/çıkış sınırlarının İÇİNDE kalacak şekilde sadece o aya kısıtlanıyor
+- `isPdfBlobOlustur(is, aySecim)`/`isPdfPaylas(is, aySecim)` aynı parametreyi alıp başlığa ("İŞ RAPORU — AĞUSTOS 2026") ve dosya adına yansıtıyor
+- Yeni `isAylarListele(is)` (işin kapsadığı, en az 1 gün çalışılmış ayları listeler) ve `isAySecenekleriCiz()` (bunları tıklanabilir küçük çip düğmeleri olarak çizip tıklanınca `isPdfPaylas(is,{yil,ay})` çağıran ortak fonksiyon) eklendi
+- Bu çipler hem "İşlerim" listesinden bir işe dokunulunca açılan detay ekranında, hem de "İşten Çıkış Yap" sonrasında çıkan panelde görünüyor. İş sadece TEK bir ayı kapsıyorsa (bölünecek bir şey olmadığından) çipler hiç gösterilmiyor
+- Gerçek koddan çekilen mantık Node.js'te test edildi: 12 Temmuz - 5 Ağustos'u kapsayan bir işte, sadece Ağustos seçilince yalnızca 01-05 Ağustos günleri, sadece Temmuz seçilince yalnızca Temmuz günleri geldi — sınırlar doğru korundu
+
+## 0.0.0.80 — İş PDF'i ay ay ayrı bölümlere ayrıldı
+- Kullanıcı bildirdi: "İşlerim" sisteminde bir iş birden fazla ayı kapsıyorsa (örn. 12 Temmuz'da giriş, hâlâ devam ediyor → 5 Ağustos'a kadar), PDF'teki gün gün çizelge TEK uzun tabloda, aylar karışık halde çıkıyordu — kesinlikle ay ay ayrılması istendi
+- `isPdfBlobOlustur()` yeniden yazıldı: günler önce `getFullYear()+"-"+ay` anahtarına göre gruplanıyor, sonra HER AY için ayrı bir başlık ("TEMMUZ 2026", "AĞUSTOS 2026") ve ayrı bir tablo (kendi ay-bazlı gün/mesai/hakediş alt toplamıyla) çiziliyor. En altta, tüm ayların toplamını gösteren tek bir GENEL toplam kutusu (Hakediş/Alınan/Kalan) ayrıca var
+- Gerçek koddan çekilen ay gruplama mantığı Node.js'te test edildi: 12/07-31/07 arası Temmuz grubuna, 01/08-05/08 arası Ağustos grubuna doğru ayrıştı
+
 ## 0.0.0.79 — "İşlerim": işe giriş/çıkış sistemi
 - Uzun bir sohbet sonucu netleşen kritik özellik: bir işten çıkıp bambaşka bir firmaya geçince (aynı inşaat sektörü içinde farklı, alakasız firmalar), o iki dönemin puantajının/raporunun kesinlikle karışmaması gerekiyordu
 - Yeni veri modeli: `ayarlar.isler` dizisi — her kayıt {id, ad, soyad, santiyeAdi, patronAdi, girisTarihi, cikisTarihi}. `cikisTarihi` boşsa o iş hâlâ "aktif" sayılır
