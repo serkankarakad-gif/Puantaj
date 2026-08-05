@@ -5760,10 +5760,16 @@ function isVerileriHesapla(is, aySecim){
   }
   const tumOdemeListesi = [];
   if(tumOdemelerQS) tumOdemelerQS.forEach(doc=> tumOdemeListesi.push(doc.data()));
-  /* Not: burada aitAy/FIFO değil, gerçek alım tarihi kullanılıyor — FIFO
-     mantığı TEK bir işverenin ay geçişleri içindi, farklı iki işveren arasında
-     anlamsız kalır. Bu dönemde fiilen alınan ödemeler bunlar. */
-  const odemelerBu = tumOdemeListesi.filter(o=> o.tarih>=bas && o.tarih<=son).sort((a,b)=> a.tarih<b.tarih?-1:1);
+  /* DÜZELTME: burada da odemeAyi() (aitAy/FIFO) kullanılmalı — bu TEK bir işin
+     (aynı işveren) içindeki ay geçişleri, tıpkı ana Puantaj sistemindeki gibi.
+     Örn: Temmuz'da çalışılıp ödenmeyen bir alacak, 1 Ağustos'ta alınan avansla
+     kapatılıyorsa, o avans Temmuz'un hesabından düşülmeli — Ağustos'tan değil.
+     (Önceki "ham tarih" mantığı yanlıştı, kullanıcı ekran görüntüsüyle bildirdi.) */
+  const basAy = bas.slice(0,7), sonAy = son.slice(0,7);
+  const odemelerBu = tumOdemeListesi.filter(o=>{
+    const ay = odemeAyi(o);
+    return ay>=basAy && ay<=sonAy;
+  }).sort((a,b)=> a.tarih<b.tarih?-1:1);
   const alinan = odemelerBu.reduce((s,o)=> s+(Number(o.tutar)||0),0);
   return {gunler, gunSayisi, mesaiToplam, hakedis, alinan, kalan:hakedis-alinan, odemeler:odemelerBu};
 }
@@ -5827,7 +5833,7 @@ function isDetayAc(isId){
 /* ---------- 💼 Bir işin PDF raporu: gerçek metin, gömülü Türkçe font ----------
    aySecim={yil,ay} verilirse SADECE o ayı kapsayan bir PDF üretir (başlıkta
    belirtilir); verilmezse işin TÜM giriş-çıkış aralığını, ay ay bölümlere
-   ayrılmış halde kapsar (0.0.0.81'deki davranış). */
+   ayrılmış halde kapsar (0.0.0.82'deki davranış). */
 function isPdfBlobOlustur(is, aySecim){
   if(!window.jspdf || !window.jspdf.jsPDF) return null;
   const { jsPDF } = window.jspdf;
@@ -5892,7 +5898,7 @@ function isPdfBlobOlustur(is, aySecim){
   doc.autoTable({
     startY: y, margin:{left:solX, right: 595-sagX},
     body: [
-      ["TOPLAM: "+t.gunSayisi+" gün · "+t.mesaiToplam+" saat mesai (tüm aylar)", "HAKEDİŞ", paraFmt(t.hakedis)],
+      ["TOPLAM: "+t.gunSayisi+" gün · "+t.mesaiToplam+" saat mesai"+(aySecim ? "" : " (tüm aylar)"), "HAKEDİŞ", paraFmt(t.hakedis)],
       ["", "ALINAN", paraFmt(t.alinan)],
       ["", "KALAN", paraFmt(t.kalan)]
     ],
@@ -7247,7 +7253,7 @@ document.addEventListener("DOMContentLoaded", ()=>{
   });
 
   /* Neler yeni kartı */
-  const YENILIK_SURUM = "0.0.0.81";
+  const YENILIK_SURUM = "0.0.0.82";
   try{ $("#cekmece-surum").textContent = "Puantaj Defterim " + YENILIK_SURUM; }catch(e){}
   try{
     if(localStorage.getItem("yenilik")!==YENILIK_SURUM) $("#yenilik-kart").classList.remove("gizli");

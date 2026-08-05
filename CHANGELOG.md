@@ -5,6 +5,13 @@ kullanır: `0.0.0.X` — X, her güncellemede 1 artar. Uygulama içindeki sürü
 (alt bilgi + "Neler yeni" kartı) ve dağıtılan zip dosyasının adı her zaman
 birebir aynıdır.
 
+## 0.0.0.82 — İşlerim'de avans FIFO düzeltmesi + "(tüm aylar)" yazı hatası
+- Kullanıcı ekran görüntüsüyle bildirdi: bir işin (Orhan Oypan Semadem, 12 Temmuz - devam ediyor) sadece Ağustos'u paylaşınca, 1 Ağustos'ta alınan avans (5.000₺) Ağustos'un "ALINAN PARALAR" listesinde çıkıyordu — halbuki bu avans, Temmuz'da çalışılıp ödenmeyen hakedişten (FIFO gereği) düşülmesi gerekiyordu, yani Temmuz'a sayılmalıydı
+- Kök sebep: `isVerileriHesapla()` (0.0.0.79'da "İşlerim" için yazılan yeni fonksiyon) ödemeleri ham `tarih` alanına göre filtreliyordu — ana Puantaj sisteminde aylar önce düzeltilmiş olan `odemeAyi()`/aitAy/FIFO mantığı buraya hiç taşınmamıştı. Yorum satırında "FIFO farklı işverenler arası anlamsız kalır" denilse de, kod yanlışlıkla AYNI işveren içindeki ay geçişlerinde de ham tarihi kullanıyordu — oysa bu senaryo tam olarak FIFO'nun var olma sebebiydi
+- Düzeltildi: artık `odemeAyi(o)` kullanılıyor, iş aralığının ay-ay (`basAy`-`sonAy`) karşılaştırmasıyla. Node.js'te gerçek koddan test edildi: 1 Ağustos'ta alınıp aitAy=Temmuz olan avans artık Temmuz'a doğru sayılıyor, Ağustos'a hiç düşmüyor
+- Ayrıca: bir ay tek başına paylaşılınca (örn. sadece Ağustos), alt toplam kutusundaki "(tüm aylar)" ibaresi yanlışlıkla hâlâ görünüyordu — bu da Temmuz'un günlerinin sanki kaybolmuş gibi bir kafa karışıklığına yol açıyordu (kullanıcının asıl şikayeti buydu). Artık sadece işin TAMAMI paylaşılınca bu ibare çıkıyor
+- Bu düzeltme hem PDF'i hem "İşlerim" ekranındaki Hakediş/Alınan/Kalan kartlarını aynı anda düzeltiyor (`isVerileriHesapla()` her ikisinin de ortak veri kaynağı)
+
 ## 0.0.0.81 — Belirli bir ayı ayrı paylaşma seçeneği
 - Kullanıcı sorusu: "İşlerim" PDF'i sadece bir kerede hepsini mi atıyor, yoksa ay ay ayrı da atılabiliyor mu? — o an sadece "hepsi bir arada" mümkündü, ayrı ay seçeneği istendi
 - `isVerileriHesapla(is, aySecim)` artık isteğe bağlı `{yil,ay}` parametresi alıyor — verilirse hesaplama, işin gerçek giriş/çıkış sınırlarının İÇİNDE kalacak şekilde sadece o aya kısıtlanıyor

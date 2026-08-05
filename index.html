@@ -302,6 +302,8 @@
       <div class="kart gizli" id="yenilik-kart" style="border-color:var(--sari)">
         <h2>🎁 Neler yeni?</h2>
         <ul style="padding-left:18px;font-size:13.5px;line-height:1.9">
+          <li><b>🐞 KRİTİK: İşlerim'de avans yanlış aya sayılıyordu:</b> Kullanıcı ekran görüntüsüyle bildirdi — bir işin PDF raporunda, Ağustos'ta alınan ama FIFO gereği Temmuz'un ödenmemiş hesabından düşülmesi gereken bir avans, yanlışlıkla Ağustos'a yazılıyordu. Sebep: "İşlerim" sistemi ödemeleri ham tarihe göre filtreliyordu, ana Puantaj sisteminde çoktan düzeltilmiş olan aitAy/FIFO mantığını kullanmıyordu. Artık `odemeAyi()` (aitAy/FIFO) kullanılıyor — İşlerim'deki raporlar da ana sistemle tutarlı</li>
+          <li><b>🐞 "(tüm aylar)" yanıltıcı yazısı düzeltildi:</b> Sadece bir ayı (örn. Ağustos) ayrı paylaşınca, alt toplam kutusu hâlâ "(tüm aylar)" yazıyordu — bu da Temmuz'un günleri sanki PDF'ten kaybolmuş gibi bir kafa karışıklığına yol açıyordu. Artık sadece gerçekten TÜM işi kapsayan raporda bu ibare çıkıyor</li>
           <li><b>📆 Belirli bir ayı AYRI paylaşma seçeneği eklendi:</b> "İşlerim" → bir işin detayında ve işten çıkış sonrasında, artık sadece o işin belirli bir ayını (örn. sadece Ağustos) tek başına PDF olarak WhatsApp'a paylaşabiliyorsun — "Tüm işi paylaş" düğmesinin altında ay çipleri (Tem 2026 · Ağu 2026 gibi) çıkıyor, birine dokununca sadece o ayın PDF'i gidiyor. İş tek bir ayı kapsıyorsa bu çipler hiç görünmüyor (gerek yok çünkü)</li>
           <li><b>📅 İş PDF'i artık ay ay ayrı bölümler halinde:</b> Kullanıcı bildirdi — bir iş birden fazla ayı kapsıyorsa (örn. 12 Temmuz - 5 Ağustos), PDF'teki çizelge tek uzun karışık tablo halindeydi. Artık her ayın kendi başlığı ("TEMMUZ 2026", "AĞUSTOS 2026") ve kendi ay-bazlı alt toplamı (gün/mesai/hakediş) var, en altta da tüm ayların GENEL toplamı ayrı bir kutuda gösteriliyor</li>
           <li><b>💼 YENİ: "İşlerim" — işe giriş/çıkış sistemi:</b> Bir işten çıkıp bambaşka bir firmaya/patrona geçtiğinde artık ikisi KESİNLİKLE karışmıyor. Hamburger menüye 3 yeni seçenek eklendi: "🏗️ İşe Giriş Yap" (ad, soyad, şantiye adı, patron adı, giriş tarihi — hepsi zorunlu), "🚪 İşten Çıkış Yap" (çıkış tarihi zorunlu, kaydedince direkt "bu işin PDF'ini WhatsApp'ta paylaş" seçeneği çıkıyor), ve "📋 İşlerim" (geçmiş tüm işlerin listesi — her birine dokununca SADECE o dönemin gün gün çizelgesi, avansları ve gerçek PDF raporu görünüyor, diğer işlerin verisi hiç karışmıyor)</li>
@@ -1456,7 +1458,7 @@
         <p style="font-size:13px;color:var(--soluk);margin-bottom:12px">Hata mı gördün, fikrin mi var? Direkt geliştiriciye ulaş:</p>
         <a class="btn btn-cizgili" style="display:block;text-align:center;text-decoration:none;margin-bottom:10px" href="https://wa.me/905051252339?text=Puantaj%20Defterim%20hakkında:" target="_blank">💬 WhatsApp'tan yaz</a>
         <a class="btn btn-cizgili" style="display:block;text-align:center;text-decoration:none" href="tel:05051252339">📞 0505 125 23 39</a>
-        <p style="font-size:11px;color:var(--soluk);margin-top:12px;text-align:center">Sürüm: 0.0.0.81 · Serkan Karakaş</p>
+        <p style="font-size:11px;color:var(--soluk);margin-top:12px;text-align:center">Sürüm: 0.0.0.82 · Serkan Karakaş</p>
       </div>
       <div class="kart">
         <h2>🔒 PIN kilidi</h2>
