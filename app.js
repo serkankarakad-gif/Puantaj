@@ -5891,7 +5891,7 @@ function isDetayAc(isId){
 /* ---------- 💼 Bir işin PDF raporu: gerçek metin, gömülü Türkçe font ----------
    aySecim={yil,ay} verilirse SADECE o ayı kapsayan bir PDF üretir (başlıkta
    belirtilir); verilmezse işin TÜM giriş-çıkış aralığını, ay ay bölümlere
-   ayrılmış halde kapsar (0.0.0.88'deki davranış). */
+   ayrılmış halde kapsar (0.0.0.89'deki davranış). */
 function isPdfBlobOlustur(is, aySecim){
   if(!window.jspdf || !window.jspdf.jsPDF) return null;
   const { jsPDF } = window.jspdf;
@@ -7321,7 +7321,7 @@ document.addEventListener("DOMContentLoaded", ()=>{
   });
 
   /* Neler yeni kartı */
-  const YENILIK_SURUM = "0.0.0.88";
+  const YENILIK_SURUM = "0.0.0.89";
   try{ $("#cekmece-surum").textContent = "Puantaj Defterim " + YENILIK_SURUM; }catch(e){}
   try{
     if(localStorage.getItem("yenilik")!==YENILIK_SURUM) $("#yenilik-kart").classList.remove("gizli");
@@ -7482,6 +7482,9 @@ document.addEventListener("DOMContentLoaded", ()=>{
       pinModu = "olustur1";
       $("#pin-alt-baslik").textContent = "Devam etmek için 6 haneli bir PIN oluştur";
     }
+    /* "PIN'imi unuttum" sadece normal giriş ekranında anlamlı — PIN'i yeni
+       oluştururken veya değiştirirken "unuttum" diye bir şey yok zaten */
+    $("#btn-pin-unuttum").classList.toggle("gizli", pinModu!=="gir");
     $("#pin-hata").textContent = "";
     pinNoktalariCiz();
     $("#pin-ekran").classList.add("acik");
@@ -7538,6 +7541,17 @@ document.addEventListener("DOMContentLoaded", ()=>{
   $("#pin-sil").addEventListener("click", ()=>{ pinGirilen = pinGirilen.slice(0,-1); pinNoktalariCiz(); });
   $("#btn-pin-degistir").addEventListener("click", ()=> pinEkraniHazirla(true));
   $("#pin-avatar-sarmal").addEventListener("click", ()=> $("#profil-foto-input").click());
+  $("#btn-pin-unuttum").addEventListener("click", ()=>{
+    /* "Site verilerini temizle" gibi ağır/mantıksız bir çözüm yerine: hesap
+       şifresi zaten kimlik kanıtı olduğundan, çıkış yapıp e-posta+şifreyle
+       tekrar giriş yapması isteniyor — bu sırada PIN sıfırlanıyor, tekrar
+       girişte yeni bir PIN oluşturması isteniyor. Diğer hiçbir verisi
+       (puantaj, ödeme, ayar vs.) silinmiyor, hepsi bulutta zaten güvende. */
+    if(!confirm("PIN'in sıfırlanacak. Çıkış yapıp e-posta/şifrenle tekrar giriş yapman gerekecek — sonra yeni bir PIN oluşturursun. Diğer hiçbir verin silinmiyor. Devam edilsin mi?")) return;
+    try{ localStorage.removeItem("pin"); }catch(e){}
+    $("#pin-ekran").classList.remove("acik");
+    auth.signOut();
+  });
 
   /* ---- Cüzdan tarihi varsayılanı ---- */
   /* $("#cuzdan-tarih") kaldırıldı — Cüzdan özelliği tamamen kaldırıldı */

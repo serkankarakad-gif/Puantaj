@@ -91,7 +91,7 @@
     <button data-tus="7">7</button><button data-tus="8">8</button><button data-tus="9">9</button>
     <button class="pin-bos"></button><button data-tus="0">0</button><button id="pin-sil">⌫</button>
   </div>
-  <p class="pin-not">PIN'i unutursan tarayıcının site verilerini temizle; kayıtların hesabında güvende, şifrenle tekrar girersin.</p>
+  <button class="pin-unuttum" id="btn-pin-unuttum">PIN'imi unuttum</button>
 </div>
 
 <!-- ============ YÜKLENİYOR ============ -->
@@ -322,6 +322,7 @@
       <div class="kart gizli" id="yenilik-kart" style="border-color:var(--sari)">
         <h2>🎁 Neler yeni?</h2>
         <ul style="padding-left:18px;font-size:13.5px;line-height:1.9">
+          <li><b>🔑 Gerçek "PIN'imi unuttum" akışı eklendi:</b> Kullanıcı haklı olarak eleştirdi — eski metin "tarayıcının site verilerini temizle" diyordu, mantıksız/ağır bir çözümdü. Artık PIN girme ekranında bir "PIN'imi unuttum" düğmesi var: dokununca hesap şifren kimlik kanıtı olarak kullanılıyor — çıkış yapıp e-posta/şifrenle tekrar giriş yapıyorsun, PIN sıfırlanıyor, yeni bir PIN oluşturman isteniyor. Puantajın/ödemelerin/ayarların HİÇBİRİ silinmiyor, hepsi zaten bulutta güvende duruyor</li>
           <li><b>🐞 Galeri açılmıyordu, gizli dosya girişi düzeltildi:</b> Kullanıcı bildirdi — avatara dokunduğunda galeri hâlâ açılmıyordu. Sebep bulundu: gizli dosya seçici `display:none` ile gizlenmişti, bazı mobil tarayıcılar tamamen gizlenmiş bir dosya girişini JS ile tetiklemeyi reddediyor. Artık görünmez ama "var" sayılan bir teknikle (1px, saydam, ekran dışına taşmış) gizleniyor — bu, dosya seçicileri programatik tetiklemenin standart/güvenilir yöntemi</li>
           <li><b>🐞 PIN ekranında profil fotoğrafı eklenemiyordu, düzeltildi:</b> Kullanıcı bildirdi — PIN artık uygulamayı ilk açan şey olduğundan, hamburger menüdeki avatara (fotoğraf ekleme yeri) ulaşmadan önce PIN ekranıyla karşılaşıyordu, orada tıklanabilir bir yer yoktu. Artık PIN ekranındaki avatarın köşesinde de bir 📷 rozeti var, ona dokununca aynı fotoğraf seçme akışı açılıyor — PIN oluşturmadan/girmeden önce bile profil fotoğrafını ekleyebiliyorsun</li>
           <li><b>🔒 YENİ: Zorunlu PIN kilidi (banka uygulaması tarzı):</b> Kullanıcı isteği: uygulama açılışında profil fotoğrafı + isim ile karşılayan, 6 haneli PIN isteyen bir kilit ekranı — tıpkı banka uygulamalarındaki gibi. PIN daha önce isteğe bağlıydı, artık ZORUNLU: ilk açılışta PIN oluşturman isteniyor (iki kez girip onaylıyorsun), oluşturmadan uygulamaya giremiyorsun. Sonraki her açılışta (kapat-aç dahil) doğru PIN'i girmeden Ana Ekran'a asla geçilmiyor. Ayarlar'dan istersen PIN'ini değiştirebilirsin (önce eskisini doğrulaman gerekiyor)</li>
@@ -1484,7 +1485,7 @@
         <p style="font-size:13px;color:var(--soluk);margin-bottom:12px">Hata mı gördün, fikrin mi var? Direkt geliştiriciye ulaş:</p>
         <a class="btn btn-cizgili" style="display:block;text-align:center;text-decoration:none;margin-bottom:10px" href="https://wa.me/905051252339?text=Puantaj%20Defterim%20hakkında:" target="_blank">💬 WhatsApp'tan yaz</a>
         <a class="btn btn-cizgili" style="display:block;text-align:center;text-decoration:none" href="tel:05051252339">📞 0505 125 23 39</a>
-        <p style="font-size:11px;color:var(--soluk);margin-top:12px;text-align:center">Sürüm: 0.0.0.88 · Serkan Karakaş</p>
+        <p style="font-size:11px;color:var(--soluk);margin-top:12px;text-align:center">Sürüm: 0.0.0.89 · Serkan Karakaş</p>
       </div>
       <div class="kart">
         <h2>🔒 PIN kilidi</h2>

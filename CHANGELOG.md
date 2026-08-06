@@ -5,6 +5,12 @@ kullanır: `0.0.0.X` — X, her güncellemede 1 artar. Uygulama içindeki sürü
 (alt bilgi + "Neler yeni" kartı) ve dağıtılan zip dosyasının adı her zaman
 birebir aynıdır.
 
+## 0.0.0.89 — Gerçek "PIN'imi unuttum" akışı
+- Kullanıcı eleştirisi: eski PIN kurtarma metni "tarayıcının site verilerini temizle" diyordu — "ne alaka" tepkisi haklıydı, gereksiz ağır/yıkıcı bir öneriydi
+- PIN girme ekranına (sadece normal "gir" modunda görünen, oluşturma/değiştirme sırasında gizlenen) bir "PIN'imi unuttum" düğmesi eklendi
+- Akış: onay istendikten sonra sadece `localStorage`'daki "pin" anahtarı siliniyor, `auth.signOut()` çağrılıyor — kullanıcı login ekranına düşüyor, e-posta/şifresiyle (zaten bilmesi gereken gerçek kimlik kanıtı) tekrar giriş yapıyor, `onAuthStateChanged` yeniden tetiklenip pin bulunamadığından otomatik olarak "yeni PIN oluştur" akışına giriyor
+- Hiçbir puantaj/ödeme/ayar verisi silinmiyor — hepsi zaten Firestore'da (bulutta), sadece cihaza özel PIN kilidi sıfırlanıyor
+
 ## 0.0.0.88 — Galeri açılmıyordu: gizli dosya girişi düzeltildi
 - Kullanıcı bildirdi: 0.0.0.87'deki düzeltmeye rağmen avatara dokununca galeri hâlâ açılmıyordu
 - Kök sebep: `#profil-foto-input` dosya seçici `style="display:none"` ile gizlenmişti — bazı mobil tarayıcılar (özellikle Android WebView/Chrome sürümleri), tamamen render edilmeyen (`display:none`) bir `<input type="file">`'ı JS'ten `.click()` ile tetiklemeyi güvenlik nedeniyle reddedebiliyor, çünkü bunu geçerli bir "kullanıcı jesti" olarak saymayabiliyor

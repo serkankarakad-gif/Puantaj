@@ -668,6 +668,10 @@ html[data-tema="acik"] .alt-nav{background:rgba(255,255,255,.94)}
 .pin-tus-takimi .pin-bos{background:transparent}
 #pin-sil{background:transparent;font-size:22px;color:var(--soluk)}
 .pin-not{font-size:11.5px;color:var(--soluk);max-width:300px;text-align:center;margin-top:auto;padding-top:24px;line-height:1.6}
+.pin-unuttum{
+  margin-top:auto;padding-top:28px;background:none;border:none;color:var(--sari);
+  font-size:13px;font-weight:700;text-decoration:underline;
+}
 
 /* ---------- TAKVİM PARA MODU ---------- */
 .hucre .para-yazi{font-size:8.5px;font-weight:700;line-height:1;opacity:.95}
