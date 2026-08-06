@@ -172,6 +172,11 @@ function basla(){
       $("#ekran-giris").classList.add("gizli");
       $("#ekran-uygulama").classList.remove("gizli");
       kullaniciBilgiYaz();
+      /* PIN kilidi ZORUNLU: PIN yoksa oluşturma, varsa girme ekranı — uygulama
+         her açılışta (bu satır her onAuthStateChanged tetiklenişinde çalışır,
+         yani kapat-aç yapınca da) bunu göstermeden hiçbir ekran görünmüyor. */
+      if(window.pinEkraniHazirla) window.pinEkraniHazirla();
+      else setTimeout(()=>{ if(window.pinEkraniHazirla) window.pinEkraniHazirla(); }, 300);
       kokRef().set({ad: u.displayName||""},{merge:true}).catch(()=>{});
       /* Derin link: #kisi=uid ile gelindiyse o kişiyi aç */
       setTimeout(()=>{
@@ -312,6 +317,12 @@ function ayarlariDinle(){
     ayarlar.isler = Array.isArray(d.isler) ? d.isler : [];
     ayarlar.profilFoto = d.profilFoto || "";
     avatarCiz();
+    /* PIN ekranı zaten açıksa (profil fotoğrafı ayarlar yüklenmeden önce
+       gösterilmiş olabilir) avatarı orada da tazele */
+    if($("#pin-ekran").classList.contains("acik")){
+      const pa = $("#pin-avatar");
+      if(ayarlar.profilFoto){ pa.style.backgroundImage = "url("+ayarlar.profilFoto+")"; pa.textContent=""; }
+    }
     $("#ayar-yevmiye").value = ayarlar.yevmiye||"";
     $("#ayar-mesai").value   = ayarlar.mesaiUcret||"";
     $("#ayar-ek").value      = ayarlar.ekGunluk||"";
@@ -5880,7 +5891,7 @@ function isDetayAc(isId){
 /* ---------- 💼 Bir işin PDF raporu: gerçek metin, gömülü Türkçe font ----------
    aySecim={yil,ay} verilirse SADECE o ayı kapsayan bir PDF üretir (başlıkta
    belirtilir); verilmezse işin TÜM giriş-çıkış aralığını, ay ay bölümlere
-   ayrılmış halde kapsar (0.0.0.85'deki davranış). */
+   ayrılmış halde kapsar (0.0.0.88'deki davranış). */
 function isPdfBlobOlustur(is, aySecim){
   if(!window.jspdf || !window.jspdf.jsPDF) return null;
   const { jsPDF } = window.jspdf;
@@ -7310,7 +7321,7 @@ document.addEventListener("DOMContentLoaded", ()=>{
   });
 
   /* Neler yeni kartı */
-  const YENILIK_SURUM = "0.0.0.85";
+  const YENILIK_SURUM = "0.0.0.88";
   try{ $("#cekmece-surum").textContent = "Puantaj Defterim " + YENILIK_SURUM; }catch(e){}
   try{
     if(localStorage.getItem("yenilik")!==YENILIK_SURUM) $("#yenilik-kart").classList.remove("gizli");
@@ -7436,46 +7447,97 @@ document.addEventListener("DOMContentLoaded", ()=>{
     });
   });
 
-  /* ---- PIN kilidi ---- */
-  const pinKontrol = ()=>{
+  /* ---- PIN kilidi: ZORUNLU, 6 haneli, banka uygulaması tarzı ----
+     pinEkraniHazirla() artık uygulama her açıldığında (onAuthStateChanged
+     içinden) çağrılıyor — PIN yoksa "oluştur" akışını, varsa "gir" akışını
+     zorunlu olarak gösteriyor. Kullanıcı doğru PIN girmeden/oluşturmadan
+     #ekran-uygulama'nın altındaki hiçbir şeye erişemiyor (tam ekran, z-index
+     9000 üstte duruyor). */
+  let pinGirilen = "", pinIlkGiris = "", pinModu = "gir", pinDegistiriliyor = false;
+
+  window.pinEkraniHazirla = function(degistirMi){
+    pinDegistiriliyor = !!degistirMi;
     let pin = null;
     try{ pin = localStorage.getItem("pin"); }catch(e){}
-    if(pin && pin.length===4){
-      $("#pin-ekran").classList.add("acik");
-      $("#ayar-pin").value = pin;
-      $("#btn-pin-kaydet").textContent = "PIN'i kaldır";
-    }
-  };
-  pinKontrol();
-  const pinDene = ()=>{
-    let pin = null;
-    try{ pin = localStorage.getItem("pin"); }catch(e){}
-    if($("#pin-girdi").value===pin){
-      $("#pin-ekran").classList.remove("acik");
-      $("#pin-girdi").value = "";
+    pinGirilen = ""; pinIlkGiris = "";
+    const saat = new Date().getHours();
+    const selamMetni = saat<6 ? "İyi geceler," : saat<12 ? "Günaydın," : saat<18 ? "İyi günler," : "İyi akşamlar,";
+    const ad = (kullanici && kullanici.displayName) || "";
+    $("#pin-selam").textContent = selamMetni;
+    $("#pin-baslik-ad").textContent = ad || "İşçi kardeşim";
+    if(ayarlar && ayarlar.profilFoto){
+      $("#pin-avatar").style.backgroundImage = "url("+ayarlar.profilFoto+")";
+      $("#pin-avatar").textContent = "";
     }else{
-      $("#pin-girdi").value = "";
-      toast("PIN yanlış, tekrar dene");
+      $("#pin-avatar").style.backgroundImage = "";
+      $("#pin-avatar").textContent = ad.trim().charAt(0).toUpperCase() || "?";
+    }
+    if(degistirMi){
+      pinModu = "dogrula";
+      $("#pin-alt-baslik").textContent = "Değiştirmek için mevcut PIN'ini gir";
+    }else if(pin && pin.length===6){
+      pinModu = "gir";
+      $("#pin-alt-baslik").textContent = "Devam etmek için PIN'ini gir";
+    }else{
+      pinModu = "olustur1";
+      $("#pin-alt-baslik").textContent = "Devam etmek için 6 haneli bir PIN oluştur";
+    }
+    $("#pin-hata").textContent = "";
+    pinNoktalariCiz();
+    $("#pin-ekran").classList.add("acik");
+  };
+  const pinNoktalariCiz = ()=> $$("#pin-noktalar span").forEach((el,i)=> el.classList.toggle("dolu", i<pinGirilen.length));
+  const pinHataGoster = (msg, sonra)=>{
+    $("#pin-hata").textContent = msg;
+    $("#pin-noktalar").classList.add("titre");
+    setTimeout(()=>{ $("#pin-noktalar").classList.remove("titre"); sonra(); }, 420);
+  };
+  const pinTamamlandi = ()=>{
+    if(pinModu==="dogrula"){
+      let pin=null; try{ pin=localStorage.getItem("pin"); }catch(e){}
+      if(pinGirilen===pin){
+        pinGirilen=""; pinModu="olustur1";
+        $("#pin-alt-baslik").textContent = "Yeni 6 haneli PIN'ini oluştur";
+        $("#pin-hata").textContent = ""; pinNoktalariCiz();
+      }else{
+        pinHataGoster("PIN yanlış, tekrar dene", ()=>{ pinGirilen=""; pinNoktalariCiz(); });
+      }
+    }else if(pinModu==="gir"){
+      let pin=null; try{ pin=localStorage.getItem("pin"); }catch(e){}
+      if(pinGirilen===pin){
+        $("#pin-ekran").classList.remove("acik");
+      }else{
+        pinHataGoster("PIN yanlış, tekrar dene", ()=>{ pinGirilen=""; pinNoktalariCiz(); });
+      }
+    }else if(pinModu==="olustur1"){
+      pinIlkGiris = pinGirilen; pinGirilen = ""; pinModu = "olustur2";
+      $("#pin-alt-baslik").textContent = "Onaylamak için PIN'ini tekrar gir";
+      pinNoktalariCiz();
+    }else if(pinModu==="olustur2"){
+      if(pinGirilen===pinIlkGiris){
+        try{ localStorage.setItem("pin", pinGirilen); }catch(e){ toast("Bu tarayıcıda kaydedilemedi"); }
+        toast(pinDegistiriliyor ? "🔒 PIN değiştirildi" : "🔒 PIN oluşturuldu");
+        $("#pin-ekran").classList.remove("acik");
+      }else{
+        pinHataGoster("PIN'ler eşleşmedi, baştan dene", ()=>{
+          pinGirilen=""; pinIlkGiris=""; pinModu="olustur1";
+          $("#pin-alt-baslik").textContent = "Devam etmek için 6 haneli bir PIN oluştur";
+          pinNoktalariCiz();
+        });
+      }
     }
   };
-  $("#btn-pin-gir").addEventListener("click", pinDene);
-  $("#pin-girdi").addEventListener("input", ()=>{ if($("#pin-girdi").value.length===4) pinDene(); });
-  $("#btn-pin-kaydet").addEventListener("click", ()=>{
-    let mevcut = null;
-    try{ mevcut = localStorage.getItem("pin"); }catch(e){}
-    if(mevcut){
-      try{ localStorage.removeItem("pin"); }catch(e){}
-      $("#ayar-pin").value = "";
-      $("#btn-pin-kaydet").textContent = "PIN'i etkinleştir";
-      toast("PIN kaldırıldı 🔓");
-      return;
-    }
-    const p = $("#ayar-pin").value.trim();
-    if(!/^\d{4}$/.test(p)){ toast("4 haneli rakam gir kanka"); return; }
-    try{ localStorage.setItem("pin", p); }catch(e){ toast("Bu tarayıcıda kaydedilemedi"); return; }
-    $("#btn-pin-kaydet").textContent = "PIN'i kaldır";
-    toast("PIN aktif 🔒 Uygulama her açılışta soracak");
+  $$(".pin-tus-takimi button[data-tus]").forEach(b=>{
+    b.addEventListener("click", ()=>{
+      if(pinGirilen.length>=6) return;
+      pinGirilen += b.dataset.tus;
+      pinNoktalariCiz();
+      if(pinGirilen.length===6) setTimeout(pinTamamlandi, 150);
+    });
   });
+  $("#pin-sil").addEventListener("click", ()=>{ pinGirilen = pinGirilen.slice(0,-1); pinNoktalariCiz(); });
+  $("#btn-pin-degistir").addEventListener("click", ()=> pinEkraniHazirla(true));
+  $("#pin-avatar-sarmal").addEventListener("click", ()=> $("#profil-foto-input").click());
 
   /* ---- Cüzdan tarihi varsayılanı ---- */
   /* $("#cuzdan-tarih") kaldırıldı — Cüzdan özelliği tamamen kaldırıldı */

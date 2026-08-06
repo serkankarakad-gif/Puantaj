@@ -5,6 +5,24 @@ kullanır: `0.0.0.X` — X, her güncellemede 1 artar. Uygulama içindeki sürü
 (alt bilgi + "Neler yeni" kartı) ve dağıtılan zip dosyasının adı her zaman
 birebir aynıdır.
 
+## 0.0.0.88 — Galeri açılmıyordu: gizli dosya girişi düzeltildi
+- Kullanıcı bildirdi: 0.0.0.87'deki düzeltmeye rağmen avatara dokununca galeri hâlâ açılmıyordu
+- Kök sebep: `#profil-foto-input` dosya seçici `style="display:none"` ile gizlenmişti — bazı mobil tarayıcılar (özellikle Android WebView/Chrome sürümleri), tamamen render edilmeyen (`display:none`) bir `<input type="file">`'ı JS'ten `.click()` ile tetiklemeyi güvenlik nedeniyle reddedebiliyor, çünkü bunu geçerli bir "kullanıcı jesti" olarak saymayabiliyor
+- Düzeltildi: input artık `display:none` yerine "görünmez ama teknik olarak var" tekniğiyle gizleniyor (`position:absolute; width:1px; height:1px; opacity:0; overflow:hidden`) — bu, dosya seçicileri programatik olarak tetiklemenin bilinen, güvenilir standart yöntemi
+
+## 0.0.0.87 — PIN ekranına da profil fotoğrafı ekleme
+- Kullanıcı bildirdi: "profil fotoğrafı koyma yeri yok" — 0.0.0.86'da PIN ekranı zorunlu hale gelince, artık hamburger menüdeki (fotoğraf yükleme yeri olan) avatara ulaşmadan ÖNCE PIN ekranıyla karşılaşılıyordu; PIN ekranındaki avatar sadece gösteriyordu, tıklanamıyordu — tavuk-yumurta durumu
+- `#pin-avatar`'ın etrafına da aynı sarmal+kamera rozeti deseni eklendi (`#pin-avatar-sarmal`), tıklanınca aynı paylaşılan `#profil-foto-input` dosya seçiciyi tetikliyor, aynı `profilFotoSecildi()` fonksiyonunu kullanıyor — kod tekrarı yok, tek fonksiyon iki yerden de çağrılıyor
+- Firestore'a kayıt olduğunda (ayarlar dinleyicisi) zaten PIN ekranı açıksa avatarını canlı güncelleyen kod önceki turda eklenmişti, o sayede yeni fotoğraf hemen görünüyor
+
+## 0.0.0.86 — Zorunlu PIN kilidi (banka uygulaması tarzı)
+- Kullanıcı isteği: Yapı Kredi mobil uygulaması ekran görüntüsü referans gösterilerek — profil fotoğrafı + "İyi Geceler, Ad Soyad" karşılaması + 6 haneli PIN noktaları + özel sayısal tuş takımı olan bir kilit ekranı istendi, ve bunun ZORUNLU olması, PIN oluşturmadan/girmeden uygulamaya kesinlikle geçilmemesi istendi ("çıkış girişte gitmesin")
+- `#pin-ekran` tamamen yeniden tasarlandı: eski 4 haneli metin kutusu kaldırıldı, yerine avatar (profil fotoğrafı varsa onu, yoksa baş harfi gösterir), dinamik selamlama (saate göre "Günaydın/İyi günler/İyi akşamlar/İyi geceler"), 6 nokta göstergesi, ve dairesel butonlu özel sayısal tuş takımı (1-9, 0, ⌫) geldi
+- Durum makinesi (`pinModu`): `olustur1`→`olustur2` (ilk kurulum, iki kez girip onaylatma), `gir` (normal açılış), `dogrula`→`olustur1`→`olustur2` (Ayarlar'dan PIN değiştirme, önce eskisini doğrulatıyor). Yanlış PIN'de noktalar titreşip kırmızı hata mesajı çıkıyor
+- `pinEkraniHazirla()` artık `auth.onAuthStateChanged` içine, `kullaniciBilgiYaz()`'ın hemen ardından bağlandı — bu, HER uygulama açılışında (kapat-aç dahil, çünkü Firebase oturumu hatırlıyor ve bu olay yeniden tetikleniyor) çalışıyor, artık isteğe bağlı değil
+- Ayarlar'daki eski "PIN'i etkinleştir/kaldır" toggle'ı kaldırıldı (artık kapatılamaz), yerine "🔒 PIN'imi değiştir" düğmesi geldi
+- Gerçek koddan çekilen durum makinesi mantığı Node.js'te 3 senaryoyla test edildi: ilk kurulum (oluştur→onayla), ikinci açılış (yanlış PIN reddedilir, doğru PIN kabul edilir), PIN değiştirme akışının doğru modda başladığı — hepsi doğrulandı
+
 ## 0.0.0.85 — Profil fotoğrafı ekleme özelliği
 - Kullanıcı isteği: hamburger menüdeki profil avatarına dokununca kendi fotoğrafını koyabilsin
 - Firebase Storage kurmaya gerek kalmadan: seçilen fotoğraf tarayıcıda kare kırpılıp 200x200'e küçültülüyor, JPEG %75 kalitede base64'e çevrilip doğrudan Firestore'daki ayarlar belgesine (`profilFoto` alanı) kaydediliyor — genelde 15-30 KB civarı kalıyor, Firestore'un 1 MB belge sınırının çok altında

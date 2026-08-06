@@ -626,18 +626,48 @@ html[data-tema="acik"] .alt-nav{background:rgba(255,255,255,.94)}
 .renk-sec button{width:44px;height:44px;border-radius:50%;border:3px solid transparent}
 .renk-sec button.secili{border-color:var(--metin)}
 
-/* ---------- PIN EKRANI ---------- */
+/* ---------- PIN EKRANI (zorunlu, banka uygulaması tarzı) ---------- */
 #pin-ekran{
-  position:fixed;inset:0;z-index:9000;background:var(--asfalt);
-  display:none;flex-direction:column;align-items:center;justify-content:center;gap:16px;padding:24px;
+  position:fixed;inset:0;z-index:9000;background:#0A0B0D;
+  display:none;flex-direction:column;align-items:center;padding:64px 28px 36px;
 }
 #pin-ekran.acik{display:flex}
-#pin-ekran .kilit-ikon{font-size:52px}
-#pin-ekran input{
-  width:190px;text-align:center;font-size:34px;letter-spacing:14px;font-weight:700;
-  padding:12px;border-radius:14px;border:2px solid var(--cizgi);background:var(--kart);color:var(--metin);outline:none;
+.pin-ust{display:flex;flex-direction:column;align-items:center;gap:10px}
+.pin-avatar-sarmal{position:relative;width:100px;height:100px;cursor:pointer}
+.pin-avatar{
+  width:100px;height:100px;border-radius:50%;background:var(--sari);color:var(--asfalt);
+  display:flex;align-items:center;justify-content:center;font-family:'Saira Condensed';font-size:42px;font-weight:800;
+  background-size:cover;background-position:center;border:3px solid var(--cizgi);
 }
-#pin-ekran input:focus{border-color:var(--sari)}
+.pin-kamera{
+  position:absolute;bottom:0;right:0;width:30px;height:30px;border-radius:50%;
+  background:var(--sari);border:3px solid #0A0B0D;display:flex;align-items:center;justify-content:center;font-size:14px;
+}
+.pin-selam{font-size:14px;color:var(--soluk);font-weight:600;margin-top:6px}
+.pin-ad{font-size:21px;font-weight:800;color:var(--metin);margin-top:-6px}
+.pin-alt-baslik{font-size:13px;color:var(--soluk);margin-top:26px;text-align:center;font-weight:500}
+.pin-noktalar{display:flex;gap:16px;margin-top:22px}
+.pin-noktalar span{
+  width:16px;height:16px;border-radius:50%;border:2px solid var(--cizgi);background:transparent;transition:.15s;
+}
+.pin-noktalar span.dolu{background:var(--sari);border-color:var(--sari)}
+.pin-noktalar.titre{animation:pinTitre .4s}
+@keyframes pinTitre{
+  0%,100%{transform:translateX(0)} 20%{transform:translateX(-10px)} 40%{transform:translateX(10px)}
+  60%{transform:translateX(-8px)} 80%{transform:translateX(8px)}
+}
+.pin-hata{font-size:12.5px;color:#FF8A80;font-weight:700;margin-top:14px;min-height:16px}
+.pin-tus-takimi{
+  display:grid;grid-template-columns:repeat(3,72px);gap:18px;margin-top:30px;
+}
+.pin-tus-takimi button{
+  width:72px;height:72px;border-radius:50%;background:var(--kart,#1F2329);color:var(--metin);
+  font-size:26px;font-weight:600;display:flex;align-items:center;justify-content:center;
+}
+.pin-tus-takimi button:active{background:var(--asfalt2)}
+.pin-tus-takimi .pin-bos{background:transparent}
+#pin-sil{background:transparent;font-size:22px;color:var(--soluk)}
+.pin-not{font-size:11.5px;color:var(--soluk);max-width:300px;text-align:center;margin-top:auto;padding-top:24px;line-height:1.6}
 
 /* ---------- TAKVİM PARA MODU ---------- */
 .hucre .para-yazi{font-size:8.5px;font-weight:700;line-height:1;opacity:.95}

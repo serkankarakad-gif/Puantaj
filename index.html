@@ -70,13 +70,28 @@
   <div class="gelistiren">Alın terinin hesabı şaşmasın<b>SERKAN KARAKAŞ</b>tarafından geliştirilmiştir</div>
 </div>
 
-<!-- ============ PIN KİLİDİ ============ -->
+<!-- ============ PIN KİLİDİ (zorunlu, banka uygulaması tarzı) ============ -->
 <div id="pin-ekran">
-  <div class="kilit-ikon">🔒</div>
-  <h1 style="font-size:26px;color:var(--sari)">PIN Kodu</h1>
-  <input type="password" id="pin-girdi" inputmode="numeric" maxlength="4" placeholder="····" autocomplete="off">
-  <button class="btn btn-sari" id="btn-pin-gir" style="width:190px">Gir</button>
-  <p style="font-size:12px;color:var(--soluk);max-width:280px;text-align:center">PIN'i unutursan tarayıcının site verilerini temizle; kayıtların hesabında güvende, şifrenle tekrar girersin.</p>
+  <div class="pin-ust">
+    <div class="pin-avatar-sarmal" id="pin-avatar-sarmal">
+      <div class="pin-avatar" id="pin-avatar">?</div>
+      <div class="pin-kamera">📷</div>
+    </div>
+    <div class="pin-selam" id="pin-selam">Hoş geldin,</div>
+    <div class="pin-ad" id="pin-baslik-ad">—</div>
+  </div>
+  <div class="pin-alt-baslik" id="pin-alt-baslik">Devam etmek için PIN'ini gir</div>
+  <div class="pin-noktalar" id="pin-noktalar">
+    <span></span><span></span><span></span><span></span><span></span><span></span>
+  </div>
+  <div class="pin-hata" id="pin-hata"></div>
+  <div class="pin-tus-takimi">
+    <button data-tus="1">1</button><button data-tus="2">2</button><button data-tus="3">3</button>
+    <button data-tus="4">4</button><button data-tus="5">5</button><button data-tus="6">6</button>
+    <button data-tus="7">7</button><button data-tus="8">8</button><button data-tus="9">9</button>
+    <button class="pin-bos"></button><button data-tus="0">0</button><button id="pin-sil">⌫</button>
+  </div>
+  <p class="pin-not">PIN'i unutursan tarayıcının site verilerini temizle; kayıtların hesabında güvende, şifrenle tekrar girersin.</p>
 </div>
 
 <!-- ============ YÜKLENİYOR ============ -->
@@ -154,7 +169,7 @@
         <div class="avatar" id="menu-avatar">?</div>
         <div class="avatar-kamera">📷</div>
       </div>
-      <input type="file" accept="image/*" id="profil-foto-input" style="display:none">
+      <input type="file" accept="image/*" id="profil-foto-input" style="position:absolute;width:1px;height:1px;opacity:0;overflow:hidden;pointer-events:none">
       <div class="ad" id="menu-ad">—</div>
       <div class="eposta" id="menu-eposta">—</div>
       <button id="btn-profili-duzenle" data-goruntu="ayarlar" style="margin-top:8px;font-size:12px;color:var(--sari);font-weight:700;background:none;border:none;padding:0">Profili ve ayarları düzenle ›</button>
@@ -307,6 +322,9 @@
       <div class="kart gizli" id="yenilik-kart" style="border-color:var(--sari)">
         <h2>🎁 Neler yeni?</h2>
         <ul style="padding-left:18px;font-size:13.5px;line-height:1.9">
+          <li><b>🐞 Galeri açılmıyordu, gizli dosya girişi düzeltildi:</b> Kullanıcı bildirdi — avatara dokunduğunda galeri hâlâ açılmıyordu. Sebep bulundu: gizli dosya seçici `display:none` ile gizlenmişti, bazı mobil tarayıcılar tamamen gizlenmiş bir dosya girişini JS ile tetiklemeyi reddediyor. Artık görünmez ama "var" sayılan bir teknikle (1px, saydam, ekran dışına taşmış) gizleniyor — bu, dosya seçicileri programatik tetiklemenin standart/güvenilir yöntemi</li>
+          <li><b>🐞 PIN ekranında profil fotoğrafı eklenemiyordu, düzeltildi:</b> Kullanıcı bildirdi — PIN artık uygulamayı ilk açan şey olduğundan, hamburger menüdeki avatara (fotoğraf ekleme yeri) ulaşmadan önce PIN ekranıyla karşılaşıyordu, orada tıklanabilir bir yer yoktu. Artık PIN ekranındaki avatarın köşesinde de bir 📷 rozeti var, ona dokununca aynı fotoğraf seçme akışı açılıyor — PIN oluşturmadan/girmeden önce bile profil fotoğrafını ekleyebiliyorsun</li>
+          <li><b>🔒 YENİ: Zorunlu PIN kilidi (banka uygulaması tarzı):</b> Kullanıcı isteği: uygulama açılışında profil fotoğrafı + isim ile karşılayan, 6 haneli PIN isteyen bir kilit ekranı — tıpkı banka uygulamalarındaki gibi. PIN daha önce isteğe bağlıydı, artık ZORUNLU: ilk açılışta PIN oluşturman isteniyor (iki kez girip onaylıyorsun), oluşturmadan uygulamaya giremiyorsun. Sonraki her açılışta (kapat-aç dahil) doğru PIN'i girmeden Ana Ekran'a asla geçilmiyor. Ayarlar'dan istersen PIN'ini değiştirebilirsin (önce eskisini doğrulaman gerekiyor)</li>
           <li><b>📷 YENİ: Profil fotoğrafı ekleme:</b> Hamburger menüsünün en üstündeki avatar artık dokunulabilir — kendi fotoğrafını seçip profil resmi olarak koyabiliyorsun (otomatik kare kırpılıp küçültülüyor, ekstra kurulum gerektirmiyor). Fotoğraf yoksa eskisi gibi adının baş harfi görünmeye devam ediyor. Ayrıca profil başlığına "Profili ve ayarları düzenle ›" bağlantısı eklendi, direkt Ayarlar'a götürüyor</li>
           <li><b>🐞 İşlerim PDF'inde boş/izinli günler eksikti, düzeltildi:</b> Kullanıcı bildirdi — bir işin PDF çizelgesinde sadece ÇALIŞILAN günler listeleniyordu, hiç kayıt girilmeyen (boş) günler tablodan tamamen düşüyordu (örn. 16, 21, 25 Temmuz görünmüyordu). Artık normal aylık PDF'teki gibi ayın/dönemin HER günü tabloda görünüyor — boşsa "0" olarak, izinliyse "İ" olarak, çalışıldıysa kazancıyla birlikte</li>
           <li><b>🐞 PDF'lerdeki avans/ödeme tabloları artık asla ortadan bölünmüyor:</b> Kullanıcı bildirdi — bir işin "tüm işi paylaş" PDF'inde 3 avans olduğu yazıyordu ("3 adet") ama listede sadece 2'si görünüyordu, sanki biri kaybolmuş gibi. En olası sebep bulundu: tablo sayfa sonuna çok yakın başlayınca, jsPDF bir satırı görünmeyen bir sonraki sayfaya kaydırabiliyordu. Artık her avans/ödeme tablosundan ÖNCE gereken yükseklik kabaca hesaplanıp sığmıyorsa TÜM bölüm (başlık+tablo+toplam) birlikte yeni sayfaya alınıyor, `rowPageBreak:"avoid"` ile de tek bir satırın ortadan bölünmesi engellendi. Bu düzeltme hem "İşlerim" PDF'inde hem normal aylık PDF'te hem Yıl PDF'inde geçerli</li>
@@ -1466,18 +1484,14 @@
         <p style="font-size:13px;color:var(--soluk);margin-bottom:12px">Hata mı gördün, fikrin mi var? Direkt geliştiriciye ulaş:</p>
         <a class="btn btn-cizgili" style="display:block;text-align:center;text-decoration:none;margin-bottom:10px" href="https://wa.me/905051252339?text=Puantaj%20Defterim%20hakkında:" target="_blank">💬 WhatsApp'tan yaz</a>
         <a class="btn btn-cizgili" style="display:block;text-align:center;text-decoration:none" href="tel:05051252339">📞 0505 125 23 39</a>
-        <p style="font-size:11px;color:var(--soluk);margin-top:12px;text-align:center">Sürüm: 0.0.0.85 · Serkan Karakaş</p>
+        <p style="font-size:11px;color:var(--soluk);margin-top:12px;text-align:center">Sürüm: 0.0.0.88 · Serkan Karakaş</p>
       </div>
       <div class="kart">
         <h2>🔒 PIN kilidi</h2>
         <p style="font-size:13px;color:var(--soluk);margin-bottom:12px;line-height:1.6">
-          Uygulama her açıldığında 4 haneli PIN sorsun. Telefonunu eline alan yevmiyeni göremesin.
+          Uygulama her açıldığında 6 haneli PIN'ini soruyor — bu artık zorunlu, kapatılamıyor. Telefonunu eline alan yevmiyeni göremesin.
         </p>
-        <div class="alan">
-          <label>4 haneli PIN</label>
-          <input type="password" id="ayar-pin" inputmode="numeric" maxlength="4" placeholder="····">
-        </div>
-        <button class="btn btn-cizgili" id="btn-pin-kaydet">PIN'i etkinleştir</button>
+        <button class="btn btn-cizgili" id="btn-pin-degistir">🔒 PIN'imi değiştir</button>
       </div>
       <div class="kart">
         <h2>💾 Yedek</h2>
