@@ -5,6 +5,58 @@ kullanır: `0.0.0.X` — X, her güncellemede 1 artar. Uygulama içindeki sürü
 (alt bilgi + "Neler yeni" kartı) ve dağıtılan zip dosyasının adı her zaman
 birebir aynıdır.
 
+## 0.0.0.97 — Yasal asgari ücret altı yevmiye uyarısı
+- Google araştırması devam etti, bu sefer 2026 asgari ücret/işçi hakları odaklı
+- Doğrulanan gerçek: 2026 yılı için günlük brüt asgari ücret (SGK günlük kazanç alt sınırı) 1.101 TL — 4857 sayılı İş Kanunu madde 39 gereği bu sınırın altında ödeme yapılamaz
+- Şantiye/patron ekleme formundaki "Yevmiye" alanına canlı bir kontrol eklendi: girilen tutar 1.101₺'nin altındaysa, alanın hemen altında "⚠️ Bu, 2026 yasal günlük asgari ücretin altında" notu beliriyor. Kaydı ENGELLEMİYOR (enformel/nakit yevmiyeli çalışmada gerçek durum resmi rakamlardan farklı olabilir), sadece bilgilendiriyor — tıpkı SGK ve 270 saat mesai sınırı kartlarındaki gibi aynı "bilgilendir, engelleme" felsefesiyle
+
+## 0.0.0.96 — Google araştırması: KVKK + e-Devlet gerçekleri
+- "Google'dan araştır" isteği üzerine, önceki genel roadmap yerine bu sefer Türkiye'ye özel, daha önce hiç bakılmamış iki açıdan araştırma yapıldı: KVKK uyumluluğu ve e-Devlet/SGK entegrasyon imkanı
+- Bulgu 1: KVKK, 29.04.2026 tarihli 2026/921 sayılı ilke kararında, mesai takibi amacıyla biyometrik veri işlenmesinde tek başına "açık rıza"nın işçi-işveren güç dengesizliği yüzünden yeterli hukuki zemin oluşturmadığını belirtti. Bizim WebAuthn uygulamamız bundan ETKİLENMİYOR (biyometrik veri hiçbir sunucuya gönderilmiyor, sadece cihazın kendi güvenli donanımında işleniyor, biz sadece bir kimlik anahtarı saklıyoruz) ama şeffaflık için Ayarlar'daki biyometrik düğmesinin altına bunu açıkça belirten bir güven notu eklendi
+- Bulgu 2: e-Devlet'in SGK hizmet dökümü için gerçek, üçüncü parti uygulamaların kullanabileceği bir API'si YOK — sadece kullanıcının kendi e-Devlet şifresiyle giriş yapması gereken bir portal sayfası var (turkiye.gov.tr/sgk-tescil-ve-hizmet-dokumu). "Emeklilik yolculuğu" kartına, bizim gösterdiğimiz prim gün sayısının kendi girdiği verilere dayalı bir TAHMİN olduğunu (patronun gerçekten bildirim yapıp yapmadığını göstermediğini) açıklayan bir uyarı ve gerçek sayfaya giden bir bağlantı eklendi
+- İki değişiklik de CSP değişikliği gerektirmedi (basit `<a target="_blank">` linkleri CSP'nin script-src/connect-src kurallarına tabi değil, sadece `form-action` etkiler, o da `<form>` gönderimleri için)
+
+## 0.0.0.95 — Ayarlar taraması: çakışan renk seçicileri birleştirildi
+- Kullanıcı bildirdi: "Ayarlar kısmında sorunlar var, kaydetme sorunları var"
+- Ayarlar ekranındaki 58 id tek tek çıkarılıp HER birinin app.js'te karşılığı olup olmadığı kontrol edildi
+- Gerçek bulgu: "Vurgu rengi" (`.renk-sec`, 4 renk, `documentElement` üzerinde inline `--sari` set ediyordu) ile "Uygulama teması" (`#tema-secim`, Amoled dahil 5 seçenek, `body[data-tema]` CSS kuralları üzerinden AYNI `--sari` değişkenini set ediyordu) aynı anda vardı. CSS özgüllük kuralları gereği, `body[data-tema="mavi/yesil/turuncu/amoled"]` seçiliyse "Vurgu rengi" seçimi sessizce etkisiz kalıyordu — kullanıcı bir renk seçip "kaydettiğini" düşünse de görünürde hiçbir şey değişmiyordu
+- (Düzeltme sırasında bir ara yanlışlıkla `#tema-secim`'in zaten TAM ÇALIŞIR durumda olduğunu — `temaUygula()` fonksiyonu zaten mevcuttu — gözden kaçırıp onu YENİDEN yazmaya çalıştım, bu da `Identifier 'temaUygula' has already been declared` sözdizimi hatasına yol açtı. Hemen fark edilip geri alındı, kod tabanına hiç gönderilmedi.)
+- Çözüm: eski, daha eksik "Vurgu rengi" kartı ve JS'i tamamen kaldırıldı, tek ve tutarlı sistem olarak zaten var olan "Uygulama teması" (`#tema-secim`) kaldı
+- Ayarlar'daki TÜM kaydet düğmeleri (`btn-ayar-kaydet`, `btn-sgk-kaydet`, `btn-ad-kaydet`, `btn-sifre-degistir`, `btn-belge-ekle`, `btn-onarim`) tek tek incelendi — hepsinin try/catch + Firestore `.set(...,{merge:true})` deseni doğru, form alanlarının Firestore'dan doldurulup doldurulmadığı da (`ayarlariDinle()` içinde) tek tek kontrol edildi, hepsi doğru besleniyor
+
+## 0.0.0.94 — iOS taraması: safe-area boşluğu eksikti
+- Kullanıcı sorusu: "iOS'ta kritik sorun var mı" — kod tabanı bilinen iOS Safari/PWA tuzakları için taranarak yanıtlandı
+- Bulunan gerçek hata: viewport meta etiketinde `viewport-fit=cover` eksikti. Bu olmadan iOS Safari, CSS'te kullanılan `env(safe-area-inset-bottom)` değerini 0 kabul ediyor — yani alt menü/düğmelerin iPhone'un home indicator çizgisine yapışmaması için yazılan kod muhtemelen hiç çalışmıyordu. Eklendi
+- Temiz çıkan kontroller: `apple-touch-icon`/`apple-mobile-web-app-capable` meta etiketleri zaten doğruydu (Ana ekrana eklerken düzgün ikon çıkar), tüm `backdrop-filter` kullanımlarının yanında zaten `-webkit-backdrop-filter` vardı, adres çubuğu yüzünden sorunlu olan `100vh` hiç kullanılmamış (`100dvh` kullanılmış, iOS 16.4+ itibarıyla güvenli), gizli dosya seçici zaten 0.0.0.88'de iOS'u da düşünerek düzeltilmişti
+- Doğrulanamayan (canlı iOS cihazda test gerektiren) riskler açıkça not edildi: WebAuthn biyometrik ceremonysi ve Tesseract.js'in CDN'den çektiği Web Worker'ı iOS Safari'de teorik olarak çalışmalı ama gerçek cihazda doğrulanamadı — kullanıcıdan bildirim bekleniyor
+
+## 0.0.0.93 — Yıl Özeti'nin kendisi de yıl-sınırı hatasını taşıyordu
+- "Geliştirmeye devam" isteği üzerine kod tabanı `odemeler` koleksiyonuna atılan tüm ham-tarih sorguları için tekrar tarandı
+- Bir tane daha bulundu: `yilYukle()` — Yıl Özeti ekranındaki AY/GÜN/MESAİ/HAKEDİŞ/ALINAN/KALAN tablosunu VE ondan beslenen Yıl PDF'ini üreten asıl fonksiyon — hâlâ `.where("tarih",">=",bas).where("tarih","<=",son)` kullanıyordu. İçerideki ay-gruplama mantığı zaten `odemeAyi()` kullanıyordu ama SORGUNUN KENDİSİ ham tarihe göre atıldığından, yıl sınırını aşan bir ödeme sorguya hiç girmiyordu
+- Düzeltildi: `tumOdemelerQS` (tüm zamanların önbelleği) `odemeAyi()`'nin YIL kısmına göre süzülüyor artık — CSV/Excel'de az önce uygulanan aynı çözüm
+- Kod tabanında `.where("tarih"` ile atılan tüm sorgular tek tek tekrar kontrol edildi: geriye kalan ikisi (`masraflar` ve `ekipGun` koleksiyonları) aitAy/FIFO kavramına tabi olmadığından dokunulmadı — bu artık kesin, kod tabanında `odemeler` koleksiyonuna ait başka ham-tarih sorgusu kalmadı
+
+## 0.0.0.92 — Eski FIFO borcu kapatıldı: CSV/Excel + İşlerim detay ekranı
+- "Devam et güncellemeye" isteği üzerine, önceki turlarda not edilip düşük öncelikli diye ertelenen iki tutarsızlık ele alındı
+- `csvIndir()`/`excelIndir()`: ödeme sorgusu artık `.where("tarih",...)` yerine `tumOdemelerQS`'ten `odemeAyi()` (aitAy/FIFO) ile süzülüyor — yıl sınırını aşan (örn. 1 Ocak'ta alınıp Aralık'a sayılan) bir ödemenin dışa aktarımdan hiç görünmemesi/yanlış yılda çıkması ihtimali ortadan kalktı. Node.js'te gerçek senaryoyla test edildi: 1 Ocak 2027 tarihli ama aitAy=2026-12 olan bir avans, doğru şekilde 2026 dışa aktarımında çıktı
+- `isDetayAc()` (İşlerim → bir işin detay ekranı): PDF'te 0.0.0.84'te düzelttiğimiz "sadece çalışılan günler görünüyor, boş/izinli günler kayboluyor" sorunu ekranda hâlâ duruyordu — artık PDF ile ekran birebir tutarlı, ikisi de o dönemin HER gününü gösteriyor
+
+## 0.0.0.91 — OCR fiş okuma (deneysel)
+- Kullanıcı "devam et güncellemeye" dedi, önceki turda bilerek ertelenen OCR fiş okuma özelliğine geçildi
+- Teknik engel: Tesseract.js kendi Web Worker'ını ve dil verisini CDN'den çekiyor, mevcut `worker-src 'self'` CSP kuralı bunu engelliyordu. `worker-src`'ye `blob:` ve `https://cdn.jsdelivr.net` eklendi, `connect-src`'ye `cdn.jsdelivr.net` ve `tessdata.projectnaptha.com` (dil verisi barındıran varsayılan sunucu) eklendi, `script-src`'ye `cdn.jsdelivr.net` eklendi
+- `tesseract.js@5` CDN'den script olarak eklendi (`window.Tesseract` yüklenemezse OCR düğmesi hiç gösterilmiyor, fotoğraf ekleme özelliği bundan etkilenmiyor)
+- Masraf ekleme ekranına "🔍 Fişten tutarı okumayı dene (deneysel)" düğmesi eklendi — fiş fotoğrafı Tesseract'a (`tur+eng` dil modeliyle) veriliyor, metindeki para tutarına benzeyen tüm sayılar (regex ile) çıkarılıp tıklanabilir öneri çipleri olarak sunuluyor
+- GÜVENLİK TASARIMI: hiçbir tutar OTOMATİK doldurulmuyor/kaydedilmiyor — kullanıcı önerilen çiplerden birine dokunmadıkça tutar alanı boş kalıyor, yanlış okuma riski kullanıcının kontrolünde kalıyor
+- Regex mantığı Node.js'te örnek bir fiş metniyle test edildi: "VIDA SET 45,00 / SILIKON 120,50 / TOPLAM 198,60" gibi bir metinden tüm tutarlar (45, 120.5, 165.5, 198.6 vb.) doğru ayıklandı
+- Bu özellik CDN'e ve gerçek cihazda Türkçe el yazısı/baskı fiş kalitesine bağlı olduğundan "deneysel" işaretli tutuldu — kullanıcı testi bekleniyor
+
+## 0.0.0.90 — Biyometrik (parmak izi/Yüz) hızlı açma + özellik envanteri
+- Kullanıcı, Google araştırmasıyla derlenen bir "yenilikçi özellik" yol haritasının TAMAMININ eklenmesini istedi (çoklu dil hariç, açıkça istenmedi)
+- Kod tabanı taranınca yol haritasındaki maddelerin ÇOĞUNUN zaten var olduğu görüldü: sesli not (Web Speech API, `btn-sesli-not`), GPS "buradaydım" konum damgası (gün kaydında), hava durumu, SGK prim günü takibi + emeklilik tahmini (`sgkCiz`), İş Kanunu 270 saat fazla mesai sınırı takibi, çalışma serisi/streak (`seriHesapla`, 🔥 rozet), kredi kartı takibi, JSON yedek indirme, ve "Ana ekrana ekle" daveti (Android native prompt + iOS elle rehber) — hepsi önceki turlarda kurulmuş
+- Gerçekten eksik olan tek şey biyometrikti, bu turda eklendi: `navigator.credentials` (WebAuthn) ile, PIN ekranına "🫆 Parmak izi/Yüz ile aç" düğmesi ve Ayarlar'a "Etkinleştir" düğmesi eklendi. Kayıt (`create()`) ve doğrulama (`get()`) tamamen cihaz üzerinde çalışıyor, sunucu tarafı doğrulama gerektirmiyor (bu, PIN'i hızlandıran yerel bir jest — asıl kimlik doğrulaması zaten Firebase Auth ile yapılmış durumda)
+- Platform desteklemiyorsa (`isUserVerifyingPlatformAuthenticatorAvailable()` false dönerse) düğme hiç gösterilmiyor, PIN her zaman yedek olarak kalıyor
+- Bilerek BU TURA dahil edilmeyen: OCR fiş okuma (Tesseract.js gibi ~2MB'lık bir kütüphane + CSP değişikliği + gerçek cihazda doğruluk testi gerektiriyor, yanlış okursa yanlış tutar girme riski var — ayrı, dikkatli bir turda ele alınacak)
+
 ## 0.0.0.89 — Gerçek "PIN'imi unuttum" akışı
 - Kullanıcı eleştirisi: eski PIN kurtarma metni "tarayıcının site verilerini temizle" diyordu — "ne alaka" tepkisi haklıydı, gereksiz ağır/yıkıcı bir öneriydi
 - PIN girme ekranına (sadece normal "gir" modunda görünen, oluşturma/değiştirme sırasında gizlenen) bir "PIN'imi unuttum" düğmesi eklendi

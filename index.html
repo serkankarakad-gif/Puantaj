@@ -6,20 +6,20 @@
 <meta name="referrer" content="strict-origin-when-cross-origin">
 <meta http-equiv="Content-Security-Policy" content="
   default-src 'self';
-  script-src 'self' https://www.gstatic.com https://www.google.com https://cdn.sheetjs.com https://cdnjs.cloudflare.com;
+  script-src 'self' https://www.gstatic.com https://www.google.com https://cdn.sheetjs.com https://cdnjs.cloudflare.com https://cdn.jsdelivr.net;
   style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;
   font-src 'self' https://fonts.gstatic.com data:;
   img-src 'self' data: https:;
-  connect-src 'self' https://*.googleapis.com https://*.gstatic.com https://*.firebaseio.com wss://*.firebaseio.com https://*.firebasedatabase.app https://*.firebaseapp.com https://*.workers.dev https://api.aladhan.com https://api.allorigins.win https://api.bigdatacloud.net https://api.codetabs.com https://api.open-meteo.com https://api.piped.private.coffee https://api.rss2json.com https://corsproxy.io https://finans.truncgil.com https://inv.nadeko.net https://invidious.nerdvpn.de https://open.er-api.com https://pipedapi.adminforge.de https://pipedapi.kavin.rocks https://news.google.com https://www.youtube.com https://m.youtube.com https://haberglobal.com https://www.aspor.com.tr https://www.cnnturk.com https://www.haberturk.com https://www.tgrthaber.com https://www.trthaber.com https://drive.google.com https://maps.google.com;
+  connect-src 'self' https://*.googleapis.com https://*.gstatic.com https://*.firebaseio.com wss://*.firebaseio.com https://*.firebasedatabase.app https://*.firebaseapp.com https://*.workers.dev https://api.aladhan.com https://api.allorigins.win https://api.bigdatacloud.net https://api.codetabs.com https://api.open-meteo.com https://api.piped.private.coffee https://api.rss2json.com https://corsproxy.io https://finans.truncgil.com https://inv.nadeko.net https://invidious.nerdvpn.de https://open.er-api.com https://pipedapi.adminforge.de https://pipedapi.kavin.rocks https://news.google.com https://www.youtube.com https://m.youtube.com https://haberglobal.com https://www.aspor.com.tr https://www.cnnturk.com https://www.haberturk.com https://www.tgrthaber.com https://www.trthaber.com https://drive.google.com https://maps.google.com https://cdn.jsdelivr.net https://tessdata.projectnaptha.com;
   frame-src https://www.youtube.com;
-  worker-src 'self';
+  worker-src 'self' blob: https://cdn.jsdelivr.net;
   manifest-src 'self';
   object-src 'none';
   base-uri 'self';
   form-action 'self';
 ">
 <meta name="theme-color" content="#17181C">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <title>Puantaj Defterim</title>
 
 <!-- ================= iOS / Safari "Ana ekrana ekle" desteği ================= -->
@@ -56,6 +56,10 @@
      dosyamız) geldiği için internet yavaş/yoksa bile önbellekten çalışır. -->
 <script src="font-liberationsans-regular.js"></script>
 <script src="font-liberationsans-bold.js"></script>
+<!-- Fiş/fatura fotoğrafından tutar OKUMAYA çalışan (deneysel) OCR kütüphanesi.
+     Yüklenemezse (internet yoksa vb.) OCR düğmesi sessizce devre dışı kalır,
+     fotoğraf ekleme özelliği bundan etkilenmez. -->
+<script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
 
 <link rel="stylesheet" href="style.css">
 </head>
@@ -85,6 +89,7 @@
     <span></span><span></span><span></span><span></span><span></span><span></span>
   </div>
   <div class="pin-hata" id="pin-hata"></div>
+  <button class="pin-biyometrik gizli" id="btn-pin-biyometrik">🫆 Parmak izi / Yüz ile aç</button>
   <div class="pin-tus-takimi">
     <button data-tus="1">1</button><button data-tus="2">2</button><button data-tus="3">3</button>
     <button data-tus="4">4</button><button data-tus="5">5</button><button data-tus="6">6</button>
@@ -322,6 +327,15 @@
       <div class="kart gizli" id="yenilik-kart" style="border-color:var(--sari)">
         <h2>🎁 Neler yeni?</h2>
         <ul style="padding-left:18px;font-size:13.5px;line-height:1.9">
+          <li><b>⚖️ YENİ: Asgari ücret altı yevmiye uyarısı:</b> Google araştırmasıyla 2026 yasal günlük brüt asgari ücretin (1.101₺, 4857 sayılı İş Kanunu m.39 — bu sınırın altında ödeme yapılamaz) doğrulandı. Şantiye/patron eklerken yevmiye bu tutarın altındaysa, alanın altında nazik bir bilgi notu çıkıyor — engellemiyor (enformel/nakit yevmiyeli çalışmada durum değişebilir), sadece haberdar ediyor</li>
+          <li><b>🔎 Google araştırması: KVKK + e-Devlet gerçekleri ışığında 2 güncelleme:</b> (1) KVKK'nın Nisan 2026'da yayınladığı, mesai takibinde biyometrik veri kullanımına dair yeni ilke kararı bulundu — bizim durumumuzda geçerli değil (biyometriğimiz hiçbir yere gönderilmiyor, telefonun kendi donanımında kalıyor) ama şeffaflık için Ayarlar'daki biyometrik düğmesinin altına bunu açıkça belirten bir not eklendi. (2) e-Devlet'in SGK verisi için gerçek bir API'si OLMADIĞI doğrulandı (sadece giriş gerektiren bir sayfa var) — "Emeklilik yolculuğu" kartına, kendi tahminimizin resmi kayıtla aynı olmayabileceğini belirten bir uyarı ve gerçek e-Devlet SGK sayfasına giden bir bağlantı eklendi</li>
+          <li><b>🎨 Ayarlar'daki çakışan renk seçicileri birleştirildi:</b> Kullanıcı "Ayarlar'da sorunlar var, kaydetme sorunları var" diye bildirdi. Bulunan: "Vurgu rengi" (4 renk) ve "Uygulama teması" (Amoled dahil 5 seçenek) diye İKİ AYRI renk seçici vardı, ikisi de AYNI --sari rengini değiştiriyordu ama farklı yöntemlerle — biri seçilince diğerinin etkisi CSS önceliği yüzünden sessizce görünmez oluyordu, bu da "seçtim ama değişmedi/kaydolmadı" hissi yaratıyordu. Eski, daha eksik olan "Vurgu rengi" kartı kaldırıldı, tek ve tutarlı "Uygulama teması" (Amoled/renk) sistemi kaldı</li>
+          <li><b>🍎 iOS güvenlik/uyumluluk taraması: safe-area boşluğu çalışmıyordu:</b> Kullanıcı "iOS'ta kritik sorun var mı" diye sordu, kod tarandı. Gerçek bir hata bulundu: alt menü/düğmelerin iPhone'un alt çizgisine (home indicator) yapışmaması için kullanılan `env(safe-area-inset-bottom)` kodu, viewport etiketinde `viewport-fit=cover` eksik olduğundan iOS'ta muhtemelen hiç etkisizdi. Eklendi. Kontrol edilip TEMİZ çıkanlar: apple-touch-icon/apple-mobile-web-app meta etiketleri zaten doğruydu, backdrop-filter'ların hepsinde -webkit- öneki zaten vardı, 100vh (adres çubuğu sorunlu olan) hiç kullanılmamış (100dvh kullanılmış, iOS 16.4+'ta güvenli), dosya seçici gizleme tekniği zaten iOS'u da düşünerek düzeltilmişti (0.0.0.88)</li>
+          <li><b>🐞 Yıl Özeti ekranının kendisi de aynı yıl-sınırı hatasını taşıyordu:</b> Kod tabanı taranınca son kalan bir tane daha bulundu — `yilYukle()` (Yıl Özeti tablosunu VE ondan beslenen Yıl PDF'ini besleyen asıl fonksiyon) ödemeleri hâlâ ham tarih aralığıyla sorguluyordu. Artık `tumOdemelerQS`'ten `odemeAyi()`'nin YILINA göre süzülüyor — yıl sınırını aşan bir avans artık doğru yılda görünüyor. Kod tabanındaki `odemeler` koleksiyonuna ait tüm ham-tarih sorguları artık taranıp temizlendi</li>
+          <li><b>🐞 CSV/Excel dışa aktarımda yıl-sınırı FIFO hatası:</b> Uzun süre önce not edilmiş, düşük öncelikli diye ertelenmiş bir hata düzeltildi — CSV/Excel dışa aktarımı ödemeleri hâlâ ham `tarih`e göre sorguluyordu. Yıl sınırını aşan bir ödeme (örn. 1 Ocak'ta alınıp aitAy/FIFO gereği bir önceki Aralık'a sayılan bir avans) bazen hiçbir yılın dışa aktarımında görünmüyor ya da yanlış yılda çıkabiliyordu. Artık `odemeAyi()` kullanılıyor, tıpkı PDF ve diğer raporlarda olduğu gibi</li>
+          <li><b>🐞 İşlerim detay ekranında da boş/izinli günler eksikti:</b> PDF'te düzelttiğimiz "sadece çalışılan günler görünüyor" sorunu, uygulama içindeki İşlerim detay ekranında hâlâ vardı — PDF ile ekran arasında tutarsızlık, kafa karışıklığı yaratıyordu. Artık ikisi de aynı: o dönemin HER günü listede, boşsa "0" izinliyse "İ" olarak</li>
+          <li><b>🔍 YENİ (deneysel): Fişten tutar okuma (OCR):</b> Masraf eklerken fiş fotoğrafı ekledikten sonra "Fişten tutarı okumayı dene" düğmesi çıkıyor — Tesseract.js ile fişteki sayıları tarayıp öneri olarak sunuyor. ÖNEMLİ: hiçbir tutar otomatik yazılmıyor/kaydedilmiyor, sadece tıklanabilir öneri çipleri çıkıyor, doğru olanına dokunursan tutar alanına yazılıyor. Bu bir kütüphanenin CDN'den yüklenmesine bağlı (deneysel işaretli) — internet yoksa veya kütüphane yüklenemezse düğme hiç görünmüyor, fotoğraf ekleme özelliği bundan etkilenmiyor</li>
+          <li><b>🫆 YENİ: Parmak izi / Yüz ile hızlı açma:</b> PIN'e ek olarak (yerine değil) telefonun kendi biyometrik kilidiyle (parmak izi/Yüz tanıma) de uygulamayı açabiliyorsun — WebAuthn ile, tamamen cihaz üzerinde çalışıyor, hiçbir sunucuya biyometrik veri gitmiyor. Ayarlar → PIN kilidi'nden etkinleştirebilirsin (cihazın desteklemiyorsa düğme hiç görünmüyor). PIN her zaman yedek olarak kalıyor, biyometrik başarısız/iptal olursa PIN'le açabiliyorsun</li>
           <li><b>🔑 Gerçek "PIN'imi unuttum" akışı eklendi:</b> Kullanıcı haklı olarak eleştirdi — eski metin "tarayıcının site verilerini temizle" diyordu, mantıksız/ağır bir çözümdü. Artık PIN girme ekranında bir "PIN'imi unuttum" düğmesi var: dokununca hesap şifren kimlik kanıtı olarak kullanılıyor — çıkış yapıp e-posta/şifrenle tekrar giriş yapıyorsun, PIN sıfırlanıyor, yeni bir PIN oluşturman isteniyor. Puantajın/ödemelerin/ayarların HİÇBİRİ silinmiyor, hepsi zaten bulutta güvende duruyor</li>
           <li><b>🐞 Galeri açılmıyordu, gizli dosya girişi düzeltildi:</b> Kullanıcı bildirdi — avatara dokunduğunda galeri hâlâ açılmıyordu. Sebep bulundu: gizli dosya seçici `display:none` ile gizlenmişti, bazı mobil tarayıcılar tamamen gizlenmiş bir dosya girişini JS ile tetiklemeyi reddediyor. Artık görünmez ama "var" sayılan bir teknikle (1px, saydam, ekran dışına taşmış) gizleniyor — bu, dosya seçicileri programatik tetiklemenin standart/güvenilir yöntemi</li>
           <li><b>🐞 PIN ekranında profil fotoğrafı eklenemiyordu, düzeltildi:</b> Kullanıcı bildirdi — PIN artık uygulamayı ilk açan şey olduğundan, hamburger menüdeki avatara (fotoğraf ekleme yeri) ulaşmadan önce PIN ekranıyla karşılaşıyordu, orada tıklanabilir bir yer yoktu. Artık PIN ekranındaki avatarın köşesinde de bir 📷 rozeti var, ona dokununca aynı fotoğraf seçme akışı açılıyor — PIN oluşturmadan/girmeden önce bile profil fotoğrafını ekleyebiliyorsun</li>
@@ -766,6 +780,9 @@
           <input type="file" id="masraf-foto-sec" accept="image/*" style="display:none">
           <button class="eksik-cip" id="btn-masraf-foto">🧾 Fiş fotoğrafı ekle</button>
           <img id="masraf-foto-onizle" class="gizli" style="width:100%;border-radius:12px;margin-top:8px;border:1.5px solid var(--cizgi)" alt="">
+          <button class="eksik-cip gizli" id="btn-masraf-ocr" style="margin-top:8px">🔍 Fişten tutarı okumayı dene (deneysel)</button>
+          <div id="masraf-ocr-durum" style="font-size:12px;color:var(--soluk);margin-top:6px"></div>
+          <div id="masraf-ocr-oneriler" style="display:flex;flex-wrap:wrap;gap:6px;margin-top:8px"></div>
         </div>
         <button class="btn btn-sari" id="btn-masraf-ekle">Kaydet</button>
       </div>
@@ -1211,6 +1228,8 @@
         <h2 style="font-size:15px">🏖️ Emeklilik yolculuğu</h2>
         <div class="hedef-bar" style="height:12px;margin-top:4px"><div class="dolu" id="sgk-dolu" style="width:0%"></div></div>
         <div style="font-size:13px;color:var(--soluk);margin-top:8px" id="sgk-yazi"></div>
+        <p style="font-size:11.5px;color:var(--soluk);margin-top:10px;line-height:1.6">⚠️ Bu, senin kendi girdiğin günlere göre yaptığımız bir <b>tahmin</b> — patronunun SGK'ya gerçekten bildirim yapıp yapmadığını göstermez. Gerçek, resmi kaydını kontrol etmek için:</p>
+        <a href="https://www.turkiye.gov.tr/sgk-tescil-ve-hizmet-dokumu" target="_blank" rel="noopener" class="btn btn-cizgili" style="display:block;text-align:center;margin-top:8px;text-decoration:none">📄 e-Devlet'te gerçek SGK kaydımı gör</a>
       </div>
       <div class="kart">
         <h2>⏱️ Mesai ücreti kontrolü</h2>
@@ -1358,6 +1377,7 @@
           <div class="alan" style="flex:1">
             <label>Yevmiye (TL)</label>
             <input type="text" id="yeni-santiye-yevmiye" inputmode="decimal" placeholder="1800">
+            <div id="yevmiye-asgari-uyari" class="gizli" style="font-size:11.5px;color:#FF8A65;margin-top:5px;line-height:1.5">⚠️ Bu, 2026 yasal günlük asgari ücretin (1.101₺ brüt) altında</div>
           </div>
           <div class="alan" style="flex:1">
             <label>Mesai (TL/saat)</label>
@@ -1399,15 +1419,6 @@
         <label style="display:flex;align-items:center;gap:10px;font-size:14px;margin-top:10px">
           <input type="checkbox" id="ayar-ses" style="width:20px;height:20px;accent-color:var(--sari)"> Kayıtta tık sesi
         </label>
-        <div class="alan" style="margin-top:14px;margin-bottom:0">
-          <label>Vurgu rengi</label>
-          <div class="renk-sec">
-            <button data-renk="sari" style="background:#FFC400" class="secili"></button>
-            <button data-renk="turuncu" style="background:#FF8A3C"></button>
-            <button data-renk="yesil" style="background:#35D07F"></button>
-            <button data-renk="mavi" style="background:#4C9AFF"></button>
-          </div>
-        </div>
       </div>
       <div class="kart">
         <h2>🧹 Depolama</h2>
@@ -1485,7 +1496,7 @@
         <p style="font-size:13px;color:var(--soluk);margin-bottom:12px">Hata mı gördün, fikrin mi var? Direkt geliştiriciye ulaş:</p>
         <a class="btn btn-cizgili" style="display:block;text-align:center;text-decoration:none;margin-bottom:10px" href="https://wa.me/905051252339?text=Puantaj%20Defterim%20hakkında:" target="_blank">💬 WhatsApp'tan yaz</a>
         <a class="btn btn-cizgili" style="display:block;text-align:center;text-decoration:none" href="tel:05051252339">📞 0505 125 23 39</a>
-        <p style="font-size:11px;color:var(--soluk);margin-top:12px;text-align:center">Sürüm: 0.0.0.89 · Serkan Karakaş</p>
+        <p style="font-size:11px;color:var(--soluk);margin-top:12px;text-align:center">Sürüm: 0.0.0.97 · Serkan Karakaş</p>
       </div>
       <div class="kart">
         <h2>🔒 PIN kilidi</h2>
@@ -1493,6 +1504,8 @@
           Uygulama her açıldığında 6 haneli PIN'ini soruyor — bu artık zorunlu, kapatılamıyor. Telefonunu eline alan yevmiyeni göremesin.
         </p>
         <button class="btn btn-cizgili" id="btn-pin-degistir">🔒 PIN'imi değiştir</button>
+        <button class="btn btn-cizgili gizli" id="btn-biyometrik-ac" style="margin-top:10px">🫆 Parmak izi/Yüz ile açmayı etkinleştir</button>
+        <p style="font-size:11px;color:var(--soluk);margin-top:8px;line-height:1.6">🔒 Parmak izin/yüzün hiçbir zaman bu uygulamaya ya da bir sunucuya gönderilmiyor — eşleştirme tamamen telefonunun kendi güvenli donanımında (Face ID/parmak izi çipi) oluyor, biz sadece "eşleşti" cevabını alıyoruz.</p>
       </div>
       <div class="kart">
         <h2>💾 Yedek</h2>

@@ -4942,13 +4942,19 @@ async function csvIndir(){
   toast("CSV hazırlanıyor...");
   try{
     const bas = aktifYil+"-01-01", son = aktifYil+"-12-31";
-    const [gSnap, oSnap] = await Promise.all([
+    const [gSnap] = await Promise.all([
       kokRef().collection("girdiler")
         .where(firebase.firestore.FieldPath.documentId(), ">=", bas)
-        .where(firebase.firestore.FieldPath.documentId(), "<=", son).get(),
-      kokRef().collection("odemeler")
-        .where("tarih", ">=", bas).where("tarih", "<=", son).get()
+        .where(firebase.firestore.FieldPath.documentId(), "<=", son).get()
     ]);
+    /* DÜZELTME: ödemeler artık ham tarihe göre sorgulanmıyor — aitAy/FIFO
+       gereği yıl sınırını aşan bir ödeme (örn. 1 Ocak'ta alınıp bir önceki
+       Aralık'a sayılan bir avans) eskiden hem yanlış yılda çıkabiliyor hem
+       de bazı durumlarda hiçbir yılın dışa aktarımında görünmeyebiliyordu.
+       tumOdemelerQS (tüm zamanların önbelleği) odemeAyi()'ye göre süzülüyor. */
+    const tumOdemeListesi = [];
+    if(tumOdemelerQS) tumOdemelerQS.forEach(doc=> tumOdemeListesi.push(doc.data()));
+    const oListe = tumOdemeListesi.filter(o=> odemeAyi(o).slice(0,4)===String(aktifYil));
     const tirnak = s => '"' + String(s==null?"":s).replace(/"/g,'""') + '"';
     let csv = "\uFEFFTarih;Tur;Durum/Aciklama;Mesai Saat;Tutar TL;Santiye;Not\n";
     const satirlar = [];
@@ -4956,8 +4962,7 @@ async function csvIndir(){
       const v = doc.data();
       satirlar.push([doc.id, "Puantaj", girisEtiket(v), v.mesai||0, girdiKazanc(v), v.santiye||"", v.not||""]);
     });
-    oSnap.forEach(doc=>{
-      const v = doc.data();
+    oListe.forEach(v=>{
       satirlar.push([v.tarih, "Odeme", odemeTurEtiket(v.tur), "", -Number(v.tutar||0), "", v.not||""]);
     });
     satirlar.sort((a,b)=> a[0]<b[0]?-1:1);
@@ -4976,12 +4981,10 @@ async function excelIndir(){
   toast("Excel hazırlanıyor...");
   try{
     const bas = aktifYil+"-01-01", son = aktifYil+"-12-31";
-    const [gSnap, oSnap] = await Promise.all([
+    const [gSnap] = await Promise.all([
       kokRef().collection("girdiler")
         .where(firebase.firestore.FieldPath.documentId(), ">=", bas)
-        .where(firebase.firestore.FieldPath.documentId(), "<=", son).get(),
-      kokRef().collection("odemeler")
-        .where("tarih", ">=", bas).where("tarih", "<=", son).get()
+        .where(firebase.firestore.FieldPath.documentId(), "<=", son).get()
     ]);
     const puantajSatir = [["Tarih","Gün","Durum","Mesai (saat)","Şantiye","Not","Kazanç (TL)"]];
     const gunler = [];
@@ -4991,9 +4994,12 @@ async function excelIndir(){
       const t = new Date(v.id+"T12:00:00");
       puantajSatir.push([v.id, GUNLER[t.getDay()], girisEtiket(v), Number(v.mesai)||0, v.santiye||"", v.not||"", girdiKazanc(v)]);
     });
+    /* DÜZELTME: aynı csvIndir()'daki gibi — ham tarih yerine odemeAyi()/FIFO
+       kullanılıyor, yıl sınırını aşan ödemeler artık doğru yılda çıkıyor. */
+    const tumOdemeListesi = [];
+    if(tumOdemelerQS) tumOdemelerQS.forEach(doc=> tumOdemeListesi.push(doc.data()));
+    const odemeler2 = tumOdemeListesi.filter(o=> odemeAyi(o).slice(0,4)===String(aktifYil));
     const odemeSatir = [["Tarih","Tür","Not","Tutar (TL)"]];
-    const odemeler2 = [];
-    oSnap.forEach(doc=> odemeler2.push(doc.data()));
     odemeler2.sort((a,b)=> String(a.tarih)<String(b.tarih)?-1:1);
     odemeler2.forEach(o=> odemeSatir.push([o.tarih||"", odemeTurEtiket(o.tur), o.not||"", Number(o.tutar)||0]));
 
@@ -5140,12 +5146,10 @@ function isiHaritaCiz(gunKazanc){
   $("#yil-icerik").innerHTML = '<div class="bos-mesaj">Yükleniyor...</div>';
   try{
     const bas = aktifYil+"-01-01", son = aktifYil+"-12-31";
-    const [gSnap, oSnap] = await Promise.all([
+    const [gSnap] = await Promise.all([
       kokRef().collection("girdiler")
         .where(firebase.firestore.FieldPath.documentId(), ">=", bas)
-        .where(firebase.firestore.FieldPath.documentId(), "<=", son).get(),
-      kokRef().collection("odemeler")
-        .where("tarih", ">=", bas).where("tarih", "<=", son).get()
+        .where(firebase.firestore.FieldPath.documentId(), "<=", son).get()
     ]);
     const aylik = Array.from({length:12}, ()=>({gun:0,mesai:0,hak:0,alinan:0}));
     const gunKazanc = {};
@@ -5158,8 +5162,15 @@ function isiHaritaCiz(gunKazanc){
       if(kz>0) gunKazanc[doc.id] = kz;
     });
     isiHaritaCiz(gunKazanc);
-    oSnap.forEach(doc=>{
-      const v=doc.data(), ay=Number(odemeAyi(v).slice(5,7))-1;
+    /* DÜZELTME: eskiden oSnap sorgusu ham tarihe göre atılıyordu — yıl
+       sınırını aşan bir ödeme (örn. 1 Ocak'ta alınıp bir önceki Aralık'a
+       sayılan avans) sorguya hiç girmiyordu, dolayısıyla Yıl Özeti ekranı ve
+       ondan beslenen Yıl PDF'i onu göstermiyordu. Artık tumOdemelerQS (tüm
+       zamanların önbelleği) odemeAyi()'nin YILINA göre süzülüyor. */
+    const tumOdemeListesi = [];
+    if(tumOdemelerQS) tumOdemelerQS.forEach(doc=> tumOdemeListesi.push(doc.data()));
+    tumOdemeListesi.filter(v=> odemeAyi(v).slice(0,4)===String(aktifYil)).forEach(v=>{
+      const ay=Number(odemeAyi(v).slice(5,7))-1;
       if(ay>=0 && ay<12) aylik[ay].alinan += Number(v.tutar)||0;
     });
     let T={gun:0,mesai:0,hak:0,alinan:0}, satirlar="";
@@ -5870,16 +5881,16 @@ function isDetayAc(isId){
   $("#is-detay-baslik").textContent = is.patronAdi;
   $("#is-detay-alt").textContent = is.santiyeAdi+" · "+tarihFormatla(is.girisTarihi)+" – "+(is.cikisTarihi?tarihFormatla(is.cikisTarihi):"devam ediyor");
   const t = isVerileriHesapla(is);
-  const calisilanlar = t.gunler.filter(g=>g.kazancVar);
+  const calisilanlar = t.gunler;   /* PDF'teki gibi HER gün (boş/izinli dahil) — tutarlılık için, "günler kayboldu" karışıklığı olmasın */
   $("#is-detay-icerik").innerHTML =
     '<div style="display:flex;gap:8px;margin:12px 0">'+
       '<div style="flex:1;background:var(--girdi);border:1.5px solid var(--cizgi);border-radius:12px;padding:10px;text-align:center"><div style="font-size:10.5px;color:var(--soluk)">HAKEDİŞ</div><div style="font-weight:800;font-size:15px">'+paraFmt(t.hakedis)+'</div></div>'+
       '<div style="flex:1;background:var(--girdi);border:1.5px solid var(--cizgi);border-radius:12px;padding:10px;text-align:center"><div style="font-size:10.5px;color:var(--soluk)">ALINAN</div><div style="font-weight:800;font-size:15px">'+paraFmt(t.alinan)+'</div></div>'+
       '<div style="flex:1;background:var(--girdi);border:1.5px solid var(--cizgi);border-radius:12px;padding:10px;text-align:center"><div style="font-size:10.5px;color:var(--soluk)">KALAN</div><div style="font-weight:800;font-size:15px;color:var(--sari)">'+paraFmt(t.kalan)+'</div></div>'+
     '</div>'+
-    '<div style="font-size:12.5px;color:var(--soluk);margin:10px 0 6px">📋 '+calisilanlar.length+' gün çalışıldı</div>'+
+    '<div style="font-size:12.5px;color:var(--soluk);margin:10px 0 6px">📋 '+calisilanlar.filter(g=>g.kazancVar).length+' gün çalışıldı · '+calisilanlar.length+' gün toplam</div>'+
     '<ul class="liste">'+
-      calisilanlar.map(g=> '<li><div class="rozet" style="background:var(--mesai)">'+g.d.getDate()+'</div><div class="orta"><div class="baslik">'+g.i.yev+' · '+g.i.mesai+' saat mesai</div><div class="alt-yazi">'+tarihFormatla(g.id)+'</div></div><div class="tutar">'+paraFmt(girdiKazanc(g.v))+'</div></li>').join("")+
+      calisilanlar.map(g=> '<li><div class="rozet" style="background:'+(g.kazancVar?"var(--mesai)":"var(--cizgi)")+'">'+g.d.getDate()+'</div><div class="orta"><div class="baslik">'+g.i.yev+(g.kazancVar?' · '+g.i.mesai+' saat mesai':'')+'</div><div class="alt-yazi">'+tarihFormatla(g.id)+'</div></div><div class="tutar">'+(g.kazancVar?paraFmt(girdiKazanc(g.v)):'')+'</div></li>').join("")+
     '</ul>'+
     (t.odemeler.length ? '<h3 style="margin:16px 0 6px;font-size:14px">💵 Alınan paralar ('+t.odemeler.length+')</h3><ul class="liste">'+
       t.odemeler.map(o=> '<li><div class="rozet" style="background:var(--altin,#FFC400)">💵</div><div class="orta"><div class="baslik">'+esc(o.not||"Ödeme")+'</div><div class="alt-yazi">'+tarihFormatla(o.tarih)+'</div></div><div class="tutar">'+paraFmt(o.tutar)+'</div></li>').join("")+'</ul>' : '');
@@ -5891,7 +5902,7 @@ function isDetayAc(isId){
 /* ---------- 💼 Bir işin PDF raporu: gerçek metin, gömülü Türkçe font ----------
    aySecim={yil,ay} verilirse SADECE o ayı kapsayan bir PDF üretir (başlıkta
    belirtilir); verilmezse işin TÜM giriş-çıkış aralığını, ay ay bölümlere
-   ayrılmış halde kapsar (0.0.0.89'deki davranış). */
+   ayrılmış halde kapsar (0.0.0.97'deki davranış). */
 function isPdfBlobOlustur(is, aySecim){
   if(!window.jspdf || !window.jspdf.jsPDF) return null;
   const { jsPDF } = window.jspdf;
@@ -7321,7 +7332,7 @@ document.addEventListener("DOMContentLoaded", ()=>{
   });
 
   /* Neler yeni kartı */
-  const YENILIK_SURUM = "0.0.0.89";
+  const YENILIK_SURUM = "0.0.0.97";
   try{ $("#cekmece-surum").textContent = "Puantaj Defterim " + YENILIK_SURUM; }catch(e){}
   try{
     if(localStorage.getItem("yenilik")!==YENILIK_SURUM) $("#yenilik-kart").classList.remove("gizli");
@@ -7427,25 +7438,6 @@ document.addEventListener("DOMContentLoaded", ()=>{
     }catch(e){}
   });
 
-  /* ---- Vurgu rengi ---- */
-  const RENKLER = {
-    sari:["#FFC400","#E5AF00"], turuncu:["#FF8A3C","#E0702A"],
-    yesil:["#35D07F","#27AE60"], mavi:["#4C9AFF","#3B7FD9"]
-  };
-  const renkUygula = ad=>{
-    const r = RENKLER[ad]||RENKLER.sari;
-    document.documentElement.style.setProperty("--sari", r[0]);
-    document.documentElement.style.setProperty("--sari-koyu", r[1]);
-    $$(".renk-sec button").forEach(b=> b.classList.toggle("secili", b.dataset.renk===ad));
-  };
-  try{ renkUygula(localStorage.getItem("vurgu")||"sari"); }catch(e){}
-  $$(".renk-sec button").forEach(b=>{
-    b.addEventListener("click", ()=>{
-      renkUygula(b.dataset.renk);
-      try{ localStorage.setItem("vurgu", b.dataset.renk); }catch(e){}
-      toast("Renk değişti 🎨");
-    });
-  });
 
   /* ---- PIN kilidi: ZORUNLU, 6 haneli, banka uygulaması tarzı ----
      pinEkraniHazirla() artık uygulama her açıldığında (onAuthStateChanged
@@ -7485,6 +7477,8 @@ document.addEventListener("DOMContentLoaded", ()=>{
     /* "PIN'imi unuttum" sadece normal giriş ekranında anlamlı — PIN'i yeni
        oluştururken veya değiştirirken "unuttum" diye bir şey yok zaten */
     $("#btn-pin-unuttum").classList.toggle("gizli", pinModu!=="gir");
+    let biyoKayitli=false; try{ biyoKayitli = !!localStorage.getItem("biyoKimlikId"); }catch(e){}
+    $("#btn-pin-biyometrik").classList.toggle("gizli", !(pinModu==="gir" && biyoKayitli));
     $("#pin-hata").textContent = "";
     pinNoktalariCiz();
     $("#pin-ekran").classList.add("acik");
@@ -7541,6 +7535,57 @@ document.addEventListener("DOMContentLoaded", ()=>{
   $("#pin-sil").addEventListener("click", ()=>{ pinGirilen = pinGirilen.slice(0,-1); pinNoktalariCiz(); });
   $("#btn-pin-degistir").addEventListener("click", ()=> pinEkraniHazirla(true));
   $("#pin-avatar-sarmal").addEventListener("click", ()=> $("#profil-foto-input").click());
+
+  /* ---- 🫆 Biyometrik (parmak izi/Yüz) kilit: WebAuthn ile PIN'e EK bir hızlı
+     açma yolu, PIN'in yerine geçmiyor (PIN her zaman yedek olarak kalıyor).
+     Sunucu tarafı doğrulama gerektirmeyen, tamamen CİHAZ ÜZERİNDE çalışan bir
+     "yerel açma jesti" olarak kullanılıyor — asıl kimlik doğrulaması zaten
+     Firebase Auth ile yapılmış durumda, bu sadece PIN yazmayı hızlandırıyor. */
+  const b64Ver = buf => btoa(String.fromCharCode(...new Uint8Array(buf)));
+  const b64Al = b64 => { const bin=atob(b64); const by=new Uint8Array(bin.length); for(let i=0;i<bin.length;i++) by[i]=bin.charCodeAt(i); return by.buffer; };
+  const biyoDesteklerMi = ()=> !!(window.PublicKeyCredential && navigator.credentials);
+  async function biyoPlatformVarMi(){
+    if(!biyoDesteklerMi()) return false;
+    try{ return await PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable(); }catch(e){ return false; }
+  }
+  function biyoKayitliMi(){ try{ return !!localStorage.getItem("biyoKimlikId"); }catch(e){ return false; } }
+
+  async function biyoKurulumYap(){
+    if(!(await biyoPlatformVarMi())){ toast("Bu cihaz/tarayıcı parmak izi/Yüz kilidini desteklemiyor"); return; }
+    try{
+      const kimlik = await navigator.credentials.create({
+        publicKey:{
+          challenge: crypto.getRandomValues(new Uint8Array(32)),
+          rp:{ name:"Puantaj Defterim" },
+          user:{ id: crypto.getRandomValues(new Uint8Array(16)), name: (kullanici&&kullanici.email)||"kullanici", displayName:(kullanici&&kullanici.displayName)||"Kullanıcı" },
+          pubKeyCredParams:[{alg:-7,type:"public-key"},{alg:-257,type:"public-key"}],
+          authenticatorSelection:{ authenticatorAttachment:"platform", userVerification:"required" },
+          timeout:60000
+        }
+      });
+      localStorage.setItem("biyoKimlikId", b64Ver(kimlik.rawId));
+      toast("🫆 Parmak izi/Yüz ile açma etkinleştirildi");
+      $("#btn-biyometrik-ac").classList.add("gizli");
+    }catch(e){ toast("Kurulum iptal edildi veya başarısız oldu"); }
+  }
+  async function biyoDene(){
+    if(!biyoKayitliMi()) return;
+    try{
+      await navigator.credentials.get({
+        publicKey:{
+          challenge: crypto.getRandomValues(new Uint8Array(32)),
+          allowCredentials:[{ id: b64Al(localStorage.getItem("biyoKimlikId")), type:"public-key" }],
+          userVerification:"required", timeout:60000
+        }
+      });
+      $("#pin-ekran").classList.remove("acik");   /* jest başarılı — PIN yazmadan aç */
+    }catch(e){ /* iptal/başarısız — kullanıcı PIN'i elle girmeye devam eder */ }
+  }
+  $("#btn-pin-biyometrik").addEventListener("click", biyoDene);
+  $("#btn-biyometrik-ac").addEventListener("click", biyoKurulumYap);
+  (async ()=>{
+    if(await biyoPlatformVarMi()) $("#btn-biyometrik-ac").classList.remove("gizli");
+  })();
   $("#btn-pin-unuttum").addEventListener("click", ()=>{
     /* "Site verilerini temizle" gibi ağır/mantıksız bir çözüm yerine: hesap
        şifresi zaten kimlik kanıtı olduğundan, çıkış yapıp e-posta+şifreyle
@@ -7629,7 +7674,48 @@ document.addEventListener("DOMContentLoaded", ()=>{
       const im = $("#masraf-foto-onizle");
       im.src = masrafFoto; im.classList.remove("gizli");
       toast("Fiş hazır, Kaydet'e bas 🧾");
+      $("#masraf-ocr-oneriler").innerHTML = ""; $("#masraf-ocr-durum").textContent = "";
+      if(window.Tesseract) $("#btn-masraf-ocr").classList.remove("gizli");
     }catch(err){ toast("Fotoğraf eklenemedi, başka dene"); }
+  });
+
+  /* ---- 🔍 Fişten tutar okuma (DENEYSEL): sadece ÖNERİ üretir, hiçbir zaman
+     otomatik doldurmaz/kaydetmez — kullanıcı önerilen rakamlardan birine
+     dokunursa tutar alanına yazılır, yanlış okursa hiçbir şeye dokunmadan
+     elle yazmaya devam edebilir. */
+  $("#btn-masraf-ocr").addEventListener("click", async ()=>{
+    if(!window.Tesseract || !masrafFoto) return;
+    const durum = $("#masraf-ocr-durum"), oneriler = $("#masraf-ocr-oneriler");
+    oneriler.innerHTML = "";
+    durum.textContent = "🔍 Fiş okunuyor, biraz sürebilir...";
+    $("#btn-masraf-ocr").disabled = true;
+    try{
+      const sonuc = await Tesseract.recognize(masrafFoto, "tur+eng");
+      const metin = (sonuc && sonuc.data && sonuc.data.text) || "";
+      /* Fiş üzerindeki, para tutarına benzeyen sayıları (1.234,56 / 350 / 45,00 gibi)
+         yakalayıp tekilleştiriyoruz — hangisinin "toplam" olduğunu tahmin etmeye
+         çalışmıyoruz, hepsini öneri olarak sunuyoruz, seçim kullanıcıda kalıyor. */
+      const bulunanlar = [...new Set((metin.match(/\d{1,3}(?:[.,]\d{3})*(?:[.,]\d{1,2})?/g)||[])
+        .map(s=> s.replace(/\./g,"").replace(",", "."))
+        .map(Number)
+        .filter(n=> n>=1 && n<=100000)
+      )];
+      if(!bulunanlar.length){
+        durum.textContent = "Fişte okunabilir bir tutar bulunamadı, elle yazabilirsin.";
+      }else{
+        durum.textContent = "Bulunan tutarlardan birine dokun (hiçbiri doğru değilse elle yaz):";
+        bulunanlar.slice(0,6).forEach(n=>{
+          const b = document.createElement("button");
+          b.className = "eksik-cip"; b.textContent = paraFmt(n);
+          b.addEventListener("click", ()=>{ $("#masraf-tutar").value = String(n).replace(".", ","); toast("Tutar dolduruldu, kontrol etmeyi unutma"); });
+          oneriler.appendChild(b);
+        });
+      }
+    }catch(e){
+      durum.textContent = "Fiş okunamadı (deneysel özellik) — elle yazabilirsin.";
+    }finally{
+      $("#btn-masraf-ocr").disabled = false;
+    }
   });
 
   /* ---- Ekip ---- */
@@ -8331,6 +8417,14 @@ document.addEventListener("DOMContentLoaded", ()=>{
   $("#kayit-ara").addEventListener("input", gunListesiCiz);
 
   /* Şantiye ekle / güncelle */
+  $("#yeni-santiye-yevmiye").addEventListener("input", ()=>{
+    /* 2026 yasal günlük brüt asgari ücret: 1.101₺ (SGK günlük kazanç alt
+       sınırı). Enformel/nakit yevmiyeli çalışmada brüt-net ayrımı genelde
+       yapılmadığından kaba bir referans olarak kullanılıyor — engellemiyor,
+       sadece bilgilendiriyor, kullanıcı isterse yine de kaydedebiliyor. */
+    const y = sayi($("#yeni-santiye-yevmiye").value)||0;
+    $("#yevmiye-asgari-uyari").classList.toggle("gizli", !(y>0 && y<1101));
+  });
   $("#btn-santiye-ekle").addEventListener("click", async ()=>{
     const ad = $("#yeni-santiye-ad").value.trim();
     const yevmiye = sayi($("#yeni-santiye-yevmiye").value)||0;
