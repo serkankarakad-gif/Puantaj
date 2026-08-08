@@ -666,7 +666,10 @@ function santiyeListCiz(){
     li.querySelector(".sil").addEventListener("click", async ()=>{
       if(!confirm('"'+s.ad+'" silinsin mi? (Eski günlerin hesabı bozulmaz, ücretler günlere işlendi)')) return;
       try{
-        await kokRef().set({santiyeler: ayarlar.santiyeler.filter(x=>x.id!==s.id)},{merge:true});
+        /* Aynı yarış durumu düzeltmesi: arrayRemove tam nesne eşleşmesiyle
+           çalışıyor, "s" zaten ayarlar.santiyeler'den birebir geldiği için
+           güvenli. */
+        await kokRef().set({santiyeler: firebase.firestore.FieldValue.arrayRemove(s)},{merge:true});
         toast("Şantiye silindi");
       }catch(e){ hataGoster(e); }
     });
@@ -5904,7 +5907,7 @@ function isDetayAc(isId){
 /* ---------- 💼 Bir işin PDF raporu: gerçek metin, gömülü Türkçe font ----------
    aySecim={yil,ay} verilirse SADECE o ayı kapsayan bir PDF üretir (başlıkta
    belirtilir); verilmezse işin TÜM giriş-çıkış aralığını, ay ay bölümlere
-   ayrılmış halde kapsar (0.0.1.2'deki davranış). */
+   ayrılmış halde kapsar (0.0.1.6'deki davranış). */
 function isPdfBlobOlustur(is, aySecim){
   if(!window.jspdf || !window.jspdf.jsPDF) return null;
   const { jsPDF } = window.jspdf;
@@ -6897,6 +6900,14 @@ document.addEventListener("DOMContentLoaded", ()=>{
     const tutar = sayi($("#borc-tutar").value);
     const tarih = $("#borc-tarih").value || tarihId(new Date());
     if(!kisi || !tutar || tutar<=0){ toast("Kişi ve tutarı doldur kanka"); return; }
+    /* ÇİFT KAYIT KORUMASI: bu ".add()" ile her tıklamada YENİ, rastgele ID'li
+       bir kayıt oluşturuyor (gün kaydı gibi sabit tarih-ID değil) — kullanıcı
+       hızlı iki kez basarsa (yavaş bağlantıda "basmadı mı" diye tekrar
+       basmak gayet olası) aynı borç iki kez eklenebiliyordu. Düğmeyi işlem
+       sürerken devre dışı bırakmak bunu kesin olarak engelliyor. */
+    const btn = $("#btn-borc-ekle");
+    if(btn.disabled) return;
+    btn.disabled = true;
     try{
       await kokRef().collection("borclar").add({
         kisi, tutar, tarih,
@@ -6910,6 +6921,7 @@ document.addEventListener("DOMContentLoaded", ()=>{
       $("#borc-kisi").value=""; $("#borc-tutar").value=""; $("#borc-not").value=""; $("#borc-vade").value="";
       toast("Borç kaydedildi 🤝");
     }catch(e){ hataGoster(e); }
+    finally{ btn.disabled = false; }
   });
 
   /* Ay kilidi */
@@ -6918,8 +6930,13 @@ document.addEventListener("DOMContentLoaded", ()=>{
     const kilitli = ayarlar.kapali.includes(anahtar);
     if(!kilitli && !confirm(AYLAR[aktifAy]+" "+aktifYil+" kilitlensin mi? Kilitliyken bu aya kayıt eklenemez, silinemez.")) return;
     try{
-      const yeni = kilitli ? ayarlar.kapali.filter(k=>k!==anahtar) : [...ayarlar.kapali, anahtar];
-      await kokRef().set({kapali: yeni},{merge:true});
+      /* Aynı yarış durumu düzeltmesi burada da geçerli: primitive string
+         değerler için arrayUnion/arrayRemove'a geçildi. */
+      if(kilitli){
+        await kokRef().set({kapali: firebase.firestore.FieldValue.arrayRemove(anahtar)},{merge:true});
+      }else{
+        await kokRef().set({kapali: firebase.firestore.FieldValue.arrayUnion(anahtar)},{merge:true});
+      }
       toast(kilitli ? "Ay kilidi açıldı 🔓" : "Ay kilitlendi 🔒");
     }catch(e){ hataGoster(e); }
   });
@@ -7334,7 +7351,7 @@ document.addEventListener("DOMContentLoaded", ()=>{
   });
 
   /* Neler yeni kartı */
-  const YENILIK_SURUM = "0.0.1.2";
+  const YENILIK_SURUM = "0.0.1.6";
   try{ $("#cekmece-surum").textContent = "Puantaj Defterim " + YENILIK_SURUM; }catch(e){}
   try{
     if(localStorage.getItem("yenilik")!==YENILIK_SURUM) $("#yenilik-kart").classList.remove("gizli");
@@ -7685,6 +7702,11 @@ document.addEventListener("DOMContentLoaded", ()=>{
        kilit sadece ÇALIŞMA kayıtlarını korur; bir masrafı (fiş, malzeme
        parası) o ayı kapattıktan sonra fark edip girmek gayet normal, bunu
        engellemek gereksiz bir kısıtlamaydı. */
+    /* ÇİFT KAYIT KORUMASI: ".add()" her tıklamada yeni kayıt oluşturuyor,
+       hızlı çift tıklamaya karşı düğme geçici olarak kapatılıyor. */
+    const btn = $("#btn-masraf-ekle");
+    if(btn.disabled) return;
+    btn.disabled = true;
     try{
       const veri = {
         tarih, tutar,
@@ -7710,6 +7732,7 @@ document.addEventListener("DOMContentLoaded", ()=>{
         toast("Masraf kaydedildi 🧾 Hesabına alacak olarak eklendi");
       }
     }catch(e){ hataGoster(e); }
+    finally{ btn.disabled = false; }
   });
   let masrafFoto = null;
   $("#btn-masraf-foto").addEventListener("click", ()=> $("#masraf-foto-sec").click());
@@ -8319,6 +8342,12 @@ document.addEventListener("DOMContentLoaded", ()=>{
        (inşaatta normal bir şey) — bu yeni ödemeyi engellemek, "ay bitti ama
        parası hâlâ yatmadı" gerçek hayat senaryosunda parayı hiç
        kaydedemeyeceğin, kritik bir hataya yol açıyordu. */
+    /* ÇİFT KAYIT KORUMASI: yeni ödeme eklerken ".add()" her tıklamada yeni
+       kayıt oluşturuyor (düzenleme modunda zaten ".update()" olduğundan bu
+       risk yok, ama yine de tutarlılık için düğme genel olarak kilitleniyor). */
+    const btn = $("#btn-odeme-ekle");
+    if(btn.disabled) return;
+    btn.disabled = true;
     try{
       if(duzenlenenOdeme){
         /* Not: burada duzenlenenOdeme.tarih değil aitAy'a bakıyoruz — kilit,
@@ -8366,6 +8395,7 @@ document.addEventListener("DOMContentLoaded", ()=>{
         toast("Para girişi kaydedildi 💵");
       }
     }catch(e){ hataGoster(e); }
+    finally{ btn.disabled = false; }
   });
 
   /* ---------- Tutar onarımı: "5.000" → 5 TL kaydedilmiş kayıtları düzelt ---------- */
@@ -8480,14 +8510,25 @@ document.addEventListener("DOMContentLoaded", ()=>{
     const mesaiUcret = sayi($("#yeni-santiye-mesai").value)||0;
     if(!ad || !yevmiye){ toast("Şantiye adı ve yevmiyesini yaz kanka"); return; }
     try{
-      let yeni, yeniId = null;
+      let yeniId = null;
       if(duzenlenenSantiyeId){
-        yeni = ayarlar.santiyeler.map(x=> x.id===duzenlenenSantiyeId ? {...x, ad, yevmiye, mesaiUcret} : x);
+        const yeni = ayarlar.santiyeler.map(x=> x.id===duzenlenenSantiyeId ? {...x, ad, yevmiye, mesaiUcret} : x);
+        await kokRef().set({santiyeler: yeni},{merge:true});
       }else{
+        /* GÜVENLİK/SAĞLAMLIK: eskiden "[...ayarlar.santiyeler, yeni]" ile YEREL
+           diziyi okuyup üstüne ekleyip TAMAMINI geri yazıyorduk — eğer kullanıcı
+           çok hızlı art arda iki şantiye eklerse (Firestore'un ilk yazmayı
+           yerel `ayarlar.santiyeler`'e yansıtması birkaç yüz milisaniye sürebilir),
+           ikinci yazma hâlâ ESKİ (birinciyi içermeyen) diziyi baz alıp üzerine
+           yazabilir, ilk eklenen şantiye sessizce kaybolabilirdi. Firestore'un
+           kendi atomik `arrayUnion` işlemi bu riski tamamen ortadan kaldırıyor —
+           sunucu tarafında "diziye ekle" işlemi yapılıyor, yerel diziye hiç
+           bakılmıyor, iki hızlı yazma birbirini asla ezemiyor. */
         yeniId = Date.now().toString(36);
-        yeni = [...ayarlar.santiyeler, {id: yeniId, ad, yevmiye, mesaiUcret}];
+        await kokRef().set({
+          santiyeler: firebase.firestore.FieldValue.arrayUnion({id: yeniId, ad, yevmiye, mesaiUcret})
+        },{merge:true});
       }
-      await kokRef().set({santiyeler: yeni},{merge:true});
       if(yeniId){
         /* Yeni bir şantiye/patron eklendiğinde bunu otomatik "son kullanılan"
            yap — aksi halde bir sonraki gün kaydı hâlâ ESKİ şantiyeyi hatırlar
@@ -8511,8 +8552,10 @@ document.addEventListener("DOMContentLoaded", ()=>{
     const tarih = $("#yeni-belge-tarih").value;
     if(!ad || !tarih){ toast("Belge adı ve son geçerlilik tarihini gir"); return; }
     try{
-      const yeni = [...(ayarlar.belgeler||[]), {id: Date.now().toString(36), ad, tarih}];
-      await kokRef().set({belgeler: yeni},{merge:true});
+      /* Yarış durumu düzeltmesi (şantiyeler ile aynı sebep): atomik arrayUnion */
+      await kokRef().set({
+        belgeler: firebase.firestore.FieldValue.arrayUnion({id: Date.now().toString(36), ad, tarih})
+      },{merge:true});
       toast("Belge eklendi 📄 — süresi yaklaşınca haber veririm");
       $("#yeni-belge-ad").value=""; $("#yeni-belge-tarih").value="";
     }catch(e){ hataGoster(e); }
@@ -8760,7 +8803,8 @@ document.addEventListener("DOMContentLoaded", ()=>{
     }
     try{
       const yeni = {id: Date.now().toString(36), ad, soyad, santiyeAdi, patronAdi, girisTarihi, cikisTarihi: null};
-      await kokRef().set({isler: [...(ayarlar.isler||[]), yeni]}, {merge:true});
+      /* Yarış durumu düzeltmesi: atomik arrayUnion (aynı gerekçe: santiyeler/belgeler) */
+      await kokRef().set({isler: firebase.firestore.FieldValue.arrayUnion(yeni)}, {merge:true});
       toast("🏗️ İşe giriş kaydedildi: "+patronAdi);
       $("#is-giris-modal").classList.remove("acik");
       $("#modal-perde").classList.remove("acik");

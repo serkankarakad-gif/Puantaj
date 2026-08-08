@@ -1,5 +1,5 @@
 /* Puantaj Defterim — service worker (çevrimdışı kabuk) */
-const KASA = "puantaj-0.0.1.2";
+const KASA = "puantaj-0.0.1.6";
 const DOSYALAR = ["./", "./index.html", "./manifest.webmanifest", "./style.css", "./app.js", "./firebase-config.js", "./sabitler.js", "./font-liberationsans-regular.js", "./font-liberationsans-bold.js", "./pin-arka-fotograf.jpg"];
 
 self.addEventListener("install", e => {

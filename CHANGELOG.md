@@ -5,6 +5,31 @@ kullanır: `0.0.0.X` — X, her güncellemede 1 artar. Uygulama içindeki sürü
 (alt bilgi + "Neler yeni" kartı) ve dağıtılan zip dosyasının adı her zaman
 birebir aynıdır.
 
+## 0.0.1.6 — Çift kayıt koruması: borç/masraf/ödeme
+- "Devam et" isteği üzerine farklı bir hata sınıfı arandı: "çift gönderme" — aynı düğmeye hızlı art arda iki kez basınca kaydın iki kez oluşması
+- Önce gün kaydı (`btn-gun-kaydet`) kontrol edildi: GÜVENLİ çıktı, çünkü `.doc(modalTarih).set(...)` kullanıyor — tarih zaten sabit bir doküman ID'si, çift tıklasa bile İKİNCİ yazma AYNI dokümanın üzerine yazıyor, yeni bir kayıt oluşturmuyor (idempotent)
+- Asıl risk `.collection(X).add(...)` kullanan üç düğmede bulundu (her çağrıda YENİ, rastgele ID'li bir doküman oluşturuyor): Borç Ekle, Masraf Ekle, Ödeme/Avans Ekle — yavaş bağlantıda "basmadı mı" diye tekrar basmak gerçekçi bir senaryo, sonucu aynı borcun/masrafın/avansın iki kez kaydedilmesi olurdu
+- Üçüne de aynı basit ve güvenilir koruma eklendi: işlem başlarken düğme `disabled=true` yapılıyor, `finally` bloğunda (başarılı/başarısız fark etmez) tekrar `disabled=false` yapılıyor — düğme zaten kilitliyken gelen ikinci tıklama fonksiyonun en başında sessizce yok sayılıyor
+
+## 0.0.1.5 — Derin güncelleme devamı: ay kilidi + şantiye silme
+- "Devam devam" isteği üzerine aynı yarış-durumu deseni için tarama genişletildi, 2 nokta daha bulundu
+- `ayarlar.kapali` (ay kilitleme/açma): basit metin değerleri (örn. "2026-07") olduğundan `arrayUnion`/`arrayRemove` ile atomikleştirildi
+- `ayarlar.santiyeler` silme işlemi: silinecek nesne (`s`) zaten yerel diziden birebir geldiğinden `arrayRemove(s)` ile tam nesne eşleşmesi güvenli şekilde çalışıyor
+- Kod tabanında artık bilinen, düzeltilmemiş bir "oku-değiştir-yaz" yarış durumu deseni kalmadı (santiyeler ekle/sil, belgeler ekle, isler ekle, kapali ekle/çıkar — hepsi atomik)
+
+## 0.0.1.4 — Derin güncelleme: sessiz veri kaybı riski (yarış durumu) kapatıldı
+- Kullanıcı isteği: "uygulama için derin güncelleme yap" — bu sefer görsel değil, kodun senkronizasyon/async katmanında gerçek bir risk arandı
+- Bulunan risk sınıfı: `[...(ayarlar.X||[]), yeni]` şeklindeki "yerel diziyi oku → üstüne ekle → TAMAMINI Firestore'a geri yaz" deseni, üç yerde (şantiye ekleme, belge ekleme, iş girişi) kullanılıyordu. Bu desen, kullanıcı ÇOK HIZLI art arda iki kayıt eklerse (örn. iki şantiyeyi peş peşe eklemek), klasik bir "kaybolan güncelleme" (lost update) yarış durumuna açık: ilk yazmanın sonucu yerel `ayarlar.X`'e Firestore'un `onSnapshot` dinleyicisi üzerinden yansımadan (bu birkaç yüz milisaniye sürebilir) ikinci yazma başlarsa, ikinci yazma hâlâ İLK KAYDI İÇERMEYEN eski diziyi baz alıp üzerine yazar — ilk eklenen kayıt HİÇBİR HATA MESAJI OLMADAN sessizce kaybolur
+- Düzeltme: üç konumda da (`btn-santiye-ekle` yeni kayıt dalı, `btn-belge-ekle`, iş girişi) Firestore'un kendi atomik `firebase.firestore.FieldValue.arrayUnion(...)` işlemine geçildi — bu işlem sunucu tarafında çalışır, yerel diziye hiç bakmaz, dolayısıyla art arda gelen iki yazma birbirini asla ezemez, ikisi de korunur
+- Bilinçli olarak kapsam dışı bırakılanlar: düzenleme (edit) ve silme (delete) işlemleri — bunlar `arrayUnion`/`arrayRemove` ile trivially atomikleştirilemiyor (bir dizinin İÇİNDEKİ bir nesnenin belirli bir alanını değiştirmek, basit ekle/çıkar değil) ve kullanıcı davranışı olarak zaten çok daha nadir/yavaş yapılan işlemler, bu yüzden gereksiz karmaşıklık/test riski almamak için dokunulmadı
+
+## 0.0.1.3 — Yeni uygulama ikonu: gün batımı + vinç + baret
+- Kullanıcı bir ilham fotoğrafı (vinç, gün batımı, baret, plan kağıtları) paylaşıp uygulamanın ana ekran ikonunun bu atmosferde olmasını istedi
+- Önce (kullanıcının açıkça istediği "önce görsel göster, dosyayı verme" kuralına uyularak) Python/PIL ile bir ikon tasarımı çizilip hem büyük hem gerçek-boyut (96px) önizlemesi ayrı görseller olarak paylaşıldı, onay alındıktan SONRA gerçek dosyalara işlendi
+- Tasarım: lacivertten turuncuya/sarıya geçen gün batımı gradyanı, bulanıklaştırılmış bir güneş parıltısı, iki kule vinç silüeti (biri belirgin, biri uzakta/soluk — derinlik hissi), alt kısımda bina/iskele hatları, odakta sarı bir baret — küçük ikon boyutunda (96px) test edilip hâlâ net okunduğu doğrulandı
+- 3 boyut/varyant üretildi: 192×192, 512×512, ve Android'in "maskable" formatı için özel olarak ortaya küçültülüp güvenli-alan payı bırakılmış bir 512×512 varyant (kenarları kırpılsa da baret/vinç tam ortada kalıyor)
+- `manifest.webmanifest`'teki (Python `json` modülüyle güvenli şekilde parse edilip yeniden yazıldı) 3 ikon girdisi VE `index.html`'deki 2 ayrı `apple-touch-icon` etiketindeki (iOS'un "Ana ekrana ekle" özelliği için ayrıca gerekiyor, manifest'ten bağımsız) gömülü base64 veriler yeni ikonla değiştirildi — hem Android hem iOS artık aynı yeni ikonu gösteriyor
+
 ## 0.0.1.2 — Profil fotoğrafı değiştirme artık sadece Ayarlar'dan
 - Kullanıcı isteği: "orda profil resmi koyma şeklini kaldır, profil koyma Ayarlar kısmından ayarlansın"
 - Hamburger menüdeki avatardan fotoğraf değiştirme kaldırıldı (kamera rozeti ve tıklama olayı silindi, artık sadece salt-okunur görüntü)
