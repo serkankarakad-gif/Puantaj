@@ -76,10 +76,11 @@
 
 <!-- ============ PIN KİLİDİ (zorunlu, banka uygulaması tarzı) ============ -->
 <div id="pin-ekran">
+  <div id="pin-arka-foto"></div>
+  <canvas id="pin-arka-canvas"></canvas>
   <div class="pin-ust">
     <div class="pin-avatar-sarmal" id="pin-avatar-sarmal">
       <div class="pin-avatar" id="pin-avatar">?</div>
-      <div class="pin-kamera">📷</div>
     </div>
     <div class="pin-selam" id="pin-selam">Hoş geldin,</div>
     <div class="pin-ad" id="pin-baslik-ad">—</div>
@@ -172,7 +173,6 @@
     <div class="cekmece-bas">
       <div class="avatar-sarmal" id="avatar-sarmal">
         <div class="avatar" id="menu-avatar">?</div>
-        <div class="avatar-kamera">📷</div>
       </div>
       <input type="file" accept="image/*" id="profil-foto-input" style="position:absolute;width:1px;height:1px;opacity:0;overflow:hidden;pointer-events:none">
       <div class="ad" id="menu-ad">—</div>
@@ -214,6 +214,7 @@
       <li data-grup="diger"><button data-goruntu="tv"><span class="ikon">📺</span> Canlı TV</button></li>
       <li data-grup="diger"><button data-goruntu="video"><span class="ikon">▶️</span> Video</button></li>
       <li data-grup="diger"><button data-goruntu="arac"><span class="ikon">🛠️</span> Araçlar & Bilgi</button></li>
+      <li data-grup="diger"><a href="https://www.turkiye.gov.tr/sgk-tescil-ve-hizmet-dokumu" target="_blank" rel="noopener"><span class="ikon">📄</span> e-Devlet'te SGK Kaydımı Sorgula</a></li>
 
       <li style="margin-top:6px"><button data-goruntu="ayarlar"><span class="ikon">⚙️</span> Ayarlar</button></li>
       <li><button id="btn-geribildirim"><span class="ikon">💬</span> Geri bildirim gönder</button></li>
@@ -327,6 +328,12 @@
       <div class="kart gizli" id="yenilik-kart" style="border-color:var(--sari)">
         <h2>🎁 Neler yeni?</h2>
         <ul style="padding-left:18px;font-size:13.5px;line-height:1.9">
+          <li><b>🐞 KRİTİK: PIN ekranından profil fotoğrafı değiştirilebiliyordu:</b> Kullanıcı buldu — kilit ekranındaki avatara dokununca (PIN girmeden/bilmeden) profil fotoğrafı değiştirilebiliyordu, bu da PIN'in koruma amacını anlamsız kılıyordu ("babamın telefonunu aldı diyelim, şifresini bilmese bile saçma bir fotoğraf koyabilir"). Fotoğraf değiştirme özelliği PIN ekranından tamamen kaldırıldı — artık SADECE uygulamanın içinden (hamburger menü, kilidi açtıktan SONRA) erişilebiliyor</li>
+          <li><b>📷 Profil fotoğrafı değiştirme artık SADECE Ayarlar'dan:</b> Kullanıcı isteğiyle, hamburger menüdeki avatardan fotoğraf değiştirme kaldırıldı (kamera rozeti de gitti, artık sadece görüntülüyor) — tek ve net bir yer olsun diye, fotoğraf değiştirme artık SADECE Ayarlar → Hesap kartından yapılıyor (küçük bir önizleme + "📷 Profil fotoğrafı seç" düğmesiyle). `avatarCiz()` tek bir merkezi fonksiyona dönüştürüldü, hamburger menü/Ayarlar önizlemesi/PIN ekranındaki avatarların HEPSİNİ aynı anda güncelliyor</li>
+          <li><b>📷 PIN ekranına kullanıcının kendi fotoğrafı eklendi:</b> Kullanıcı kendi inşaat/şantiye fotoğrafını gönderdi ("benim fotoğraf" diye onayladı), arka planına yerleştirildi. Fotoğraf sıkıştırılıp (~37 KB'a indirilip) projeye eklendi, üstüne okunabilirlik için koyu bir gradyan karartma bindirildi, yavaş bir "yakınlaşma" (Ken Burns) animasyonuyla canlandırıldı — sabit bir fotoğraf yerine hafifçe hareket eden bir sahne hissi veriyor. Önceki turdaki sıcak ışık lekesi Canvas'ı kaldırılmadı, üstüne "overlay" karışım modunda ince bir katman olarak bindirildi — fotoğrafın üstünde hafif, sıcak bir parıltı efekti oluşturuyor</li>
+          <li><b>✨ PIN ekranı: yay animasyonları + "video gibi" arka plan:</b> Kullanıcı isteğiyle (önce canlı önizleme onaylatılarak) PIN ekranı tamamen animasyonlu hale getirildi — ekran açılışında yumuşak büyüme, avatar süzülerek inme, her rakamda "zıplayan" nokta (yay/spring efekti), yanlış PIN'de kırmızı titreşim, doğru PIN'de yeşil dalga. Arka plan artık düz siyah değil — gerçek bir video dosyası yerine (ağır, düşük bütçeli telefonlarda sorun çıkarır) Canvas'ta çizilen, yavaşça hareket eden 3 sıcak ışık lekesi var; neredeyse hiç pil/veri tüketmiyor. Tuş takımı buzlu cam (frosted glass) görünümünde, arkadan ışık hafifçe sızıyor. Tüm animasyonlar sadece `transform`/`opacity` kullanıyor (GPU hızlandırmalı, en pürüzsüz yöntem)</li>
+          <li><b>🧹 Uçtan uca kalite taraması:</b> Kullanıcı isteğiyle tüm proje detaylı incelendi — hiçbir sorun/eksik kalmasın diye. Kontrol edilenler: debug/console.log kalıntısı (yok), yarım kalmış TODO notu (yok), 154 id'li düğmenin hepsinin JS'e bağlı olduğu (hepsi bağlı — bazıları `getElementById` bazıları `$()` ile, üçü ilk taramada yanlış alarm verdi ama tek tek doğrulandı), kullanılmayan CSS sınıfları (2 tanesi gerçekten ölüymüş — önceki turlarda kaldırılan "Vurgu rengi" ve eski PIN alt metni kalıntılarıydı, temizlendi), görünür metinlerde çift boşluk/bozukluk (yok, hem index.html hem app.js'teki tüm metin dizileri tek tek tarandı), kullanıcı girdilerinin (patron adı, not vb.) ekrana basılırken HTML kaçışlama (`esc()`) ile güvenli işlendiği (evet, tutarlı). HTML etiket dengesi (div/section/ul/li) ve CSS parantez dengesi son kez doğrulandı, hepsi tam</li>
+          <li><b>🐞 e-Devlet bağlantısı hamburger menüde görünmüyordu:</b> Kullanıcı bildirdi — 0.0.0.96'da eklenen e-Devlet SGK linki, "Emeklilik yolculuğu" kartının İÇİNDEYDİ, o kart da SGK hedefi girilmediği sürece hiç görünmüyordu, yani link pratikte bulunamıyordu. Artık hamburger menüye, hiçbir ayar gerektirmeden HER ZAMAN görünen bağımsız bir "📄 e-Devlet'te SGK Kaydımı Sorgula" bağlantısı eklendi</li>
           <li><b>⚖️ YENİ: Asgari ücret altı yevmiye uyarısı:</b> Google araştırmasıyla 2026 yasal günlük brüt asgari ücretin (1.101₺, 4857 sayılı İş Kanunu m.39 — bu sınırın altında ödeme yapılamaz) doğrulandı. Şantiye/patron eklerken yevmiye bu tutarın altındaysa, alanın altında nazik bir bilgi notu çıkıyor — engellemiyor (enformel/nakit yevmiyeli çalışmada durum değişebilir), sadece haberdar ediyor</li>
           <li><b>🔎 Google araştırması: KVKK + e-Devlet gerçekleri ışığında 2 güncelleme:</b> (1) KVKK'nın Nisan 2026'da yayınladığı, mesai takibinde biyometrik veri kullanımına dair yeni ilke kararı bulundu — bizim durumumuzda geçerli değil (biyometriğimiz hiçbir yere gönderilmiyor, telefonun kendi donanımında kalıyor) ama şeffaflık için Ayarlar'daki biyometrik düğmesinin altına bunu açıkça belirten bir not eklendi. (2) e-Devlet'in SGK verisi için gerçek bir API'si OLMADIĞI doğrulandı (sadece giriş gerektiren bir sayfa var) — "Emeklilik yolculuğu" kartına, kendi tahminimizin resmi kayıtla aynı olmayabileceğini belirten bir uyarı ve gerçek e-Devlet SGK sayfasına giden bir bağlantı eklendi</li>
           <li><b>🎨 Ayarlar'daki çakışan renk seçicileri birleştirildi:</b> Kullanıcı "Ayarlar'da sorunlar var, kaydetme sorunları var" diye bildirdi. Bulunan: "Vurgu rengi" (4 renk) ve "Uygulama teması" (Amoled dahil 5 seçenek) diye İKİ AYRI renk seçici vardı, ikisi de AYNI --sari rengini değiştiriyordu ama farklı yöntemlerle — biri seçilince diğerinin etkisi CSS önceliği yüzünden sessizce görünmez oluyordu, bu da "seçtim ama değişmedi/kaydolmadı" hissi yaratıyordu. Eski, daha eksik olan "Vurgu rengi" kartı kaldırıldı, tek ve tutarlı "Uygulama teması" (Amoled/renk) sistemi kaldı</li>
@@ -1496,7 +1503,7 @@
         <p style="font-size:13px;color:var(--soluk);margin-bottom:12px">Hata mı gördün, fikrin mi var? Direkt geliştiriciye ulaş:</p>
         <a class="btn btn-cizgili" style="display:block;text-align:center;text-decoration:none;margin-bottom:10px" href="https://wa.me/905051252339?text=Puantaj%20Defterim%20hakkında:" target="_blank">💬 WhatsApp'tan yaz</a>
         <a class="btn btn-cizgili" style="display:block;text-align:center;text-decoration:none" href="tel:05051252339">📞 0505 125 23 39</a>
-        <p style="font-size:11px;color:var(--soluk);margin-top:12px;text-align:center">Sürüm: 0.0.0.97 · Serkan Karakaş</p>
+        <p style="font-size:11px;color:var(--soluk);margin-top:12px;text-align:center">Sürüm: 0.0.1.2 · Serkan Karakaş</p>
       </div>
       <div class="kart">
         <h2>🔒 PIN kilidi</h2>
@@ -1518,6 +1525,12 @@
       </div>
       <div class="kart">
         <h2>👤 Hesap</h2>
+        <div style="display:flex;align-items:center;gap:14px;margin-bottom:16px">
+          <div class="avatar" id="ayar-avatar-onizle" style="width:64px;height:64px;border-radius:16px;background:var(--sari);color:var(--asfalt);display:flex;align-items:center;justify-content:center;font-family:'Saira Condensed';font-size:28px;font-weight:800;background-size:cover;background-position:center;flex-shrink:0">?</div>
+          <div style="flex:1">
+            <button class="btn btn-cizgili" id="btn-ayar-foto-degistir" style="width:100%">📷 Profil fotoğrafı seç</button>
+          </div>
+        </div>
         <div class="alan">
           <label>Adın Soyadın</label>
           <input type="text" id="ayar-ad">

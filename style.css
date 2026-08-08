@@ -232,12 +232,7 @@ nav.cekmece.acik{transform:translateX(0)}
   font-family:'Saira Condensed';font-size:26px;font-weight:800;
   background-size:cover;background-position:center;overflow:hidden;
 }
-.avatar-sarmal{position:relative;width:56px;height:56px;margin-bottom:10px;cursor:pointer}
-.avatar-kamera{
-  position:absolute;bottom:-4px;right:-4px;width:22px;height:22px;border-radius:50%;
-  background:var(--asfalt2);border:2px solid var(--asfalt);display:flex;align-items:center;justify-content:center;
-  font-size:11px;
-}
+.avatar-sarmal{position:relative;width:56px;height:56px;margin-bottom:10px}
 .cekmece-bas .ad{font-weight:600;font-size:16px}
 .cekmece-bas .eposta{font-size:12px;color:#9EA0A9;word-break:break-all}
 .cekmece ul{list-style:none;padding:10px;flex:1}
@@ -245,8 +240,13 @@ nav.cekmece.acik{transform:translateX(0)}
   width:100%;display:flex;align-items:center;gap:14px;
   padding:14px 12px;border-radius:12px;color:#E7E8EC;font-size:15px;font-weight:500;text-align:left;
 }
+.cekmece li a{
+  width:100%;display:flex;align-items:center;gap:14px;
+  padding:14px 12px;border-radius:12px;color:#E7E8EC;font-size:15px;font-weight:500;text-align:left;
+  text-decoration:none;box-sizing:border-box;
+}
 .cekmece li button.aktif{background:var(--asfalt2);color:var(--sari)}
-.cekmece li button .ikon{font-size:20px;width:26px;text-align:center}
+.cekmece li button .ikon, .cekmece li a .ikon{font-size:20px;width:26px;text-align:center}
 .cekmece-alt{padding:14px}
 .cekmece-alt button{
   width:100%;padding:13px;border-radius:12px;background:#3A1D1D;color:#FF8A80;font-weight:600;
@@ -621,10 +621,7 @@ html[data-tema="acik"] .alt-nav{background:rgba(255,255,255,.94)}
 }
 .rozet-nav.goster{display:flex}
 
-/* ---------- RENK SEÇİMİ ---------- */
-.renk-sec{display:flex;gap:12px;margin-top:6px}
-.renk-sec button{width:44px;height:44px;border-radius:50%;border:3px solid transparent}
-.renk-sec button.secili{border-color:var(--metin)}
+/* ---------- Uygulama teması (Amoled/renk) ---------- */
 #tema-secim button{width:40px;height:40px;border-radius:50%;border:3px solid transparent;font-size:16px}
 #tema-secim button.secili{border-color:var(--metin);transform:scale(1.1)}
 
@@ -632,48 +629,86 @@ html[data-tema="acik"] .alt-nav{background:rgba(255,255,255,.94)}
 #pin-ekran{
   position:fixed;inset:0;z-index:9000;background:#0A0B0D;
   display:none;flex-direction:column;align-items:center;padding:64px 28px 36px;
+  transition:opacity .35s ease, transform .35s cubic-bezier(.34,1.56,.64,1);
+  overflow:hidden;
 }
-#pin-ekran.acik{display:flex}
-.pin-ust{display:flex;flex-direction:column;align-items:center;gap:10px}
-.pin-avatar-sarmal{position:relative;width:100px;height:100px;cursor:pointer}
+#pin-arka-foto{
+  position:absolute; inset:0; z-index:0;
+  background:url('pin-arka-fotograf.jpg') center 30%/cover no-repeat;
+  animation:pinFotoYakinlas 22s ease-in-out infinite alternate;
+}
+#pin-arka-foto:after{
+  content:""; position:absolute; inset:0;
+  background:linear-gradient(180deg, rgba(10,11,13,.55) 0%, rgba(10,11,13,.72) 45%, rgba(10,11,13,.94) 100%);
+}
+@keyframes pinFotoYakinlas{ 0%{transform:scale(1);} 100%{transform:scale(1.12);} }
+#pin-arka-canvas{ position:absolute; inset:0; z-index:0; mix-blend-mode:overlay; opacity:.6; }
+#pin-ekran > *:not(#pin-arka-foto):not(#pin-arka-canvas){ position:relative; z-index:1; }
+#pin-ekran.acik{display:flex; animation:pinEkranGir .45s cubic-bezier(.2,.8,.2,1);}
+#pin-ekran.kapaniyor{opacity:0; transform:scale(1.04);}
+@keyframes pinEkranGir{
+  0%{opacity:0; transform:scale(.97);}
+  100%{opacity:1; transform:scale(1);}
+}
+.pin-ust{display:flex;flex-direction:column;align-items:center;gap:10px; animation:pinAvatarGir .5s .1s cubic-bezier(.2,.8,.2,1) both;}
+@keyframes pinAvatarGir{
+  0%{opacity:0; transform:translateY(-14px) scale(.9);}
+  100%{opacity:1; transform:translateY(0) scale(1);}
+}
+.pin-avatar-sarmal{position:relative;width:100px;height:100px;}
 .pin-avatar{
   width:100px;height:100px;border-radius:50%;background:var(--sari);color:var(--asfalt);
   display:flex;align-items:center;justify-content:center;font-family:'Saira Condensed';font-size:42px;font-weight:800;
   background-size:cover;background-position:center;border:3px solid var(--cizgi);
+  box-shadow:0 0 0 0 rgba(255,196,0,.35); animation:pinAvatarNabiz 2.6s ease-in-out infinite;
 }
-.pin-kamera{
-  position:absolute;bottom:0;right:0;width:30px;height:30px;border-radius:50%;
-  background:var(--sari);border:3px solid #0A0B0D;display:flex;align-items:center;justify-content:center;font-size:14px;
+@keyframes pinAvatarNabiz{
+  0%,100%{box-shadow:0 0 0 0 rgba(255,196,0,.22);}
+  50%{box-shadow:0 0 0 10px rgba(255,196,0,0);}
 }
 .pin-selam{font-size:14px;color:var(--soluk);font-weight:600;margin-top:6px}
 .pin-ad{font-size:21px;font-weight:800;color:var(--metin);margin-top:-6px}
-.pin-alt-baslik{font-size:13px;color:var(--soluk);margin-top:26px;text-align:center;font-weight:500}
+.pin-alt-baslik{font-size:13px;color:var(--soluk);margin-top:26px;text-align:center;font-weight:500; animation:pinSolgunGir .5s .18s ease both;}
+@keyframes pinSolgunGir{ 0%{opacity:0;} 100%{opacity:1;} }
 .pin-noktalar{display:flex;gap:16px;margin-top:22px}
 .pin-noktalar span{
-  width:16px;height:16px;border-radius:50%;border:2px solid var(--cizgi);background:transparent;transition:.15s;
+  width:16px;height:16px;border-radius:50%;border:2px solid var(--cizgi);background:transparent;
+  transition:background .15s, border-color .15s, transform .32s cubic-bezier(.34,1.56,.64,1);
 }
-.pin-noktalar span.dolu{background:var(--sari);border-color:var(--sari)}
-.pin-noktalar.titre{animation:pinTitre .4s}
+.pin-noktalar span.dolu{background:var(--sari);border-color:var(--sari); animation:pinNoktaSek .32s cubic-bezier(.34,1.56,.64,1);}
+@keyframes pinNoktaSek{
+  0%{transform:scale(.4);} 60%{transform:scale(1.35);} 100%{transform:scale(1);}
+}
+.pin-noktalar.titre{animation:pinTitre .45s cubic-bezier(.36,.07,.19,.97);}
+.pin-noktalar.titre span.dolu{background:#FF5A4E; border-color:#FF5A4E;}
 @keyframes pinTitre{
-  0%,100%{transform:translateX(0)} 20%{transform:translateX(-10px)} 40%{transform:translateX(10px)}
-  60%{transform:translateX(-8px)} 80%{transform:translateX(8px)}
+  0%,100%{transform:translateX(0)} 15%{transform:translateX(-11px)} 30%{transform:translateX(9px)}
+  45%{transform:translateX(-7px)} 60%{transform:translateX(6px)} 75%{transform:translateX(-4px)} 90%{transform:translateX(2px)}
 }
-.pin-hata{font-size:12.5px;color:#FF8A80;font-weight:700;margin-top:14px;min-height:16px}
+.pin-noktalar.basarili span{ background:var(--yesil,#3FB27F); border-color:var(--yesil,#3FB27F); animation:pinBasariDalga .5s cubic-bezier(.2,.8,.2,1);}
+@keyframes pinBasariDalga{ 0%{transform:scale(1);} 40%{transform:scale(1.5);} 100%{transform:scale(1);} }
+.pin-hata{font-size:12.5px;color:#FF8A80;font-weight:700;margin-top:14px;min-height:16px; transition:opacity .2s;}
 .pin-biyometrik{
   background:var(--kart,#1F2329);color:var(--sari);border:1.5px solid var(--sari);
   font-size:13.5px;font-weight:700;padding:12px 22px;border-radius:16px;margin-top:6px;
+  transition:transform .12s;
 }
+.pin-biyometrik:active{transform:scale(.96);}
 .pin-tus-takimi{
-  display:grid;grid-template-columns:repeat(3,72px);gap:18px;margin-top:30px;
+  display:grid;grid-template-columns:repeat(3,72px);gap:16px;margin-top:30px;
+  animation:pinSolgunGir .5s .24s ease both;
+  background:rgba(255,255,255,.04); backdrop-filter:blur(18px); -webkit-backdrop-filter:blur(18px);
+  border:1px solid rgba(255,255,255,.08); border-radius:28px; padding:20px;
 }
 .pin-tus-takimi button{
-  width:72px;height:72px;border-radius:50%;background:var(--kart,#1F2329);color:var(--metin);
+  width:72px;height:72px;border-radius:50%;background:rgba(255,255,255,.06);color:var(--metin);
+  border:1px solid rgba(255,255,255,.08);
   font-size:26px;font-weight:600;display:flex;align-items:center;justify-content:center;
+  transition:transform .08s cubic-bezier(.34,1.56,.64,1), background .08s;
 }
-.pin-tus-takimi button:active{background:var(--asfalt2)}
-.pin-tus-takimi .pin-bos{background:transparent}
-#pin-sil{background:transparent;font-size:22px;color:var(--soluk)}
-.pin-not{font-size:11.5px;color:var(--soluk);max-width:300px;text-align:center;margin-top:auto;padding-top:24px;line-height:1.6}
+.pin-tus-takimi button:active{background:rgba(255,196,0,.18); transform:scale(.88);}
+.pin-tus-takimi .pin-bos{background:transparent; border:none;}
+#pin-sil{background:transparent;font-size:22px;color:var(--soluk); border:none;}
 .pin-unuttum{
   margin-top:auto;padding-top:28px;background:none;border:none;color:var(--sari);
   font-size:13px;font-weight:700;text-decoration:underline;

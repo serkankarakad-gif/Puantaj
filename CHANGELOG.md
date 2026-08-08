@@ -5,6 +5,42 @@ kullanır: `0.0.0.X` — X, her güncellemede 1 artar. Uygulama içindeki sürü
 (alt bilgi + "Neler yeni" kartı) ve dağıtılan zip dosyasının adı her zaman
 birebir aynıdır.
 
+## 0.0.1.2 — Profil fotoğrafı değiştirme artık sadece Ayarlar'dan
+- Kullanıcı isteği: "orda profil resmi koyma şeklini kaldır, profil koyma Ayarlar kısmından ayarlansın"
+- Hamburger menüdeki avatardan fotoğraf değiştirme kaldırıldı (kamera rozeti ve tıklama olayı silindi, artık sadece salt-okunur görüntü)
+- Ayarlar → 👤 Hesap kartına yeni bir bölüm eklendi: küçük bir avatar önizlemesi (`#ayar-avatar-onizle`) + "📷 Profil fotoğrafı seç" düğmesi — fotoğraf değiştirmenin artık TEK yeri burası
+- `avatarCiz()` merkezi bir fonksiyona dönüştürüldü: hamburger menü avatarı, Ayarlar'daki yeni önizleme, ve PIN ekranındaki avatar — üçü de tek çağrıda aynı anda güncelleniyor. Bu sayede önceki turda PIN ekranı için ayrıca yazılmış olan manuel "eğer PIN ekranı açıksa avatarı da tazele" kodu artık gereksiz hale geldi, kaldırıldı (kod tekrarı azaldı)
+
+## 0.0.1.1 — PIN ekranına kullanıcının kendi fotoğrafı eklendi
+- Kullanıcı gerçek bir inşaat fotoğrafı istedi, önce telif hakkı riski konusunda uyarıldı (haklı olarak sabırsızlandı), sonra kendi fotoğrafını gönderip "benim fotoğraf" diye sahipliğini onayladı
+- Fotoğraf Python/PIL ile işlendi: JPEG kalitesi optimize edilip ~37 KB'a indirildi (`pin-arka-fotograf.jpg` olarak projeye eklendi), `sw.js` önbellek listesine eklendi (çevrimdışı da çalışsın diye)
+- CSS'te `#pin-arka-foto` katmanı eklendi: fotoğraf arka plan olarak yerleşiyor, üstüne okunabilirlik için alttan koyulaşan bir gradyan karartma bindiriliyor (PIN noktaları/tuş takımı her zaman net okunuyor), yavaş bir "Ken Burns" yakınlaşma animasyonu (22 saniyede %12 büyüyüp geri küçülüyor) ile sabit durmuyor
+- Önceki turdaki sıcak ışık lekesi Canvas'ı kaldırılmadı — `mix-blend-mode:overlay` ile fotoğrafın üstüne ince bir sıcak parıltı katmanı olarak bindirildi, ikisi birlikte çalışıyor
+- Kullanıcının önceki turda çizilen (SVG) vinç silüeti artık gereksiz olduğundan kaldırıldı — gerçek fotoğraf onun yerini aldı
+
+## 0.0.1.0 — PIN ekranı: animasyonlu + video-benzeri arka plan, güvenlik açığı kapatıldı
+- (Sürüm numarası kuralı: 0.0.0.99'dan sonra kullanıcının istediği gibi 0.0.1.0'a geçildi — araba kilometre sayacı gibi.)
+- Kullanıcı önce PIN ekranının "çok basit" kaldığını belirtti, Google'dan modern kilit ekranı animasyon trendleri araştırıldı: 2026 yönelimi yay-tabanlı (spring) animasyonlar, anında görsel geri bildirim, ve düşük/orta segment cihazlarda performans sorunu yaratmayacak HAFİF efektler
+- Önce canlı, dokunulabilir bir HTML önizlemesi hazırlanıp kullanıcıya onaylatıldı (gerçek koda geçmeden önce) — kullanıcı "video animasyon" de istedi, "arka taraf siyah kalmasın" dedi
+- Gerçek video dosyası yerine (birkaç MB, zayıf internette/düşük bütçeli telefonlarda ağır) Canvas'ta çizilen, yavaşça hareket eden 3 sıcak ışık lekesi eklendi — PIN ekranı kapalıyken çizim durduruluyor (pil tasarrufu)
+- Tüm animasyonlar `transform`/`opacity` ile sınırlandı (GPU hızlandırmalı, pürüzsüz)
+- KRİTİK GÜVENLİK DÜZELTMESİ: Bu çalışma sırasında kullanıcı fark etti — PIN ekranındaki avatara dokununca (yani PIN girmeden/bilmeden) profil fotoğrafı değiştirilebiliyordu. "Babamın telefonunu aldı diyelim, şifresini bilmese bile saçma bir fotoğraf koyabilir" — haklı. Fotoğraf değiştirme özelliği PIN ekranından TAMAMEN kaldırıldı (hem JS hem HTML hem CSS'ten), artık sadece kilidi açtıktan sonra hamburger menüden erişilebiliyor
+
+## 0.0.0.99 — Uçtan uca kalite taraması
+- Kullanıcı isteği: "hiçbir sıkıntı, hiçbir eksik kalmasın... bütün programları baştan aşağı incele, test et... noktalama ve benzeri hatalar olmasın"
+- Debug kalıntısı taraması: `console.log`/`debugger` yok, TODO/FIXME notu yok
+- 154 id'li düğmenin tamamı JS'e bağlı olduğu doğrulandı (bazıları `getElementById`, bazıları `$()`, bazıları `data-goruntu` genel mekanizmasıyla — üç düğme ilk otomatik taramada "bağlı değil" gibi göründü ama tek tek elle kontrol edilip hepsinin gerçekte bağlı olduğu doğrulandı)
+- Kullanılmayan CSS taraması: 201 sınıftan 6'sı ilk bakışta "ölü" göründü, 4'ü (`d-yarim`, `secili-tam` vb.) aslında JS'te dinamik string birleştirmeyle (`"secili-"+durum`) üretiliyormuş — yanlış alarm, dokunulmadı. Gerçekten ölü olan 2 tanesi (`.renk-sec` — önceki turda kaldırılan "Vurgu rengi" kartından kalma; `.pin-not` — eski PIN ekranından kalma) temizlendi
+- Görünür tüm metinler (index.html'deki HTML içerikleri + app.js'teki tüm string sabitleri) çift boşluk/bozukluk için programatik olarak tarandı — hiçbir sorun bulunamadı
+- Kullanıcı girdilerinin (patron adı, şantiye adı, not alanları) ekrana `innerHTML` ile basıldığı her yerde `esc()` ile güvenli kaçışlandığı doğrulandı — HTML bozulması/enjeksiyon riski yok
+- Son doğrulama: `node --check` temiz, HTML etiket dengesi (div/section/ul/li) tam, CSS parantez dengesi (390/390) tam
+
+## 0.0.0.98 — e-Devlet bağlantısı hamburger menüye taşındı
+- Kullanıcı bildirdi: "e-Devlet falan gibi şeyler hamburger menüde görünmüyor"
+- Sebep bulundu: 0.0.0.96'da eklenen e-Devlet SGK linki "Emeklilik yolculuğu" kartının içine konmuştu, ama o kart `sgkCiz()` içinde `if(!(hedef>0)){ kart.classList.add("gizli"); return; }` koşuluyla — kullanıcı Ayarlar'dan bir SGK hedefi girmediği sürece kart (ve içindeki link) HİÇ görünmüyordu
+- Düzeltildi: hamburger menüye, "Araçlar & Bilgi" satırının hemen altına, hiçbir ön koşula bağlı olmayan bağımsız bir "📄 e-Devlet'te SGK Kaydımı Sorgula" bağlantısı eklendi — artık her zaman görünüyor
+- Bu menü öğesi `<button>` değil `<a href target="_blank">` olduğundan, `.cekmece li button` stilinin aynısı `.cekmece li a` için de CSS'e eklendi (görünüm birebir aynı, davranış farklı — sayfa içi gezinme değil, yeni sekmede dış bağlantı açıyor)
+
 ## 0.0.0.97 — Yasal asgari ücret altı yevmiye uyarısı
 - Google araştırması devam etti, bu sefer 2026 asgari ücret/işçi hakları odaklı
 - Doğrulanan gerçek: 2026 yılı için günlük brüt asgari ücret (SGK günlük kazanç alt sınırı) 1.101 TL — 4857 sayılı İş Kanunu madde 39 gereği bu sınırın altında ödeme yapılamaz

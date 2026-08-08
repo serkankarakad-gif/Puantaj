@@ -248,16 +248,24 @@ function kullaniciBilgiYaz(){
    — 200x200 JPEG %75 kalite genelde 15-30 KB civarı kalıyor, Firestore'un 1 MB belge
    sınırının çok altında, ekstra bir kurulum/masraf gerektirmiyor. */
 function avatarCiz(){
-  const el = $("#menu-avatar");
-  if(!el) return;
-  if(ayarlar.profilFoto){
-    el.style.backgroundImage = "url("+ayarlar.profilFoto+")";
-    el.textContent = "";
-  }else{
-    el.style.backgroundImage = "";
+  /* Uygulamadaki HER avatar görüntüsünü (hamburger menü, Ayarlar önizlemesi,
+     PIN ekranı) tek bir yerden, aynı mantıkla günceller — fotoğraf değiştirme
+     artık SADECE Ayarlar'dan yapılabiliyor ama sonucu her yerde görünmeli. */
+  const adHarfi = ()=>{
     const ad = (kullanici && kullanici.displayName) || "";
-    el.textContent = ad.trim().charAt(0).toUpperCase() || "?";
-  }
+    return ad.trim().charAt(0).toUpperCase() || "?";
+  };
+  ["#menu-avatar", "#ayar-avatar-onizle", "#pin-avatar"].forEach(secici=>{
+    const el = $(secici);
+    if(!el) return;
+    if(ayarlar.profilFoto){
+      el.style.backgroundImage = "url("+ayarlar.profilFoto+")";
+      el.textContent = "";
+    }else{
+      el.style.backgroundImage = "";
+      el.textContent = adHarfi();
+    }
+  });
 }
 
 function profilFotoSecildi(dosya){
@@ -316,13 +324,7 @@ function ayarlariDinle(){
        şantiye/patron değişince eski işin adı/ücreti kaybolmasın diye */
     ayarlar.isler = Array.isArray(d.isler) ? d.isler : [];
     ayarlar.profilFoto = d.profilFoto || "";
-    avatarCiz();
-    /* PIN ekranı zaten açıksa (profil fotoğrafı ayarlar yüklenmeden önce
-       gösterilmiş olabilir) avatarı orada da tazele */
-    if($("#pin-ekran").classList.contains("acik")){
-      const pa = $("#pin-avatar");
-      if(ayarlar.profilFoto){ pa.style.backgroundImage = "url("+ayarlar.profilFoto+")"; pa.textContent=""; }
-    }
+    avatarCiz();   /* artık #pin-avatar dahil TÜM avatarları tek seferde günceller */
     $("#ayar-yevmiye").value = ayarlar.yevmiye||"";
     $("#ayar-mesai").value   = ayarlar.mesaiUcret||"";
     $("#ayar-ek").value      = ayarlar.ekGunluk||"";
@@ -5902,7 +5904,7 @@ function isDetayAc(isId){
 /* ---------- 💼 Bir işin PDF raporu: gerçek metin, gömülü Türkçe font ----------
    aySecim={yil,ay} verilirse SADECE o ayı kapsayan bir PDF üretir (başlıkta
    belirtilir); verilmezse işin TÜM giriş-çıkış aralığını, ay ay bölümlere
-   ayrılmış halde kapsar (0.0.0.97'deki davranış). */
+   ayrılmış halde kapsar (0.0.1.2'deki davranış). */
 function isPdfBlobOlustur(is, aySecim){
   if(!window.jspdf || !window.jspdf.jsPDF) return null;
   const { jsPDF } = window.jspdf;
@@ -7332,7 +7334,7 @@ document.addEventListener("DOMContentLoaded", ()=>{
   });
 
   /* Neler yeni kartı */
-  const YENILIK_SURUM = "0.0.0.97";
+  const YENILIK_SURUM = "0.0.1.2";
   try{ $("#cekmece-surum").textContent = "Puantaj Defterim " + YENILIK_SURUM; }catch(e){}
   try{
     if(localStorage.getItem("yenilik")!==YENILIK_SURUM) $("#yenilik-kart").classList.remove("gizli");
@@ -7447,6 +7449,48 @@ document.addEventListener("DOMContentLoaded", ()=>{
      9000 üstte duruyor). */
   let pinGirilen = "", pinIlkGiris = "", pinModu = "gir", pinDegistiriliyor = false;
 
+  /* ---- "Video gibi" hafif Canvas arka planı ----
+     Gerçek bir video dosyası eklemek (birkaç MB) düşük bütçeli telefonlarda/
+     zayıf internette ağır olurdu — bunun yerine birkaç yumuşak, yavaşça
+     dönen sıcak ışık lekesi çiziliyor. Neredeyse hiç pil/veri tüketmiyor,
+     ama arka plan artık düz siyah durmuyor. */
+  (function pinArkaPlanBaslat(){
+    const cv = document.getElementById("pin-arka-canvas");
+    if(!cv || !cv.getContext) return;
+    const ctx = cv.getContext("2d");
+    let boyutlandirildi = false;
+    function boyutAyarla(){
+      cv.width = window.innerWidth; cv.height = window.innerHeight; boyutlandirildi = true;
+    }
+    window.addEventListener("resize", boyutAyarla);
+    const lekeler = [
+      {x:.25, y:.2, r:.55, renk:"255,196,0", hiz:.00025, faz:0},
+      {x:.75, y:.55, r:.6, renk:"228,87,46", hiz:.00019, faz:2},
+      {x:.5, y:.85, r:.5, renk:"63,178,127", hiz:.00022, faz:4},
+    ];
+    function cizArkaPlan(zaman){
+      if(!boyutlandirildi) boyutAyarla();
+      /* PIN ekranı kapalıyken boşuna çizmeyip GPU/pil tasarrufu yapıyoruz */
+      if($("#pin-ekran").classList.contains("acik")){
+        const w = cv.width, h = cv.height;
+        ctx.fillStyle = "#0A0B0D"; ctx.fillRect(0,0,w,h);
+        ctx.globalCompositeOperation = "lighten";
+        lekeler.forEach(l=>{
+          const dx = Math.sin(zaman*l.hiz + l.faz)*.12, dy = Math.cos(zaman*l.hiz*.8 + l.faz)*.10;
+          const cx = (l.x+dx)*w, cy = (l.y+dy)*h, r = l.r*Math.max(w,h);
+          const g = ctx.createRadialGradient(cx,cy,0,cx,cy,r);
+          g.addColorStop(0, "rgba("+l.renk+",.16)");
+          g.addColorStop(1, "rgba("+l.renk+",0)");
+          ctx.fillStyle = g;
+          ctx.beginPath(); ctx.arc(cx,cy,r,0,Math.PI*2); ctx.fill();
+        });
+        ctx.globalCompositeOperation = "source-over";
+      }
+      requestAnimationFrame(cizArkaPlan);
+    }
+    requestAnimationFrame(cizArkaPlan);
+  })();
+
   window.pinEkraniHazirla = function(degistirMi){
     pinDegistiriliyor = !!degistirMi;
     let pin = null;
@@ -7534,7 +7578,12 @@ document.addEventListener("DOMContentLoaded", ()=>{
   });
   $("#pin-sil").addEventListener("click", ()=>{ pinGirilen = pinGirilen.slice(0,-1); pinNoktalariCiz(); });
   $("#btn-pin-degistir").addEventListener("click", ()=> pinEkraniHazirla(true));
-  $("#pin-avatar-sarmal").addEventListener("click", ()=> $("#profil-foto-input").click());
+  /* GÜVENLİK: PIN ekranındaki avatardan fotoğraf değiştirmeyi BİLEREK
+     kaldırdık — kullanıcı bildirdi: telefonu ele geçiren biri (PIN'i
+     bilmese bile) kilidi hiç açmadan profil fotoğrafını değiştirebiliyordu,
+     bu da PIN'in koruma amacını anlamsız kılıyordu. Fotoğraf değiştirmek
+     artık SADECE uygulamanın içinden (hamburger menüdeki avatar, kilidi
+     açtıktan SONRA erişilebilir) yapılabiliyor. Bu satır kasıtlı olarak yok. */
 
   /* ---- 🫆 Biyometrik (parmak izi/Yüz) kilit: WebAuthn ile PIN'e EK bir hızlı
      açma yolu, PIN'in yerine geçmiyor (PIN her zaman yedek olarak kalıyor).
@@ -8674,7 +8723,10 @@ document.addEventListener("DOMContentLoaded", ()=>{
   });
 
   /* ---------- 💼 İşlerim: giriş / çıkış / detay ---------- */
-  $("#avatar-sarmal").addEventListener("click", ()=> $("#profil-foto-input").click());
+  /* Profil fotoğrafı değiştirme buradan (hamburger menü avatarı) kaldırıldı —
+     kullanıcı isteğiyle artık sadece Ayarlar ekranından yapılıyor, tek ve net
+     bir yer olsun diye. Bu avatar artık sadece GÖRÜNTÜLÜYOR, tıklanamıyor. */
+  $("#btn-ayar-foto-degistir").addEventListener("click", ()=> $("#profil-foto-input").click());
   $("#profil-foto-input").addEventListener("change", e=>{
     const dosya = e.target.files && e.target.files[0];
     if(dosya) profilFotoSecildi(dosya);
