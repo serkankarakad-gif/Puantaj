@@ -5,6 +5,60 @@ kullanır: `0.0.0.X` — X, her güncellemede 1 artar. Uygulama içindeki sürü
 (alt bilgi + "Neler yeni" kartı) ve dağıtılan zip dosyasının adı her zaman
 birebir aynıdır.
 
+## 0.0.2.9 — 🔒 EKRAN KİLİDİ: yakınlaştırma engeli + yatay kayma düzeltmesi
+- Kullanıcı isteği: "ekran büyüyüp küçülmesin, sağa sola kesinlikle kaymasın"
+- 🔒 **Yakınlaştırma kilidi.** `<meta viewport>` zaten `user-scalable=no, maximum-scale=1.0` içeriyordu ama iki boşluk vardı:
+  1. **iOS Safari 10'dan beri `user-scalable=no`'yu bilerek yok sayar** (erişilebilirlik gerekçesiyle) → iPhone'da çimdik yakınlaştırma hep mümkündü. Çözüm: `gesturestart`/`gesturechange`/`gestureend` olayları `preventDefault` ile engellendi (bu olaylar yalnızca Safari'de var)
+  2. `touch-action` CSS'te **hiç tanımlı değildi** → çift dokunma yakınlaştırması hiçbir tarayıcıda engellenmiyordu. `html, body{touch-action:pan-x pan-y}` eklendi — `manipulation` yerine `pan-x pan-y` seçildi çünkü `manipulation` çimdik yakınlaştırmayı KESMEZ
+  - Ek: masaüstünde Ctrl/⌘ + tekerlek engellendi; eski Android WebView'ler için `touchstart`'ta `touches.length > 1` engeli (tek parmağa dokunmuyor)
+- ↔️ **Yatay kayma: kuralın kendisi sebepmiş.** Mevcut `html, body{max-width:100vw}` kuralı taşmayı ÖNLEMEK için yazılmıştı ama `100vw` dikey kaydırma çubuğunun genişliğini de kapsar → sayfa, görüntü alanından tam çubuk genişliği kadar geniş olur, yani kural taşmanın kaynağıydı. `max-width:100%` ile değiştirildi (üstteki tanımda `!important` olmadığı için sonraki kural geçerli)
+  - Ek: `overscroll-behavior:none` (yatay lastik bant), ve son güvenlik ağı olarak `scroll` dinleyicisinde `scrollX !== 0` ise `scrollTo(0, scrollY)`
+- ✅ **Bozulmadığı doğrulanan davranışlar**: takvimde tek parmakla sağa/sola kaydırıp ay değiştirme (`#takvim` touchstart/touchend, tek parmak olduğu için engellenmiyor); `#asistan-cipler` yatay kaydırması (`pan-x` izin veriyor); uygulamada iki parmak gerektiren başka jest bulunmadığı taranarak doğrulandı
+- ↩️ **Denenip GERİ ALINAN iki değişiklik**:
+  1. `body{user-select:none}` — büyüteç balonunu engellemek için yazılmıştı. İstenen şey yakınlaştırma kilidiydi; metin seçimini kapatmak not/tutar/e-posta kopyalama yeteneğini kaldırırdı. Yakınlaştırma zaten `touch-action` + jest engeliyle çözülüyor
+  2. `*{min-width:0}` — özgüllük sayesinde mevcut `min-width` kurallarını bozmuyordu, ama evrensel seçicilerle esneklik davranışını değiştirmek sonradan izlenemeyen yerleşim hatalarının klasik kaynağı. Var olan `main, section, .kart{min-width:0}` zaten kapsıyor
+- Erişilebilirlik notu: iOS'un bu viewport ayarını yok sayması bilinçli bir tercihtir. Kilit uygulandı ancak sistem genelindeki Büyüteç ve uygulama içindeki "Büyük yazı" ayarı çalışmaya devam ediyor
+- Üç yerde sürüm güncellendi: `app.js`, `sw.js`, zip adı — hepsi `0.0.2.9`
+
+## 0.0.2.8 — 🎨 TASARIM: hafta şeridi, çipler, ay gezgini + iki görünürlük hatası
+- Kullanıcı isteği: "kaldığımız yerden devam et" — tasarım sıralamasında sıradaki bileşenler
+- 🐞 **HATA: `.hs-gun.pzr{opacity:.45}` bilgi taşıyan pazarları da soluklaştırıyordu.** `anaHaftaCiz()` aynı öğeye `pzr` ile birlikte `bugun` ve `dolu`/`yok` sınıflarını da ekleyebiliyor. İki sonuç:
+  1. Bugün pazara denk geldiğinde sarı çerçeve %45'e soluyor → haftada bir gün "bugün" işareti kayboluyordu
+  2. Çalışılmış bir pazar (inşaatta sık, genelde mesaili) yeşil dolgusuyla soluk görünüyordu — anlamın tersi
+  - Düzeltme: `.hs-gun.pzr.bugun`, `.hs-gun.pzr.dolu`, `.hs-gun.pzr.yok` için `opacity:1`. Soluklaştırma yalnızca boş pazarlarda kalıyor
+  - Desen taraması: takvimdeki pazar hücresi `opacity` değil `background:var(--pazar)` kullandığı için aynı hata orada YOK; `.rozet-kut.kilitli` 0.0.2.6'da düzeltilmişti. Tek örnek buymuş
+- 🐞 **HATA: `.eksik-cip:active` kontrastı.** Basılıyken zemin `var(--sari)` oluyor ama metin rengine dokunulmuyordu; koyu temada metin `#ECEDF1` olduğu için sarı üstüne beyaz yazı çıkıyor, basılı anda okunmuyordu. `color:#1a1200` eklendi (kategori çiplerinde zaten doğru olan koyu metin yaklaşımı)
+- 📅 `.ay-bar .ay-ad` 24→26px + harf aralığı; ok düğmeleri `opacity:.9`, basılınca sarı kenar
+- 👋 `.selam-blok` başlık 27→28px, alt satır 13→13.5px ve opaklık artırıldı
+- 📊 `.hedef-bar` 22→24px, dolguya iç gölge ile sınır netliği
+- 🔒 **PIN ekranı bilinçli olarak DEĞİŞTİRİLMEDİ**: 72px tuşlar, hatalı girişte kırmızı titreme animasyonu, avatar/selam akışı — zaten iyi tasarlanmış. Değişiklik için değişiklik yapılmadı
+- ⚡ Yeni iç gölge hafif modda kapatılıyor
+- Üç yerde sürüm güncellendi: `app.js`, `sw.js`, zip adı — hepsi `0.0.2.8`
+
+## 0.0.2.7 — 💰 FIFO doğrulaması + beklenen-tahsil akışındaki FIFO atlaması düzeltildi
+- Kullanıcı sorusu: "avans aldığımda geçen ay alacağım varsa geçen aya, yoksa çalıştığım aya yazıyor değil mi — bozmadın inşallah"
+- ✅ **DOĞRULAMA: FIFO çekirdeği el değmemiş.** `odemeAitAySecDoldur`, `enEskiOdenmemisAy`, `odemeAyi`, `odemeTarihiAyaGoreAyarla`, `odemeleriAyaGoreDoldur` fonksiyonları orijinal 0.0.1.6 dosyasıyla MD5 karşılaştırmasıyla denetlendi — beşi de birebir aynı
+- ✅ **Para hesabının tamamı da denetlendi**: `girdiKazanc`, `oranBul`, `guncelOranlar`, `hesaplaAralik`, `sayi`, `borcKalan`, `hesapla` — yedisi de orijinalle birebir aynı
+- 🐞 **BULUNAN HATA (0.0.1.7'de kendi eklediğim özellikte): beklenen-tahsil akışı FIFO'yu atlıyordu.** `beklenenCiz()` içindeki "✔ Tahsil edildi" işleyicisi `aitAy`'ı sabit olarak `bugun.slice(0,7)` yazıyordu. Normal ödeme akışı ise `enEskiOdenmemisAy()` sonucunu kullanıyor. Sonuç: aynı para, hangi düğmeyle kaydedildiğine göre farklı aya yazılabiliyordu — geçen aydan ödenmemiş bakiye varken beklenen listesinden tahsil edilen avans yanlışlıkla bu aya sayılıyordu
+  - Düzeltme: tahsil öncesi `await enEskiOdenmemisAy()` çağrılıyor, sonuç varsa `aitAy` olarak kullanılıyor
+  - FIFO sorgusu hata verirse bugünün ayına düşülüyor (try/catch) — kayıt hiçbir durumda kaybolmuyor
+  - Bildirim metni artık hangi aya yazıldığını açıkça söylüyor
+- Üç yerde sürüm güncellendi: `app.js`, `sw.js`, zip adı — hepsi `0.0.2.7`
+
+## 0.0.2.6 — 🎨 TASARIM: her ekranda görünen bileşenler + degrade metin hatası
+- Kullanıcı isteği: "sen sırala onlara göre devam edelim"
+- Sıralama gerekçesi: üst bar ve çekmece HER ekranda görünüyor; toast 43 yerden çağrılıyor; PIN her açılışta zorunlu. Bunlar bugüne dek hiç elden geçmemişti
+- 🚨 **HATA: `.topbar h1` degrade metni desteklenmeyen tarayıcıda GÖRÜNMEZ.** `background-clip:text` + `color:transparent` deseni kullanılıyordu; `background-clip:text` desteklenmeyen eski Android WebView'de degrade uygulanmaz ama saydamlık kalır → uygulama adı bomboş görünür. Düz `var(--sari)` taban rengi verilip degrade `@supports ((-webkit-background-clip:text) or (background-clip:text))` içine alındı
+  - Aynı desen 0.0.2.2'de `.banka-kart .bakiye` için düzeltilmişti; bu ikinci örnekti
+- 🐞 **HATA: `.cekmece li a.aktif` kuralı yoktu.** `.cekmece li button.aktif` tanımlıydı ama bağlantı türü menü satırları için karşılığı eksikti → seçiliyken hiçbir işaret vermiyorlardı. Ortak kurala alındı; ayrıca seçili satıra `::before` ile sol kenar işareti eklendi
+- 👆 **Dokunma hedefi**: `.hamburger` 42×42 → 44×44 px (erişilebilirlik tabanı)
+- 📌 **Üst bar**: alt kenar çizgisi + gölge (yapışkan başlığın sınırı belirsizdi); `h1 small` kontrastı artırıldı (#B9BAC1 → #C6C7CE)
+- 💬 **Toast**: kenarlık + belirgin gölge (alt navigasyonla aynı koyu tonda olup birbirine yapışıyordu), 14→14.5px, ağırlık 500→600
+- 🏅 **Rozetler**: `.rozet-kut.kilitli` üzerinde `opacity:.35` ve `grayscale(1)` birlikte uygulanınca rozet okunamaz hale geliyordu — kilitli rozetin amacı hedef göstermek olduğu için opaklık .5'e çıkarıldı, gri filtre korundu. `.acildi` durumu vurgu zeminiyle güçlendirildi
+- Doğrulamalar: `--vurgu-zemin` ve `--asfalt2` değişkenlerinin tanımlı olduğu; çekmecede gerçekten `<a>` bulunduğu (kural hedefsiz değil); açık temada `--asfalt` override EDİLMEDİĞİ, dolayısıyla çekmece/üst bardaki sabit kodlu renklerin güvenli olduğu
+- ⚡ Yeni gölgeler hafif moda eklendi
+- Üç yerde sürüm güncellendi: `app.js`, `sw.js`, zip adı — hepsi `0.0.2.6`
+
 ## 0.0.2.5 — 🎨 TASARIM: dokunulmamış bileşenler + iki görünürlük hatası
 - Kullanıcı sorusu: "neyimiz kaldı tasarım yapmadığımız"
 - Sayım yapıldı: CSS'te 29 bileşen bölümü var, 0.0.2.2'de yalnızca 6'sına dokunulmuştu. Kullanım yoğunluğuna göre öncelik verildi — listeler (kodda 145 kullanım) ve alt sayfa/modal (120) en çok görülüp hiç dokunulmamış iki bileşendi

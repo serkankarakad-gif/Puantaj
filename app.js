@@ -1542,19 +1542,31 @@ function beklenenCiz(){
       '<button class="sil" aria-label="Sil">🗑️</button>';
     const btnler = li.querySelectorAll("[aria-label]");
     btnler[0].addEventListener("click", async ()=>{
-      /* Tahsil edildi: gerçek bir ödeme kaydına dönüştür (bugünün tarihiyle, "avans" türünde,
-         hangi ayın hesabına yazılacağı bugünün ayına göre belirlenir — kullanıcı isterse
-         Ödemeler ekranından sonradan düzenleyip ayını değiştirebilir), ardından beklenen kaydı silinir. */
+      /* Tahsil edildi: gerçek bir ödeme kaydına dönüştürülür.
+
+         DÜZELTME (0.0.2.7): burada `aitAy` körü körüne bugünün ayına yazılıyordu.
+         Bu, uygulamanın çekirdek FIFO kuralını ATLIYORDU — normal ödeme ekranında
+         `enEskiOdenmemisAy()` çalışır ve geçen aydan ödenmemiş bakiyen varsa avans
+         ORAYA sayılır, yoksa bulunduğun aya düşer. Beklenen ödemeden tahsil edilen
+         para bu kuralın dışında kalıyordu, yani aynı para hangi düğmeyle
+         kaydedildiğine göre farklı aya yazılabiliyordu.
+         Artık normal akışla birebir aynı: önce en eski ödenmemiş ay sorulur. */
       try{
         const bugun = tarihId(new Date());
+        let aitAy = bugun.slice(0,7);
+        try{
+          const enEski = await enEskiOdenmemisAy();
+          if(enEski) aitAy = enEski;
+        }catch(e){}   /* FIFO sorgusu başarısız olursa bugünün ayına düş (veri kaybı yok) */
         await kokRef().collection("odemeler").add({
-          tarih: bugun, aitAy: bugun.slice(0,7), tutar: Number(b.tutar)||0,
+          tarih: bugun, aitAy, tutar: Number(b.tutar)||0,
           tur: b.tur || "avans",
           not: (b.not||"") + " (beklenenden tahsil edildi)",
           olusturma: firebase.firestore.FieldValue.serverTimestamp()
         });
         await kokRef().collection("beklenenler").doc(b.id).delete();
-        toast("💵 Tahsil edildi, 'Aldığım paralar'a eklendi ✓");
+        const [yy,aa] = aitAy.split("-").map(Number);
+        toast("💵 Tahsil edildi → "+AYLAR[aa-1]+" "+yy+" hesabına yazıldı ✓");
       }catch(e){ hataGoster(e); }
     });
     btnler[1].addEventListener("click", async ()=>{
@@ -6760,6 +6772,42 @@ window.addEventListener("popstate", ()=>{
 
 document.addEventListener("DOMContentLoaded", ()=>{
 
+  /* 🔒 EKRAN KİLİDİ: yakınlaştırma yok, yatay kayma yok
+     ─────────────────────────────────────────────────────────────────
+     CSS'teki `touch-action:pan-x pan-y` çoğu tarayıcıda yeter, ama:
+       • iOS Safari, `user-scalable=no` viewport ayarını 10. sürümden
+         beri BİLEREK YOK SAYAR (erişilebilirlik gerekçesiyle). Çimdik
+         (pinch) yakınlaştırmayı kesmek için `gesture*` olaylarını
+         engellemek gerekir — bunlar yalnızca Safari'de vardır.
+       • Masaüstünde Ctrl/⌘ + tekerlek de yakınlaştırır.
+     Aşağıdaki engeller SADECE yakınlaştırmayı hedefler; kaydırma,
+     dokunma, sürükleme ve yazma normal çalışmaya devam eder.
+
+     Not: iOS'un bu ayarı yok sayması bilinçli bir erişilebilirlik
+     tercihidir. Burada kilitlemek uygulamayı yerli uygulama gibi
+     davrandırıyor; gözü zayıf bir kullanıcı için sistem genelindeki
+     "Büyüteç" ve Ayarlar'daki "Büyük yazı" seçeneği hâlâ çalışıyor. */
+  ["gesturestart","gesturechange","gestureend"].forEach(olay=>{
+    document.addEventListener(olay, e=> e.preventDefault(), {passive:false});
+  });
+  /* Ctrl/⌘ + tekerlek (masaüstü) */
+  document.addEventListener("wheel", e=>{
+    if(e.ctrlKey || e.metaKey) e.preventDefault();
+  }, {passive:false});
+  /* İki parmakla dokunma başlangıcı — eski Android WebView'lerde
+     touch-action yeterli olmayabiliyor. Tek parmak dokunuşa KARIŞMAZ,
+     böylece kaydırma ve düğmeler etkilenmez. */
+  document.addEventListener("touchstart", e=>{
+    if(e.touches && e.touches.length > 1) e.preventDefault();
+  }, {passive:false});
+  /* Yatay kaymaya karşı son güvenlik ağı: bir şekilde sayfa yana
+     kaydıysa (beklenmedik bir taşma öğesi yüzünden) geri toparla.
+     Kaydırma sırasında sürekli çalışmasın diye yalnızca sıfırdan
+     farklıysa müdahale eder. */
+  window.addEventListener("scroll", ()=>{
+    if(window.scrollX !== 0) window.scrollTo(0, window.scrollY);
+  }, {passive:true});
+
   /* ⚡ Hafif modu EN BAŞTA uygula — Ayarlar ekranı hiç açılmasa bile geçerli
      olmalı, üstelik ilk boyamadan önce uygulanmalı ki açılışta bulanık zemin
      bir an görünüp sonra kaybolmasın. */
@@ -7725,7 +7773,7 @@ document.addEventListener("DOMContentLoaded", ()=>{
   });
 
   /* Neler yeni kartı */
-  const YENILIK_SURUM = "0.0.2.5";
+  const YENILIK_SURUM = "0.0.2.9";
   try{ $("#cekmece-surum").textContent = "Puantaj Defterim " + YENILIK_SURUM; }catch(e){}
   try{
     if(localStorage.getItem("yenilik")!==YENILIK_SURUM) $("#yenilik-kart").classList.remove("gizli");

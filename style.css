@@ -1141,3 +1141,211 @@ html[data-hafif="1"] .para-pop{ animation:none }
 /* ── 7. Hafif mod: bu turda eklenen gölgeyi de kapsa ───────────────
    0.0.2.3'teki hafif mod, henüz var olmayan bu gölgeyi bilmiyordu. */
 html[data-hafif="1"] .alt-sayfa{ box-shadow:0 -2px 8px rgba(0,0,0,.28) }
+
+/* ═══════════════════════════════════════════════════════════════════
+   0.0.2.6 — TASARIM: her ekranda görünen bileşenler
+   ───────────────────────────────────────────────────────────────────
+   Sıra kullanım yoğunluğuna göre belirlendi: üst bar ve çekmece HER
+   ekranda görünüyor, bildirim kutusu 43 yerde çağrılıyor, PIN ekranı
+   her açılışta zorunlu. Bunlar bugüne kadar hiç elden geçmemişti.
+   ═══════════════════════════════════════════════════════════════════ */
+
+/* ── 1. HATA: uygulama başlığı eski cihazlarda GÖRÜNMEZ olabiliyordu
+   `.topbar h1` degrade dolgulu metin kullanıyor ve `color:transparent`
+   ile taban rengi siliniyor. `background-clip:text` desteklemeyen bir
+   tarayıcıda (eski Android WebView) degrade uygulanamaz ama saydamlık
+   kalır — yani uygulamanın adı BOMBOŞ görünür. Aynı sorunu 0.0.2.2'de
+   bakiye rakamında düzeltmiştim; burada da aynısı varmış.
+   Çözüm: önce düz renk ver, degradeyi sadece destekleyen tarayıcıda
+   uygula (@supports). Böylece desteklenmeyen yerde başlık sarı düz
+   renkle okunur kalıyor. */
+.topbar h1{
+  color:var(--sari);
+  background:none;
+}
+@supports ((-webkit-background-clip:text) or (background-clip:text)){
+  .topbar h1{
+    background:linear-gradient(135deg,var(--sari),var(--sari-koyu));
+    -webkit-background-clip:text; background-clip:text;
+    color:transparent;
+  }
+}
+
+/* ── 2. Dokunma hedefi: hamburger 42px → 44px ──────────────────────
+   Erişilebilirlik tabanı 44×44px. Eldivenli/tozlu parmakla açılan bir
+   uygulamada bu alt sınır değil, gerçek bir ihtiyaç. */
+.hamburger{ width:44px; height:44px }
+.hamburger span{ width:21px; height:2.5px }
+
+/* ── 3. Üst bar: sayfadan ayrılsın ─────────────────────────────────
+   Yapışkan (sticky) bir başlık, altından içerik kayarken sınırını
+   belli etmeli; yoksa kaydırırken içerik başlığın içinden çıkıyormuş
+   gibi görünüyor. İnce alt çizgi + kaydırınca beliren gölge. */
+header.topbar{
+  border-bottom:1px solid rgba(255,255,255,.07);
+  box-shadow:0 2px 10px rgba(0,0,0,.22);
+}
+.topbar h1 small{ color:#C6C7CE; font-size:11.5px; margin-top:2px }
+
+/* ── 4. Çekmece: seçili satır belli olsun ──────────────────────────
+   HATA: `.cekmece li button.aktif` kuralı vardı ama `.cekmece li a`
+   için karşılığı YOKTU. Menüdeki bağlantı türü satırlar seçiliyken
+   hiçbir işaret göstermiyordu. Ortak kurala alındı; ayrıca seçili
+   satıra solda sarı bir işaret eklendi — hangi ekranda olduğun tek
+   bakışta belli oluyor. */
+.cekmece li button, .cekmece li a{
+  position:relative;
+  font-size:15.5px;
+  padding:14px 12px 14px 14px;
+}
+.cekmece li button.aktif, .cekmece li a.aktif{
+  background:var(--asfalt2);
+  color:var(--sari);
+  font-weight:700;
+}
+.cekmece li button.aktif::before, .cekmece li a.aktif::before{
+  content:""; position:absolute; left:0; top:9px; bottom:9px;
+  width:3px; border-radius:0 3px 3px 0; background:var(--sari);
+}
+.cekmece-bas .ad{ font-size:16.5px; font-weight:700 }
+.cekmece-bas .eposta{ color:#A8AAB3 }
+.surum{ color:#8A8C95 }
+
+/* ── 5. Bildirim (toast): okunabilir ve ayrık ──────────────────────
+   Toast, alt navigasyonun hemen üstünde beliriyor ve zemini
+   var(--asfalt) — alt bar da koyu olduğu için ikisi birbirine
+   yapışıyordu. Kenarlık + gölge ile ayrıldı, metin biraz büyüdü.
+   43 yerden çağrılan bir bileşen için okunurluk kritik. */
+.toast{
+  background:var(--asfalt);
+  border:1px solid rgba(255,255,255,.12);
+  box-shadow:0 6px 22px rgba(0,0,0,.42);
+  font-size:14.5px; font-weight:600;
+  padding:13px 20px; line-height:1.45;
+}
+
+/* ── 6. Rozet / seviye kutuları ────────────────────────────────────
+   Kilitli rozetlerde `opacity:.35 + grayscale(1)` birlikte kullanılıyordu;
+   ikisi üst üste binince rozet neredeyse okunmaz hale geliyordu (ne
+   olduğunu görüp hedef edinemiyorsun — oysa kilitli rozetin işlevi
+   tam olarak BUDUR). Opaklık biraz yükseltildi, gri filtre korundu. */
+.rozet-kut.kilitli{ opacity:.5 }
+.rozet-kut.acildi{ border-width:2px; background:var(--vurgu-zemin) }
+.rozet-kut .rad{ font-size:14px }
+
+/* ── 7. Hafif mod kapsaması ────────────────────────────────────────
+   Bu turda eklenen gölgeler hafif modda ucuzlatılıyor. */
+html[data-hafif="1"] header.topbar{ box-shadow:none }
+html[data-hafif="1"] .toast{ box-shadow:0 2px 8px rgba(0,0,0,.35) }
+
+/* ═══════════════════════════════════════════════════════════════════
+   0.0.2.8 — TASARIM: hafta şeridi, çipler, ay gezgini
+   ───────────────────────────────────────────────────────────────────
+   PIN ekranı incelendi ve DEĞİŞTİRİLMEDİ: tuşlar 72px (dokunma hedefi
+   fazlasıyla yeterli), nokta göstergelerinde yanlış PIN'de kırmızıya
+   dönen titreme animasyonu var, avatar/selamlama akışı düşünülmüş.
+   Bu ekran zaten iyi durumda — dokunmamak doğru karar.
+   ═══════════════════════════════════════════════════════════════════ */
+
+/* ── 1. HATA: pazar günü BUGÜN ise işareti soluyordu ───────────────
+   `.hs-gun.pzr{opacity:.45}` tüm pazar günlerini soluklaştırıyor.
+   Ama JS aynı öğeye `bugun` ve `dolu`/`yok` sınıflarını da ekleyebiliyor.
+   Sonuç: pazara denk gelen bir BUGÜN, sarı çerçevesiyle birlikte %45'e
+   soluyordu — yani haftada bir gün, "bugün neredeyim" işareti
+   kayboluyordu. Ayrıca ÇALIŞILMIŞ bir pazar (inşaatta sık, üstelik
+   genelde mesaili) yeşil dolgusuyla birlikte soluk görünüyordu; oysa
+   pazar mesaisi daha az değil DAHA çok dikkat çekmeli.
+   Soluklaştırma artık yalnızca BOŞ pazar günleri için (dinlenme günü
+   olarak geri plana çekmek mantıklı); bilgi taşıyan pazarlar tam
+   parlaklıkta. */
+.hs-gun.pzr{ opacity:.45 }
+.hs-gun.pzr.bugun,
+.hs-gun.pzr.dolu,
+.hs-gun.pzr.yok{ opacity:1 }
+/* Pazar + bugün (boş): sarı çerçeve zaten var, üstüne ince bir iç halka
+   ile hücre takvimindeki "nişan" diliyle aynı olsun */
+.hs-gun.bugun{ border-width:2px }
+
+/* ── 2. HATA: basılı çipte yazı okunmuyordu ────────────────────────
+   `.eksik-cip:active` zemini sarıya çeviriyor ama metin rengine
+   dokunmuyordu; koyu temada metin #ECEDF1 (beyaza yakın) olduğu için
+   basılı tutulduğu an sarı üstüne beyaz yazı çıkıyor ve okunmuyordu.
+   Aynı düzeltme kategori çiplerinde zaten doğru yapılmıştı (koyu metin);
+   burada eksik kalmış. */
+.eksik-cip:active{ color:#1a1200 }
+
+/* ── 3. Ay gezgini: ayın adı sayfanın çapası ───────────────────────
+   Hangi aya baktığın, takvimdeki her şeyin bağlamı. Zaten Saira
+   Condensed ile dizilmiş; biraz büyütülüp harf aralığı sıkıldı, alt
+   satır (yıl/özet) ile arasındaki ilişki netleştirildi. Ok düğmeleri
+   ise geri çekildi — asıl bilgi ay adı, oklar sadece araç. */
+.ay-bar .ay-ad{ font-size:26px; letter-spacing:-.01em; line-height:1.05 }
+.ay-bar .ay-ad small{ margin-top:3px; font-size:11.5px }
+.ay-bar button{ opacity:.9 }
+.ay-bar button:active{ opacity:1; border-color:var(--sari) }
+
+/* ── 4. Selamlama bloğu ────────────────────────────────────────────
+   Ana ekranın ilk satırı; kullanıcıyı karşılayan yer. Alt satır
+   (tarih/durum) fazla soluktu, bir kademe okunur yapıldı. */
+.selam-blok .buyuk{ font-size:28px; letter-spacing:-.01em }
+.selam-blok .alt{ font-size:13.5px; opacity:.9; margin-top:3px }
+
+/* ── 5. Hedef çubuğu: ilerleme okunabilir olsun ────────────────────
+   22px yüksekliğinde bir çubuk ama içinde oran yazmıyor; en azından
+   dolgunun sınırı net görünsün diye ince bir iç kenar eklendi. */
+.hedef-bar{ height:24px }
+.hedef-bar .dolu{ box-shadow:inset 0 -1px 0 rgba(0,0,0,.18) }
+
+/* ── 6. Hafif mod kapsaması ────────────────────────────────────────*/
+html[data-hafif="1"] .hedef-bar .dolu{ box-shadow:none }
+
+/* ═══════════════════════════════════════════════════════════════════
+   0.0.2.9 — EKRAN KİLİDİ: yakınlaştırma yok, yatay kayma yok
+   ───────────────────────────────────────────────────────────────────
+   Kullanıcı isteği: "ekran büyüyüp küçülmesin, sağa sola kesinlikle
+   kaymasın". Uygulama bir web sayfası gibi değil, yerli (native) bir
+   uygulama gibi davranmalı — şantiyede tozlu/eldivenli parmakla
+   kullanılırken yanlışlıkla iki parmak değince ekranın zıplaması ya
+   da yana kayması gerçek bir sorun.
+   ═══════════════════════════════════════════════════════════════════ */
+
+/* ── 1. Yakınlaştırma kilidi (CSS tarafı) ──────────────────────────
+   `touch-action` hiçbir yerde tanımlı değildi. Değer seçimi önemli:
+     • `manipulation` → çift dokunma yakınlaştırmasını keser ama
+       ÇİMDİK (pinch) yakınlaştırmayı kesmez
+     • `pan-x pan-y`  → kaydırmaya izin verir, hem çimdik hem çift
+       dokunma yakınlaştırmasını keser  ← istenen bu
+   Kaydırma (dikey ve çekmece için yatay) çalışmaya devam eder. */
+html, body{
+  touch-action:pan-x pan-y;
+  -ms-touch-action:pan-x pan-y;
+}
+/* NOT — denenip VAZGEÇİLEN: `body{user-select:none}` ile metin seçimini
+   tamamen kapatmayı denedim (uzun basınca çıkan büyüteç balonu için).
+   Vazgeçtim çünkü senin istediğin şey YAKINLAŞTIRMA kilidi; metin
+   seçimi ayrı bir yetenek ve onu kapatmak notlarını, tutarları,
+   e-postanı kopyalamanı engellerdi. Yakınlaştırma zaten aşağıdaki
+   `touch-action` ve JS tarafındaki jest engeliyle çözülüyor —
+   kullanıcıdan bir yeteneği almaya gerek yok. */
+
+/* ── 2. Yatay kayma kilidi ─────────────────────────────────────────
+   Mevcut `overflow-x:hidden !important` zaten vardı ama tek başına
+   yetmiyordu. Asıl sorun `max-width:100vw` idi: dikey kaydırma çubuğu
+   olan ekranlarda 100vw çubuğun genişliğini de sayar, yani kuralın
+   KENDİSİ taşma üretir. `100%` ile değiştirildi (üstteki kuralda
+   !important olmadığı için bu sonraki tanım geçerli olur).
+   `overscroll-behavior:none` de yatay lastik bant etkisini kapatır. */
+html, body{
+  width:100%;
+  max-width:100%;
+  position:relative;
+  overscroll-behavior:none;
+  overscroll-behavior-x:none;
+}
+/* Taşmayı üretebilecek yaygın kaynaklar için güvenlik ağı.
+   NOT — denenip VAZGEÇİLEN: `*{min-width:0}` yazmıştım. Özgüllük
+   sayesinde `.liste .rozet{min-width:46px}` gibi kuralları bozmuyordu
+   ama evrensel seçicilerle esneklik davranışını değiştirmek, sonradan
+   sebebi bulunamayan yerleşim hatalarının klasik kaynağıdır. Zaten
+   var olan `main, section, .kart{min-width:0}` bu işi kapsıyor. */
+img, svg, canvas, video, table, pre{ max-width:100% }
