@@ -5,6 +5,55 @@ kullanır: `0.0.0.X` — X, her güncellemede 1 artar. Uygulama içindeki sürü
 (alt bilgi + "Neler yeni" kartı) ve dağıtılan zip dosyasının adı her zaman
 birebir aynıdır.
 
+## 0.0.2.1 — 🚨 İKİ KRİTİK VERİ KAYBI: kronometre saatleri + geri alınamayan fotoğraflar
+- Kullanıcı isteği: "hataları bulmaya devam et" — kronometre, geri alma ve silme zincirleri tarandı
+- 🚨 **KRİTİK: `kronoDurdur()` saatleri onaydan ÖNCE siliyordu.** İşlem sırası hatalıydı: (1) `localStorage.removeItem("kronoBas")`, (2) `confirm()`, (3) `ayKilitli()` kontrolü. Kullanıcı onay kutusunda "İptal"e bassa veya ay kilitli olsa, kronometre çoktan silinmiş oluyor, tutulan mesai saatleri geri dönüşsüz kayboluyordu — kaç saat olduğu bile bir daha görülemiyordu
+  - Yeni sıra: kilit kontrolü → onay → yazma → **ancak başarılı yazmadan sonra** kronometreyi sıfırla. Ağ hatasında da kronometre korunuyor, kullanıcı tekrar deneyebiliyor. Kilitli ay mesajı artık saat bilgisini de veriyor
+- 🚨 **KRİTİK: Geri alma, bağlı fotoğrafları kurtarmıyordu.** `toastGeriAlVeri()` ve `toastGeriAl()` yalnızca ana kaydı geri yazıyordu; oysa silme sırasında bağlı fotoğraf (fiş/dekont/gün fotoğrafı) da siliniyordu. Kullanıcı "GERİ AL"a bastığında kayıt `fisli:true` bayrağıyla geri geliyor ama fotoğraf yok — 🧾 düğmesi görünüyor, basınca "bulunamadı" diyordu. Sessiz ve kalıcı fotoğraf kaybı
+  - Her iki geri alma fonksiyonu isteğe bağlı ek-dosya parametresi alacak şekilde genişletildi (eski 4 argümanlı çağrılar geriye dönük uyumlu)
+  - Silme akışları fotoğrafı silmeden önce belleğe alacak şekilde düzeltildi: masraf fişi (`fisler`), ödeme dekontu (`dekontlar`, 2 ayrı yerde), gün fotoğrafı (`fotolar`)
+- Üç yerde sürüm güncellendi: `app.js`, `sw.js`, zip adı — hepsi `0.0.2.1`
+
+## 0.0.2.0 — 🚨 İKİ KRİTİK HATA: raporlarda eksik ödeme + donan ana ekran bakiyesi
+- Kullanıcı isteği: "tüm kritik hataları bul" — veri kaybı / para hesabı / sessiz başarısızlık önceliğiyle sistematik tarama
+- 🚨 **KRİTİK 1: Dışa aktarımlar ödemeleri sessizce atlıyordu.** `tumOdemelerQS` önbelleği 7 yerde `if(tumOdemelerQS)` deseniyle okunuyordu; önbellek boşsa (dinleyici henüz kurulmamış ya da düşmüş) ödeme listesi sessizce BOŞ kalıyor, CSV/Excel/PDF raporları alınan tüm avanslar eksik olarak üretiliyordu. Bu raporlar işverene/muhasebeciye verilen belgeler olduğu için etkisi ciddi
+  - Yeni `tumOdemeleriGetir()` (async, önbellek yoksa sunucudan çeker) → `csvIndir()` ve `excelIndir()` buna geçirildi
+  - Senkron jsPDF zincirleri için yeni `tumOdemeOnbellegiHazirla()` → `isPdfPaylas()` ve `yilPdfPaylas()` içinde, senkron üretim başlamadan önce `await` ediliyor
+- 🚨 **KRİTİK 2: `tumVeriDinle()` hata yakalayıcıları tamamen boştu.** Firestore hatalı dinleyiciyi kalıcı koparır; `dinleyiciTumG` dolu kaldığından fonksiyon başındaki erken çıkış yeniden kurulmayı sonsuza dek engelliyordu. Dinleyici veri geldikten sonra düşerse önbellek donuyor → ana ekran para kartı eski rakamda kalıyor, sonraki hiçbir kayıt yansımıyor, kullanıcıya hiçbir uyarı gitmiyordu. Hata callback'leri artık önbelleği ve tutamacı sıfırlıyor, böylece dinleyici yeniden kurulabiliyor ve `anaYukle()` içindeki `get()` yedeği anlamlı hale geliyor
+- 🔍 **Denetlenip TEMİZ çıkanlar** (hata bulunmadı, değişiklik yapılmadı):
+  - `sayi()` para/saat çeviricisi — 19 kenar durum testi (binlik/ondalık ayrımı, "1,000" İngilizce alışkanlığı, saat modunda "2.500"→2.5) hepsi doğru
+  - `oranBul()` / `girdiKazanc()` — ücretlerin güne mühürlenmesi (`uYevmiye`/`uMesai`) doğru; zam geçmişi geriye dönük bozmuyor
+  - Tüm `db.batch()` kullanımları — 500 işlem sınırına karşı 400/450'lik parçalamalar yerinde
+- Üç yerde sürüm güncellendi: `app.js`, `sw.js`, zip adı — hepsi `0.0.2.0`
+
+## 0.0.1.9 — Borç defterinde hayalet uyarı hatası + beklenen ödemeye tür seçimi
+- Kullanıcı isteği: "geliştirmeye devam et" — derin hata avı sürdürüldü
+- 🐞 **BULUNAN HATA: `borcCiz()` içinde hayalet uyarı.** Ana ekran borç uyarısını gizleyen kod fonksiyonun sonundaydı, ama `if(!borclar.length){ ...; return; }` erken çıkışı ona hiç ulaşmıyordu — kullanıcı vadesi geçmiş son borcunu silince ana ekranda eski uyarı metni asılı kalıyor, dokununca boş bir defter açılıyordu. Uyarı hesabı erken çıkışın öncesine taşındı, fonksiyon sonundaki kopya kaldırıldı
+  - Aynı desen `kartCiz()` içinde de denetlendi — orada erken `return` kullanılmadığı (sadece `if` bloğu) için uyarı koduna her durumda ulaşılıyor, hata yok, dokunulmadı
+- 💵 **Beklenen ödemeye `tur` alanı eklendi**: Kayıt formuna Avans/Hakediş/Askeriye/Diğer seçimi eklendi. Önceden tahsil edilen her beklenen ödeme sabit olarak `tur:"avans"` ile işleniyordu — hakediş beklentisi yanlış türde kaydediliyor, FIFO/aitAy hesabını etkileyebiliyordu. Artık kayıttaki tür kullanılıyor (`b.tur || "avans"` ile 0.0.1.7-0.0.1.8'de oluşturulmuş eski kayıtlar geriye dönük uyumlu). Liste satırında da tür etiketi gösteriliyor
+- Üç yerde sürüm güncellendi: `app.js`, `sw.js`, zip adı — hepsi `0.0.1.9`
+
+## 0.0.1.8 — Beklenen ödemeler yedekleme hatası + ana ekran uyarısı + masraf filtresi
+- Kullanıcı isteği: "geliştir işte en detaylı noktaya kadar" — derin hata avı + özellik tamamlama
+- 🐞 **BULUNAN HATA (veri kaybı riski): `beklenenler` yedeklenmiyordu.** 0.0.1.7'de eklenen beklenen-ödeme kayıtları `yedekAl()` ve `yedekGeriYukle()` fonksiyonlarına eklenmemişti — yedekten geri dönen bir kullanıcı bu kayıtların tamamını sessizce kaybederdi. Her iki fonksiyona da eklendi, yedek biçim sürümü 3 → 4. Eski (sürüm ≤3) yedekler `||{}` sayesinde geriye dönük uyumlu kalıyor
+- ⏳ **Beklenen ödemeler ana ekran uyarısı**: Vadesi geçmiş beklenen ödeme varsa ana ekrandaki bildirim kutusunda sayı + toplam tutar ile uyarı çıkıyor, dokununca Ödemeler ekranına gidiyor. Dinleyici (`beklenenDinle`) artık `birKezBaslat` ile ekran açılışında değil, `borclariDinle()` gibi GİRİŞTE başlatılıyor — aksi halde ana ekran uyarısı, kullanıcı Ödemeler ekranına girmeden hiç görünmezdi
+  - `bildirimKutusuGuncelle()` içindeki `satirlar` dizisine `beklenen-uyari` eklendi (yoksa uyarı görünür olsa bile kapsayıcı kutu gizli kalabilirdi)
+  - Uyarıyı gizleme mantığı `beklenenCiz()` içindeki erken `return`'ün ÖNCESİNE taşındı — son beklenen kayıt silindiğinde uyarının da kaybolması için (aksi halde ana ekranda hayalet uyarı asılı kalırdı)
+- 🧾 **Masraf kategori filtresi**: Masraf listesinin üstüne kategori filtre düğmeleri eklendi. Sadece o ay gerçekten kaydı olan kategoriler gösteriliyor; tek kategori varsa filtre satırı hiç çizilmiyor; seçili kategorideki son kayıt silinirse filtre otomatik "Hepsi"ye dönüyor (boş listede takılı kalma sorunu önlendi)
+- 🔍 **Ölü düğme taraması**: HTML'deki tüm `btn-*` id'leri JS'e bağlılık için tarandı. Tek şüpheli (`btn-profili-duzenle`) incelendi ve `data-goruntu` genel yönlendiricisi üzerinden düzgün çalıştığı (`cekmeceAc(false)` dahil) doğrulandı — gerçek ölü düğme yok
+- Üç yerde sürüm güncellendi: `app.js`, `sw.js`, zip adı — hepsi `0.0.1.8`
+
+## 0.0.1.7 — Masraf kategorileri + beklenen ödemeler + ekip/rapor/takvim/tasarım güncellemeleri
+- Kullanıcı isteği: "devasa güncelleme" — takvim, avans/hakediş, ekip, raporlar, masraf/borç/cüzdan bölümlerine yeni özellik + tasarım yenileme + hata avı
+- 🧾 **Masraf kategorileri**: Masraf eklerken Malzeme/Yakıt-Yol/Yemek/Alet-Ekipman/Diğer seçimi eklendi (`sabitler.js`'te `MASRAF_KATEGORI`). "İş masrafları" ekranının üstünde kategoriye göre toplam döküm rozetleri gösteriliyor. Eski kayıtlar (kategori alanı olmayan) otomatik "Diğer" sayılır, geriye dönük uyumlu
+- ⏳ **Beklenen ödemeler (yeni özellik)**: "Aldığım paralar" ekranına yeni bir kart eklendi — sözü verilen ama henüz alınmamış parayı (tutar, beklenen tarih, not) `beklenenler` koleksiyonuna kaydediyor. Vadesi geçmişse kırmızı "(gecikti)" uyarısı çıkıyor. "✔ Tahsil edildi" tıklanınca otomatik olarak gerçek bir `odemeler` kaydına dönüştürülüp beklenen listeden siliniyor
+- 🏆 **Ekip özetine "Ayın lideri" rozeti**: Aylık ekip özetinin en üstünde, o ay en çok gün çalışan ekip üyesini vurgulayan bir kart (2+ ekip üyesi varken görünür)
+- 📊 **CSV/Excel dışa aktarıma masraflar eklendi**: Daha önce yıllık CSV ve Excel raporlarında masraf kayıtları HİÇ yer almıyordu (sadece puantaj + ödemeler vardı) — artık CSV'de kategorili masraf satırları kronolojik sırada, Excel'de ayrı bir "Masraflar" sayfası (tarih/kategori/açıklama/tutar/ödendi mi) olarak yer alıyor
+- 📅 **Takvimde masraf günü göstergesi**: Masraf girilen günlerde takvim hücresinin sol üst köşesinde küçük bir 🧾 ikonu görünüyor (fotoğraf/tatil ikonlarıyla aynı desende, ayrı bir köşede — çakışma yok)
+- 🎨 **Tasarım tazelendi**: Kart gölgeleri derinleştirildi (`0 2px 8px` + `0 1px 2px`), kart başlıklarına seçili temanın rengiyle solda ince bir vurgu çizgisi eklendi. Yeni tema rengi: 🧱 Kızıl tuğla (koyu ve açık mod için ayrı kontrast ayarlarıyla, mevcut mavi/yeşil/turuncu/amoled temalarla aynı desende)
+- Otomatik hata taraması (TODO/FIXME/console.log/debugger, tekrar eden fonksiyon tanımı) tekrarlandı — proje zaten önceki turlarda kapsamlı taranmış olduğundan yeni bulgu çıkmadı; bu turda gerçek değer, yukarıdaki somut özellik eklemelerinde toplandı
+- Üç yerde birden sürüm güncellendi (kural gereği): `app.js` (`YENILIK_SURUM`), `sw.js` (`KASA`), zip dosya adı — hepsi `0.0.1.7`
+
 ## 0.0.1.6 — Çift kayıt koruması: borç/masraf/ödeme
 - "Devam et" isteği üzerine farklı bir hata sınıfı arandı: "çift gönderme" — aynı düğmeye hızlı art arda iki kez basınca kaydın iki kez oluşması
 - Önce gün kaydı (`btn-gun-kaydet`) kontrol edildi: GÜVENLİ çıktı, çünkü `.doc(modalTarih).set(...)` kullanıyor — tarih zaten sabit bir doküman ID'si, çift tıklasa bile İKİNCİ yazma AYNI dokümanın üzerine yazıyor, yeni bir kayıt oluşturmuyor (idempotent)

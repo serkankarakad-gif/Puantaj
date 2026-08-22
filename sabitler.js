@@ -73,3 +73,15 @@ const HABER_KAYNAK = {
 
 /* ---------- 🕌 Namaz vakti adları ---------- */
 const VAKIT_ADLAR = [["Fajr","İmsak"],["Sunrise","Güneş"],["Dhuhr","Öğle"],["Asr","İkindi"],["Maghrib","Akşam"],["Isha","Yatsı"]];
+
+/* ---------- 🧾 Masraf kategorileri ---------- */
+/* Kod: veride saklanan değer (eski kayıtlarda hiç yok → "diger" varsayılır).
+   Ad/ikon: sadece ekranda gösterim için. */
+const MASRAF_KATEGORI = [
+  {kod:"malzeme",  ad:"Malzeme",        ikon:"🧱"},
+  {kod:"yakit",    ad:"Yakıt / Yol",    ikon:"⛽"},
+  {kod:"yemek",    ad:"Yemek",          ikon:"🍽️"},
+  {kod:"alet",     ad:"Alet / Ekipman", ikon:"🔧"},
+  {kod:"diger",    ad:"Diğer",          ikon:"📦"}
+];
+const masrafKategoriBul = kod => MASRAF_KATEGORI.find(k=>k.kod===kod) || MASRAF_KATEGORI[MASRAF_KATEGORI.length-1];

@@ -50,7 +50,7 @@ function odemeAyi(v){
    kendi işini bitirince bunu çağırır. */
 function bildirimKutusuGuncelle(){
   const kutu = document.querySelector("#bildirim-kutusu"); if(!kutu) return;
-  const satirlar = ["tatil-kart","dun-kart","esik-uyari","kapanis-uyari","maas-kart","kart-uyari","borc-uyari","belge-uyari-kart"];
+  const satirlar = ["tatil-kart","dun-kart","esik-uyari","kapanis-uyari","maas-kart","kart-uyari","borc-uyari","beklenen-uyari","belge-uyari-kart"];
   const varMi = satirlar.some(id=>{
     const el = document.getElementById(id);
     return el && !el.classList.contains("gizli");
@@ -112,6 +112,9 @@ let planlar = [], dinleyiciPlan = null; // 📐 plan/proje linkleri
 /* let cuzdan kaldırıldı — Cüzdan özelliği tamamen kaldırıldı */
 let masraflar = [];                    // bu ayın iş masrafları
 let ekipListe = [];                    // ekipteki işçiler
+let masrafSeciliKategori = "malzeme";  // masraf ekleme formunda seçili kategori
+let masrafFiltre = "hepsi";            // masraf listesinde gösterilen kategori ("hepsi" = filtre yok)
+let beklenenler = [], dinleyiciBeklenen = null;  // ⏳ henüz eline geçmemiş, sözü verilen ödemeler
 let yoklama = {};                      // seçili günün yoklaması {iscId:{durum,mesai}}
 let gunKonum = null;                   // modaldaki konum damgası
 let seciliKisi = null;                 // Herkes sayfasında seçilen kişi
@@ -206,6 +209,9 @@ function basla(){
       ayarlariDinle();
       ayiYukle();
       borclariDinle();     /* Ana ekrandaki kart/borç vade uyarı kutuları buna bağlı, ertelenemez */
+      /* Beklenen ödemeler de ana ekranda bir uyarı kutusu besliyor ("sözü verilip gelmeyen para"),
+         bu yüzden Ödemeler ekranı hiç açılmasa bile girişte başlaması gerekiyor — ertelenemez. */
+      birKezBaslat("beklenen", beklenenDinle);
       /* cuzdaniDinle() kaldırıldı — Cüzdan özelliği tamamen kaldırıldı */
       anaYukle();
       havaYukle();
@@ -230,7 +236,8 @@ function dinleyicileriKapat(){
   if(dinleyiciMasraf) dinleyiciMasraf();
   if(dinleyiciEkip) dinleyiciEkip();
   if(dinleyiciPlan) dinleyiciPlan();
-  dinleyiciKart=dinleyiciGirdi=dinleyiciOdeme=dinleyiciAyar=dinleyiciBorc=dinleyiciCuzdan=dinleyiciNot=dinleyiciMasraf=dinleyiciEkip=dinleyiciPlan=null;
+  if(dinleyiciBeklenen) dinleyiciBeklenen();
+  dinleyiciKart=dinleyiciGirdi=dinleyiciOdeme=dinleyiciAyar=dinleyiciBorc=dinleyiciCuzdan=dinleyiciNot=dinleyiciMasraf=dinleyiciEkip=dinleyiciPlan=dinleyiciBeklenen=null;
   baslatmalariSifirla();  /* ertelenen dinleyiciler bir sonraki girişte tekrar başlayabilsin */
 }
 
@@ -559,12 +566,29 @@ function borcCiz(){
     '<div class="ozet-kut eksi"><div class="et">Borcum (aldım)</div><div class="deger">'+paraFmt(acikAldim)+'</div></div>'+
     '<div class="ozet-kut '+(net>=0?'vurgu':'eksi')+'" style="grid-column:1/-1"><div class="et">Net durum</div><div class="deger">'+(net>=0?'+':'')+paraFmt(net)+'</div></div>';
   const ul = $("#liste-borclar");
+  const bugunId = tarihId(new Date());
+  /* ⚠️ Ana ekran uyarısı: vadesi geçen açık kayıtlar.
+     DÜZELTME: bu blok eskiden fonksiyonun SONUNDAYDI, ama hemen aşağıdaki
+     "kayıt yok" erken çıkışı ona hiç ulaşmıyordu — kullanıcı vadesi geçmiş son
+     borcunu silince ana ekranda "Vadesi geçen 2 kayıt var" hayalet uyarısı
+     asılı kalıyordu (dokununca da bomboş bir borç defteri açılıyordu).
+     Artık erken çıkıştan ÖNCE hesaplanıyor, liste boşalınca uyarı da kayboluyor. */
+  const uy = $("#borc-uyari");
+  if(uy){
+    const gecikenler = borclar.filter(b=> !b.odendi && b.vade && b.vade < bugunId);
+    if(gecikenler.length){
+      const alacak = gecikenler.filter(b=> b.yon==="verdim").length;
+      uy.innerHTML = "⚠️ Vadesi geçen <b>"+gecikenler.length+"</b> kayıt var"+
+        (alacak ? " ("+alacak+" alacağın gecikmiş!)" : "")+" — dokun, borç defterine git ›";
+      uy.classList.remove("gizli");
+    }else uy.classList.add("gizli");
+    bildirimKutusuGuncelle();
+  }
   if(!borclar.length){
     ul.innerHTML = '<div class="bos-mesaj"><span class="buyuk">🤝</span>Borç kaydın yok, temizsin 👍</div>';
     return;
   }
   ul.innerHTML = "";
-  const bugunId = tarihId(new Date());
   /* Vadesi geçenler en üstte, sonra vadesi yaklaşanlar, kapananlar en altta */
   const sirali = borclar.slice().sort((a,b)=>{
     if(!!a.odendi !== !!b.odendi) return a.odendi ? 1 : -1;
@@ -627,18 +651,6 @@ function borcCiz(){
     });
     ul.appendChild(li);
   });
-  /* ⚠️ Ana ekran uyarısı: vadesi geçen açık kayıtlar */
-  const uy = $("#borc-uyari");
-  if(uy){
-    const gecikenler = borclar.filter(b=> !b.odendi && b.vade && b.vade < bugunId);
-    if(gecikenler.length){
-      const alacak = gecikenler.filter(b=> b.yon==="verdim").length;
-      uy.innerHTML = "⚠️ Vadesi geçen <b>"+gecikenler.length+"</b> kayıt var"+
-        (alacak ? " ("+alacak+" alacağın gecikmiş!)" : "")+" — dokun, borç defterine git ›";
-      uy.classList.remove("gizli");
-    }else uy.classList.add("gizli");
-    bildirimKutusuGuncelle();
-  }
 }
 
 function santiyeListCiz(){
@@ -1354,25 +1366,95 @@ function havaTamEkranDoldur(d){
 }
 
 /* ---------- İş masrafları ---------- */
+/* Masraf ekleme formundaki kategori kutucuklarını çizer + tıklama olayını bağlar.
+   Tek seferlik çağrılır (başlangıçta); seçim değiştiğinde sadece .secili sınıfı oynar. */
+function masrafKategoriCizGoster(){
+  const kap = $("#masraf-kategori-cipler");
+  if(!kap) return;
+  kap.innerHTML = MASRAF_KATEGORI.map(k=>
+    '<button type="button" data-kod="'+k.kod+'" class="'+(k.kod===masrafSeciliKategori?"secili":"")+'">'+k.ikon+' '+k.ad+'</button>'
+  ).join("");
+  kap.querySelectorAll("button").forEach(b=>{
+    b.addEventListener("click", ()=>{
+      masrafSeciliKategori = b.dataset.kod;
+      kap.querySelectorAll("button").forEach(x=> x.classList.toggle("secili", x===b));
+      titret(10);
+    });
+  });
+}
+/* Bu ayki masrafları kategoriye göre toplayıp "Malzeme: 1.200 ₺ · Yakıt: 400 ₺" gibi
+   kısa bir döküm satırı üretir — hangi kalemin bütçeyi yediğini bir bakışta gösterir. */
+function masrafKategoriOzetiCiz(){
+  const kap = $("#masraf-kategori-ozet");
+  if(!kap) return;
+  if(!masraflar.length){ kap.innerHTML = ""; return; }
+  const toplamlar = {};
+  masraflar.forEach(m=>{
+    const kod = m.kategori || "diger";
+    toplamlar[kod] = (toplamlar[kod]||0) + (Number(m.tutar)||0);
+  });
+  const parcalar = Object.keys(toplamlar)
+    .sort((a,b)=> toplamlar[b]-toplamlar[a])
+    .map(kod=>{
+      const k = masrafKategoriBul(kod);
+      return '<span class="masraf-kat-rozet">'+k.ikon+' '+k.ad+': '+paraFmt(toplamlar[kod])+'</span>';
+    });
+  kap.innerHTML = parcalar.join("");
+}
+/* Masraf listesinin üstündeki kategori filtresi. Sadece o ay GERÇEKTEN kaydı olan
+   kategoriler gösterilir — boş kategoriye tıklatıp kullanıcıyı boş listeyle
+   karşılaştırmanın anlamı yok. Tek kategori varsa filtre satırı hiç çizilmez. */
+function masrafFiltreCiz(){
+  const kap = $("#masraf-filtre");
+  if(!kap) return;
+  const varOlanlar = [...new Set(masraflar.map(m=> m.kategori || "diger"))];
+  /* Seçili filtrenin kategorisindeki son masraf silindiyse (ya da ay değişip o kategori
+     kalmadıysa) filtre boş bir listede takılı kalırdı — böyle bir durumda "Hepsi"ne dön. */
+  if(masrafFiltre!=="hepsi" && !varOlanlar.includes(masrafFiltre)) masrafFiltre = "hepsi";
+  if(varOlanlar.length < 2){ kap.innerHTML = ""; masrafFiltre = "hepsi"; return; }
+  const secenekler = [{kod:"hepsi", ad:"Hepsi", ikon:"📋"}]
+    .concat(MASRAF_KATEGORI.filter(k=> varOlanlar.includes(k.kod)));
+  kap.innerHTML = secenekler.map(k=>
+    '<button type="button" data-kod="'+k.kod+'" class="'+(k.kod===masrafFiltre?"secili":"")+'">'+k.ikon+' '+k.ad+'</button>'
+  ).join("");
+  kap.querySelectorAll("button").forEach(b=>{
+    b.addEventListener("click", ()=>{
+      masrafFiltre = b.dataset.kod;
+      titret(10);
+      masrafCiz();
+    });
+  });
+}
 function masrafCiz(){
   const ul = $("#liste-masraflar");
   if(!ul) return;
   const bekleyen = masraflar.filter(m=>!m.odendi).reduce((s,m)=> s+(Number(m.tutar)||0), 0);
   const tEl = $("#masraf-toplam");
   if(tEl) tEl.textContent = masraflar.length ? "Bekleyen: "+paraFmt(bekleyen) : "";
+  masrafKategoriOzetiCiz();
+  masrafFiltreCiz();
   if(!masraflar.length){
     ul.innerHTML = '<div class="bos-mesaj"><span class="buyuk">🧾</span>Bu ay masraf yok.</div>';
     return;
   }
+  /* Filtre uygulanmış liste. Filtre "hepsi" ise hiçbir şey elenmiyor. */
+  const gosterilecek = masrafFiltre==="hepsi"
+    ? masraflar
+    : masraflar.filter(m=> (m.kategori||"diger") === masrafFiltre);
+  if(!gosterilecek.length){
+    ul.innerHTML = '<div class="bos-mesaj"><span class="buyuk">🧾</span>Bu kategoride masraf yok.</div>';
+    return;
+  }
   ul.innerHTML = "";
-  masraflar.forEach(m=>{
+  gosterilecek.forEach(m=>{
     const t = new Date(m.tarih+"T12:00:00");
+    const kat = masrafKategoriBul(m.kategori);
     const li = document.createElement("li");
     if(m.odendi) li.style.opacity = ".45";
     li.innerHTML =
       '<div class="rozet" style="background:var(--yarim)">'+t.getDate()+'<small>'+AYLAR[t.getMonth()].slice(0,3)+'</small></div>'+
-      '<div class="orta"><div class="baslik">'+esc(m.aciklama||"Masraf")+(m.odendi?" ✔ ödendi":"")+'</div>'+
-      '<div class="alt-yazi">'+t.getDate()+' '+AYLAR[t.getMonth()]+'</div></div>'+
+      '<div class="orta"><div class="baslik">'+kat.ikon+' '+esc(m.aciklama||"Masraf")+(m.odendi?" ✔ ödendi":"")+'</div>'+
+      '<div class="alt-yazi">'+t.getDate()+' '+AYLAR[t.getMonth()]+' · '+kat.ad+'</div></div>'+
       '<div class="tutar">'+paraFmt(m.tutar)+'</div>'+
       (m.fisli ? '<button class="sil" aria-label="Fis" style="color:var(--sari)">🧾</button>' : '')+
       '<button class="sil" aria-label="Ödendi" style="color:var(--tam)">'+(m.odendi?"↩️":"✔")+'</button>'+
@@ -1397,11 +1479,89 @@ function masrafCiz(){
         .then(()=> toast(m.odendi ? "Masraf tekrar açıldı" : "Masraf ödendi olarak işaretlendi ✔")).catch(hataGoster);
     });
     btnler[1].addEventListener("click", async ()=>{
-      if(m.fisli) kokRef().collection("fisler").doc(m.id).delete().catch(()=>{});
       const kopya = {...m}; delete kopya.id;
+      /* Fişi silmeden ÖNCE belleğe al ki "GERİ AL" onu da geri getirebilsin */
+      let fisYedek = null;
+      if(m.fisli){
+        try{
+          const fd = await kokRef().collection("fisler").doc(m.id).get();
+          if(fd.exists) fisYedek = fd.data();
+        }catch(e){}
+        kokRef().collection("fisler").doc(m.id).delete().catch(()=>{});
+      }
       try{
         await kokRef().collection("masraflar").doc(m.id).delete();
-        toastGeriAlVeri("Masraf silindi", "masraflar", m.id, kopya);
+        toastGeriAlVeri("Masraf silindi", "masraflar", m.id, kopya,
+                        fisYedek ? {koleksiyon:"fisler", veri:fisYedek} : null);
+      }catch(e){ hataGoster(e); }
+    });
+    ul.appendChild(li);
+  });
+}
+
+/* ---------- ⏳ Beklenen ödemeler (sözü verilen, henüz eline geçmemiş para) ---------- */
+function beklenenDinle(){
+  dinleyiciBeklenen = kokRef().collection("beklenenler").onSnapshot(qs=>{
+    beklenenler = [];
+    qs.forEach(doc=> beklenenler.push({id:doc.id, ...doc.data()}));
+    beklenenler.sort((a,b)=> (a.tarih||"") < (b.tarih||"") ? -1 : 1);
+    beklenenCiz();
+  }, ()=>{});
+}
+function beklenenCiz(){
+  const ul = $("#liste-beklenen");
+  const bugunId = tarihId(new Date());
+  /* ⚠️ Ana ekran uyarısı: vadesi geçmiş beklenen ödemeler (söz verilip gelmeyen para).
+     Erken çıkıştan ÖNCE yapılıyor — liste boşaldığında uyarının da gizlenmesi gerekiyor,
+     yoksa son beklenen kayıt silinse bile ana ekranda hayalet uyarı asılı kalırdı. */
+  const uy = $("#beklenen-uyari");
+  if(uy){
+    const gecikmis = beklenenler.filter(b=> b.tarih && b.tarih < bugunId);
+    if(gecikmis.length){
+      const tp = gecikmis.reduce((s,b)=> s+(Number(b.tutar)||0), 0);
+      uy.innerHTML = "⏳ Sözü verilip gelmeyen <b>"+gecikmis.length+"</b> ödeme var ("+paraFmt(tp)+") — dokun, listeye git ›";
+      uy.classList.remove("gizli");
+    }else uy.classList.add("gizli");
+    bildirimKutusuGuncelle();
+  }
+  if(!ul) return;
+  if(!beklenenler.length){
+    ul.innerHTML = '<div class="bos-mesaj" style="padding:10px 4px;font-size:13px">Beklenen ödemen yok 👍</div>';
+    return;
+  }
+  ul.innerHTML = "";
+  beklenenler.forEach(b=>{
+    const gecikti = b.tarih && b.tarih < bugunId;
+    const t = b.tarih ? new Date(b.tarih+"T12:00:00") : null;
+    const li = document.createElement("li");
+    li.innerHTML =
+      '<div class="rozet" style="background:'+(gecikti?"var(--gelmedi)":"var(--mesai)")+'">'+(t?t.getDate():"?")+(t?'<small>'+AYLAR[t.getMonth()].slice(0,3)+'</small>':'')+'</div>'+
+      '<div class="orta"><div class="baslik">'+esc(b.not||"Beklenen ödeme")+(gecikti?' <span style="color:var(--gelmedi)">(gecikti)</span>':'')+'</div>'+
+      '<div class="alt-yazi">'+paraFmt(b.tutar)+' · '+odemeTurEtiket(b.tur||"avans")+'</div></div>'+
+      '<button class="sil" aria-label="Tahsil edildi" style="color:var(--tam)">✔</button>'+
+      '<button class="sil" aria-label="Sil">🗑️</button>';
+    const btnler = li.querySelectorAll("[aria-label]");
+    btnler[0].addEventListener("click", async ()=>{
+      /* Tahsil edildi: gerçek bir ödeme kaydına dönüştür (bugünün tarihiyle, "avans" türünde,
+         hangi ayın hesabına yazılacağı bugünün ayına göre belirlenir — kullanıcı isterse
+         Ödemeler ekranından sonradan düzenleyip ayını değiştirebilir), ardından beklenen kaydı silinir. */
+      try{
+        const bugun = tarihId(new Date());
+        await kokRef().collection("odemeler").add({
+          tarih: bugun, aitAy: bugun.slice(0,7), tutar: Number(b.tutar)||0,
+          tur: b.tur || "avans",
+          not: (b.not||"") + " (beklenenden tahsil edildi)",
+          olusturma: firebase.firestore.FieldValue.serverTimestamp()
+        });
+        await kokRef().collection("beklenenler").doc(b.id).delete();
+        toast("💵 Tahsil edildi, 'Aldığım paralar'a eklendi ✓");
+      }catch(e){ hataGoster(e); }
+    });
+    btnler[1].addEventListener("click", async ()=>{
+      const kopya = {...b}; delete kopya.id;
+      try{
+        await kokRef().collection("beklenenler").doc(b.id).delete();
+        toastGeriAlVeri("Beklenen ödeme silindi", "beklenenler", b.id, kopya);
       }catch(e){ hataGoster(e); }
     });
     ul.appendChild(li);
@@ -1534,6 +1694,21 @@ async function ekipOzetYukle(){
       return;
     }
     ul.innerHTML = "";
+    /* 🏆 Ayın lideri: en çok gün çalışan ekip üyesini üstte vurgula (2+ kişi varsa anlamlı) */
+    if(idler.length>1){
+      let liderId = idler[0];
+      idler.forEach(id=>{ if(grup[id].gun > grup[liderId].gun) liderId = id; });
+      const liderIsc = ekipListe.find(x=>x.id===liderId);
+      if(liderIsc && grup[liderId].gun>0){
+        const liderLi = document.createElement("li");
+        liderLi.style.cssText = "background:var(--vurgu-zemin);border-radius:12px;margin-bottom:6px";
+        liderLi.innerHTML =
+          '<div class="rozet" style="background:var(--sari);color:#1a1200">🏆</div>'+
+          '<div class="orta"><div class="baslik">Ayın lideri: '+esc(liderIsc.ad)+'</div>'+
+          '<div class="alt-yazi">'+grup[liderId].gun+' gün ile ekipte en çok çalışan</div></div>';
+        ul.appendChild(liderLi);
+      }
+    }
     idler.forEach(id=>{
       const isc = ekipListe.find(x=>x.id===id) || {ad:"(silinmiş işçi)"};
       const g = grup[id];
@@ -1924,12 +2099,20 @@ function kronoYaz(){
 }
 async function kronoDurdur(bas){
   const saat = Math.max(0.5, Math.round(((Date.now()-bas)/3600000)*2)/2);
-  try{ if(window._kilit){ window._kilit.release(); window._kilit=null; } }catch(e){}
-  try{ localStorage.removeItem("kronoBas"); }catch(e){}
-  kronoYaz();
-  if(!confirm(saat+" saat mesai yaptın. Bugünün kaydına eklensin mi?")) return;
   const id = tarihId(new Date());
-  if(ayKilitli(id)){ toast("Bu ay kilitli 🔒"); return; }
+  /* KRİTİK DÜZELTME — çalışılan saatler geri dönüşsüz kaybolabiliyordu.
+     Eskiden sıra şöyleydi: (1) localStorage'daki kronometre SİLİNİR,
+     (2) kullanıcıya "eklensin mi?" diye sorulur, (3) ay kilidi kontrol edilir.
+     Yani kullanıcı yanlışlıkla "İptal"e bassa YA DA ay kilitli olsa, kronometre
+     çoktan silinmiş oluyordu — 5 saat mesai tutmuşsan hepsi yok oluyordu, geri
+     getirmenin hiçbir yolu yoktu ve kaç saat olduğunu da bir daha göremiyordun.
+     Artık önce kilit kontrolü + onay alınıyor, kronometre ancak kayıt yapılacağı
+     kesinleşince siliniyor. Vazgeçilirse kronometre çalışmaya devam ediyor. */
+  if(ayKilitli(id)){
+    toast("Bu ay kilitli 🔒 Kronometre duruyor, ayı açınca tekrar bitir ("+saat+" saat)");
+    return;
+  }
+  if(!confirm(saat+" saat mesai yaptın. Bugünün kaydına eklensin mi?\n\n(İptal dersen kronometre çalışmaya devam eder, saatlerin kaybolmaz.)")) return;
   try{
     const ref = kokRef().collection("girdiler").doc(id);
     const doc = await ref.get();
@@ -1938,6 +2121,11 @@ async function kronoDurdur(bas){
                    : {durum:"tam", mesai:saat, arti:0, santiye:ayarlar.santiye||"", santiyeId:"", not:"",
                       ...guncelOranlar("", id), guncelleme: firebase.firestore.FieldValue.serverTimestamp()};
     await ref.set(yeni);
+    /* Kayıt BAŞARILI olduktan sonra kronometreyi sıfırla — yazma hata verirse
+       (internet yok vb.) kronometre duruyor, kullanıcı tekrar deneyebiliyor. */
+    try{ if(window._kilit){ window._kilit.release(); window._kilit=null; } }catch(e){}
+    try{ localStorage.removeItem("kronoBas"); }catch(e){}
+    kronoYaz();
     toast("⏱ "+saat+" saat mesai bugüne eklendi ✅");
   }catch(e){ hataGoster(e); }
 }
@@ -3690,12 +3878,49 @@ let tumGirdilerQS = null, tumOdemelerQS = null;
 let dinleyiciTumG = null, dinleyiciTumO = null;
 function tumVeriDinle(){
   if(dinleyiciTumG || !kullanici) return;
+  /* KRİTİK DÜZELTME: hata callback'i eskiden tamamen boştu. Firestore bir dinleyici
+     hata alınca onu KALICI olarak koparır (kendi kendine yeniden bağlanmaz), ama
+     `dinleyiciTumG` dolu kaldığı için yukarıdaki erken çıkış yüzünden bir daha asla
+     kurulamıyordu. İki ayrı sonuç doğuruyordu, ikisi de sessiz:
+       1) Dinleyici veri geldikten SONRA düşerse, önbellek o anki haliyle DONUYORDU —
+          ana ekran para kartı, sonraki tüm kayıtları görmeden eski rakamı göstermeye
+          devam ediyordu (kullanıcı yanlış bakiye görüyor, hiçbir uyarı yok).
+       2) Önbellek `null` kalırsa, ona bağlı CSV/Excel/PDF dışa aktarımları ödeme
+          listesini SESSİZCE BOŞ üretiyordu (patrona verilen raporda alınan tüm
+          avanslar eksik çıkıyordu).
+     Artık hata olunca önbellek ve tutamaç sıfırlanıyor; bir sonraki `tumVeriDinle()`
+     çağrısı dinleyiciyi yeniden kuruyor, kurulana kadar da `anaYukle()` içindeki
+     `get()` yedeği devreye giriyor. */
+  const dusursen = (hangi)=> ()=>{
+    if(hangi==="girdi"){ tumGirdilerQS = null; dinleyiciTumG = null; }
+    else{ tumOdemelerQS = null; dinleyiciTumO = null; }
+  };
   dinleyiciTumG = kokRef().collection("girdiler").onSnapshot(qs=>{
     tumGirdilerQS = qs; anaTazele();
-  }, ()=>{ /* dinleme düşerse get() yedeği devrede */ });
+  }, dusursen("girdi"));
   dinleyiciTumO = kokRef().collection("odemeler").onSnapshot(qs=>{
     tumOdemelerQS = qs; anaTazele(); odemeleriAyaGoreDoldur();
-  }, ()=>{});
+  }, dusursen("odeme"));
+}
+/* Dışa aktarımlar (CSV/Excel/PDF) için ödeme listesini GARANTİLİ döndürür.
+   Önbellek hazırsa onu kullanır; değilse (dinleyici henüz kurulmadıysa ya da
+   düştüyse) sunucudan doğrudan çeker. Eskiden bu kontrol her çağrı yerinde
+   `if(tumOdemelerQS)` şeklindeydi ve önbellek boşsa rapor sessizce ödemesiz
+   üretiliyordu — artık bu mümkün değil. */
+async function tumOdemeleriGetir(){
+  const liste = [];
+  if(tumOdemelerQS){ tumOdemelerQS.forEach(d=> liste.push(d.data())); return liste; }
+  const qs = await kokRef().collection("odemeler").get();
+  qs.forEach(d=> liste.push(d.data()));
+  return liste;
+}
+/* PDF üreten zincirlerin bir kısmı senkron (jsPDF çağrıları iç içe), yani içeride
+   `await` edemiyoruz. Bu yüzden PDF'i tetikleyen ASYNC giriş noktalarında, senkron
+   üretim başlamadan ÖNCE bu çağrılıp önbelleğin dolu olduğu garanti ediliyor —
+   aksi halde önbellek boşken üretilen PDF, alınan avansları hiç göstermeden çıkardı. */
+async function tumOdemeOnbellegiHazirla(){
+  if(tumOdemelerQS) return;
+  try{ tumOdemelerQS = await kokRef().collection("odemeler").get(); }catch(e){}
 }
 function tumVeriBirak(){
   if(dinleyiciTumG){ dinleyiciTumG(); dinleyiciTumG = null; }
@@ -4210,6 +4435,9 @@ function takvimCiz(){
   for(let i=0;i<bosluk;i++){
     const el=document.createElement("div"); el.className="hucre bos"; kap.appendChild(el);
   }
+  /* O ay masraf girilen günleri önceden bir kümede topla — döngü içinde tekrar tekrar
+     .filter/.some çağırmamak için (30 gün × N masraf yerine tek geçişte O(1) bakış) */
+  const masrafGunleri = new Set(masraflar.map(m=>m.tarih));
   const gunSayisi = new Date(aktifYil, aktifAy+1, 0).getDate();
   const bugunId = tarihId(new Date());
   for(let g=1; g<=gunSayisi; g++){
@@ -4250,6 +4478,11 @@ function takvimCiz(){
       const f=document.createElement("span");
       f.className="foto-nokta"; f.textContent="📸";
       el.appendChild(f);
+    }
+    if(masrafGunleri.has(id)){
+      const mk=document.createElement("span");
+      mk.className="masraf-nokta"; mk.textContent="🧾"; mk.title="Bu gün masraf kaydı var";
+      el.appendChild(mk);
     }
     if(tatilAdi(id)){
       const tk = document.createElement("span");
@@ -4393,11 +4626,20 @@ function odemeListesiCiz(){
     });
     li.querySelector('[aria-label="Sil"]').addEventListener("click", async ()=>{
       if(ayKilitli(odemeAyi(o)+"-15")){ toast("Bu ay kilitli 🔒 Hesap özetinden açabilirsin"); return; }
-      if(o.dekontlu) kokRef().collection("dekontlar").doc(o.id).delete().catch(()=>{});
       const kopya = {...o}; delete kopya.id;
+      /* Dekontu silmeden ÖNCE belleğe al ki "GERİ AL" onu da geri getirebilsin */
+      let dekontYedek = null;
+      if(o.dekontlu){
+        try{
+          const dd = await kokRef().collection("dekontlar").doc(o.id).get();
+          if(dd.exists) dekontYedek = dd.data();
+        }catch(e){}
+        kokRef().collection("dekontlar").doc(o.id).delete().catch(()=>{});
+      }
       try{
         await kokRef().collection("odemeler").doc(o.id).delete();
-        toastGeriAlVeri("Ödeme silindi", "odemeler", o.id, kopya);
+        toastGeriAlVeri("Ödeme silindi", "odemeler", o.id, kopya,
+                        dekontYedek ? {koleksiyon:"dekontlar", veri:dekontYedek} : null);
       }catch(e){ hataGoster(e); }
     });
     ul.appendChild(li);
@@ -4405,7 +4647,15 @@ function odemeListesiCiz(){
 }
 
 /* Koleksiyon kaydı için geri al */
-function toastGeriAlVeri(mesaj, koleksiyon, id, veri){
+/* mesaj/koleksiyon/id/veri: geri alınacak ANA kayıt.
+   ek (isteğe bağlı): {koleksiyon, veri} — o kayda bağlı fotoğraf/belge (fiş, dekont).
+   DÜZELTME: eskiden bu fonksiyon sadece ana kaydı geri getiriyordu. Oysa masraf/ödeme
+   silinirken bağlı fotoğraf da siliniyordu ve geri alma onu kurtarmıyordu — kullanıcı
+   "GERİ AL"a bastığında kayıt geri geliyor, `fisli:true` bayrağı da geri geliyor, ama
+   fotoğrafın kendisi çoktan yok olduğu için 🧾 düğmesi "Fiş fotoğrafı bulunamadı"
+   diyordu. Fotoğraf kalıcı olarak kaybedilmiş oluyordu. Artık fotoğraf silinmeden
+   önce belleğe alınıp geri almada birlikte yazılıyor. */
+function toastGeriAlVeri(mesaj, koleksiyon, id, veri, ek){
   const t = $("#toast");
   t.innerHTML = "";
   t.appendChild(document.createTextNode(mesaj + " "));
@@ -4415,6 +4665,9 @@ function toastGeriAlVeri(mesaj, koleksiyon, id, veri){
   b.addEventListener("click", async ()=>{
     try{
       await kokRef().collection(koleksiyon).doc(id).set(veri);
+      if(ek && ek.koleksiyon && ek.veri!=null){
+        try{ await kokRef().collection(ek.koleksiyon).doc(id).set(ek.veri); }catch(e){}
+      }
       toast("Geri alındı ↩️");
     }catch(e){ hataGoster(e); }
   });
@@ -4773,11 +5026,19 @@ function ayDetayAc(ay){
     li.querySelector('[aria-label="Sil"]').addEventListener("click", async ()=>{
       if(ayKilitli(odemeAyi(o)+"-15")){ toast("Bu ay kilitli 🔒 Hesap özetinden açabilirsin"); return; }
       if(!confirm("Bu ödeme kaydı silinsin mi?")) return;
-      if(o.dekontlu) kokRef().collection("dekontlar").doc(o.id).delete().catch(()=>{});
       const kopya = {...o}; delete kopya.id;
+      let dekontYedek2 = null;
+      if(o.dekontlu){
+        try{
+          const dd2 = await kokRef().collection("dekontlar").doc(o.id).get();
+          if(dd2.exists) dekontYedek2 = dd2.data();
+        }catch(e){}
+        kokRef().collection("dekontlar").doc(o.id).delete().catch(()=>{});
+      }
       try{
         await kokRef().collection("odemeler").doc(o.id).delete();
-        toastGeriAlVeri("Ödeme silindi", "odemeler", o.id, kopya);
+        toastGeriAlVeri("Ödeme silindi", "odemeler", o.id, kopya,
+                        dekontYedek2 ? {koleksiyon:"dekontlar", veri:dekontYedek2} : null);
         ayDetayKapat();
         setTimeout(()=> maaslarListCiz(), 400);
       }catch(err){ hataGoster(err, "ay-detay-odeme-sil"); }
@@ -4947,18 +5208,20 @@ async function csvIndir(){
   toast("CSV hazırlanıyor...");
   try{
     const bas = aktifYil+"-01-01", son = aktifYil+"-12-31";
-    const [gSnap] = await Promise.all([
+    const [gSnap, mSnap] = await Promise.all([
       kokRef().collection("girdiler")
         .where(firebase.firestore.FieldPath.documentId(), ">=", bas)
-        .where(firebase.firestore.FieldPath.documentId(), "<=", son).get()
+        .where(firebase.firestore.FieldPath.documentId(), "<=", son).get(),
+      kokRef().collection("masraflar")
+        .where("tarih", ">=", bas).where("tarih", "<=", son).get()
     ]);
     /* DÜZELTME: ödemeler artık ham tarihe göre sorgulanmıyor — aitAy/FIFO
        gereği yıl sınırını aşan bir ödeme (örn. 1 Ocak'ta alınıp bir önceki
        Aralık'a sayılan bir avans) eskiden hem yanlış yılda çıkabiliyor hem
        de bazı durumlarda hiçbir yılın dışa aktarımında görünmeyebiliyordu.
        tumOdemelerQS (tüm zamanların önbelleği) odemeAyi()'ye göre süzülüyor. */
-    const tumOdemeListesi = [];
-    if(tumOdemelerQS) tumOdemelerQS.forEach(doc=> tumOdemeListesi.push(doc.data()));
+    /* GARANTİLİ: önbellek boşsa sunucudan çekilir — rapor asla sessizce ödemesiz çıkmaz */
+    const tumOdemeListesi = await tumOdemeleriGetir();
     const oListe = tumOdemeListesi.filter(o=> odemeAyi(o).slice(0,4)===String(aktifYil));
     const tirnak = s => '"' + String(s==null?"":s).replace(/"/g,'""') + '"';
     let csv = "\uFEFFTarih;Tur;Durum/Aciklama;Mesai Saat;Tutar TL;Santiye;Not\n";
@@ -4969,6 +5232,12 @@ async function csvIndir(){
     });
     oListe.forEach(v=>{
       satirlar.push([v.tarih, "Odeme", odemeTurEtiket(v.tur), "", -Number(v.tutar||0), "", v.not||""]);
+    });
+    /* Masraflar da CSV'ye eklendi — kategori bilgisiyle birlikte (önceden dışa aktarıma hiç girmiyordu) */
+    mSnap.forEach(doc=>{
+      const v = doc.data();
+      const kat = masrafKategoriBul(v.kategori);
+      satirlar.push([v.tarih, "Masraf", kat.ad+(v.odendi?" (ödendi)":""), "", Number(v.tutar||0), "", v.aciklama||""]);
     });
     satirlar.sort((a,b)=> a[0]<b[0]?-1:1);
     satirlar.forEach(s=> csv += s.map(tirnak).join(";")+"\n");
@@ -4986,10 +5255,12 @@ async function excelIndir(){
   toast("Excel hazırlanıyor...");
   try{
     const bas = aktifYil+"-01-01", son = aktifYil+"-12-31";
-    const [gSnap] = await Promise.all([
+    const [gSnap, mSnap] = await Promise.all([
       kokRef().collection("girdiler")
         .where(firebase.firestore.FieldPath.documentId(), ">=", bas)
-        .where(firebase.firestore.FieldPath.documentId(), "<=", son).get()
+        .where(firebase.firestore.FieldPath.documentId(), "<=", son).get(),
+      kokRef().collection("masraflar")
+        .where("tarih", ">=", bas).where("tarih", "<=", son).get()
     ]);
     const puantajSatir = [["Tarih","Gün","Durum","Mesai (saat)","Şantiye","Not","Kazanç (TL)"]];
     const gunler = [];
@@ -5001,8 +5272,8 @@ async function excelIndir(){
     });
     /* DÜZELTME: aynı csvIndir()'daki gibi — ham tarih yerine odemeAyi()/FIFO
        kullanılıyor, yıl sınırını aşan ödemeler artık doğru yılda çıkıyor. */
-    const tumOdemeListesi = [];
-    if(tumOdemelerQS) tumOdemelerQS.forEach(doc=> tumOdemeListesi.push(doc.data()));
+    /* GARANTİLİ: önbellek boşsa sunucudan çekilir — rapor asla sessizce ödemesiz çıkmaz */
+    const tumOdemeListesi = await tumOdemeleriGetir();
     const odemeler2 = tumOdemeListesi.filter(o=> odemeAyi(o).slice(0,4)===String(aktifYil));
     const odemeSatir = [["Tarih","Tür","Not","Tutar (TL)"]];
     odemeler2.sort((a,b)=> String(a.tarih)<String(b.tarih)?-1:1);
@@ -5015,6 +5286,16 @@ async function excelIndir(){
     const ws2 = XLSX.utils.aoa_to_sheet(odemeSatir);
     ws2["!cols"] = [{wch:11},{wch:12},{wch:28},{wch:12}];
     XLSX.utils.book_append_sheet(wb, ws2, "Ödemeler");
+
+    /* Masraflar sayfası — önceden Excel'de hiç yoktu, sadece uygulama içinde görünüyordu */
+    const masrafSatir = [["Tarih","Kategori","Açıklama","Tutar (TL)","Ödendi mi"]];
+    const masrafListe = [];
+    mSnap.forEach(doc=> masrafListe.push(doc.data()));
+    masrafListe.sort((a,b)=> String(a.tarih)<String(b.tarih)?-1:1);
+    masrafListe.forEach(m=> masrafSatir.push([m.tarih||"", masrafKategoriBul(m.kategori).ad, m.aciklama||"", Number(m.tutar)||0, m.odendi?"Evet":"Hayır"]));
+    const ws3 = XLSX.utils.aoa_to_sheet(masrafSatir);
+    ws3["!cols"] = [{wch:11},{wch:14},{wch:28},{wch:12},{wch:10}];
+    XLSX.utils.book_append_sheet(wb, ws3, "Masraflar");
 
     XLSX.writeFile(wb, "puantaj-"+aktifYil+".xlsx");
     toast("Excel indirildi 📗");
@@ -5041,7 +5322,7 @@ function yedekHatirlat(){
 async function yedekAl(){
   toast("Yedek hazırlanıyor...");
   try{
-    const [ayarDoc, gSnap, oSnap, bSnap, cSnap, nSnap, mSnap, eSnap, egSnap] = await Promise.all([
+    const [ayarDoc, gSnap, oSnap, bSnap, cSnap, nSnap, mSnap, eSnap, egSnap, bkSnap] = await Promise.all([
       kokRef().get(),
       kokRef().collection("girdiler").get(),
       kokRef().collection("odemeler").get(),
@@ -5050,15 +5331,16 @@ async function yedekAl(){
       kokRef().collection("notlar").get(),
       kokRef().collection("masraflar").get(),
       kokRef().collection("ekip").get(),
-      kokRef().collection("ekipGun").get()
+      kokRef().collection("ekipGun").get(),
+      kokRef().collection("beklenenler").get()
     ]);
     const yedek = {
       uygulama: "Puantaj Defterim",
-      surum: 3,
+      surum: 4,
       tarih: new Date().toISOString(),
       eposta: kullanici.email,
       ayarlar: ayarDoc.data()||{},
-      girdiler: {}, odemeler: {}, borclar: {}, cuzdan: {}, notlar: {}, masraflar: {}, ekip: {}, ekipGun: {}
+      girdiler: {}, odemeler: {}, borclar: {}, cuzdan: {}, notlar: {}, masraflar: {}, ekip: {}, ekipGun: {}, beklenenler: {}
     };
     gSnap.forEach(doc=> yedek.girdiler[doc.id] = doc.data());
     oSnap.forEach(doc=> yedek.odemeler[doc.id] = doc.data());
@@ -5068,6 +5350,7 @@ async function yedekAl(){
     mSnap.forEach(doc=> yedek.masraflar[doc.id] = doc.data());
     eSnap.forEach(doc=> yedek.ekip[doc.id] = doc.data());
     egSnap.forEach(doc=> yedek.ekipGun[doc.id] = doc.data());
+    bkSnap.forEach(doc=> yedek.beklenenler[doc.id] = doc.data());
     dosyaIndir("puantaj-yedek-"+tarihId(new Date())+".json", JSON.stringify(yedek,null,2), "application/json");
     try{ localStorage.setItem("sonYedekTarihi", Date.now().toString()); }catch(e){}
     try{ localStorage.setItem("yedekZaman", Date.now()); }catch(e){}
@@ -5107,6 +5390,9 @@ async function yedekGeriYukle(dosya){
     Object.entries(y.masraflar||{}).forEach(([id, v])=> ekle(kokRef().collection("masraflar").doc(id), v));
     Object.entries(y.ekip||{}).forEach(([id, v])=> ekle(kokRef().collection("ekip").doc(id), v));
     Object.entries(y.ekipGun||{}).forEach(([id, v])=> ekle(kokRef().collection("ekipGun").doc(id), v));
+    /* beklenenler: 0.0.1.7'de eklendi. Eski (surum<=3) yedeklerde bu anahtar hiç yok,
+       `||{}` sayesinde sorunsuz atlanıyor — eski yedekler geriye dönük uyumlu kalıyor. */
+    Object.entries(y.beklenenler||{}).forEach(([id, v])=> ekle(kokRef().collection("beklenenler").doc(id), v));
     for(const bt of batches) await bt.commit();
     toast("Yedek geri yüklendi ✅ ("+gSayi+" gün)");
   }catch(e){ hataGoster(e); }
@@ -5458,6 +5744,8 @@ async function hizliIsaretle(id){
   }catch(e){ hataGoster(e); }
 }
 
+/* islem: {id, onceki, foto?} — foto varsa, gün kaydıyla birlikte silinmiş
+   şantiye fotoğrafı da geri yazılır (masraf/ödeme geri almadaki aynı düzeltme). */
 function toastGeriAl(mesaj, islem){
   const t = $("#toast");
   t.innerHTML = "";
@@ -5470,6 +5758,9 @@ function toastGeriAl(mesaj, islem){
       const ref = kokRef().collection("girdiler").doc(islem.id);
       if(islem.onceki) await ref.set(islem.onceki);
       else await ref.delete();
+      if(islem.foto!=null){
+        try{ await kokRef().collection("fotolar").doc(islem.id).set(islem.foto); }catch(e){}
+      }
       toast("Geri alındı ↩️");
       anaTazele();
     }catch(e){ hataGoster(e); }
@@ -6019,6 +6310,7 @@ function isPdfBlobOlustur(is, aySecim){
 }
 
 async function isPdfPaylas(is, aySecim){
+  await tumOdemeOnbellegiHazirla();   /* rapor ödemesiz çıkmasın */
   const blob = isPdfBlobOlustur(is, aySecim);
   if(!blob){ toast("PDF motoru yüklenemedi, internetini kontrol et"); return; }
   const ayEki = aySecim ? "-"+AYLAR[aySecim.ay]+"-"+aySecim.yil : "";
@@ -6169,6 +6461,7 @@ function yilPdfBlobOlustur(){
 }
 
 async function yilPdfPaylas(){
+  await tumOdemeOnbellegiHazirla();   /* rapor ödemesiz çıkmasın */
   const blob = yilPdfBlobOlustur();
   if(!blob){ toast("Önce yıl verisi yüklensin"); return; }
   const dosyaAdi = "Yil-Raporu-"+yilSon.yil+".pdf";
@@ -6554,6 +6847,7 @@ document.addEventListener("DOMContentLoaded", ()=>{
       if(g==="planlar"){ birKezBaslat("planlar", planlariDinle); planSantiyeSecDoldur(); }
       if(g==="maaslar") maaslarListCiz();
       if(g==="notlar") birKezBaslat("notlar", notlariDinle);
+      if(g==="odemeler") birKezBaslat("beklenen", beklenenDinle);
       if(g!=="arac" && sesAkis) sesDurdur();
       if(g!=="arac" && oyun){ oyun.bitti = true; oyun = null; const oa=$("#oyun-alan"); if(oa) oa.classList.add("gizli"); }
       if(g!=="arac" && teraziAcik){ teraziAcik = false; window.removeEventListener("deviceorientation", teraziDinle); const ta=$("#terazi-alan"); if(ta) ta.classList.add("gizli"); }
@@ -6762,6 +7056,7 @@ document.addEventListener("DOMContentLoaded", ()=>{
     }catch(e){}
   });
   $("#borc-uyari").addEventListener("click", ()=> gorunumSec("borc"));
+  $("#beklenen-uyari").addEventListener("click", ()=> gorunumSec("odemeler"));
   $("#kart-uyari").addEventListener("click", ()=> gorunumSec("kartlar"));
   $("#btn-kart-ekle").addEventListener("click", async ()=>{
     const banka = $("#kart-banka").value.trim();
@@ -6995,10 +7290,18 @@ document.addEventListener("DOMContentLoaded", ()=>{
     if(ayKilitli(modalTarih)){ toast("Bu ay kilitli 🔒 Hesap özetinden açabilirsin"); return; }
     if(!confirm("Bu günün kaydını silmek istiyor musun?")) return;
     const onceki = girdiler[modalTarih] ? {...girdiler[modalTarih]} : null;
+    /* Fotoğrafı silmeden ÖNCE belleğe al ki "GERİ AL" onu da geri getirebilsin */
+    let fotoYedek = null;
+    if(onceki && onceki.foto){
+      try{
+        const fd = await kokRef().collection("fotolar").doc(modalTarih).get();
+        if(fd.exists) fotoYedek = fd.data();
+      }catch(e){}
+    }
     try{
       await kokRef().collection("girdiler").doc(modalTarih).delete();
       kokRef().collection("fotolar").doc(modalTarih).delete().catch(()=>{});
-      modalKapat(); toastGeriAl("Kayıt silindi", {id:modalTarih, onceki});
+      modalKapat(); toastGeriAl("Kayıt silindi", {id:modalTarih, onceki, foto:fotoYedek});
       anaTazele();
     }catch(e){ hataGoster(e); }
   });
@@ -7351,7 +7654,7 @@ document.addEventListener("DOMContentLoaded", ()=>{
   });
 
   /* Neler yeni kartı */
-  const YENILIK_SURUM = "0.0.1.6";
+  const YENILIK_SURUM = "0.0.2.1";
   try{ $("#cekmece-surum").textContent = "Puantaj Defterim " + YENILIK_SURUM; }catch(e){}
   try{
     if(localStorage.getItem("yenilik")!==YENILIK_SURUM) $("#yenilik-kart").classList.remove("gizli");
@@ -7692,8 +7995,32 @@ document.addEventListener("DOMContentLoaded", ()=>{
     document.querySelector('[data-goruntu="maaslar"]').click();
   });
 
+  /* ---- ⏳ Beklenen ödemeler ---- */
+  $("#beklenen-tarih").value = tarihId(new Date());
+  $("#btn-beklenen-ekle").addEventListener("click", async ()=>{
+    const tutar = sayi($("#beklenen-tutar").value);
+    const tarih = $("#beklenen-tarih").value || tarihId(new Date());
+    if(!tutar || tutar<=0){ toast("Tutarı yaz kanka"); return; }
+    const btn = $("#btn-beklenen-ekle");
+    if(btn.disabled) return;
+    btn.disabled = true;
+    try{
+      await kokRef().collection("beklenenler").add({
+        tutar, tarih, not: $("#beklenen-not").value.trim(),
+        tur: $("#beklenen-tur").value || "avans",
+        olusturma: firebase.firestore.FieldValue.serverTimestamp()
+      });
+      $("#beklenen-tutar").value=""; $("#beklenen-not").value="";
+      $("#beklenen-tur").value = "avans";
+      $("#beklenen-tarih").value = tarihId(new Date());
+      toast("⏳ Beklenen ödeme eklendi, tahsil edince ✔'ye bas");
+    }catch(e){ hataGoster(e); }
+    finally{ btn.disabled = false; }
+  });
+
   /* ---- İş masrafları ---- */
   $("#masraf-tarih").value = tarihId(new Date());
+  masrafKategoriCizGoster();
   $("#btn-masraf-ekle").addEventListener("click", async ()=>{
     const tutar = sayi($("#masraf-tutar").value);
     const tarih = $("#masraf-tarih").value || tarihId(new Date());
@@ -7711,6 +8038,7 @@ document.addEventListener("DOMContentLoaded", ()=>{
       const veri = {
         tarih, tutar,
         aciklama: $("#masraf-aciklama").value.trim(),
+        kategori: masrafSeciliKategori,
         odendi: false,
         olusturma: firebase.firestore.FieldValue.serverTimestamp()
       };
