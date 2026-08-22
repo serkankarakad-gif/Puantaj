@@ -1349,3 +1349,52 @@ html, body{
    sebebi bulunamayan yerleşim hatalarının klasik kaynağıdır. Zaten
    var olan `main, section, .kart{min-width:0}` bu işi kapsıyor. */
 img, svg, canvas, video, table, pre{ max-width:100% }
+
+/* ═══════════════════════════════════════════════════════════════════
+   0.0.3.0 — ÜRETİM KALİTESİ: araştırma bulgularının uygulanması
+   ═══════════════════════════════════════════════════════════════════ */
+
+/* ── 1. HATA: iOS'ta her girdiye dokununca ekran yakınlaşıyordu ────
+   `input,select,textarea{font-size:15px}` tanımlıydı. iOS Safari,
+   font boyutu 16px'in ALTINDA olan bir alana odaklanınca sayfayı
+   otomatik yakınlaştırır ve GERİ DÖNDÜRMEZ. Yani 0.0.2.9'da
+   yakınlaştırmayı kilitledik ama her yevmiye/tutar yazmaya
+   başladığında ekran zıplayıp öyle kalıyordu — istenen davranışın
+   tam tersi.
+   Doğru çözüm font boyutunu 16px'e çıkarmaktır; `maximum-scale=1`
+   ile bastırmak erişilebilirliği bozar (WCAG ihlali). Kural yalnızca
+   dokunmatik cihazlara uygulanıyor, masaüstü görünümü değişmiyor. */
+@media (pointer: coarse){
+  input, select, textarea,
+  .alan input, .alan select, .alan textarea{
+    font-size:16px;
+  }
+}
+
+/* ── 2. Dokunma hedefi: tema renk düğmeleri ────────────────────────
+   Denetimde 44px altında kalan TEK öğe bunlardı (40×40).
+   WCAG 2.2 SC 2.5.8 asgari 24px ister ama eldivenli/tozlu parmak
+   için platform önerisi (iOS 44pt / Android 48dp) esas alındı.
+   Görsel daire aynı boyutta kalıyor, dokunma alanı büyütülüyor. */
+#tema-secim{ gap:8px }
+#tema-secim button{
+  width:44px; height:44px;
+  background-clip:content-box;      /* renk dairesi görsel olarak küçük kalsın */
+  padding:2px;
+}
+
+/* ── 3. Uzun listelerde render maliyetini düşür ────────────────────
+   `content-visibility:auto`, ekran dışındaki liste satırlarının
+   yerleşim ve boyama işini atlar. Düşük donanımlı Android'de uzun
+   puantaj/ödeme listelerinde ilk çizim süresini belirgin azaltır.
+   `contain-intrinsic-size` ile tahmini yükseklik verilerek kaydırma
+   çubuğunun zıplaması önleniyor.
+   Destek: Chromium 85+. Desteklenmeyen eski WebView'de kural yok
+   sayılır, davranış bugünküyle aynı kalır (aşamalı iyileştirme). */
+.liste li{
+  content-visibility:auto;
+  contain-intrinsic-size:auto 76px;
+}
+/* Takvim hücrelerine UYGULANMADI: 30-31 hücre zaten tek ekranda
+   görünüyor, content-visibility burada fayda getirmez ama ölçüm
+   maliyeti ekler. */

@@ -85,3 +85,15 @@ const MASRAF_KATEGORI = [
   {kod:"diger",    ad:"Diğer",          ikon:"📦"}
 ];
 const masrafKategoriBul = kod => MASRAF_KATEGORI.find(k=>k.kod===kod) || MASRAF_KATEGORI[MASRAF_KATEGORI.length-1];
+
+/* ---------- 🇹🇷 Türkçe harf dönüşümü ----------
+   JavaScript'in varsayılan toUpperCase()/toLowerCase() İngilizce kurallarını
+   uygular ve Türkçede iki somut hata üretir:
+     • "Haziran".toUpperCase() → "HAZIRAN"  (doğrusu "HAZİRAN")
+     • "İstanbul".toLowerCase() → "i̇stanbul" (i + görünmez birleşik nokta)
+   İkincisi daha sinsi: görünüşte "istanbul" yazıyor ama içinde fazladan bir
+   karakter var, bu yüzden kullanıcının yazdığı "istanbul" ile EŞLEŞMİYOR —
+   yani "İbrahim" adlı işçiyi "ibrahim" yazarak arayınca bulunamıyordu.
+   Bu iki yardımcı, arama ve rapor başlıklarında bunun yerine kullanılır. */
+const trBuyuk = s => String(s==null?"":s).toLocaleUpperCase("tr-TR");
+const trKucuk = s => String(s==null?"":s).toLocaleLowerCase("tr-TR");

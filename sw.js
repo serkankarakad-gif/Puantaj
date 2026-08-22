@@ -1,5 +1,5 @@
 /* Puantaj Defterim — service worker (çevrimdışı kabuk) */
-const KASA = "puantaj-0.0.2.9";
+const KASA = "puantaj-0.0.3.0";
 /* ÇEKİRDEK: uygulamanın açılması için ŞART olan dosyalar. addAll atomiktir —
    biri bile inmezse kurulum tamamen başarısız olur, bu yüzden burada sadece
    gerçekten zorunlu olanlar var. */
@@ -22,15 +22,30 @@ self.addEventListener("install", e => {
         /* Bilerek waitUntil zincirine BAĞLANMIYOR: arka planda ilsin, kurulumu bekletmesin */
         EK_DOSYALAR.forEach(u => c.add(u).catch(() => {}));
       })
-    ).then(() => self.skipWaiting())
+    )
+    /* skipWaiting() BİLEREK ÇAĞRILMIYOR (0.0.3.0).
+       Eskiden kurulum biter bitmez `skipWaiting()` çağrılıyor, activate'te de
+       `clients.claim()` yapılıyordu. Bu, yeni sürüm yayınlandığı anda çalışan
+       sayfayı yeni service worker'ın devralması demek — kullanıcı tam puantaj
+       veya masraf formu doldururken sayfa yenilenip GİRDİĞİ VERİ KAYBOLABİLİYORDU.
+       Ayrıca sayfa v1 kodunu çalıştırırken worker v2 olabildiği için sürüm
+       çarpıklığı (version skew) riski vardı.
+       Artık yeni sürüm "waiting" durumunda bekliyor; app.js kullanıcıya
+       "Yeni sürüm hazır — Yenile" bildirimi gösteriyor ve kullanıcı onaylayınca
+       aşağıdaki SKIP_WAITING mesajı geliyor. Karar kullanıcıda. */
   );
+});
+
+/* Kullanıcı "Yenile"ye bastığında app.js bu mesajı gönderir. */
+self.addEventListener("message", e => {
+  if (e.data && e.data.tip === "SKIP_WAITING") self.skipWaiting();
 });
 
 self.addEventListener("activate", e => {
   e.waitUntil(
     caches.keys()
       .then(adlar => Promise.all(adlar.filter(a => a !== KASA && a !== "puantaj-duyuru").map(a => caches.delete(a))))
-      .then(() => self.clients.claim())
+      .then(() => self.clients.claim())   /* skipWaiting sadece kullanıcı onayıyla tetiklendiği için burada güvenli */
   );
 });
 

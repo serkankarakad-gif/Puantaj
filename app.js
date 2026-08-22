@@ -260,7 +260,7 @@ function avatarCiz(){
      artık SADECE Ayarlar'dan yapılabiliyor ama sonucu her yerde görünmeli. */
   const adHarfi = ()=>{
     const ad = (kullanici && kullanici.displayName) || "";
-    return ad.trim().charAt(0).toUpperCase() || "?";
+    return trBuyuk(ad.trim().charAt(0)) || "?";
   };
   ["#menu-avatar", "#ayar-avatar-onizle", "#pin-avatar"].forEach(secici=>{
     const el = $(secici);
@@ -1051,13 +1051,13 @@ function notRenkSec(renk){
 }
 function notCiz(){
   const ul = $("#liste-notlar");
-  const ara = (($("#not-ara")&&$("#not-ara").value)||"").toLowerCase().trim();
+  const ara = trKucuk(($("#not-ara")&&$("#not-ara").value)||"").trim();
   let liste = [...notlar];
   liste.sort((a,b)=>{
     if(!!b.sabit !== !!a.sabit) return b.sabit ? 1 : -1;
     return a.tarih < b.tarih ? 1 : -1;
   });
-  if(ara) liste = liste.filter(n=> String(n.metin||"").toLowerCase().includes(ara));
+  if(ara) liste = liste.filter(n=> trKucuk(n.metin||"").includes(ara));
   if(!liste.length){
     ul.innerHTML = '<div class="bos-mesaj"><span class="buyuk">📝</span>'+(ara?'Eşleşen not yok.':'Henüz not yok.')+'</div>';
     return;
@@ -1599,7 +1599,7 @@ function isciListeCiz(){
   ekipListe.forEach(i=>{
     const li = document.createElement("li");
     li.innerHTML =
-      '<div class="rozet" style="background:var(--mesai)">'+esc(String(i.ad||"?").charAt(0).toUpperCase())+'</div>'+
+      '<div class="rozet" style="background:var(--mesai)">'+esc(trBuyuk(String(i.ad||"?").charAt(0)))+'</div>'+
       '<div class="orta"><div class="baslik">'+esc(i.ad)+'</div>'+
       '<div class="alt-yazi">Yevmiye '+paraFmt(i.yevmiye)+' · Mesai '+paraFmt(i.mesaiUcret)+'/saat</div></div>'+
       '<button class="sil" aria-label="Sil">🗑️</button>';
@@ -1727,7 +1727,7 @@ async function ekipOzetYukle(){
       g.gunler.sort((a,b)=>a-b);
       const li = document.createElement("li");
       li.innerHTML =
-        '<div class="rozet" style="background:var(--asfalt2)">'+esc(String(isc.ad||"?").charAt(0).toUpperCase())+'</div>'+
+        '<div class="rozet" style="background:var(--asfalt2)">'+esc(trBuyuk(String(isc.ad||"?").charAt(0)))+'</div>'+
         '<div class="orta"><div class="baslik">'+esc(isc.ad)+'</div>'+
         '<div class="alt-yazi">'+g.gun+' gün · '+g.mesai+' saat mesai</div></div>'+
         '<div class="tutar">'+paraFmt(g.hak)+'</div>'+
@@ -1767,7 +1767,7 @@ async function kisilerYukle(){
       const ben = doc.id===kullanici.uid;
       const b = document.createElement("button");
       b.className = "eksik-cip kisi-cip";
-      b.dataset.ad = ad.toLowerCase();
+      b.dataset.ad = trKucuk(ad);
       b.textContent = "👤 " + ad + (ben ? " (sen)" : "");
       if(ben) b.style.borderColor = "var(--sari)";
       b.addEventListener("click", ()=> kisiSec(doc.id, ad));
@@ -1975,7 +1975,7 @@ function pngOzetBlobOlustur(gBas, gSon){
   c.fillStyle = koyu; c.fillRect(0,0,W,86);
   c.fillStyle = sari; c.fillRect(0,86,W,8);
   c.fillStyle = sari; c.font = "bold 30px Arial";
-  c.fillText("PUANTAJ — "+AYLAR[aktifAy].toUpperCase()+" "+aktifYil+t.etiket, 24, 42);
+  c.fillText("PUANTAJ — "+trBuyuk(AYLAR[aktifAy])+" "+aktifYil+t.etiket, 24, 42);
   c.fillStyle = "#DDD"; c.font = "16px Arial";
   c.fillText("👷 "+((kullanici&&kullanici.displayName)||""), 24, 70);
   /* başlık satırı */
@@ -2032,7 +2032,7 @@ function pngAvansBlobOlustur(gBas, gSon){
   c.fillStyle = koyu; c.fillRect(0,0,W,86);
   c.fillStyle = sari; c.fillRect(0,86,W,8);
   c.fillStyle = sari; c.font = "bold 26px Arial";
-  c.fillText("ALINAN AVANSLAR — "+AYLAR[aktifAy].toUpperCase()+" "+aktifYil+t.etiket, 24, 42);
+  c.fillText("ALINAN AVANSLAR — "+trBuyuk(AYLAR[aktifAy])+" "+aktifYil+t.etiket, 24, 42);
   c.fillStyle = "#DDD"; c.font = "16px Arial";
   c.fillText("👷 "+((kullanici&&kullanici.displayName)||""), 24, 70);
   /* başlık satırı */
@@ -4567,13 +4567,13 @@ function durumRenk(d){
 
 function gunListesiCiz(){
   const ul = $("#liste-gunler");
-  const ara = ($("#kayit-ara").value||"").toLowerCase().trim();
+  const ara = trKucuk($("#kayit-ara").value||"").trim();
   let idler = Object.keys(girdiler).sort();
   if(kayitSirala==="yeni") idler.reverse();
   if(ara){
     idler = idler.filter(id=>{
       const v = girdiler[id];
-      return ((v.not||"")+" "+(v.santiye||"")+" "+girisEtiket(v)).toLowerCase().includes(ara);
+      return trKucuk((v.not||"")+" "+(v.santiye||"")+" "+girisEtiket(v)).includes(ara);
     });
   }
   if(!idler.length){
@@ -4609,8 +4609,8 @@ function odemeTurEtiket(t){
 function odemeListesiCiz(){
   const ul = $("#liste-odemeler");
   let gorunen = odemeFiltre ? odemeler.filter(o=> (o.tur||"diger")===odemeFiltre) : odemeler;
-  const oAra = (($("#odeme-ara")&&$("#odeme-ara").value)||"").toLowerCase().trim();
-  if(oAra) gorunen = gorunen.filter(o=> String(o.not||"").toLowerCase().includes(oAra) || odemeTurEtiket(o.tur).toLowerCase().includes(oAra));
+  const oAra = trKucuk(($("#odeme-ara")&&$("#odeme-ara").value)||"").trim();
+  if(oAra) gorunen = gorunen.filter(o=> trKucuk(o.not||"").includes(oAra) || trKucuk(odemeTurEtiket(o.tur)).includes(oAra));
   const toplamEl = $("#odeme-toplam");
   if(toplamEl) toplamEl.textContent = gorunen.length ? "Toplam: "+paraFmt(gorunen.reduce((s,o)=>s+(Number(o.tutar)||0),0)) : "";
   if(!gorunen.length){
@@ -6284,7 +6284,7 @@ function isPdfBlobOlustur(is, aySecim){
   const solX = 40, sagX = 555;
   let y = 46;
   doc.setFont(yaziTipi,"bold"); doc.setFontSize(16);
-  doc.text("İŞ RAPORU"+(aySecim ? " — "+AYLAR[aySecim.ay].toUpperCase()+" "+aySecim.yil : ""), solX, y);
+  doc.text("İŞ RAPORU"+(aySecim ? " — "+trBuyuk(AYLAR[aySecim.ay])+" "+aySecim.yil : ""), solX, y);
   y += 8;
   doc.setDrawColor(255,196,0); doc.setLineWidth(2.5);
   doc.line(solX, y, sagX, y);
@@ -6312,7 +6312,7 @@ function isPdfBlobOlustur(is, aySecim){
     const gunlerBuAy = aylikGruplar[anahtar];
     if(y > 700){ doc.addPage(); y = 50; }
     doc.setFont(yaziTipi,"bold"); doc.setFontSize(12.5); doc.setTextColor(0);
-    doc.text(AYLAR[aa-1].toUpperCase()+" "+yy, solX, y);
+    doc.text(trBuyuk(AYLAR[aa-1])+" "+yy, solX, y);
     y += 6;
     const ayGun = gunlerBuAy.reduce((s,g)=> s+(g.v?girdiGun(g.v):0), 0);
     const ayMesai = gunlerBuAy.reduce((s,g)=> s+(g.v?(Number(g.v.mesai)||0):0), 0);
@@ -6456,7 +6456,7 @@ function yilPdfBlobOlustur(){
     let y2 = 46;
     const ayinSonGunu = new Date(yilSon.yil, ayIndex+1, 0).getDate();
     doc.setFont(yaziTipi,"bold"); doc.setFontSize(15);
-    doc.text(ayOzet.ad.toUpperCase()+" "+yilSon.yil+" — DETAY", solX, y2);
+    doc.text(trBuyuk(ayOzet.ad)+" "+yilSon.yil+" — DETAY", solX, y2);
     y2 += 8;
     doc.setDrawColor(255,196,0); doc.setLineWidth(2.5);
     doc.line(solX, y2, sagX, y2);
@@ -6642,6 +6642,33 @@ function durumButonYenile(){
 }
 
 /* ---------- Olaylar ---------- */
+/* ---------- 💸 Firestore maliyet koruması: arka planda dinleyicileri durdur ----------
+   Firestore belgelerine göre, bir onSnapshot dinleyicisi 30 DAKİKADAN uzun süre
+   bağlantısız kalıp sonra yeniden bağlanırsa, eşleşen TÜM dökümanlar sıfırdan bir
+   sorguymuş gibi yeniden faturalanır. Şantiyede internet sürekli kesilip bağlandığı
+   ve telefon uzun süre cepte (arka planda) kaldığı için bu, sessizce tekrarlayan bir
+   okuma maliyeti kaynağı.
+
+   Çözüm: uygulama arka plana geçtiğinde ağır "tüm zamanlar" dinleyicilerini kapat,
+   öne dönünce yeniden kur. Ana ekran para kartını besleyen bu iki dinleyici zaten
+   `tumVeriBirak()` ile temiz kapanıyor ve `anaYukle()` içinde get() yedeği var —
+   yani kapatmak veri kaybına yol açmıyor, sadece maliyeti düşürüyor.
+
+   Diğer dinleyiciler (girdiler, ödemeler, masraflar) BİLEREK kapatılmıyor: onlar
+   aktif ayla sınırlı, küçük ve kullanıcı ekrana dönünce anında veri görmeli. */
+let arkaPlanZaman = null;
+document.addEventListener("visibilitychange", ()=>{
+  if(document.visibilityState === "hidden"){
+    /* Hemen kapatma — ekran kilidi/bildirim gibi kısa geçişlerde gereksiz
+       kapat-aç döngüsü olmasın diye 2 dakika bekle. */
+    clearTimeout(arkaPlanZaman);
+    arkaPlanZaman = setTimeout(()=>{ try{ tumVeriBirak(); }catch(e){} }, 120000);
+  }else{
+    clearTimeout(arkaPlanZaman);
+    if(kullanici){ try{ tumVeriDinle(); anaTazele(); }catch(e){} }
+  }
+});
+
 /* PWA: service worker kaydı + güncelleme bildirimi.
    Otomatik yenilemiyoruz (kullanıcı ortasında form doldurken sayfa
    birden yenilenirse yazdığı şey kaybolur) — sadece nazikçe haber veriyoruz,
@@ -6697,9 +6724,24 @@ async function guncellemeBandiGoster(){
     cubuk.style.width = "100%";
   }));
   setTimeout(()=> btn.classList.remove("gizli"), 5000);
-  btn.onclick = ()=>{
+  btn.onclick = async ()=>{
     btn.textContent = "Yenileniyor…";
     window._swYenile();
+    /* 0.0.3.0: sw.js artık kurulum biter bitmez kendini devreye SOKMUYOR
+       (kullanıcı form doldururken sayfa yenilenip veri kaybolmasın diye).
+       Yeni sürüm "waiting" durumunda bekliyor; devralması için ona açıkça
+       izin vermemiz gerekiyor. Mesaj gönderildikten sonra worker devralır,
+       `controllerchange` tetiklenir ve yukarıdaki dinleyici sayfayı yeniler.
+       Mesaj gönderilemezse (worker yoksa vb.) doğrudan reload'a düşülüyor —
+       kullanıcı hiçbir durumda ekranda takılı kalmıyor. */
+    try{
+      const kayit = await navigator.serviceWorker.getRegistration();
+      if(kayit && kayit.waiting){
+        kayit.waiting.postMessage({tip:"SKIP_WAITING"});
+        setTimeout(()=> location.reload(), 1200);   /* devralma olmazsa yine de yenile */
+        return;
+      }
+    }catch(e){}
     location.reload();
   };
 }
@@ -7773,7 +7815,7 @@ document.addEventListener("DOMContentLoaded", ()=>{
   });
 
   /* Neler yeni kartı */
-  const YENILIK_SURUM = "0.0.2.9";
+  const YENILIK_SURUM = "0.0.3.0";
   try{ $("#cekmece-surum").textContent = "Puantaj Defterim " + YENILIK_SURUM; }catch(e){}
   try{
     if(localStorage.getItem("yenilik")!==YENILIK_SURUM) $("#yenilik-kart").classList.remove("gizli");
@@ -7945,7 +7987,7 @@ document.addEventListener("DOMContentLoaded", ()=>{
       $("#pin-avatar").textContent = "";
     }else{
       $("#pin-avatar").style.backgroundImage = "";
-      $("#pin-avatar").textContent = ad.trim().charAt(0).toUpperCase() || "?";
+      $("#pin-avatar").textContent = trBuyuk(ad.trim().charAt(0)) || "?";
     }
     if(degistirMi){
       pinModu = "dogrula";
@@ -8350,7 +8392,7 @@ document.addEventListener("DOMContentLoaded", ()=>{
 
   /* Kişi arama */
   $("#kisi-ara").addEventListener("input", ()=>{
-    const q = $("#kisi-ara").value.toLowerCase().trim();
+    const q = trKucuk($("#kisi-ara").value).trim();
     $$(".kisi-cip").forEach(c=>{
       c.style.display = !q || c.dataset.ad.includes(q) ? "" : "none";
     });
