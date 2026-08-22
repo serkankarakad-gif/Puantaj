@@ -1,10 +1,28 @@
 /* Puantaj Defterim — service worker (çevrimdışı kabuk) */
-const KASA = "puantaj-0.0.2.1";
-const DOSYALAR = ["./", "./index.html", "./manifest.webmanifest", "./style.css", "./app.js", "./firebase-config.js", "./sabitler.js", "./font-liberationsans-regular.js", "./font-liberationsans-bold.js", "./pin-arka-fotograf.jpg"];
+const KASA = "puantaj-0.0.2.4";
+/* ÇEKİRDEK: uygulamanın açılması için ŞART olan dosyalar. addAll atomiktir —
+   biri bile inmezse kurulum tamamen başarısız olur, bu yüzden burada sadece
+   gerçekten zorunlu olanlar var. */
+const DOSYALAR = ["./", "./index.html", "./manifest.webmanifest", "./style.css", "./app.js", "./firebase-config.js", "./sabitler.js", "./pin-arka-fotograf.jpg"];
+/* EK: sadece PDF üretilirken gereken ~1,05 MB'lık fontlar. 0.0.2.3'te çekirdekten
+   ayrıldılar çünkü:
+     1) addAll atomik olduğu için, zayıf şantiye internetinde bu 1 MB'ın yarıda
+        kalması TÜM çevrimdışı kurulumu düşürüyordu (uygulama hiç çevrimdışı
+        çalışmaz hale geliyordu, sebebi de görünmüyordu),
+     2) kurulumu gereksiz yere uzatıyorlardı.
+   Artık kurulum çekirdek inince tamamlanıyor; fontlar arka planda, başarısız
+   olsa bile kurulumu etkilemeden önbelleğe alınıyor. İnmezlerse PDF yine
+   üretilir (app.js "helvetica" yedeğine düşer). */
+const EK_DOSYALAR = ["./font-liberationsans-regular.js", "./font-liberationsans-bold.js"];
 
 self.addEventListener("install", e => {
   e.waitUntil(
-    caches.open(KASA).then(c => c.addAll(DOSYALAR)).then(() => self.skipWaiting())
+    caches.open(KASA).then(c =>
+      c.addAll(DOSYALAR).then(() => {
+        /* Bilerek waitUntil zincirine BAĞLANMIYOR: arka planda ilsin, kurulumu bekletmesin */
+        EK_DOSYALAR.forEach(u => c.add(u).catch(() => {}));
+      })
+    ).then(() => self.skipWaiting())
   );
 });
 

@@ -837,3 +837,220 @@ button:focus-visible{ outline: 2px solid var(--sari); outline-offset: 2px }
 @media (prefers-reduced-motion: reduce){
   .btn:active, .eksik-cip:active, .durum-secim button:active, .takvim > div:active{ transform: none }
 }
+
+/* ═══════════════════════════════════════════════════════════════════
+   0.0.2.2 — ARAYÜZ YENİLEMESİ: "Şantiye işareti"
+   ───────────────────────────────────────────────────────────────────
+   Yön: Bu bir ofis uygulaması değil. Kullanıcı bunu şantiyede, öğle
+   güneşinde, tozlu parmakla, çoğu zaman tek eliyle açıyor. Bu yüzden
+   tasarım dili şantiyenin kendi diliyle kuruldu: tebeşir işareti,
+   kalıp üstüne şablonla basılmış rakam, sarı-siyah ikaz bandı — ama
+   ikaz sarısı SADECE bir şey ifade ettiği yerde kullanılıyor, süs
+   olarak değil.
+
+   Blok dosyanın sonuna eklendi: mevcut 839 satırlık çalışan CSS'in
+   sırası bozulmuyor, aynı özgüllükteki kurallar burada geçersiz
+   kılınıyor. Böylece yenileme geri alınabilir ve izlenebilir kalıyor.
+   ═══════════════════════════════════════════════════════════════════ */
+
+/* ── 1. İMZA: bugünün hücresi ──────────────────────────────────────
+   HATA DÜZELTMESİ + tasarım. Eskiden `.hucre.bugun` kenarlığı
+   var(--asfalt) = #0E0F13 idi; bu, normal hücre kenarlığından
+   (#262933) DAHA KOYU. Yani takvimin en önemli hücresi, sıradan bir
+   günden daha az görünüyordu. Artık bugün, betona tebeşirle çekilmiş
+   bir nişan gibi işaretleniyor: sarı halka + üst köşede tik. */
+.hucre.bugun{
+  border-color:var(--sari);
+  border-width:2px;
+  /* Yedek: color-mix desteklemeyen eski Android/WebView'lerde de halka görünsün.
+     Aşağıdaki color-mix satırı destekleyen tarayıcıda bunun üzerine yazar. */
+  box-shadow:0 0 0 3px rgba(255,196,0,.22);
+  box-shadow:0 0 0 3px color-mix(in srgb, var(--sari) 22%, transparent);
+}
+.hucre.bugun::before{
+  content:"";position:absolute;top:3px;right:3px;
+  width:5px;height:5px;border-radius:50%;background:var(--sari);
+  pointer-events:none;
+}
+/* Bugün aynı zamanda işlenmişse (renkli dolgu), sarı halka dolgunun
+   üstünde kalmalı — dolgu rengi halkayı yutmasın diye kontrast halka */
+.hucre.bugun.d-tam, .hucre.bugun.d-yarim, .hucre.bugun.d-gelmedi{
+  box-shadow:0 0 0 2px var(--beton), 0 0 0 4px var(--sari);
+  border-color:transparent;
+}
+
+/* ── 2. Takvim rakamları: uygulamanın geri kalanıyla aynı dilde ────
+   Uygulamadaki HER rakam Saira Condensed ile diziliyor (bakiye, özet
+   kutuları, kronometre, hava sıcaklığı) — takvim ise tek istisnaydı,
+   Rubik kullanıyordu. Takvim bu uygulamanın ana artefaktı; rakamları
+   şablon/tabela karakterine geçirmek hem tutarlılık hem okunurluk
+   kazandırıyor. Tabular rakam: hücreden hücreye genişlik oynamıyor. */
+.hucre > span:first-child{
+  font-family:'Saira Condensed', sans-serif;
+  font-size:19px; font-weight:800; line-height:1;
+  font-variant-numeric:tabular-nums;
+  letter-spacing:.01em;
+}
+
+/* ── 3. Gün adı şeridi: basılı form başlığı gibi ───────────────────
+   Bu şerit ekranın üstünde sabit duruyor ve kullanıcının sütun
+   hizasını takip etmesini sağlıyor — yani bir yön bulma aracı, dekor
+   değil. Güneş altında okunması için kontrastı ve harf aralığı
+   artırıldı. */
+.takvim .gun-adi, .takvim-baslik .gun-adi{
+  font-size:11.5px; font-weight:800;
+  color:var(--metin); opacity:.62;
+  letter-spacing:.1em;
+  padding:6px 0 5px;
+}
+
+/* ── 4. Dış mekân okunurluğu ───────────────────────────────────────
+   Küçük gri yazılar (alt satırlar, etiketler) parlak güneşte
+   kayboluyordu. Koyu temada soluk ton bir kademe açıldı; açık temada
+   bir kademe koyulaştı. Renk kimliği değişmiyor, sadece kontrast. */
+:root{ --soluk:#9CA0AC }
+html[data-tema="acik"]{ --soluk:#5D6069 }
+
+/* ── 5. Dokunma geri bildirimi ─────────────────────────────────────
+   Eldivenli/tozlu parmakla dokunuşun kaydedildiğini görmek gerekiyor.
+   Mevcut scale(.94) korundu, üzerine kısa bir kenar vurgusu eklendi. */
+.takvim > div:not(.bos):active{
+  border-color:var(--sari);
+}
+
+/* ── 6. İşlenmiş gün dolgularına derinlik ──────────────────────────
+   Tam/yarım/gelmedi hücreleri düz renk bloklarıydı; üstten hafif bir
+   iç ışık, boyalı metal levha hissi veriyor ve rakamı zeminden
+   ayırıyor. */
+.hucre.d-tam, .hucre.d-yarim, .hucre.d-gelmedi{
+  background-image:linear-gradient(to bottom, rgba(255,255,255,.14), rgba(0,0,0,.06));
+  text-shadow:0 1px 2px rgba(0,0,0,.28);
+}
+
+/* ── 7. Kart başlığı vurgusu (0.0.1.7'de eklendi, burada olgunlaştı)
+   Solda düz bir çizgi yerine, ikaz bandını çağrıştıran kısa ve kalın
+   bir işaret — ama sadece kart başlıklarında, tek yerde. */
+.kart h2{
+  border-left:none;
+  padding-left:0;
+  position:relative;
+  padding-top:2px;
+}
+.kart h2::before{
+  content:"";position:absolute;left:-16px;top:2px;
+  width:4px;height:calc(100% - 4px);
+  border-radius:0 3px 3px 0;
+  background:var(--sari);
+}
+
+/* ── 8. Kalite tabanı: klavye odağı ────────────────────────────────
+   Fiziksel klavye/erişilebilirlik aracı kullananlar için odak
+   görünürlüğü. Fareyle/dokunmayla tıklamada çıkmaz (:focus-visible). */
+button:focus-visible, a:focus-visible, input:focus-visible,
+select:focus-visible, textarea:focus-visible, .hucre:focus-visible{
+  outline:3px solid var(--sari);
+  outline-offset:2px;
+  border-radius:8px;
+}
+
+/* ── 9. Hareket azaltma tercihi ────────────────────────────────────
+   Yukarıda eklenen tek hareketli öğe hücre basma efekti; sistem
+   ayarında hareket azaltılmışsa devre dışı. */
+@media (prefers-reduced-motion: reduce){
+  .hucre{ animation:none }
+}
+
+/* ── 10. Bakiye rakamı: sayfanın tezi ──────────────────────────────
+   Kullanıcı bu uygulamayı günde birçok kez SADECE bu rakama bakmak
+   için açıyor: "elime ne geçecek?". Rakam zaten Saira Condensed ile
+   diziliydi ama degrade ile metin rengi saydamlaştırılmıştı; bu,
+   parlak güneşte ve düşük parlaklıkta okunurluğu düşüren bir tercih.
+   Degrade korundu (kimliğin parçası) ama daha dar bir aralığa
+   çekilerek alt uçtaki koyu ton kaldırıldı, harf aralığı sıkıldı ve
+   gövde ile arasındaki ölçek farkı belirginleştirildi. */
+.banka-kart .bakiye{
+  font-size:52px;
+  letter-spacing:-.015em;
+  line-height:1.02;
+  margin:12px 0 6px;
+  background:linear-gradient(160deg, var(--sari) 0%, var(--sari) 55%, var(--sari-koyu) 100%);
+  -webkit-background-clip:text; background-clip:text;
+  /* Degrade metin desteklenmezse rakam görünmez kalmasın diye taban renk */
+  color:var(--sari);
+  -webkit-text-fill-color:transparent;
+}
+/* Kartın üst etiketi ("BU AY ELİNE GEÇECEK" vb.) rakamın bağlamı —
+   küçük ama okunur, form etiketi gibi. */
+.banka-kart .kart-ust{
+  font-size:11.5px; font-weight:700; letter-spacing:.14em;
+  color:rgba(255,255,255,.82);
+}
+
+/* ── 11. Özet kutuları: ızgara hizası ──────────────────────────────
+   Rakamlar farklı uzunlukta (1.200 ₺ / 12.400 ₺) olduğu için kutular
+   arasında optik kayma oluyordu; tabular rakam zaten açıktı, buraya
+   satır yüksekliği sabitlemesi ve etiket-rakam arası nefes eklendi. */
+.ozet-kut{ padding:14px 13px }
+.ozet-kut .et{ letter-spacing:.07em; font-size:11px }
+.ozet-kut .deger{ font-size:29px; line-height:1.05; margin-top:5px; letter-spacing:-.01em }
+
+/* ── 12. Birincil düğme ────────────────────────────────────────────
+   DİKKAT: mevcut tasarımda `.btn-sari` zaten düşünülmüş bir tercihe
+   sahip — `box-shadow:0 3px 0 var(--sari-koyu)` ile düğmenin altında
+   katı bir kalınlık var ve basınca `translateY(2px)` ile fiziksel
+   olarak çöküyor. Bu, gerçek bir makine düğmesi hissi veriyor ve
+   şantiye diline çok uygun. İlk denememde bunu yumuşak bir gölgeyle
+   değiştirmiştim; bu, karakterli bir tercihi jenerik bir varsayılana
+   çevirmek olurdu. Geri alındı — bunun yerine mevcut metafor
+   KORUNARAK sadece kalınlık ve tipografi ağırlığı artırıldı. */
+.btn-sari{
+  box-shadow:0 4px 0 var(--sari-koyu);
+  font-weight:800;
+  letter-spacing:.015em;
+}
+.btn-sari:active{ transform:translateY(3px); box-shadow:0 1px 0 var(--sari-koyu) }
+
+/* ═══════════════════════════════════════════════════════════════════
+   0.0.2.3 — HAFİF MOD (eski/yavaş cihazlarda akıcılık)
+   ───────────────────────────────────────────────────────────────────
+   <html data-hafif="1"> olduğunda devreye girer. app.js bunu ya
+   cihazı otomatik algılayarak (az RAM / az çekirdek) ya da kullanıcı
+   Ayarlar'dan elle açtığında ekler.
+
+   En pahalı öğe .alt-nav'daki backdrop-filter:blur(14px) idi: sabit
+   konumlu, sürekli görünen ve altından içerik kayan bir öğe olduğu
+   için eski GPU'larda HER KAYDIRMA KARESİNDE yeniden bulanıklaştırma
+   hesaplanıyordu — kaydırma takılmasının ana sebebi buydu.
+   Hafif modda bulanıklık yerine tam opak zemin kullanılıyor; görünüm
+   biraz sadeleşiyor ama kaydırma akıcı hale geliyor.
+   ═══════════════════════════════════════════════════════════════════ */
+html[data-hafif="1"] .alt-nav{
+  backdrop-filter:none; -webkit-backdrop-filter:none;
+  background:var(--kart);
+}
+html[data-hafif="1"] .perde,
+html[data-hafif="1"] .modal-perde{
+  backdrop-filter:none; -webkit-backdrop-filter:none;
+  background:rgba(10,10,12,.72);   /* bulanıklık gidince ayrım için biraz daha opak */
+}
+html[data-hafif="1"] .pin-tus-takimi{
+  backdrop-filter:none; -webkit-backdrop-filter:none;
+  background:rgba(255,255,255,.06);
+  animation:none;
+}
+/* Gölgeler: eski cihazlarda çok sayıda yumuşak gölge boyama maliyeti yaratıyor.
+   Tamamen kaldırmak yerine ucuzlatılıyor (yayılım küçültülüyor). */
+html[data-hafif="1"] .kart{ box-shadow:0 1px 2px rgba(0,0,0,.20) }
+html[data-hafif="1"] .banka-kart{ box-shadow:0 2px 6px rgba(0,0,0,.25) }
+/* Takvim hücrelerindeki degrade + metin gölgesi: 30+ hücrede tekrarlanıyor,
+   hafif modda düz renge dönülüyor (renk kodu aynı kalıyor, anlam kaybı yok). */
+html[data-hafif="1"] .hucre.d-tam,
+html[data-hafif="1"] .hucre.d-yarim,
+html[data-hafif="1"] .hucre.d-gelmedi{
+  background-image:none; text-shadow:none;
+}
+/* Süs animasyonları kapalı — bilgi taşımıyorlar. Bugünün sarı halkası
+   KORUNUYOR, çünkü o bilgi taşıyor (hangi gün bugün). */
+html[data-hafif="1"] .hucre{ animation:none }
+html[data-hafif="1"] .kart-parla::after{ display:none }
+html[data-hafif="1"] .para-pop{ animation:none }

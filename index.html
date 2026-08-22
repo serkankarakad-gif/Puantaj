@@ -52,10 +52,15 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <!-- Gerçek (metin tabanlı) PDF'te Türkçe karakterlerin (İ ı Ş ş Ğ ğ) doğru çıkması için
-     gömülü font — jsPDF'in standart fontu bunları desteklemiyor. Aynı sunucudan (kendi
-     dosyamız) geldiği için internet yavaş/yoksa bile önbellekten çalışır. -->
-<script src="font-liberationsans-regular.js"></script>
-<script src="font-liberationsans-bold.js"></script>
+     gömülü font — jsPDF'in standart fontu bunları desteklemiyor.
+
+     ⚡ 0.0.2.3: Bu iki dosya (toplam ~1,05 MB base64) BURADAN KALDIRILDI.
+     Eskiden normal <script> olarak duruyordu, yani uygulama her açıldığında
+     tarayıcı 1 MB'ı indirip JavaScript olarak ayrıştırmak zorunda kalıyordu —
+     eski/yavaş telefonlarda her açılışta saniyelerce donma sebebi buydu.
+     Oysa fontlar sadece PDF üretilirken gerekli. Artık app.js içindeki
+     pdfFontlariYukle() ile ilk PDF üretiminde talep üzerine yükleniyorlar.
+     Dosyalar silinmedi, sw.js önbelleğinde duruyor (çevrimdışı da çalışır). -->
 <!-- Fiş/fatura fotoğrafından tutar OKUMAYA çalışan (deneysel) OCR kütüphanesi.
      Yüklenemezse (internet yoksa vb.) OCR düğmesi sessizce devre dışı kalır,
      fotoğraf ekleme özelliği bundan etkilenmez. -->
@@ -329,8 +334,12 @@
       <div class="kart gizli" id="yenilik-kart" style="border-color:var(--sari)">
         <h2>🎁 Neler yeni?</h2>
         <ul style="padding-left:18px;font-size:13.5px;line-height:1.9">
-          <li><b>🚨 KRİTİK — Kronometre çalıştığın saatleri yok edebiliyordu:</b> Mesai kronometresini durdurunca sıra şöyleydi: önce kronometre SİLİNİYOR, sonra "eklensin mi?" diye soruluyordu. Yani yanlışlıkla "İptal"e bassan ya da o ay kilitliyse, tuttuğun saatler geri dönüşsüz yok oluyordu — 5 saat mesai tutmuşsan hepsi gidiyor, kaç saat olduğunu bir daha göremiyordun. Artık önce kilit kontrolü ve onay yapılıyor, kronometre ancak kayıt BAŞARILI olunca sıfırlanıyor. İptal edersen ya da internet gidip kayıt başarısız olursa kronometre çalışmaya devam ediyor, hiçbir şey kaybolmuyor</li>
-          <li><b>🚨 KRİTİK — "GERİ AL" fotoğrafları kurtarmıyordu:</b> Fişi olan bir masrafı (ya da dekontu olan bir ödemeyi, fotoğrafı olan bir günü) silip hemen "GERİ AL"a bastığında, kayıt geri geliyordu ama FOTOĞRAF kalıcı olarak yok olmuştu. Üstelik kayıt "fişi var" olarak geri döndüğü için 🧾 düğmesi görünüyor, basınca "Fiş fotoğrafı bulunamadı" diyordu — yani fotoğrafın gittiğini ancak aylar sonra, en çok ihtiyacın olduğu anda fark ediyordun. Artık silmeden önce fotoğraf belleğe alınıyor, "GERİ AL" hem kaydı hem fotoğrafı birlikte geri getiriyor. Üç yerde birden düzeltildi: masraf fişi, ödeme dekontu, gün fotoğrafı</li>
+          <li><b>🔬 Bu sürüm bir DENETİM sürümü.</b> Son sürümlerde çok sayıda değişiklik yapıldı (yeni özellikler, kritik hata düzeltmeleri, tasarım yenilemesi, performans işi). Bu sürümde yeni bir şey eklenmedi — bunun yerine yapılan HER değişiklik tek tek doğrulandı ki elinde sağlam bir sürüm olsun</li>
+          <li><b>✅ Yapılan doğrulamalar:</b> Beş JavaScript dosyasının söz dizimi; HTML etiket dengesi (546 div, 21 bölüm, 26 liste, 111 etiket, 12 seçim kutusu, 221 düğme — hepsi dengeli); CSS parantez dengesi (459/459); üç yerdeki sürüm numarasının eşleştiği; 19 dosyanın da pakette olduğu</li>
+          <li><b>✅ Çapraz bağlantı denetimi:</b> Kodun aradığı TÜM ekran öğesi kimlikleri HTML ile karşılaştırıldı. Eşleşmeyen iki tanesi çıktı, incelendi — ikisi de kaldırılmış "Cüzdan" özelliğinden kalan YORUM satırlarıydı, çalışan kod değil. Risk yok. Yeni eklenen 10 fonksiyonun hepsinin tanımlı ve tek olduğu, kullandıkları sabitlerin doğru sırada yüklendiği (sabitler.js → app.js) doğrulandı</li>
+          <li><b>✅ Dinleyici yaşam döngüsü:</b> Beklenen ödemeler dinleyicisinin girişte başlayıp çıkışta düzgün kapandığı izlendi. Ana para verisini besleyen iki dinleyicinin de hesap değişiminde temizlendiği ayrıca doğrulandı — farklı bir hesaba geçince eski hesabın verisi sızmıyor</li>
+          <li><b>✅ Yeni PDF font yüklemesi test edildi:</b> Aynı anda üç PDF isteği gelirse tek indirme yapıyor (tekrar indirme yok), ikinci kez anında bellekten dönüyor, font hiç inmezse çökmüyor ve sonra tekrar denenebiliyor. Güvenlik politikasının (CSP) bu yüklemeyi engellemediği de kontrol edildi</li>
+          <li><b>✅ Hafif mod 8 senaryoda test edildi:</b> Eski telefon, orta telefon, yeni telefon, zayıf işlemcili telefon, bilgi vermeyen telefon (iPhone) ve kullanıcının elle açıp kapattığı durumlar — 8/8 doğru. Elle dokunduğun an senin tercihin her zaman kazanıyor</li>
         </ul>
         <button class="btn btn-cizgili" id="btn-yenilik-kapat">Süper, kapat</button>
       </div>
@@ -1423,6 +1432,10 @@
         </label>
         <label style="display:flex;align-items:center;gap:10px;font-size:14px;margin-top:10px">
           <input type="checkbox" id="ayar-ses" style="width:20px;height:20px;accent-color:var(--sari)"> Kayıtta tık sesi
+        </label>
+        <label style="display:flex;align-items:flex-start;gap:10px;font-size:14px;margin-top:14px;padding-top:14px;border-top:1px solid var(--cizgi)">
+          <input type="checkbox" id="ayar-hafif" style="width:20px;height:20px;accent-color:var(--sari);flex-shrink:0;margin-top:1px">
+          <span>⚡ Hafif mod <small style="display:block;color:var(--soluk);font-size:12.5px;line-height:1.5;margin-top:3px">Telefon eski veya takılıyorsa aç. Bulanık zemin ve gölge gibi süsler kapanır, kaydırma akıcılaşır. Uygulama telefonunu tanıyıp bunu kendi de açabilir.</small></span>
         </label>
       </div>
       <div class="kart">

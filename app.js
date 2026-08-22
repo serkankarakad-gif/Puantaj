@@ -2131,6 +2131,35 @@ async function kronoDurdur(bas){
 }
 
 /* ---------- Bakiye sayaç animasyonu ---------- */
+/* ---------- ⚡ Hafif mod: eski/yavaş cihazlarda akıcılık ----------
+   Kaydırma takılmasının başlıca sebebi .alt-nav'daki backdrop-filter
+   (sabit konumlu, sürekli görünen bulanık zemin) ve çok sayıda yumuşak
+   gölge/degradedir. Hafif mod bunları sadeleştirir.
+
+   Karar sırası:
+     1) Kullanıcı Ayarlar'dan elle açıp kapattıysa DAİMA onun tercihi geçerli.
+     2) Hiç dokunmadıysa cihaz otomatik değerlendirilir: 4 GB veya altı RAM,
+        ya da 4 veya daha az işlemci çekirdeği → hafif mod açılır.
+   deviceMemory/hardwareConcurrency her tarayıcıda yok; yoksa otomatik açma
+   yapılmaz (yanlış pozitifle iyi cihazın görünümünü düşürmemek için). */
+function hafifModOtomatikMi(){
+  try{
+    const ram = navigator.deviceMemory;             /* GB, Chrome/Android */
+    const cekirdek = navigator.hardwareConcurrency; /* mantıksal çekirdek */
+    if(typeof ram === "number" && ram <= 4) return true;
+    if(typeof cekirdek === "number" && cekirdek <= 4) return true;
+  }catch(e){}
+  return false;
+}
+function hafifModUygula(){
+  let tercih = null;
+  try{ tercih = localStorage.getItem("hafifMod"); }catch(e){}
+  const acik = tercih === null ? hafifModOtomatikMi() : tercih === "1";
+  document.documentElement.setAttribute("data-hafif", acik ? "1" : "0");
+  const kutu = document.getElementById("ayar-hafif");
+  if(kutu) kutu.checked = acik;
+  return acik;
+}
 const AZ_HAREKET = !!(window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches);
 function sayacAnim(el, hedef, ozelSure){
   if(gizliMod){ el.textContent = "•••• ₺"; el.dataset.deger = hedef; return; }
@@ -5874,6 +5903,40 @@ function pdfYazdir(gBas, gSon){
 /* Bir jsPDF dokümanına Türkçe destekli gerçek fontu gömer, doc.text/doc.autoTable'ı
    otomatik bu fontu kullanacak şekilde sarar. Her PDF üreten fonksiyon bunu çağırır
    (tek yerden bakım — ileride yeni bir PDF raporu eklenirse tekrar yazılmaz). */
+/* ---------- ⚡ PDF fontlarını TEMBEL yükle (eski cihazlarda açılış performansı) ----------
+   SORUN: font-liberationsans-regular.js (535 KB) ve -bold.js (540 KB), yani toplam
+   ~1,05 MB base64 metin, index.html'de normal <script> etiketiyle duruyordu. Bu şu
+   demekti: uygulama HER açıldığında tarayıcı bu 1 MB'ı indirip JavaScript olarak
+   ayrıştırmak (parse) ve çalıştırmak zorundaydı — üstelik render'ı bloklayarak.
+   Modern telefonda fark edilmez ama eski/yavaş cihazlarda bu, her açılışta saniyelerle
+   ölçülen bir donma demek. Oysa bu fontlar SADECE PDF üretilirken gerekiyor; kullanıcı
+   hiç PDF paylaşmasa bile bedeli her açılışta ödeniyordu.
+
+   ÇÖZÜM: <script> etiketleri index.html'den kaldırıldı; fontlar ilk PDF üretimi
+   sırasında talep üzerine yükleniyor. Bir kez yüklendikten sonra bellekte kalıyor
+   (aynı oturumda ikinci PDF anında üretilir). Yükleme başarısız olursa kod zaten
+   var olan "helvetica" yedeğine düşüyor — PDF yine üretilir, sadece Türkçe karakter
+   desteği jsPDF'in gömülü fontuna kalır. */
+let pdfFontSozu = null;
+function pdfFontlariYukle(){
+  if(window.PDF_FONT_REGULAR_B64 && window.PDF_FONT_BOLD_B64) return Promise.resolve();
+  if(pdfFontSozu) return pdfFontSozu;                 /* aynı anda iki çağrı gelirse tek indirme */
+  const tekDosya = src => new Promise((tamam)=>{
+    const s = document.createElement("script");
+    s.src = src;
+    s.onload = ()=> tamam(true);
+    s.onerror = ()=> tamam(false);                    /* reject etme: helvetica yedeği devrede */
+    document.head.appendChild(s);
+  });
+  pdfFontSozu = Promise.all([
+    tekDosya("font-liberationsans-regular.js"),
+    tekDosya("font-liberationsans-bold.js")
+  ]).then(()=>{
+    /* Yükleme başarısızsa bir daha denenebilsin diye sözü sıfırla */
+    if(!(window.PDF_FONT_REGULAR_B64 && window.PDF_FONT_BOLD_B64)) pdfFontSozu = null;
+  });
+  return pdfFontSozu;
+}
 function pdfTurkceFontKur(doc){
   if(window.PDF_FONT_REGULAR_B64){
     doc.addFileToVFS("LiberationSans-Regular.ttf", window.PDF_FONT_REGULAR_B64);
@@ -6045,6 +6108,7 @@ async function pdfResimBlobOlustur(gBas, gSon){
 }
 
 async function pdfPaylas(gBas, gSon){
+  await pdfFontlariYukle();   /* ⚡ fontlar artık talep üzerine yükleniyor */
   /* Kullanıcı isteği: "resim değil, gerçek PDF" — artık gerçek (metin tabanlı,
      seçilebilir/aranabilir yazılı) PDF önceliği. Gömülü Türkçe font sayesinde
      artık bozuk karakter riski yok. html2canvas'lı "resim" yöntemi sadece
@@ -6310,6 +6374,7 @@ function isPdfBlobOlustur(is, aySecim){
 }
 
 async function isPdfPaylas(is, aySecim){
+  await pdfFontlariYukle();           /* ⚡ fontlar artık talep üzerine yükleniyor */
   await tumOdemeOnbellegiHazirla();   /* rapor ödemesiz çıkmasın */
   const blob = isPdfBlobOlustur(is, aySecim);
   if(!blob){ toast("PDF motoru yüklenemedi, internetini kontrol et"); return; }
@@ -6461,6 +6526,7 @@ function yilPdfBlobOlustur(){
 }
 
 async function yilPdfPaylas(){
+  await pdfFontlariYukle();           /* ⚡ fontlar artık talep üzerine yükleniyor */
   await tumOdemeOnbellegiHazirla();   /* rapor ödemesiz çıkmasın */
   const blob = yilPdfBlobOlustur();
   if(!blob){ toast("Önce yıl verisi yüklensin"); return; }
@@ -6693,6 +6759,11 @@ window.addEventListener("popstate", ()=>{
 });
 
 document.addEventListener("DOMContentLoaded", ()=>{
+
+  /* ⚡ Hafif modu EN BAŞTA uygula — Ayarlar ekranı hiç açılmasa bile geçerli
+     olmalı, üstelik ilk boyamadan önce uygulanmalı ki açılışta bulanık zemin
+     bir an görünüp sonra kaybolmasın. */
+  hafifModUygula();
 
   /* Açılış ekranı: 3 saniye */
   setTimeout(()=> $("#acilis").classList.add("kapan"), 2600);
@@ -7654,7 +7725,7 @@ document.addEventListener("DOMContentLoaded", ()=>{
   });
 
   /* Neler yeni kartı */
-  const YENILIK_SURUM = "0.0.2.1";
+  const YENILIK_SURUM = "0.0.2.4";
   try{ $("#cekmece-surum").textContent = "Puantaj Defterim " + YENILIK_SURUM; }catch(e){}
   try{
     if(localStorage.getItem("yenilik")!==YENILIK_SURUM) $("#yenilik-kart").classList.remove("gizli");
@@ -8370,6 +8441,18 @@ document.addEventListener("DOMContentLoaded", ()=>{
   $("#ayar-ses").addEventListener("change", ()=>{
     try{ localStorage.setItem("ses", $("#ayar-ses").checked?"1":"0"); }catch(e){}
     if($("#ayar-ses").checked) tik();
+  });
+
+  /* ---- ⚡ Hafif mod ---- */
+  hafifModUygula();   /* kutuyu mevcut duruma göre işaretler (otomatik ya da kayıtlı tercih) */
+  $("#ayar-hafif").addEventListener("change", ()=>{
+    const acik = $("#ayar-hafif").checked;
+    /* Kullanıcı bir kez dokunduysa artık otomatik algılama devreye girmez,
+       tercihi kalıcı olarak saklanır. */
+    try{ localStorage.setItem("hafifMod", acik?"1":"0"); }catch(e){}
+    document.documentElement.setAttribute("data-hafif", acik?"1":"0");
+    toast(acik ? "⚡ Hafif mod açık — süsler kapandı, kaydırma hızlanmalı"
+               : "✨ Hafif mod kapalı — tüm görsel efektler geri geldi");
   });
 
   /* ---- Kişi linki kopyala + derin link ---- */

@@ -5,6 +5,50 @@ kullanır: `0.0.0.X` — X, her güncellemede 1 artar. Uygulama içindeki sürü
 (alt bilgi + "Neler yeni" kartı) ve dağıtılan zip dosyasının adı her zaman
 birebir aynıdır.
 
+## 0.0.2.4 — 🔬 DENETİM SÜRÜMÜ: 0.0.1.7–0.0.2.3 arası tüm değişikliklerin doğrulanması
+- Kullanıcı isteği: "devam et, hiçbir sorun hata olmasın"
+- Yeni özellik EKLENMEDİ. Amaç: son yedi sürümde biriken değişiklikleri (yeni özellikler, kritik hata düzeltmeleri, arayüz yenilemesi, performans işi) sistematik doğrulamak
+- ✅ **Söz dizimi**: `app.js`, `sw.js`, `sabitler.js`, `worker.js`, `firebase-config.js` — hepsi temiz
+- ✅ **Yapısal denge**: HTML (div 546/546, section 21/21, ul 26/26, label 111/111, select 12/12, button 221/221, script 13/13) ve CSS (459/459). Script sayımı ilk bakışta 14/13 görünüp incelendi — fazlalık, 0.0.2.3'te yazılan yorum metninin içindeki `<script>` kelimesiydi; yorumlar hariç tutulunca dengeli
+- ✅ **Çapraz bağlantı**: JS'in `$("#…")`/`getElementById` ile aradığı tüm kimlikler HTML ile karşılaştırıldı. Eşleşmeyen 2 kimlik (`ayar-kumbara`, `cuzdan-tarih`) incelendi — ikisi de kaldırılmış Cüzdan özelliğinden kalan yorum satırlarında, çalışan kodda değil
+- ✅ **Yeni fonksiyonlar**: 0.0.1.7+ eklenen 10 fonksiyonun (`masrafKategoriCizGoster`, `masrafKategoriOzetiCiz`, `masrafFiltreCiz`, `beklenenDinle`, `beklenenCiz`, `tumOdemeleriGetir`, `tumOdemeOnbellegiHazirla`, `pdfFontlariYukle`, `hafifModOtomatikMi`, `hafifModUygula`) tümü tanımlı ve tek. `MASRAF_KATEGORI`/`masrafKategoriBul` bağımlılığı için `sabitler.js` (satır 48) → `app.js` (satır 1914) yükleme sırası doğrulandı
+- ✅ **Dinleyici yaşam döngüsü**: `beklenenDinle` girişte `birKezBaslat` ile başlıyor, `dinleyicileriKapat()` içinde kapanıyor. `dinleyiciTumG`/`dinleyiciTumO` bu listede olmadığı fark edilip araştırıldı — ayrı `tumVeriBirak()` fonksiyonuyla ve hesap değişiminde de temizlendikleri doğrulandı (hesaplar arası veri sızıntısı yok)
+- ✅ **CSS hedef denetimi**: 0.0.2.2–0.0.2.3'te eklenen 12 seçicinin hepsinin HTML/JS'te gerçek hedefi olduğu doğrulandı (ölü kural yok)
+- ✅ **`pdfFontlariYukle()` davranış testi**: eşzamanlı 3 çağrıda tek indirme; ikinci çağrı 0 ms (bellekten); yükleme hatasında çökme yok ve söz sıfırlanarak tekrar denenebiliyor. CSP `script-src 'self'` içerdiği için aynı-kök font yüklemesi engellenmiyor
+  - Not: ilk test düzeneği senkron `appendChild` kullandığı için yanlış negatif verdi; gerçek tarayıcı davranışını taklit eden asenkron düzenekle tekrarlanıp doğrulandı
+- ✅ **Hafif mod karar mantığı, 8/8 senaryo**: eski/orta/yeni telefon, zayıf işlemci, API'siz cihaz (iOS), yalnız-çekirdek bilgisi, kullanıcı elle açtı, kullanıcı elle kapattı. Kullanıcı tercihi her durumda otomatik algılamayı geçersiz kılıyor
+  - Not: ilk test Node'un yerleşik `navigator.hardwareConcurrency` değerinin sızması yüzünden 2 yanlış hata verdi; mantık `navigator`dan izole edilerek tekrar test edildi
+- Üç yerde sürüm güncellendi: `app.js`, `sw.js`, zip adı — hepsi `0.0.2.4`
+
+## 0.0.2.3 — ⚡ PERFORMANS: eski cihazlarda açılış donması ve kaydırma takılması
+- Kullanıcı bildirimi: "eski cihazlarda kasma sorunu olduğu söylendi"
+- Tahmin yerine ölçüm yapıldı: dosya boyutları, senkron yükleme sırası ve pahalı CSS özellikleri tarandı
+- ⚡ **KÖK SEBEP 1 — 1,05 MB font açılışta senkron yükleniyordu.** `font-liberationsans-regular.js` (535 KB) ve `-bold.js` (540 KB), `index.html`'de normal `<script>` etiketleriyle duruyordu; tarayıcı her açılışta bu base64 metni indirip JS olarak ayrıştırmak zorundaydı ve bu render'ı bloklıyordu. Fontlar yalnızca PDF üretiminde kullanılıyor
+  - `<script>` etiketleri kaldırıldı; yeni `pdfFontlariYukle()` fontları ilk PDF üretiminde talep üzerine enjekte ediyor (tek uçuş: eşzamanlı çağrılarda tek indirme; başarısızlıkta söz sıfırlanıp tekrar denenebiliyor)
+  - Üç async PDF giriş noktasına `await pdfFontlariYukle()` eklendi: `pdfPaylas()`, `isPdfPaylas()`, `yilPdfPaylas()`. `raporPaylas()` düz metin ürettiği için kapsam dışı
+  - Yükleme başarısız olursa mevcut `helvetica` yedeği zaten devrede — PDF üretimi hiç durmuyor
+  - **Açılışta ayrıştırılan JS: 1.518 KB → 443 KB (%71 azalma)**
+- ⚡ **KÖK SEBEP 2 — `.alt-nav` üzerindeki `backdrop-filter:blur(14px)`.** Sabit konumlu, sürekli görünen ve altından içerik kayan bir öğede bulanıklık, eski GPU'larda her kaydırma karesinde yeniden hesaplanır; kaydırma takılmasının ana kaynağıydı
+  - Yeni **hafif mod**: `<html data-hafif="1">` ile `.alt-nav`, `.perde`, `.modal-perde`, `.pin-tus-takimi` üzerindeki backdrop-filter kapatılıyor; kart/banka-kart gölgeleri ucuzlatılıyor; hücre degradeleri, `kart-parla` ve `para-pop` animasyonları devre dışı
+  - **Bilgi taşıyan hiçbir görsel kapatılmıyor** — bugünün sarı halkası, durum renkleri, uyarılar korunuyor
+  - Karar sırası: kullanıcı tercihi (`localStorage.hafifMod`) varsa daima o; yoksa otomatik algılama (`navigator.deviceMemory <= 4` veya `hardwareConcurrency <= 4`). API'ler yoksa otomatik açma yapılmıyor (yanlış pozitif riski)
+  - Ayarlar → Uygulama teması altına açıklamalı anahtar eklendi; `DOMContentLoaded` başında da uygulanıyor ki ilk boyamadan önce geçerli olsun
+- 📴 **YAN FAYDA — çevrimdışı kurulum güvenilirliği.** `sw.js` içindeki `cache.addAll()` atomiktir ve listede o 1 MB'lık fontlar da vardı; zayıf bağlantıda font indirmesi yarıda kalınca TÜM çevrimdışı kurulum sessizce başarısız oluyordu. Fontlar `EK_DOSYALAR` olarak ayrıldı ve `waitUntil` zincirine bağlanmadan, hata toleranslı biçimde arka planda önbelleğe alınıyor
+- Üç yerde sürüm güncellendi: `app.js`, `sw.js`, zip adı — hepsi `0.0.2.3`
+
+## 0.0.2.2 — 🎨 Arayüz yenilemesi: "Şantiye işareti"
+- Kullanıcı isteği: "arayüz idare eder gibi, bunu daha iyi yapalım — arayüzü geliştir, tasarımı geliştir"
+- **Tasarım yönü**: Bu bir ofis uygulaması değil; kullanıcı onu şantiyede, öğle güneşinde, tozlu parmakla, çoğu zaman tek elle açıyor. Görsel dil şantiyenin kendi diliyle kuruldu (tebeşir işareti, kalıp üstü şablon rakam, ikaz bandı sarısı) — sarı SADECE bir şey ifade ettiği yerde kullanıldı, süs olarak dağıtılmadı
+- Uygulama biçimi: yenileme, mevcut 839 satırlık çalışan CSS'in sırasını bozmamak için dosya sonuna numaralandırılmış ve gerekçelendirilmiş bir blok olarak eklendi (geri alınabilir, izlenebilir)
+- 🎯 **GÖRSEL HATA: bugünün hücresi görünmezdi.** `.hucre.bugun{border-color:var(--asfalt)}` → `--asfalt` (#0E0F13) normal hücre kenarlığından (`--cizgi` #262933) daha koyu; takvimin en önemli hücresi sıradan bir günden az görünüyordu. Artık sarı halka + köşe noktası ile işaretleniyor; hücre doluysa (d-tam/d-yarim/d-gelmedi) halka dolgunun üstünde kalacak ayrı kural var. `color-mix` desteklemeyen eski WebView'ler için rgba yedeği eklendi
+- 🔢 **Takvim rakamları Saira Condensed'e geçti**: Uygulamadaki tüm rakamlar bu yüzü kullanıyordu, takvim tek istisnaydı (Rubik). 19px/800, `tabular-nums` ile sabit genişlik
+- ☀️ **Dış mekân okunurluğu**: `--soluk` koyu temada #8B8E99 → #9CA0AC, açık temada #6B6D76 → #5D6069. Gün adı şeridi kalınlaştırıldı (700→800), harf aralığı .1em
+- 💰 **Bakiye**: 46px → 52px, `letter-spacing:-.015em`. Degrade korundu ama alt uçtaki koyu durak kaldırıldı; degrade metin desteklenmeyen ortam için taban `color` eklendi
+- 🎨 Kart başlığı vurgusu `border-left` yerine kartın iç kenarına oturan `::before` işaretine dönüştürüldü; işlenmiş gün dolgularına ince iç ışık + metin gölgesi
+- ♿ `:focus-visible` odak halkası eklendi; `prefers-reduced-motion` altında hücre animasyonu kapatıldı
+- ↩️ **Bilinçli geri alma**: İlk denemede `.btn-sari` yumuşak gölgeye çevrilmişti. Mevcut tasarımda `box-shadow:0 3px 0 var(--sari-koyu)` + `:active{translateY(2px)}` ile fiziksel "basılan tuş" metaforu vardı — karakterli bir tercih. Jenerik gölgeye çevirmek gerileme olurdu; metafor korunup sadece kalınlık (3px→4px) ve yazı ağırlığı artırıldı
+- Üç yerde sürüm güncellendi: `app.js`, `sw.js`, zip adı — hepsi `0.0.2.2`
+
 ## 0.0.2.1 — 🚨 İKİ KRİTİK VERİ KAYBI: kronometre saatleri + geri alınamayan fotoğraflar
 - Kullanıcı isteği: "hataları bulmaya devam et" — kronometre, geri alma ve silme zincirleri tarandı
 - 🚨 **KRİTİK: `kronoDurdur()` saatleri onaydan ÖNCE siliyordu.** İşlem sırası hatalıydı: (1) `localStorage.removeItem("kronoBas")`, (2) `confirm()`, (3) `ayKilitli()` kontrolü. Kullanıcı onay kutusunda "İptal"e bassa veya ay kilitli olsa, kronometre çoktan silinmiş oluyor, tutulan mesai saatleri geri dönüşsüz kayboluyordu — kaç saat olduğu bile bir daha görülemiyordu
