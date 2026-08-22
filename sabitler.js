@@ -97,3 +97,33 @@ const masrafKategoriBul = kod => MASRAF_KATEGORI.find(k=>k.kod===kod) || MASRAF_
    Bu iki yardımcı, arama ve rapor başlıklarında bunun yerine kullanılır. */
 const trBuyuk = s => String(s==null?"":s).toLocaleUpperCase("tr-TR");
 const trKucuk = s => String(s==null?"":s).toLocaleLowerCase("tr-TR");
+
+/* ---------- 🔧 Tanı (teşhis) modu — yetkili hesap ----------
+   BURAYA KENDİ E-POSTANI YAZ (Firebase'e giriş yaptığın adres).
+
+   ⚠️ NEDEN ŞİFRE YAZMIYORUZ?
+   Bu bir web uygulaması; app.js kullanıcının tarayıcısına iniyor ve
+   isteyen herkes okuyabilir. Buraya şifre yazmak GÜVENLİK SAĞLAMAZ —
+   biri kaynağı açıp okur. Karıştırmak da çözmez, çünkü karşılaştırma
+   yine tarayıcıda yapılır.
+
+   E-posta ise burada durabilir: biri onu görse bile o hesaba GİREMEZ,
+   çünkü giriş Firebase Auth üzerinden yapılıyor ve gerçek şifre asla
+   kodda bulunmuyor. Yani "yetkili kim" bilgisi açık, "nasıl girilir"
+   bilgisi kapalı — doğru olan da bu.
+
+   Ek olarak tanı ekranı yalnızca GİRİŞ YAPMIŞ KULLANICININ KENDİ
+   verisini okur ve hiçbir şey yazmaz. Biri bir şekilde açsa bile
+   kendi puantajının raporunu görür, başkasınınkini değil.
+
+   Birden fazla yetkili olacaksa virgülle ekle. */
+const TANI_YETKILI = [
+  "buraya@kendi-epostani-yaz.com"
+];
+const taniYetkiliMi = () => {
+  try{
+    if(!kullanici || !kullanici.email) return false;
+    const e = trKucuk(kullanici.email).trim();
+    return TANI_YETKILI.some(x=> trKucuk(x).trim() === e);
+  }catch(e){ return false; }
+};

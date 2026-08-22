@@ -6,6 +6,43 @@
 
 const $ = s => document.querySelector(s);
 /* Titreşim ayarına uyan ortak haptic feedback yardımcısı */
+/* ---------- ✨ Günlük akış animasyonları ----------
+   Hepsi yalnızca transform/opacity kullanır (GPU'da çalışır, kaydırmayı
+   takmaz). Hareket azaltma tercihi açıksa CSS tarafında zaten kapanırlar;
+   burada ayrıca kontrol etmeye gerek yok. */
+
+/* Ay ileri/geri giderken takvimin yönlü kayması */
+function takvimYonAnimasyon(yon){
+  const t = document.getElementById("takvim");
+  if(!t) return;
+  t.classList.remove("ay-ileri","ay-geri");
+  void t.offsetWidth;                       /* animasyonu yeniden tetiklemek için */
+  t.classList.add(yon==="ileri" ? "ay-ileri" : "ay-geri");
+}
+
+/* Bir gün işlendiğinde o hücreyi vurgula — hangi hücrenin değiştiği
+   gözle takip edilebilsin. Takvim yeniden çizildikten SONRA çağrılmalı. */
+function gunHucreVurgula(id){
+  requestAnimationFrame(()=>{
+    const h = document.querySelector('.hucre[data-id="'+id+'"]');
+    if(!h) return;
+    h.classList.remove("yeni-islendi");
+    void h.offsetWidth;
+    h.classList.add("yeni-islendi");
+    setTimeout(()=> h.classList.remove("yeni-islendi"), 400);
+  });
+}
+
+/* Kaydetme onayı: ekranın ortasında kısa bir yeşil tik damgası */
+function kayitTikGoster(){
+  const d = document.createElement("div");
+  d.className = "kayit-tik";
+  d.textContent = "✓";
+  d.setAttribute("aria-hidden","true");
+  document.body.appendChild(d);
+  setTimeout(()=> d.remove(), 900);
+}
+
 function titret(desen){
   try{
     if(!navigator.vibrate) return;
@@ -245,6 +282,13 @@ function kullaniciBilgiYaz(){
   const ad = kullanici.displayName || "İşçi kardeşim";
   $("#menu-ad").textContent = ad;
   $("#menu-eposta").textContent = kullanici.email || "";
+  /* Tanı menüsü yalnızca yetkili UID'de görünür. Bu bir GÜVENLİK duvarı değil,
+     sadece normal kullanıcıyı gereksiz bir ekranla meşgul etmemek için.
+     Gerçek koruma Firestore kurallarında: tanı zaten sadece kendi verini okur. */
+  try{
+    const li = document.getElementById("menu-tani-li");
+    if(li) li.classList.toggle("gizli", !taniYetkiliMi());
+  }catch(e){}
   $("#ayar-ad").value = kullanici.displayName || "";
   avatarCiz();
 }
@@ -2158,8 +2202,13 @@ function hafifModOtomatikMi(){
   try{
     const ram = navigator.deviceMemory;             /* GB, Chrome/Android */
     const cekirdek = navigator.hardwareConcurrency; /* mantıksal çekirdek */
-    if(typeof ram === "number" && ram <= 4) return true;
-    if(typeof cekirdek === "number" && cekirdek <= 4) return true;
+    /* DÜZELTME (0.0.3.2): eşikler çok genişti. `deviceMemory <= 4` neredeyse
+       tüm orta seviye Android telefonları kapsıyor (birçoğu 4 GB bildirir) ve
+       gayet akıcı çalışan cihazlarda bile hafif modu sessizce açıyordu —
+       kullanıcı bu yüzden animasyonların hiç olmadığını sanıyordu.
+       Eşikler gerçekten düşük donanımı yakalayacak şekilde daraltıldı. */
+    if(typeof ram === "number" && ram <= 2) return true;
+    if(typeof cekirdek === "number" && cekirdek <= 2) return true;
   }catch(e){}
   return false;
 }
@@ -4486,6 +4535,7 @@ function takvimCiz(){
     const veri = girdiler[id];
     const el = document.createElement("button");
     el.className = "hucre";
+    el.dataset.id = id;   /* gün işlendiğinde o hücreyi vurgulayabilmek için */
     if(new Date(aktifYil, aktifAy, g).getDay()===0) el.classList.add("pazar");
     if(tatilAdi(id)) el.classList.add("tatil");
     if(id===bugunId) el.classList.add("bugun");
@@ -4897,10 +4947,16 @@ function bugunKazancCiz(v, kazanc){
     return;
   }
   const mesai = Number(v.mesai)||0;
+  /* DÜZELTME: bu satır iki yan yana öğeli bir flex'ti ve hiçbirinde esneme
+     koruması yoktu. `.kart` içinde `overflow-x:hidden` olduğu için, sol metin
+     uzayınca (örn. "Yarım gün · 3,5 saat mesai") sağdaki TUTAR kırpılıyordu —
+     yani kullanıcı o gün ne kazandığını göremiyordu. Artık:
+       • sol metin daralabiliyor ve gerekirse "…" ile kısalıyor (min-width:0)
+       • tutar asla daralmıyor (flex-shrink:0) — para her zaman tam görünür */
   icerik.innerHTML =
-    '<div style="display:flex;align-items:baseline;justify-content:space-between">'+
-    '<span style="font-size:13.5px;color:var(--soluk)">'+girisEtiket(v)+(mesai>0?" · "+mesai+" saat mesai":"")+'</span>'+
-    '<span style="font-family:\'Saira Condensed\';font-size:26px;font-weight:800;color:var(--sari)">'+gizliPara(kazanc)+'</span>'+
+    '<div style="display:flex;align-items:baseline;justify-content:space-between;gap:10px">'+
+    '<span style="font-size:13.5px;color:var(--soluk);min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+girisEtiket(v)+(mesai>0?" · "+mesai+" saat mesai":"")+'</span>'+
+    '<span style="font-family:\'Saira Condensed\';font-size:26px;font-weight:800;color:var(--sari);flex-shrink:0;white-space:nowrap">'+gizliPara(kazanc)+'</span>'+
     '</div>';
 }
 
@@ -6746,12 +6802,37 @@ async function guncellemeBandiGoster(){
   };
 }
 
+/* ---------- 🎁 Tam ekran "Neler yeni" penceresi ---------- */
+function yenilikTamAc(surum){
+  const kaynak = document.getElementById("yenilik-kart");
+  const govde  = document.getElementById("yenilik-tam-govde");
+  const pencere= document.getElementById("yenilik-tam");
+  if(!kaynak || !govde || !pencere) return;
+  const liste = kaynak.querySelector("ul");
+  if(!liste) return;
+  govde.innerHTML = "<ul>" + liste.innerHTML + "</ul>";
+  const sEl = document.getElementById("yenilik-tam-surum");
+  if(sEl) sEl.textContent = "Sürüm " + (surum || "");
+  pencere.classList.remove("gizli");
+  /* Arkadaki sayfa kaymasın */
+  try{ document.body.style.overflow = "hidden"; }catch(e){}
+}
+function yenilikTamKapat(){
+  const p = document.getElementById("yenilik-tam");
+  if(p) p.classList.add("gizli");
+  try{ document.body.style.overflow = ""; }catch(e){}
+  try{ localStorage.setItem("yenilik", window.__SURUM || ""); }catch(e){}
+}
+
 /* Android geri tuşu: açık pencereyi kapat, uygulamadan çıkma */
 function geriKaydet(){
   try{ history.pushState({pencere:1}, ""); }catch(e){}
 }
 function acikPencereKapat(){
   let kapandi = false;
+  /* Tam ekran yenilik penceresi açıksa önce onu kapat */
+  const yt = document.getElementById("yenilik-tam");
+  if(yt && !yt.classList.contains("gizli")){ yenilikTamKapat(); return true; }
   /* TV oynatıcı açıksa önce onu kapat (ses de kesilsin) */
   const tvo = document.getElementById("tv-oynatici");
   if(tvo && !tvo.classList.contains("gizli")){
@@ -6976,7 +7057,8 @@ document.addEventListener("DOMContentLoaded", ()=>{
     arama:["Kayıt ara","Tüm defterde bul"],
     planlar:["Planlarım","Proje ve plan linklerin"],
     maaslar:["Maaşlar","Her ayın kendi hesap kartı"],
-    isler:["İşlerim","İşe giriş/çıkış geçmişin"]
+    isler:["İşlerim","İşe giriş/çıkış geçmişin"],
+    tani:["Tanı / Test","Uygulama kendini kontrol ediyor"]
   };
   $$("[data-goruntu]").forEach(b=>{
     b.addEventListener("click", ()=>{
@@ -6985,10 +7067,10 @@ document.addEventListener("DOMContentLoaded", ()=>{
       aktifGoruntu = g;
       $("#btn-geri").classList.toggle("gizli", g==="ana");
       $$("[data-goruntu]").forEach(x=>x.classList.toggle("aktif", x===b));
-      ["ana","puantaj","odemeler","masraf","borc","ozet","yil","notlar","rozet","ekip","kisiler","arac","ayarlar","haber","tv","video","kartlar","arama","planlar","maaslar","isler"].forEach(x=>{
+      ["ana","puantaj","odemeler","masraf","borc","ozet","yil","notlar","rozet","ekip","kisiler","arac","ayarlar","haber","tv","video","kartlar","arama","planlar","maaslar","isler","tani"].forEach(x=>{
         $("#goruntu-"+x).classList.toggle("gizli", x!==g);
       });
-      $("#ay-bar").style.display = (g==="ayarlar"||g==="borc"||g==="ana"||g==="notlar"||g==="rozet"||g==="arac"||g==="haber"||g==="tv"||g==="video"||g==="kartlar"||g==="arama"||g==="planlar"||g==="maaslar"||g==="isler") ? "none" : "flex";
+      $("#ay-bar").style.display = (g==="ayarlar"||g==="borc"||g==="ana"||g==="notlar"||g==="rozet"||g==="arac"||g==="haber"||g==="tv"||g==="video"||g==="kartlar"||g==="arama"||g==="planlar"||g==="maaslar"||g==="isler"||g==="tani") ? "none" : "flex";
       $("#topbar-baslik").firstChild.textContent = basliklar[g][0];
       $("#topbar-alt").textContent = basliklar[g][1];
       $("#btn-bugun").style.display = g==="puantaj" ? "flex" : "none";
@@ -7290,6 +7372,7 @@ document.addEventListener("DOMContentLoaded", ()=>{
       aktifYil--; $("#ay-ad").firstChild.textContent = aktifYil; yilYukle(); return;
     }
     aktifAy--; if(aktifAy<0){aktifAy=11;aktifYil--;}
+    takvimYonAnimasyon("geri");
     ayiYukle(); ayBarCiz();
   });
   $("#btn-sonraki-ay").addEventListener("click", ()=>{
@@ -7297,6 +7380,7 @@ document.addEventListener("DOMContentLoaded", ()=>{
       aktifYil++; $("#ay-ad").firstChild.textContent = aktifYil; yilYukle(); return;
     }
     aktifAy++; if(aktifAy>11){aktifAy=0;aktifYil++;}
+    takvimYonAnimasyon("ileri");
     ayiYukle(); ayBarCiz();
   });
 
@@ -7443,6 +7527,11 @@ document.addEventListener("DOMContentLoaded", ()=>{
       try{ localStorage.setItem("sonSantiye", secId); }catch(e){}
       tik();
       modalKapat(); toastGeriAl("Gün kaydedildi ✅", {id:modalTarih, onceki});
+      /* ✨ Görsel onay: ortada kısa bir tik damgası + takvimde o hücreyi vurgula.
+         Vurgulama takvim yeniden çizildikten sonra çalışmalı, bu yüzden
+         gunHucreVurgula içinde requestAnimationFrame ile bir kare bekleniyor. */
+      kayitTikGoster();
+      gunHucreVurgula(modalTarih);
       anaTazele();
     }catch(e){ hataGoster(e); }
   });
@@ -7815,15 +7904,28 @@ document.addEventListener("DOMContentLoaded", ()=>{
   });
 
   /* Neler yeni kartı */
-  const YENILIK_SURUM = "0.0.3.0";
+  const YENILIK_SURUM = "0.0.3.4";
+  window.__SURUM = YENILIK_SURUM;   /* tanı raporu bunu okur */
   try{ $("#cekmece-surum").textContent = "Puantaj Defterim " + YENILIK_SURUM; }catch(e){}
-  try{
-    if(localStorage.getItem("yenilik")!==YENILIK_SURUM) $("#yenilik-kart").classList.remove("gizli");
-  }catch(e){ $("#yenilik-kart").classList.remove("gizli"); }
+  /* Yenilikler artık TAM EKRAN gösteriliyor.
+     Eskiden ana ekranda bir karttı ve kullanıcı aşağı kaydırmazsa hiç
+     görmüyordu — yani yapılan onca güncelleme kullanıcıya ulaşmıyordu.
+     Artık güncellemeden sonraki ilk açılışta ekranı kaplıyor.
+
+     İçerik `#yenilik-kart` içindeki listeden KOPYALANIYOR; böylece her
+     sürümde tek bir yerde (o kart) düzenleme yapmak yeterli oluyor,
+     iki ayrı yerde aynı metni tutmak gerekmiyor. Kart ise gizli kalıyor
+     ve "Neler yeni" penceresini sonradan tekrar açmak için kaynak
+     görevi görüyor. */
+  let yenilikGoster = true;
+  try{ yenilikGoster = localStorage.getItem("yenilik") !== YENILIK_SURUM; }catch(e){}
+  if(yenilikGoster) yenilikTamAc(YENILIK_SURUM);
   $("#btn-yenilik-kapat").addEventListener("click", ()=>{
     $("#yenilik-kart").classList.add("gizli");
     try{ localStorage.setItem("yenilik", YENILIK_SURUM); }catch(e){}
   });
+  /* Tam ekran pencerenin kapatma düğmesi */
+  $("#btn-yenilik-tam-kapat").addEventListener("click", yenilikTamKapat);
 
   /* ---- Ay seçici ---- */
   const ayModalAc = ()=>{
@@ -8531,6 +8633,21 @@ document.addEventListener("DOMContentLoaded", ()=>{
   $("#ayar-ses").addEventListener("change", ()=>{
     try{ localStorage.setItem("ses", $("#ayar-ses").checked?"1":"0"); }catch(e){}
     if($("#ayar-ses").checked) tik();
+  });
+
+  /* ---- 🔧 Tanı / test ---- */
+  $("#btn-tani-calistir").addEventListener("click", taniCalistir);
+  $("#btn-tani-kopyala").addEventListener("click", async ()=>{
+    if(!taniSatirlar.length){ toast("Önce testi çalıştır"); return; }
+    try{ await navigator.clipboard.writeText(taniRaporMetni()); toast("Rapor kopyalandı 📋"); }
+    catch(e){ toast("Kopyalanamadı — raporu elle seçip kopyala"); }
+  });
+  $("#btn-tani-paylas").addEventListener("click", async ()=>{
+    if(!taniSatirlar.length){ toast("Önce testi çalıştır"); return; }
+    try{
+      if(navigator.share) await navigator.share({text: taniRaporMetni()});
+      else{ await navigator.clipboard.writeText(taniRaporMetni()); toast("Rapor kopyalandı 📋"); }
+    }catch(e){}
   });
 
   /* ---- ⚡ Hafif mod ---- */
@@ -9382,3 +9499,209 @@ function toast(m){
 }
 
 })();
+
+/* ═══════════════════════════════════════════════════════════════════
+   🔧 TANI / TEST MOTORU
+   ───────────────────────────────────────────────────────────────────
+   Amaç: "burada sıkıntı var mı?" sorusunu göz kararıyla değil, ölçerek
+   yanıtlamak. Uygulama kendi kendini kontrol eder ve kopyalanabilir bir
+   rapor üretir.
+
+   Kapsam: YALNIZCA giriş yapmış kullanıcının KENDİ verisi ve kendi
+   ekranı. Başka kullanıcının verisine erişmez, hiçbir şey YAZMAZ —
+   sadece okur ve karşılaştırır.
+   ═══════════════════════════════════════════════════════════════════ */
+let taniSatirlar = [];
+function taniYaz(durum, baslik, detay){
+  taniSatirlar.push({durum, baslik, detay: detay||""});
+}
+
+/* Ekranda görünen bir sayıyı, ham veriden yeniden hesaplanan değerle
+   karşılaştırır. "Köprü" hatalarını yakalayan asıl kontrol budur:
+   ekranda yazan ile verinin söylediği aynı mı? */
+function taniSayiCek(id){
+  const el = document.getElementById(id);
+  if(!el) return null;
+  const m = (el.textContent||"").replace(/[^\d,.-]/g,"").trim();
+  if(!m) return null;
+  return sayi(m);
+}
+
+async function taniCalistir(){
+  taniSatirlar = [];
+  const btn = $("#btn-tani-calistir");
+  if(btn){ btn.disabled = true; btn.textContent = "Test ediliyor…"; }
+  const t0 = Date.now();
+
+  try{
+    /* ---- 1. ORTAM ---- */
+    taniYaz("bilgi", "SÜRÜM", "app.js: " + (window.__SURUM || "?"));
+    try{
+      const kayit = await navigator.serviceWorker.getRegistration();
+      const sw = kayit ? (kayit.active ? "aktif" : "kayıtlı ama pasif") : "YOK";
+      taniYaz(kayit && kayit.active ? "ok" : "uyari", "Service worker", sw + (kayit && kayit.waiting ? " · BEKLEYEN GÜNCELLEME VAR" : ""));
+    }catch(e){ taniYaz("hata", "Service worker", e.message); }
+    taniYaz("bilgi", "Cihaz",
+      "RAM: " + (navigator.deviceMemory ?? "bilinmiyor") + " GB · " +
+      "Çekirdek: " + (navigator.hardwareConcurrency ?? "bilinmiyor") + " · " +
+      "Hafif mod: " + (document.documentElement.getAttribute("data-hafif")==="1" ? "AÇIK" : "kapalı"));
+    taniYaz("bilgi", "Çevrimiçi", navigator.onLine ? "evet" : "HAYIR");
+
+    /* ---- 2. EKRAN ÖĞELERİ (köprü kontrolü) ---- */
+    const zorunlu = ["sirket-bakiye","sirket-alt","kur-satir","bugun-kazanc-icerik",
+      "hafta-serit","tahmin-kart","krono-yazi","takvim","ay-ad","liste-odemeler",
+      "liste-masraflar","liste-borclar","liste-beklenen","liste-notlar","liste-ekip",
+      "ozet-gun","ozet-kazanc","ozet-alinan","ozet-kalan","liste-maaslar",
+      "toast","bildirim-kutusu","liste-sirket-hareket","liste-santiyeler"];
+    const eksikOge = zorunlu.filter(id=> !document.getElementById(id));
+    taniYaz(eksikOge.length ? "hata" : "ok", "Ekran öğeleri",
+      eksikOge.length ? "EKSİK: " + eksikOge.join(", ") : zorunlu.length + " öğenin hepsi yerinde");
+
+    /* ---- 3. FONKSİYONLAR ---- */
+    const fonk = ["girdiKazanc","oranBul","guncelOranlar","hesaplaAralik","sayi","odemeAyi",
+      "enEskiOdenmemisAy","paraFmt","tarihId","hepsiniCiz","anaYukle","ayiYukle",
+      "takvimCiz","odemeListesiCiz","masrafCiz","borcCiz","beklenenCiz","ekipYoklamaCiz",
+      "pdfFontlariYukle","tumOdemeleriGetir","hafifModUygula","trBuyuk","trKucuk"];
+    const eksikFn = fonk.filter(f=> typeof window[f] !== "function");
+    taniYaz(eksikFn.length ? "hata" : "ok", "Fonksiyonlar",
+      eksikFn.length ? "TANIMSIZ: " + eksikFn.join(", ") : fonk.length + " fonksiyonun hepsi tanımlı");
+
+    /* ---- 4. FIREBASE BAĞLANTISI ---- */
+    taniYaz(kullanici ? "ok" : "hata", "Giriş", kullanici ? kullanici.email : "OTURUM YOK");
+    try{
+      const t = Date.now();
+      await kokRef().get();
+      taniYaz("ok", "Firestore okuma", (Date.now()-t) + " ms");
+    }catch(e){ taniYaz("hata", "Firestore okuma", e.code + " — " + e.message); }
+
+    /* ---- 5. DİNLEYİCİLER ---- */
+    const dinleyiciler = {
+      "girdiler (aylık)": dinleyiciGirdi, "ödemeler (aylık)": dinleyiciOdeme,
+      "ayarlar": dinleyiciAyar, "borçlar": dinleyiciBorc, "masraflar": dinleyiciMasraf,
+      "beklenenler": dinleyiciBeklenen, "tüm girdiler": dinleyiciTumG, "tüm ödemeler": dinleyiciTumO
+    };
+    const kapali = Object.keys(dinleyiciler).filter(k=> !dinleyiciler[k]);
+    taniYaz(kapali.length > 3 ? "uyari" : "ok", "Canlı dinleyiciler",
+      kapali.length ? "kapalı: " + kapali.join(", ") : "hepsi açık");
+
+    /* ---- 6. VERİ SAYIMI ---- */
+    const say = {};
+    for(const k of ["girdiler","odemeler","masraflar","borclar","beklenenler","ekip","notlar"]){
+      try{ say[k] = (await kokRef().collection(k).get()).size; }
+      catch(e){ say[k] = "HATA"; }
+    }
+    taniYaz("bilgi", "Kayıt sayıları",
+      Object.entries(say).map(([k,v])=> k+": "+v).join(" · "));
+
+    /* ---- 7. VERİ SAĞLIĞI ---- */
+    const bozuk = [];
+    try{
+      const gs = await kokRef().collection("girdiler").get();
+      gs.forEach(d=>{
+        const v = d.data();
+        if(!/^\d{4}-\d{2}-\d{2}$/.test(d.id)) bozuk.push("girdi id bozuk: " + d.id);
+        if(v.durum && !["tam","yarim","gelmedi","izin","saatlik"].includes(v.durum))
+          bozuk.push("bilinmeyen durum: " + d.id + " → " + v.durum);
+        if(Number(v.mesai) < 0 || Number(v.arti) < 0) bozuk.push("negatif mesai/artı: " + d.id);
+      });
+      const os = await kokRef().collection("odemeler").get();
+      os.forEach(d=>{
+        const v = d.data();
+        if(!(Number(v.tutar) > 0)) bozuk.push("ödeme tutarı geçersiz: " + d.id + " → " + v.tutar);
+        if(!v.tarih) bozuk.push("ödeme tarihsiz: " + d.id);
+      });
+      const ms = await kokRef().collection("masraflar").get();
+      ms.forEach(d=>{
+        const v = d.data();
+        if(!(Number(v.tutar) > 0)) bozuk.push("masraf tutarı geçersiz: " + d.id);
+      });
+    }catch(e){ bozuk.push("veri taraması hata: " + e.message); }
+    taniYaz(bozuk.length ? "hata" : "ok", "Veri sağlığı",
+      bozuk.length ? bozuk.slice(0,15).join("\n   ") + (bozuk.length>15 ? "\n   … +"+(bozuk.length-15)+" tane daha" : "") : "bozuk kayıt yok");
+
+    /* ---- 8. KÖPRÜ: EKRANDAKİ SAYI = HESAPLANAN SAYI MI? ---- */
+    try{
+      const bas = aktifYil+"-"+pad(aktifAy+1)+"-01";
+      const son = aktifYil+"-"+pad(aktifAy+1)+"-31";
+      let hesapGun = 0, hesapKazanc = 0;
+      Object.keys(girdiler).forEach(id=>{
+        if(id >= bas && id <= son){
+          const v = girdiler[id];
+          const k = girdiKazanc(v);
+          if(k > 0) hesapGun++;
+          hesapKazanc += k;
+        }
+      });
+      const ekranGun = taniSayiCek("ozet-gun");
+      const ekranKazanc = taniSayiCek("ozet-kazanc");
+      const gunOk = ekranGun===null || Math.abs(ekranGun - hesapGun) < 0.01;
+      const kazOk = ekranKazanc===null || Math.abs(ekranKazanc - hesapKazanc) < 1;
+      taniYaz(gunOk && kazOk ? "ok" : "hata", "Köprü: özet ↔ veri",
+        "gün ekran=" + ekranGun + " hesap=" + hesapGun +
+        " · kazanç ekran=" + ekranKazanc + " hesap=" + Math.round(hesapKazanc));
+    }catch(e){ taniYaz("hata", "Köprü: özet ↔ veri", e.message); }
+
+    /* ---- 9. KÖPRÜ: FIFO / AİT AY TUTARLILIĞI ---- */
+    try{
+      const tumO = await tumOdemeleriGetir();
+      const aitAysiz = tumO.filter(o=> !o.aitAy).length;
+      const gelecek = tumO.filter(o=> odemeAyi(o) > tarihId(new Date()).slice(0,7)).length;
+      taniYaz(aitAysiz ? "uyari" : "ok", "Ödeme ait-ay",
+        "aitAy alanı olmayan: " + aitAysiz + " (tarihten türetiliyor) · gelecek aya yazılmış: " + gelecek);
+    }catch(e){ taniYaz("hata", "Ödeme ait-ay", e.message); }
+
+    /* ---- 10. AYARLAR ---- */
+    taniYaz(ayarlar && (ayarlar.yevmiye>0 || ayarlar.saatUcret>0) ? "ok" : "uyari", "Ücret ayarı",
+      "yevmiye: " + (ayarlar.yevmiye||0) + " · saat: " + (ayarlar.saatUcret||0) +
+      " · mesai çarpan: " + (ayarlar.mesaiCarpan||"?") + " · çalışma tipi: " + (ayarlar.calismaTipi||"?"));
+    taniYaz("bilgi", "Şantiyeler", (ayarlar.santiyeler||[]).length + " tanımlı · kilitli ay: " + (ayarlar.kapali||[]).length);
+
+    /* ---- 11. KÜTÜPHANELER ---- */
+    const kutup = {jsPDF: window.jspdf, XLSX: window.XLSX, html2canvas: window.html2canvas, Tesseract: window.Tesseract};
+    const eksikKut = Object.keys(kutup).filter(k=> !kutup[k]);
+    taniYaz(eksikKut.length ? "uyari" : "ok", "Dış kütüphaneler",
+      eksikKut.length ? "yüklenmemiş: " + eksikKut.join(", ") + " (internet gerektirir)" : "hepsi yüklü");
+    taniYaz(window.PDF_FONT_REGULAR_B64 ? "ok" : "bilgi", "PDF fontları",
+      window.PDF_FONT_REGULAR_B64 ? "yüklü" : "henüz yüklenmedi (ilk PDF'te yüklenir — normal)");
+
+  }catch(e){
+    taniYaz("hata", "TEST ÇÖKTÜ", e.message + "\n" + (e.stack||"").split("\n").slice(0,3).join("\n"));
+  }
+
+  taniYaz("bilgi", "Süre", (Date.now()-t0) + " ms");
+  taniSonucCiz();
+  if(btn){ btn.disabled = false; btn.textContent = "▶ Testi tekrar çalıştır"; }
+}
+
+function taniSonucCiz(){
+  const sim = {ok:"✅", hata:"❌", uyari:"⚠️", bilgi:"ℹ️"};
+  const hata = taniSatirlar.filter(s=>s.durum==="hata").length;
+  const uyari = taniSatirlar.filter(s=>s.durum==="uyari").length;
+
+  const ozet = $("#tani-ozet");
+  if(ozet){
+    ozet.innerHTML =
+      '<div style="font-size:34px;font-family:\'Saira Condensed\';font-weight:800;color:' +
+      (hata ? "var(--gelmedi)" : uyari ? "var(--yarim)" : "var(--tam)") + '">' +
+      (hata ? hata + " HATA" : uyari ? uyari + " UYARI" : "TEMİZ") + '</div>' +
+      '<div style="font-size:13px;color:var(--soluk);margin-top:4px">' +
+      taniSatirlar.length + " kontrol · " + hata + " hata · " + uyari + " uyarı</div>";
+    $("#tani-ozet-kart").classList.remove("gizli");
+  }
+  const kutu = $("#tani-sonuc");
+  if(kutu){
+    kutu.textContent = taniSatirlar.map(s=>
+      sim[s.durum] + " " + s.baslik + (s.detay ? "\n   " + s.detay : "")).join("\n");
+    $("#tani-sonuc-kart").classList.remove("gizli");
+  }
+}
+
+function taniRaporMetni(){
+  const sim = {ok:"[OK]", hata:"[HATA]", uyari:"[UYARI]", bilgi:"[BILGI]"};
+  return "PUANTAJ DEFTERIM — TANI RAPORU\n" +
+    new Date().toLocaleString("tr-TR") + "\n" +
+    "Surum: " + (window.__SURUM||"?") + "\n" +
+    "Tarayici: " + navigator.userAgent + "\n" +
+    "".padEnd(52,"=") + "\n" +
+    taniSatirlar.map(s=> sim[s.durum] + " " + s.baslik + (s.detay ? "\n    " + s.detay : "")).join("\n");
+}

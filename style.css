@@ -1051,9 +1051,17 @@ html[data-hafif="1"] .hucre.d-gelmedi{
 }
 /* Süs animasyonları kapalı — bilgi taşımıyorlar. Bugünün sarı halkası
    KORUNUYOR, çünkü o bilgi taşıyor (hangi gün bugün). */
-html[data-hafif="1"] .hucre{ animation:none }
+/* DÜZELTME (0.0.3.2): burada fazla ihtiyatlı davranılmıştı.
+   Kaydırma takılmasının gerçek sebebi `backdrop-filter` idi — sabit konumlu
+   bir öğenin altından içerik kayarken her karede yeniden bulanıklaştırma
+   hesaplanıyordu. Ama o düzeltmeyle birlikte `opacity` ve `transform`
+   animasyonları da kapatılmıştı. Oysa bu ikisi düzen (layout) ve boyama
+   (paint) tetiklemez; doğrudan GPU'da çalışır ve eski telefonda bile
+   maliyeti neredeyse sıfırdır. Kapatmak gereksiz bir kayıptı: kullanıcı
+   hafif mod açıkken uygulamayı "ölü" hissediyordu.
+   Artık hafif modda da ucuz animasyonlar ÇALIŞIYOR; yalnızca gerçekten
+   pahalı olanlar (bulanıklık, ağır gölge) kapalı kalıyor. */
 html[data-hafif="1"] .kart-parla::after{ display:none }
-html[data-hafif="1"] .para-pop{ animation:none }
 
 /* ═══════════════════════════════════════════════════════════════════
    0.0.2.5 — TASARIM: dokunulmamış bileşenler
@@ -1398,3 +1406,202 @@ img, svg, canvas, video, table, pre{ max-width:100% }
 /* Takvim hücrelerine UYGULANMADI: 30-31 hücre zaten tek ekranda
    görünüyor, content-visibility burada fayda getirmez ama ölçüm
    maliyeti ekler. */
+
+/* ── Ana ekran üst bölüm: para kartı yukarı çekildi ────────────────
+   0.0.3.1'de Şirket Hesap Kartı, "Bugün" kartının ÜSTÜNE alındı —
+   araştırmadaki en net bulgu buydu: kullanıcının en çok baktığı sayı
+   (eline geçecek para) kaydırmadan görünmeli. Eskiden selamlama +
+   günün sözü + Bugün kartı, para kartını aşağı itiyordu.
+
+   Buna ek olarak selamlama bloğu sıkıştırıldı: bilgi aynı, yer daha az.
+   Amaç, para kartını ekranın görünür kısmına tamamen sığdırmak. */
+.selam-blok{ margin-bottom:12px }
+.selam-blok .buyuk{ font-size:25px; line-height:1.15 }
+.selam-blok .alt{ font-size:13px; margin-top:2px }
+#gunun-soz{ font-size:12.5px; line-height:1.45; margin-top:5px !important }
+
+/* Para kartı artık en üstteki kart: biraz daha nefes ve belirginlik */
+.banka-kart.sirket{ margin-bottom:12px }
+/* "Bugün" kartı artık paranın altında, ikincil rol — sıkı ve sakin */
+#bugun-kazanc-kart{ padding:11px 14px }
+
+/* ═══════════════════════════════════════════════════════════════════
+   0.0.3.2 — GÜNLÜK AKIŞTA HAREKET
+   ───────────────────────────────────────────────────────────────────
+   Uygulamada 20 animasyon vardı ama neredeyse hepsi PIN ekranında,
+   açılışta ve asistandaydı. Her gün yapılan işler (günü işaretle,
+   kaydet, haftaya bak) tamamen hareketsizdi — uygulama bu yüzden
+   "ölü" hissettiriyordu.
+
+   Tasarım kuralı: SADECE `transform` ve `opacity` kullanılıyor. Bu iki
+   özellik düzen ve boyama tetiklemez, doğrudan GPU'da çalışır; eski
+   telefonda bile kaydırmayı takmaz. `width`, `height`, `top`, `margin`,
+   `box-shadow`, `filter` gibi pahalı özellikler ANİME EDİLMİYOR.
+
+   Hepsi `prefers-reduced-motion` altında kapanıyor.
+   ═══════════════════════════════════════════════════════════════════ */
+
+/* ── 1. Gün işaretlendiğinde hücre "oturur" ────────────────────────
+   Bir günü işleyince takvim hücresi hafifçe büyüyüp yerine oturuyor.
+   Amaç süs değil: hangi hücrenin değiştiğini gözle takip etmek. */
+@keyframes gunOturdu{
+  0%  { transform:scale(1) }
+  35% { transform:scale(1.18) }
+  70% { transform:scale(.96) }
+  100%{ transform:scale(1) }
+}
+.hucre.yeni-islendi{ animation:gunOturdu .34s cubic-bezier(.34,1.56,.64,1) }
+
+/* ── 2. Hafta şeridi sırayla belirir ───────────────────────────────
+   Ana ekranda haftalık şerit tek seferde patlamak yerine soldan sağa
+   sırayla giriyor — göz doğal olarak Pazartesi'den bugüne kayıyor. */
+@keyframes seritGir{
+  from{ opacity:0; transform:translateY(6px) }
+  to  { opacity:1; transform:translateY(0) }
+}
+.hafta-serit > *{ animation:seritGir .26s ease backwards }
+.hafta-serit > *:nth-child(1){ animation-delay:.02s }
+.hafta-serit > *:nth-child(2){ animation-delay:.05s }
+.hafta-serit > *:nth-child(3){ animation-delay:.08s }
+.hafta-serit > *:nth-child(4){ animation-delay:.11s }
+.hafta-serit > *:nth-child(5){ animation-delay:.14s }
+.hafta-serit > *:nth-child(6){ animation-delay:.17s }
+.hafta-serit > *:nth-child(7){ animation-delay:.20s }
+
+/* ── 3. Kaydetme onayı: yeşil tik ──────────────────────────────────
+   Kaydet'e basınca sadece yazı çıkıyordu. Artık kısa bir tik damgası
+   beliriyor — "kaydoldu" hissini gözle veriyor. */
+@keyframes tikDamga{
+  0%  { opacity:0; transform:scale(.4) rotate(-12deg) }
+  55% { opacity:1; transform:scale(1.12) rotate(3deg) }
+  100%{ opacity:0; transform:scale(1) rotate(0) }
+}
+.kayit-tik{
+  position:fixed; left:50%; top:45%; margin:-38px 0 0 -38px;
+  width:76px; height:76px; border-radius:50%;
+  background:var(--tam); color:#fff;
+  display:flex; align-items:center; justify-content:center;
+  font-size:40px; z-index:9999; pointer-events:none;
+  animation:tikDamga .85s ease forwards;
+}
+
+/* ── 4. Liste satırları aşağıdan girer ─────────────────────────────
+   Masraf/ödeme/borç listeleri çizilirken satırlar sırayla beliriyor.
+   İlk 8 satıra kademe veriliyor; sonrası anında (uzun listede bekleme
+   hissi olmasın diye). */
+@keyframes satirGir{
+  from{ opacity:0; transform:translateY(7px) }
+  to  { opacity:1; transform:translateY(0) }
+}
+.liste li{ animation:satirGir .22s ease backwards }
+.liste li:nth-child(1){ animation-delay:.01s }
+.liste li:nth-child(2){ animation-delay:.03s }
+.liste li:nth-child(3){ animation-delay:.05s }
+.liste li:nth-child(4){ animation-delay:.07s }
+.liste li:nth-child(5){ animation-delay:.09s }
+.liste li:nth-child(6){ animation-delay:.11s }
+.liste li:nth-child(7){ animation-delay:.13s }
+.liste li:nth-child(8){ animation-delay:.15s }
+.liste li:nth-child(n+9){ animation-delay:.16s }
+
+/* ── 5. Ay değişince takvim yönlü kayar ────────────────────────────
+   İleri/geri giderken takvimin hangi yöne gittiği hissediliyor. */
+@keyframes ayIleri{ from{opacity:0; transform:translateX(14px)} to{opacity:1; transform:translateX(0)} }
+@keyframes ayGeri { from{opacity:0; transform:translateX(-14px)} to{opacity:1; transform:translateX(0)} }
+.takvim.ay-ileri{ animation:ayIleri .2s ease }
+.takvim.ay-geri { animation:ayGeri  .2s ease }
+
+/* ── 6. Hareket azaltma tercihi: hepsi kapanır ─────────────────────*/
+@media (prefers-reduced-motion: reduce){
+  .hucre.yeni-islendi, .hafta-serit > *, .liste li,
+  .takvim.ay-ileri, .takvim.ay-geri, .kayit-tik{ animation:none }
+  .kayit-tik{ opacity:0 }
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   0.0.3.4 — SABİT EYLEM ÇUBUĞU
+   ───────────────────────────────────────────────────────────────────
+   Sorun: Paylaş / PDF / Excel gibi düğmeler ekranların ALTINDAYDI.
+   Üstlerindeki içerik JS ile dolduğu için (yıl dökümünde 12 ay, ekip
+   listesinde N işçi) düğmeler ekranın çok aşağısına iniyordu —
+   kullanıcı "paylaş" demek için uzun uzun kaydırmak zorunda kalıyordu.
+
+   Çözüm: bu düğmeler içeriğin ÜSTÜNE alındı ve `position:sticky` ile
+   sabitlendi. Kaydırırken üst barın hemen altında asılı kalıyorlar,
+   yani her an tek dokunuş uzaklıkta.
+
+   Yatay kaydırmalı yapıldı: 4 düğme dar ekrana sığmayınca alt alta
+   yığılıp yer kaplamak yerine yan yana kayıyor. `touch-action` zaten
+   `pan-x pan-y` olduğu için bu kaydırma çalışıyor.
+   ═══════════════════════════════════════════════════════════════════ */
+.eylem-cubugu{
+  position:sticky;
+  top:0;
+  z-index:30;
+  display:flex;
+  gap:8px;
+  padding:10px 0;
+  margin:-4px 0 12px;
+  background:var(--beton);
+  overflow-x:auto;
+  overscroll-behavior-x:contain;
+  scrollbar-width:none;
+  border-bottom:1px solid var(--cizgi);
+}
+.eylem-cubugu::-webkit-scrollbar{ display:none }
+.eylem-cubugu .btn{
+  width:auto;
+  flex:0 0 auto;
+  margin:0 !important;
+  padding:11px 15px;
+  font-size:13px;
+  white-space:nowrap;
+  border-radius:11px;
+}
+/* Çubuk kaydırılabiliyorsa sağda hafif bir soluma ile ipucu ver */
+.eylem-sarmal{ position:relative }
+.eylem-sarmal::after{
+  content:""; position:absolute; right:0; top:0; bottom:0; width:24px;
+  background:linear-gradient(to right, transparent, var(--beton));
+  pointer-events:none;
+}
+html[data-hafif="1"] .eylem-sarmal::after{ display:none }
+
+/* ── Tam ekran güncelleme penceresi ────────────────────────────────
+   Yenilikler ana ekranda bir karttı; kullanıcı kaydırmazsa görmüyordu.
+   Artık güncellemeden sonraki ilk açılışta ekranı kaplıyor. */
+#yenilik-tam{
+  position:fixed; inset:0; z-index:9998;
+  background:var(--beton);
+  display:flex; flex-direction:column;
+  animation:yenilikGir .28s ease;
+}
+@keyframes yenilikGir{ from{opacity:0; transform:translateY(12px)} to{opacity:1; transform:translateY(0)} }
+#yenilik-tam.gizli{ display:none }
+.yenilik-ic{ display:flex; flex-direction:column; height:100%; max-width:560px; margin:0 auto; width:100% }
+.yenilik-bas{
+  padding:max(26px, env(safe-area-inset-top)) 20px 16px;
+  border-bottom:1px solid var(--cizgi);
+  background:var(--asfalt);
+}
+.yenilik-rozet{
+  display:inline-block; background:var(--sari); color:#2C2000;
+  font-size:11px; font-weight:800; letter-spacing:1.4px;
+  padding:5px 11px; border-radius:20px;
+}
+.yenilik-surum{
+  font-family:'Saira Condensed'; font-size:30px; font-weight:800;
+  color:var(--sari); line-height:1.1; margin-top:9px;
+}
+.yenilik-bas h2{ font-size:17px; margin-top:2px; border:none; padding:0 }
+.yenilik-bas h2::before{ display:none }
+.yenilik-govde{
+  flex:1; overflow-y:auto; -webkit-overflow-scrolling:touch;
+  padding:16px 20px 20px;
+}
+.yenilik-govde ul{ padding-left:18px; font-size:14px; line-height:1.85 }
+.yenilik-govde li{ margin-bottom:13px; animation:none }
+.yenilik-alt{
+  padding:12px 20px max(16px, env(safe-area-inset-bottom));
+  border-top:1px solid var(--cizgi); background:var(--asfalt);
+}

@@ -159,6 +159,23 @@
 </div>
 
 <!-- ============ ANA UYGULAMA ============ -->
+<!-- Güncelleme sonrası TAM EKRAN yenilik penceresi.
+     Eskiden yenilikler ana ekranda bir kart olarak duruyordu; kullanıcı
+     aşağı kaydırmazsa hiç görmüyordu. Artık güncellemeden sonraki ilk
+     açılışta ekranı kaplayarak çıkıyor. -->
+<div id="yenilik-tam" class="gizli">
+  <div class="yenilik-ic">
+    <div class="yenilik-bas">
+      <div class="yenilik-rozet">GÜNCELLENDİ</div>
+      <div class="yenilik-surum" id="yenilik-tam-surum">—</div>
+      <h2>Neler değişti?</h2>
+    </div>
+    <div class="yenilik-govde" id="yenilik-tam-govde"></div>
+    <div class="yenilik-alt">
+      <button class="btn btn-sari" id="btn-yenilik-tam-kapat">Anladım, başlayalım</button>
+    </div>
+  </div>
+</div>
 <div id="ekran-uygulama" class="gizli">
 
   <header class="topbar">
@@ -222,6 +239,7 @@
       <li data-grup="diger"><a href="https://www.turkiye.gov.tr/sgk-tescil-ve-hizmet-dokumu" target="_blank" rel="noopener"><span class="ikon">📄</span> e-Devlet'te SGK Kaydımı Sorgula</a></li>
 
       <li style="margin-top:6px"><button data-goruntu="ayarlar"><span class="ikon">⚙️</span> Ayarlar</button></li>
+      <li class="gizli" id="menu-tani-li"><button data-goruntu="tani"><span class="ikon">🔧</span> Tanı / test</button></li>
       <li><button id="btn-geribildirim"><span class="ikon">💬</span> Geri bildirim gönder</button></li>
     </ul>
     <div class="cekmece-alt">
@@ -275,10 +293,6 @@
         <div class="alt" id="selam-alt">—</div>
         <div class="alt" id="gunun-soz" style="margin-top:6px;color:var(--sari);font-style:italic"></div>
       </div>
-      <div class="kart" id="bugun-kazanc-kart" style="padding:13px 14px">
-        <div style="font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--soluk);font-weight:700">📅 Bugün</div>
-        <div id="bugun-kazanc-icerik" style="margin-top:6px"></div>
-      </div>
       <div class="banka-kart sirket" id="sirket-kart">
         <div class="kart-ust"><span>🏢 Şirket Hesap Kartı</span><button id="btn-goz" style="color:#fff;font-size:17px">👁️</button></div>
         <div class="bakiye" id="sirket-bakiye">—</div>
@@ -290,6 +304,10 @@
         <div class="gizli" id="sirket-hareket-kutu" style="margin-top:10px;background:rgba(0,0,0,.18);border-radius:12px;padding:6px 10px;max-height:340px;overflow-y:auto">
           <ul class="liste hareket-liste" id="liste-sirket-hareket"></ul>
         </div>
+      </div>
+      <div class="kart" id="bugun-kazanc-kart" style="padding:13px 14px">
+        <div style="font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--soluk);font-weight:700">📅 Bugün</div>
+        <div id="bugun-kazanc-icerik" style="margin-top:6px"></div>
       </div>
       <div class="kart" style="padding:13px 14px">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
@@ -334,14 +352,10 @@
       <div class="kart gizli" id="yenilik-kart" style="border-color:var(--sari)">
         <h2>🎁 Neler yeni?</h2>
         <ul style="padding-left:18px;font-size:13.5px;line-height:1.9">
-          <li><b>📱 HATA — yazı yazarken ekran zıplıyordu (iPhone):</b> Geçen sürümde yakınlaştırmayı kilitledik ama girdi alanlarının yazı boyutu 15px'ti. iPhone, 16px'ten küçük bir alana dokununca sayfayı otomatik büyütür ve GERİ DÖNDÜRMEZ — yani her yevmiye/tutar yazmaya başladığında ekran zıplayıp öyle kalıyordu. İstediğinin tam tersi. Girdi yazıları 16px yapıldı (sadece dokunmatik cihazlarda)</li>
-          <li><b>🇹🇷 HATA — Türkçe harfler 17 yerde yanlıştı:</b> Raporlarda "HAZİRAN" yerine <b>"HAZIRAN"</b>, "NİSAN" yerine <b>"NISAN"</b> yazıyordu. Daha sinsisi: "İbrahim" adlı işçiyi <b>"ibrahim" yazarak arayınca bulamıyordun</b> — çünkü küçük harfe çevrilince görünmeyen fazladan bir karakter oluşuyordu. Kayıt arama, ödeme arama, kişi arama, not arama, ekip listesi, PIN avatarı ve PDF/PNG rapor başlıkları düzeltildi</li>
-          <li><b>💾 HATA — güncelleme sırasında veri kaybı riski vardı:</b> Yeni sürüm yayınlandığında, sen tam puantaj veya masraf formu doldururken sayfa kendi kendine devralınıp yenilenebiliyordu. Artık yeni sürüm sen "Yenile"ye basana kadar bekliyor — karar sende</li>
-          <li><b>💸 Faturayı düşüren koruma:</b> Telefon cepte/arka planda kalınca ağır veri dinleyicileri 2 dakika sonra kapanıyor. Sebep: bir dinleyici 30 dakikadan uzun kopuk kalıp yeniden bağlanırsa TÜM kayıtlar sıfırdan okunmuş gibi faturalanıyor. Şantiyede internet sürekli kesildiği için bu gizli bir maliyet kaynağıydı</li>
-          <li><b>👆 Tema renk düğmeleri büyütüldü</b> (40→44px). Tüm uygulamada 44px altında kalan tek dokunma hedefi buydu</li>
-          <li><b>⚡ Uzun listeler hızlandı:</b> Ekran dışındaki liste satırlarının çizim işi atlanıyor — düşük donanımlı telefonlarda uzun puantaj/ödeme geçmişlerinde belirgin fark</li>
-          <li><b>📦 Uygulama künyesi tamamlandı:</b> Telefona kurulum ve Play Store için gereken kimlik, kategori ve yön bilgileri eklendi</li>
-          <li><b>📄 İki yeni belge:</b> Pakete <b>KVKK-VE-GIZLILIK.md</b> (aydınlatma metni şablonu, hangi verinin hangi hukuki sebeple işlendiği, silme/saklama kuralları) ve <b>YAYIN-KONTROL-LISTESI.md</b> (Play Store'a TWA olarak yayınlama adımları, sık ret sebepleri, Firebase güvenlik ve maliyet ayarları) eklendi</li>
+          <li><b>📢 Güncellemeler artık gözünden kaçmayacak:</b> Şu an okuduğun bu pencere kanıtı. Eskiden yenilikler ana ekranda küçük bir kart olarak duruyordu — aşağı kaydırmazsan hiç görmüyordun. Yani yapılan onca güncelleme sana ulaşmıyordu. Artık güncellemeden sonraki ilk açılışta ekranı kaplayarak çıkıyor, okuyup kapatıyorsun</li>
+          <li><b>📤 Paylaş ve indir düğmeleri artık en ÜSTTE ve sabit:</b> Yıl dökümü ekranında dört düğme (Paylaş / PDF / CSV / Excel) tablonun altındaydı. Tablo 12 ayla dolduğu için o düğmelere ulaşmak uzun uzun kaydırmak demekti. Aynı sorun Hesap özeti ekranındaki karne düğmelerinde de vardı. Artık ikisinde de düğmeler içeriğin üstünde ve kaydırırken ekranın tepesinde asılı kalıyor — her an tek dokunuş uzaklıkta. Dar ekranda alt alta yığılmasınlar diye yan yana kayabiliyorlar</li>
+          <li><b>🔧 Tanı / test ekranı (yalnızca yetkili hesap):</b> Hamburger menüde "Tanı / test" girişi var. Tek dokunuşla uygulama kendini baştan sona kontrol ediyor: ekran öğeleri yerinde mi, fonksiyonlar tanımlı mı, veritabanı bağlantısı çalışıyor mu, bozuk kayıt var mı ve en önemlisi <b>ekranda yazan sayı ile verinin söylediği aynı mı</b>. Sonunda "TEMİZ" ya da "3 HATA" diye özet veriyor, raporu tek düğmeyle kopyalayıp gönderebiliyorsun</li>
+          <li><b>🔐 Yetkili giriş nasıl çalışıyor:</b> <code>sabitler.js</code> dosyasında <code>TANI_YETKILI</code> diye bir satır var, oraya kendi e-postanı yazıyorsun. Koda ŞİFRE yazılmadı — çünkü bu bir web uygulaması, kod kullanıcının telefonuna iniyor ve okunabiliyor; şifre yazmak sahte bir güvenlik olurdu. E-posta ise zararsız: biri görse bile o hesaba giremez, giriş Firebase üzerinden yapılıyor ve gerçek şifre asla kodda bulunmuyor</li>
         </ul>
         <button class="btn btn-cizgili" id="btn-yenilik-kapat">Süper, kapat</button>
       </div>
@@ -485,6 +499,30 @@
       <button class="btn btn-sari" id="btn-ay-detay-odeme-ekle" style="margin-top:6px">➕ Bu aya ödeme ekle</button>
     </div>
 
+    <!-- ===== GÖRÜNÜM: TANI / TEST (yalnızca yetkili hesap) ===== -->
+    <section id="goruntu-tani" class="gizli">
+      <div class="kart">
+        <h2>🔧 Tanı / test</h2>
+        <p style="font-size:13px;color:var(--soluk);line-height:1.6;margin-bottom:12px">
+          Uygulamanın kendi kendini kontrol etmesini sağlar: ekran öğeleri, fonksiyonlar,
+          bağlantılar, veri tutarlılığı ve hesap doğruluğu. Sonucu kopyalayıp gönderebilirsin.
+        </p>
+        <button class="btn btn-sari" id="btn-tani-calistir">▶ Testi başlat</button>
+        <div style="display:flex;gap:8px;margin-top:10px">
+          <button class="btn btn-cizgili" id="btn-tani-kopyala" style="flex:1">📋 Raporu kopyala</button>
+          <button class="btn btn-cizgili" id="btn-tani-paylas" style="flex:1">📤 Paylaş</button>
+        </div>
+      </div>
+      <div class="kart gizli" id="tani-ozet-kart">
+        <h2>📊 Özet</h2>
+        <div id="tani-ozet"></div>
+      </div>
+      <div class="kart gizli" id="tani-sonuc-kart">
+        <h2>📋 Ayrıntı</h2>
+        <div id="tani-sonuc" style="font-family:'Courier New',monospace;font-size:11.5px;line-height:1.65;white-space:pre-wrap;word-break:break-word"></div>
+      </div>
+    </section>
+
     <!-- ===== GÖRÜNÜM: ÖDEMELER ===== -->
     <section id="goruntu-odemeler" class="gizli">
       <div class="kart" id="beklenen-kart">
@@ -623,6 +661,12 @@
 
     <!-- ===== GÖRÜNÜM: ÖZET ===== -->
     <section id="goruntu-ozet" class="gizli">
+      <div class="eylem-sarmal">
+        <div class="eylem-cubugu">
+          <button class="btn btn-sari" id="btn-karne-kart">📸 Karne görseli</button>
+          <button class="btn btn-cizgili" id="btn-karne">📸 Ay karnesi</button>
+        </div>
+      </div>
       <div class="kart">
         <h2>🧮 Kazanç simülatörü</h2>
         <p style="font-size:13px;color:var(--soluk);margin-bottom:12px">"Şu kadar çalışırsam ne kazanırım?" — dene bak:</p>
@@ -648,8 +692,8 @@
       <div class="kart">
         <h2>🧮 Bu ayın hesabı</h2>
         <div class="ozet-grid" id="ozet-grid"></div>
-        <button class="btn btn-sari" id="btn-karne-kart" style="margin-top:12px">📸 Ay karnesini görsel yap, paylaş</button>
-        <button class="btn btn-cizgili" id="btn-karne" style="margin-top:12px">📸 Ay karnesi oluştur (paylaşılır görsel)</button>
+
+
         <div id="odeme-dagilim" style="font-size:12.5px;color:var(--soluk);margin-top:10px;text-align:center"></div>
       </div>
       <div class="kart">
@@ -706,14 +750,18 @@
 
     <!-- ===== GÖRÜNÜM: YIL ÖZETİ ===== -->
     <section id="goruntu-yil" class="gizli">
+      <div class="eylem-sarmal">
+        <div class="eylem-cubugu">
+          <button class="btn btn-sari" id="btn-yil-paylas">📤 Paylaş</button>
+          <button class="btn btn-cizgili" id="btn-yil-pdf">📄 PDF</button>
+          <button class="btn btn-cizgili" id="btn-csv">⬇️ CSV</button>
+          <button class="btn btn-cizgili" id="btn-xlsx">📗 Excel</button>
+        </div>
+      </div>
       <div class="kart">
         <h2>📊 <span id="yil-baslik">Yıl</span> dökümü</h2>
         <div id="isi-harita" style="margin-bottom:14px"></div>
         <div id="yil-icerik"><div class="bos-mesaj">Yükleniyor...</div></div>
-        <button class="btn btn-cizgili" id="btn-yil-paylas" style="margin-top:14px">📤 Yıl raporunu paylaş</button>
-        <button class="btn btn-cizgili" id="btn-yil-pdf" style="margin-top:10px">📄 Gerçek PDF indir</button>
-        <button class="btn btn-cizgili" id="btn-csv" style="margin-top:10px">⬇️ Excel için CSV indir</button>
-        <button class="btn btn-cizgili" id="btn-xlsx" style="margin-top:10px">📗 Gerçek Excel (.xlsx) indir</button>
       </div>
     </section>
 
