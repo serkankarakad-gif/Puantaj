@@ -5,6 +5,20 @@ kullanır: `0.0.0.X` — X, her güncellemede 1 artar. Uygulama içindeki sürü
 (alt bilgi + "Neler yeni" kartı) ve dağıtılan zip dosyasının adı her zaman
 birebir aynıdır.
 
+## 0.0.2.5 — 🎨 TASARIM: dokunulmamış bileşenler + iki görünürlük hatası
+- Kullanıcı sorusu: "neyimiz kaldı tasarım yapmadığımız"
+- Sayım yapıldı: CSS'te 29 bileşen bölümü var, 0.0.2.2'de yalnızca 6'sına dokunulmuştu. Kullanım yoğunluğuna göre öncelik verildi — listeler (kodda 145 kullanım) ve alt sayfa/modal (120) en çok görülüp hiç dokunulmamış iki bileşendi
+- 🐞 **GÖRÜNÜRLÜK HATASI: `.tutamak` açık temada kayboluyordu.** Rengi `#CFCDC6` olarak sabit kodlanmıştı; açık tema zemini `#F3F2EE`. İki ton neredeyse aynı olduğundan modal sürükleme tutamağı açık temada görünmüyor, "bu panel sürüklenebilir" ipucu tamamen kayboluyordu. `var(--soluk)` + opaklığa çevrildi
+- 🐞 **GÖRÜNÜRLÜK HATASI: `.durum-secim button` seçilmemişken `var(--soluk)`.** Bu dört düğme (Tam gün / Yarım gün / Gelmedim / İzinli) uygulamanın birincil kontrolü; en önemli kontrol en düşük kontrastla duruyordu. `var(--metin)` + `opacity:.78`, seçilince `opacity:1`
+  - Seçici güvenliği doğrulandı: `[class*="secili-"]` deseni `.durum-secim button` ile sınırlandı; `.eksik-cip.secili-f` (başka bileşen) yanlışlıkla eşleşmiyor. JS `b.className=""` ile sınıfları sıfırlayıp `"secili-"+durum` eklediği için desen doğru
+- 📋 **Listeler**: satır dolgusu 12→14px, başlık 14.5px/600 → 15px/700, tutar 18→19px, rozet köşesi 11→12px (takvim hücreleriyle aynı dil), alt yazıya satır yüksekliği
+- 📄 **Alt sayfa/modal**: üst kenar çizgisi + yukarı gölge (`0 -8px 28px`), başlık 22→23px
+- ↩️ **Denenip GERİ ALINAN**: panelin zemini `--beton`'dan `--kart`'a çevrilmişti. Panelin içindeki `.kart` blokları, `.durum-secim button` ve `.sayac` kontrolleri zaten `--kart` zemin kullandığı için bu, kontrollerin kenarlarını kaybetmesine yol açacaktı. Zemin `--beton` bırakıldı; ayrım perde + gölge ile sağlanıyor
+- Ayrıca: boş liste mesajları (dolgu/satır yüksekliği), `.sayac` girdisi 30→32px ve kenar kalınlığı, `.sayac` düğmeleri geri çekildi
+- ⚡ Yeni panel gölgesi hafif moda da eklendi (0.0.2.3'teki hafif mod bu kuralı bilmiyordu)
+- CSS sıra denetimi: yeni kuralların hepsi eski tanımlardan SONRA geliyor (eşit özgüllükte sonraki kazanır) — 535→1085, 530→1073, 494→1100
+- Üç yerde sürüm güncellendi: `app.js`, `sw.js`, zip adı — hepsi `0.0.2.5`
+
 ## 0.0.2.4 — 🔬 DENETİM SÜRÜMÜ: 0.0.1.7–0.0.2.3 arası tüm değişikliklerin doğrulanması
 - Kullanıcı isteği: "devam et, hiçbir sorun hata olmasın"
 - Yeni özellik EKLENMEDİ. Amaç: son yedi sürümde biriken değişiklikleri (yeni özellikler, kritik hata düzeltmeleri, arayüz yenilemesi, performans işi) sistematik doğrulamak

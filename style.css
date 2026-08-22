@@ -1054,3 +1054,90 @@ html[data-hafif="1"] .hucre.d-gelmedi{
 html[data-hafif="1"] .hucre{ animation:none }
 html[data-hafif="1"] .kart-parla::after{ display:none }
 html[data-hafif="1"] .para-pop{ animation:none }
+
+/* ═══════════════════════════════════════════════════════════════════
+   0.0.2.5 — TASARIM: dokunulmamış bileşenler
+   ───────────────────────────────────────────────────────────────────
+   0.0.2.2'de takvim, bakiye kartı ve özet kutuları elden geçmişti.
+   Bu turda uygulamanın EN ÇOK görülen ama hiç dokunulmamış iki
+   bileşeni ele alındı: listeler (kodda 145 yerde) ve alt sayfa /
+   modal (120 yerde). Ayrıca iki gerçek görünürlük hatası düzeltildi.
+   ═══════════════════════════════════════════════════════════════════ */
+
+/* ── 1. HATA: modal tutamağı açık temada görünmüyordu ──────────────
+   `.tutamak` rengi #CFCDC6 olarak SABİT kodlanmıştı; açık temanın
+   zemini #F3F2EE. Açık gri tutamak, neredeyse aynı tonda bir zeminin
+   üstünde kalıyor ve kaybolyordu — yani "bu paneli aşağı sürükleyip
+   kapatabilirsin" ipucu açık temada hiç görünmüyordu. Artık tema
+   değişkenine bağlı. */
+.tutamak{
+  background:var(--soluk);
+  opacity:.55;
+  width:48px; height:5px;
+}
+
+/* ── 2. HATA: gün durum düğmeleri seçilmemişken soluk okunuyordu ───
+   "Tam gün / Yarım gün / Gelmedim / İzinli" — bu dört düğme
+   uygulamanın ANA kontrolü, kullanıcının her gün dokunduğu şey.
+   Seçilmemiş halde metin rengi var(--soluk) idi, yani en önemli
+   kontrol en düşük kontrastla duruyordu. Güneş altında okunmuyordu.
+   Artık normal metin rengiyle, ölçülü bir opaklıkla. */
+.durum-secim button{
+  color:var(--metin);
+  opacity:.78;
+  font-size:14px;
+}
+.durum-secim button[class*="secili-"]{
+  opacity:1;
+  color:#fff;
+}
+
+/* ── 3. Listeler: satırlar arası ritim ─────────────────────────────
+   Liste satırları uygulamanın en çok görülen yapısı. Dokunma alanı
+   12px dolguyla sınırdaydı; parmakla ayırt etmek için biraz daha
+   nefes ve daha net bir ayraç verildi. Başlık ağırlığı artırıldı
+   (600 → 650 karşılığı 650 desteklenmediği için 700). */
+.liste li{ padding:14px 0; gap:13px }
+.liste .baslik{ font-weight:700; font-size:15px; line-height:1.35 }
+.liste .alt-yazi{ font-size:12.5px; line-height:1.45; margin-top:2px }
+/* Tutar: satırın asıl bilgisi — bir tık büyütüldü ve hizası sabitlendi */
+.liste .tutar{ font-size:19px; letter-spacing:-.01em }
+/* Rozet (tarih kutusu): köşeleri hücrelerle aynı dilde olsun */
+.liste .rozet{ border-radius:12px }
+
+/* ── 4. Boş liste mesajları: davet, mazeret değil ──────────────────
+   Boş ekran bir yönlendirme anıdır. İkon büyüklüğü korunup metin
+   biraz daha okunur ve daha az "kayıp" hissettiren bir tona çekildi. */
+.bos-mesaj{ padding:30px 14px; font-size:14px; line-height:1.6 }
+.bos-mesaj .buyuk{ font-size:38px; margin-bottom:10px; opacity:.85 }
+
+/* ── 5. Alt sayfa (modal): kağıt gibi otursun ──────────────────────
+   Panel, arkasındaki sayfadan yeterince ayrılmıyordu. Üst kenara ince
+   bir çizgi ve yukarı doğru bir gölge eklendi: panel artık sayfanın
+   ÜSTÜNE gelmiş bir kağıt gibi duruyor.
+
+   DİKKAT — denenip GERİ ALINAN kısım: ilk denemede panelin zemini
+   var(--beton)'dan var(--kart)'a çevrilmişti. Ama panelin İÇİNDE
+   `.kart` blokları, `.durum-secim button` ve `.sayac` kontrolleri var
+   ve bunların hepsi zaten var(--kart) zemin kullanıyor. Panel de
+   --kart olsaydı bu kontroller zemine karışıp kenarlarını
+   kaybedecekti — yani "Tam gün / Yarım gün" düğmeleri sınırsız
+   görünecekti. Zemin --beton olarak BIRAKILDI; ayrım zaten arkadaki
+   karartma perdesi + aşağıdaki gölge ile sağlanıyor. */
+.alt-sayfa{
+  border-top:1px solid var(--cizgi);
+  box-shadow:0 -8px 28px rgba(0,0,0,.32);
+  padding-top:8px;
+}
+.alt-sayfa h3{ font-size:23px; line-height:1.2; letter-spacing:-.01em }
+.alt-sayfa .tarih-yazi{ font-size:13.5px; margin-bottom:18px }
+
+/* ── 6. Sayaç (mesai/artı giriş kutusu) ────────────────────────────
+   +/− düğmeleri ile ortadaki rakam aynı görsel ağırlıktaydı; rakam
+   asıl bilgi olduğu için öne çıkarıldı, düğmeler geri çekildi. */
+.sayac input{ font-size:32px; border-width:2px }
+.sayac button{ color:var(--metin); opacity:.85 }
+
+/* ── 7. Hafif mod: bu turda eklenen gölgeyi de kapsa ───────────────
+   0.0.2.3'teki hafif mod, henüz var olmayan bu gölgeyi bilmiyordu. */
+html[data-hafif="1"] .alt-sayfa{ box-shadow:0 -2px 8px rgba(0,0,0,.28) }
