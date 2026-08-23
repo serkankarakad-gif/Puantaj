@@ -8039,7 +8039,7 @@ document.addEventListener("DOMContentLoaded", ()=>{
   });
 
   /* Neler yeni kartı */
-  const YENILIK_SURUM = "0.0.4.2";
+  const YENILIK_SURUM = "0.0.4.3";
   window.__SURUM = YENILIK_SURUM;   /* tanı raporu bunu okur */
   try{ $("#cekmece-surum").textContent = "Puantaj Defterim " + YENILIK_SURUM; }catch(e){}
 
@@ -9676,10 +9676,16 @@ function toast(m){
   toastZaman = setTimeout(()=> t.classList.remove("goster"), 2600);
 }
 
-})();
 
 /* ═══════════════════════════════════════════════════════════════════
    🔧 TANI / TEST MOTORU
+
+   ⚠️ BU KOD app.js'İ SARAN (function(){...})() BLOĞUNUN İÇİNDE OLMALI.
+   0.0.4.2'de dosyanın sonuna, o bloğun DIŞINA eklenmişti; bu yüzden
+   $, kullanici, ayarlar gibi uygulama değişkenlerinin hiçbirine
+   erişemiyor ve ilk satırda "$ is not defined" hatasıyla çöküyordu.
+   Yeni kod eklerken dosyanın en sonundaki "})();" satırının ÜSTÜNDE
+   kalmasına dikkat et.
    ───────────────────────────────────────────────────────────────────
    Amaç: "burada sıkıntı var mı?" sorusunu göz kararıyla değil, ölçerek
    yanıtlamak. Uygulama kendi kendini kontrol eder ve kopyalanabilir bir
@@ -10112,3 +10118,5 @@ function taniRaporMetni(){
     "".padEnd(52,"=") + "\n" +
     taniSatirlar.map(s=> sim[s.durum] + " " + s.baslik + (s.detay ? "\n    " + s.detay : "")).join("\n");
 }
+
+})();
