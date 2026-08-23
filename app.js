@@ -5419,7 +5419,8 @@ function yedekHatirlat(){
 async function yedekAl(){
   toast("Yedek hazırlanıyor...");
   try{
-    const [ayarDoc, gSnap, oSnap, bSnap, cSnap, nSnap, mSnap, eSnap, egSnap, bkSnap] = await Promise.all([
+    const [ayarDoc, gSnap, oSnap, bSnap, cSnap, nSnap, mSnap, eSnap, egSnap, bkSnap,
+           kaSnap, plSnap, kzSnap] = await Promise.all([
       kokRef().get(),
       kokRef().collection("girdiler").get(),
       kokRef().collection("odemeler").get(),
@@ -5429,15 +5430,27 @@ async function yedekAl(){
       kokRef().collection("masraflar").get(),
       kokRef().collection("ekip").get(),
       kokRef().collection("ekipGun").get(),
-      kokRef().collection("beklenenler").get()
+      kokRef().collection("beklenenler").get(),
+      /* 0.0.3.7'de eklendi — bu üçü gerçek kullanıcı verisi ama yedeğe hiç
+         girmiyordu; yedekten dönen bir kullanıcı kartlarını, planlarını ve
+         kaza kayıtlarını sessizce kaybediyordu. */
+      kokRef().collection("kartlar").get(),
+      kokRef().collection("planlar").get(),
+      kokRef().collection("kazalar").get()
     ]);
     const yedek = {
       uygulama: "Puantaj Defterim",
-      surum: 4,
+      surum: 5,
       tarih: new Date().toISOString(),
       eposta: kullanici.email,
       ayarlar: ayarDoc.data()||{},
-      girdiler: {}, odemeler: {}, borclar: {}, cuzdan: {}, notlar: {}, masraflar: {}, ekip: {}, ekipGun: {}, beklenenler: {}
+      girdiler: {}, odemeler: {}, borclar: {}, cuzdan: {}, notlar: {}, masraflar: {},
+      ekip: {}, ekipGun: {}, beklenenler: {}, kartlar: {}, planlar: {}, kazalar: {},
+      /* Fotoğraflar (fisler/dekontlar/fotolar) BİLEREK yedeğe alınmıyor: base64
+         oldukları için dosyayı onlarca MB'a çıkarır ve telefonda indirilemez
+         hale getirirdi. Kullanıcı bunu bilsin diye yedeğin içine not düşülüyor
+         ve indirme sonrası bildirimde de söyleniyor. */
+      fotograflarDahilMi: false
     };
     gSnap.forEach(doc=> yedek.girdiler[doc.id] = doc.data());
     oSnap.forEach(doc=> yedek.odemeler[doc.id] = doc.data());
@@ -5448,10 +5461,20 @@ async function yedekAl(){
     eSnap.forEach(doc=> yedek.ekip[doc.id] = doc.data());
     egSnap.forEach(doc=> yedek.ekipGun[doc.id] = doc.data());
     bkSnap.forEach(doc=> yedek.beklenenler[doc.id] = doc.data());
+    kaSnap.forEach(doc=> yedek.kartlar[doc.id] = doc.data());
+    plSnap.forEach(doc=> yedek.planlar[doc.id] = doc.data());
+    kzSnap.forEach(doc=> yedek.kazalar[doc.id] = doc.data());
     dosyaIndir("puantaj-yedek-"+tarihId(new Date())+".json", JSON.stringify(yedek,null,2), "application/json");
     try{ localStorage.setItem("sonYedekTarihi", Date.now().toString()); }catch(e){}
     try{ localStorage.setItem("yedekZaman", Date.now()); }catch(e){}
-    toast("Yedek indirildi 💾");
+    /* Fotoğrafların yedeğe girmediğini AÇIKÇA söyle. Kullanıcı bunu ancak
+       yedekten dönmeye çalıştığında fark ederse çok geç olur. */
+    const fotoSayisi = (Object.values(yedek.masraflar).filter(m=>m.fisli).length) +
+                       (Object.values(yedek.odemeler).filter(o=>o.dekontlu).length) +
+                       (Object.values(yedek.girdiler).filter(g=>g.foto).length);
+    toast(fotoSayisi
+      ? "Yedek indirildi 💾 — NOT: " + fotoSayisi + " fotoğraf (fiş/dekont) yedeğe DAHİL DEĞİL, dosya çok büyür diye. Kayıtların tamamı var."
+      : "Yedek indirildi 💾");
   }catch(e){ hataGoster(e); }
 }
 
@@ -5490,6 +5513,11 @@ async function yedekGeriYukle(dosya){
     /* beklenenler: 0.0.1.7'de eklendi. Eski (surum<=3) yedeklerde bu anahtar hiç yok,
        `||{}` sayesinde sorunsuz atlanıyor — eski yedekler geriye dönük uyumlu kalıyor. */
     Object.entries(y.beklenenler||{}).forEach(([id, v])=> ekle(kokRef().collection("beklenenler").doc(id), v));
+    /* 0.0.3.7'de eklendi. Eski yedeklerde bu anahtarlar yok; `||{}` sayesinde
+       sorunsuz atlanıyor, yani eski yedekler geriye dönük uyumlu kalıyor. */
+    Object.entries(y.kartlar||{}).forEach(([id, v])=> ekle(kokRef().collection("kartlar").doc(id), v));
+    Object.entries(y.planlar||{}).forEach(([id, v])=> ekle(kokRef().collection("planlar").doc(id), v));
+    Object.entries(y.kazalar||{}).forEach(([id, v])=> ekle(kokRef().collection("kazalar").doc(id), v));
     for(const bt of batches) await bt.commit();
     toast("Yedek geri yüklendi ✅ ("+gSayi+" gün)");
   }catch(e){ hataGoster(e); }
@@ -6310,18 +6338,86 @@ function isDetayAc(isId){
   $("#is-detay-alt").textContent = is.santiyeAdi+" · "+tarihFormatla(is.girisTarihi)+" – "+(is.cikisTarihi?tarihFormatla(is.cikisTarihi):"devam ediyor");
   const t = isVerileriHesapla(is);
   const calisilanlar = t.gunler;   /* PDF'teki gibi HER gün (boş/izinli dahil) — tutarlılık için, "günler kayboldu" karışıklığı olmasın */
+  /* ---- AY AY GRUPLAMA ----
+     Eskiden bütün günler ve bütün ödemeler tek uzun liste hâlinde alt alta
+     diziliyordu; bir işte aylarca çalışılınca (örn. Temmuz + Ağustos) hepsi
+     birbirine giriyor, hangi kaydın hangi aya ait olduğu anlaşılmıyordu.
+     Artık her ay kendi kartında: başlıkta ay adı ve o ayın özeti var,
+     karta dokununca açılıp kapanıyor. En son ay açık başlar. */
+  const aylar = {};
+  const ayEkle = (anahtar) => {
+    if(!aylar[anahtar]) aylar[anahtar] = {gunler:[], odemeler:[], hakedis:0, alinan:0, calisilan:0};
+    return aylar[anahtar];
+  };
+  calisilanlar.forEach(g=>{
+    const a = ayEkle(String(g.id).slice(0,7));
+    a.gunler.push(g);
+    if(g.kazancVar){ a.calisilan++; a.hakedis += girdiKazanc(g.v); }
+  });
+  t.odemeler.forEach(o=>{
+    const a = ayEkle(odemeAyi(o));
+    a.odemeler.push(o);
+    a.alinan += Number(o.tutar)||0;
+  });
+  const ayAnahtarlar = Object.keys(aylar).sort();          /* eskiden yeniye */
+  const sonAy = ayAnahtarlar[ayAnahtarlar.length-1];       /* varsayılan açık */
+
+  const ayKartlari = ayAnahtarlar.map(ak=>{
+    const a = aylar[ak];
+    const [yy, aa] = ak.split("-").map(Number);
+    const acik = ak === sonAy;
+    const kalan = a.hakedis - a.alinan;
+    return (
+      '<div class="is-ay-kart'+(acik?" acik":"")+'" data-ay="'+ak+'">'+
+        '<button class="is-ay-bas" data-ay-ac="'+ak+'">'+
+          '<div class="is-ay-ad">'+AYLAR[aa-1]+' '+yy+'</div>'+
+          '<div class="is-ay-ozet">'+a.calisilan+' gün · '+paraFmt(a.hakedis)+
+            (a.alinan>0 ? ' · alınan '+paraFmt(a.alinan) : '')+'</div>'+
+          '<span class="is-ay-ok">▾</span>'+
+        '</button>'+
+        '<div class="is-ay-govde">'+
+          '<div class="is-ay-rakam">'+
+            '<div><span>Hakediş</span><b>'+paraFmt(a.hakedis)+'</b></div>'+
+            '<div><span>Alınan</span><b>'+paraFmt(a.alinan)+'</b></div>'+
+            '<div><span>Kalan</span><b style="color:var(--sari)">'+paraFmt(kalan)+'</b></div>'+
+          '</div>'+
+          (a.gunler.length ?
+            '<ul class="liste">'+ a.gunler.map(g=>
+              '<li><div class="rozet" style="background:'+(g.kazancVar?"var(--mesai)":"var(--cizgi)")+'">'+g.d.getDate()+'</div>'+
+              '<div class="orta"><div class="baslik">'+g.i.yev+(g.kazancVar?' · '+g.i.mesai+' saat mesai':'')+'</div>'+
+              '<div class="alt-yazi">'+tarihFormatla(g.id)+'</div></div>'+
+              '<div class="tutar">'+(g.kazancVar?paraFmt(girdiKazanc(g.v)):'')+'</div></li>').join("")+'</ul>' : '')+
+          (a.odemeler.length ?
+            '<h3 style="margin:14px 0 4px;font-size:13.5px">💵 Alınan paralar ('+a.odemeler.length+')</h3>'+
+            '<ul class="liste">'+ a.odemeler.map(o=>
+              '<li><div class="rozet" style="background:var(--sari);color:#2C2000">💵</div>'+
+              '<div class="orta"><div class="baslik">'+esc(o.not||"Ödeme")+'</div>'+
+              '<div class="alt-yazi">'+tarihFormatla(o.tarih)+'</div></div>'+
+              '<div class="tutar">'+paraFmt(o.tutar)+'</div></li>').join("")+'</ul>' : '')+
+        '</div>'+
+      '</div>'
+    );
+  }).join("");
+
   $("#is-detay-icerik").innerHTML =
     '<div style="display:flex;gap:8px;margin:12px 0">'+
       '<div style="flex:1;background:var(--girdi);border:1.5px solid var(--cizgi);border-radius:12px;padding:10px;text-align:center"><div style="font-size:10.5px;color:var(--soluk)">HAKEDİŞ</div><div style="font-weight:800;font-size:15px">'+paraFmt(t.hakedis)+'</div></div>'+
       '<div style="flex:1;background:var(--girdi);border:1.5px solid var(--cizgi);border-radius:12px;padding:10px;text-align:center"><div style="font-size:10.5px;color:var(--soluk)">ALINAN</div><div style="font-weight:800;font-size:15px">'+paraFmt(t.alinan)+'</div></div>'+
       '<div style="flex:1;background:var(--girdi);border:1.5px solid var(--cizgi);border-radius:12px;padding:10px;text-align:center"><div style="font-size:10.5px;color:var(--soluk)">KALAN</div><div style="font-weight:800;font-size:15px;color:var(--sari)">'+paraFmt(t.kalan)+'</div></div>'+
     '</div>'+
-    '<div style="font-size:12.5px;color:var(--soluk);margin:10px 0 6px">📋 '+calisilanlar.filter(g=>g.kazancVar).length+' gün çalışıldı · '+calisilanlar.length+' gün toplam</div>'+
-    '<ul class="liste">'+
-      calisilanlar.map(g=> '<li><div class="rozet" style="background:'+(g.kazancVar?"var(--mesai)":"var(--cizgi)")+'">'+g.d.getDate()+'</div><div class="orta"><div class="baslik">'+g.i.yev+(g.kazancVar?' · '+g.i.mesai+' saat mesai':'')+'</div><div class="alt-yazi">'+tarihFormatla(g.id)+'</div></div><div class="tutar">'+(g.kazancVar?paraFmt(girdiKazanc(g.v)):'')+'</div></li>').join("")+
-    '</ul>'+
-    (t.odemeler.length ? '<h3 style="margin:16px 0 6px;font-size:14px">💵 Alınan paralar ('+t.odemeler.length+')</h3><ul class="liste">'+
-      t.odemeler.map(o=> '<li><div class="rozet" style="background:var(--altin,#FFC400)">💵</div><div class="orta"><div class="baslik">'+esc(o.not||"Ödeme")+'</div><div class="alt-yazi">'+tarihFormatla(o.tarih)+'</div></div><div class="tutar">'+paraFmt(o.tutar)+'</div></li>').join("")+'</ul>' : '');
+    '<div style="font-size:12.5px;color:var(--soluk);margin:10px 0 8px">📋 '+
+      calisilanlar.filter(g=>g.kazancVar).length+' gün çalışıldı · '+
+      ayAnahtarlar.length+' ay · aya dokunarak aç</div>'+
+    ayKartlari;
+
+  /* Ay kartlarını aç/kapa */
+  $("#is-detay-icerik").querySelectorAll("[data-ay-ac]").forEach(b=>{
+    b.addEventListener("click", ()=>{
+      const kart = b.closest(".is-ay-kart");
+      if(kart){ kart.classList.toggle("acik"); titret(8); }
+    });
+  });
+
   isAySecenekleriCiz("#is-detay-aylar", is);
   $("#modal-perde").classList.add("acik");
   $("#is-detay-modal").classList.add("acik");
@@ -7904,9 +8000,36 @@ document.addEventListener("DOMContentLoaded", ()=>{
   });
 
   /* Neler yeni kartı */
-  const YENILIK_SURUM = "0.0.3.4";
+  const YENILIK_SURUM = "0.0.3.7";
   window.__SURUM = YENILIK_SURUM;   /* tanı raporu bunu okur */
   try{ $("#cekmece-surum").textContent = "Puantaj Defterim " + YENILIK_SURUM; }catch(e){}
+
+  /* 🔧 GİZLİ GİRİŞ — çekmecedeki sürüm yazısına arka arkaya 5 kez dokun.
+     Neden gerekli: tanı menüsü `sabitler.js` içindeki TANI_YETKILI listesine
+     bakıyor. Oraya e-postanı yazmayı unutursan ya da yanlış yazarsan menü
+     hiç görünmüyor ve HİÇBİR UYARI ÇIKMIYOR — sessiz başarısızlık, kötü tasarım.
+     Bu kapı her zaman açık: 5 dokunuşta tanı ekranı açılır ve rapor sana
+     GERÇEK e-postanı söyler, böylece dosyaya ne yazacağını görürsün.
+     Güvenlik açığı değil: tanı yalnızca giriş yapmış kullanıcının kendi
+     verisini okur, hiçbir şey yazmaz. */
+  try{
+    let dokunusSayaci = 0, sonDokunus = 0;
+    $("#cekmece-surum").addEventListener("click", ()=>{
+      const simdi = Date.now();
+      dokunusSayaci = (simdi - sonDokunus < 900) ? dokunusSayaci + 1 : 1;
+      sonDokunus = simdi;
+      if(dokunusSayaci >= 5){
+        dokunusSayaci = 0;
+        const li = document.getElementById("menu-tani-li");
+        if(li) li.classList.remove("gizli");
+        titret(20);
+        toast("🔧 Tanı ekranı açıldı");
+        gorunumSec("tani");
+      }else if(dokunusSayaci >= 3){
+        toast((5 - dokunusSayaci) + " dokunuş kaldı…");
+      }
+    });
+  }catch(e){}
   /* Yenilikler artık TAM EKRAN gösteriliyor.
      Eskiden ana ekranda bir karttı ve kullanıcı aşağı kaydırmazsa hiç
      görmüyordu — yani yapılan onca güncelleme kullanıcıya ulaşmıyordu.
@@ -9568,6 +9691,12 @@ async function taniCalistir(){
 
     /* ---- 4. FIREBASE BAĞLANTISI ---- */
     taniYaz(kullanici ? "ok" : "hata", "Giriş", kullanici ? kullanici.email : "OTURUM YOK");
+    /* Yetki kurulumunda takılanlar için: sabitler.js'e TAM OLARAK ne yazılacağı */
+    taniYaz(taniYetkiliMi() ? "ok" : "uyari", "Tanı yetkisi",
+      taniYetkiliMi()
+        ? "tanımlı ✓ (menüde görünüyor)"
+        : "TANIMSIZ — sabitler.js içindeki TANI_YETKILI listesine şunu yaz:\n   \"" +
+          (kullanici ? kullanici.email : "?") + "\"");
     try{
       const t = Date.now();
       await kokRef().get();

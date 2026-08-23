@@ -1605,3 +1605,69 @@ html[data-hafif="1"] .eylem-sarmal::after{ display:none }
   padding:12px 20px max(16px, env(safe-area-inset-bottom));
   border-top:1px solid var(--cizgi); background:var(--asfalt);
 }
+
+/* ── İş detayı: ay ay kartlar ──────────────────────────────────────
+   Bir işte aylarca çalışıldığında tüm günler ve ödemeler tek uzun liste
+   hâlinde birbirine giriyordu. Artık her ay kendi kartında; başlıkta ay
+   adı ve özet, dokununca açılıp kapanıyor. Ana ekrandaki kart diliyle
+   aynı: aynı köşe yarıçapı, aynı kenarlık, aynı sarı vurgu. */
+.is-ay-kart{
+  background:var(--kart);
+  border:1px solid var(--cizgi);
+  border-radius:14px;
+  margin-bottom:10px;
+  overflow:hidden;
+}
+.is-ay-kart.acik{ border-color:var(--sari) }
+
+.is-ay-bas{
+  width:100%; display:flex; align-items:center; gap:10px;
+  padding:13px 14px; background:none; border:none; text-align:left;
+  color:var(--metin); cursor:pointer;
+}
+.is-ay-ad{
+  font-family:'Saira Condensed'; font-size:20px; font-weight:800;
+  letter-spacing:.2px; flex-shrink:0;
+}
+.is-ay-kart.acik .is-ay-ad{ color:var(--sari) }
+.is-ay-ozet{
+  flex:1; min-width:0; font-size:11.5px; color:var(--soluk);
+  text-align:right; line-height:1.35;
+}
+.is-ay-ok{
+  flex-shrink:0; color:var(--soluk); font-size:15px;
+  transition:transform .18s ease;
+}
+.is-ay-kart.acik .is-ay-ok{ transform:rotate(180deg); color:var(--sari) }
+
+/* Kapalıyken gövde tamamen gizli — uzun listeler DOM'da kalsa bile
+   çizilmiyor, bu yüzden çok aylı işlerde ekran hızlı açılıyor. */
+.is-ay-govde{ display:none; padding:0 14px 12px }
+.is-ay-kart.acik .is-ay-govde{ display:block; animation:satirGir .2s ease }
+
+/* Ay içi üç rakam: hakediş / alınan / kalan */
+.is-ay-rakam{
+  display:flex; gap:8px; margin-bottom:10px;
+  padding-top:11px; border-top:1px solid var(--cizgi);
+}
+.is-ay-rakam > div{
+  flex:1; background:var(--girdi); border-radius:10px;
+  padding:8px 9px; text-align:center;
+}
+.is-ay-rakam span{ display:block; font-size:10px; color:var(--soluk) }
+.is-ay-rakam b{
+  display:block; font-family:'Saira Condensed'; font-size:15px;
+  font-weight:800; margin-top:1px;
+}
+/* Ay kartı içindeki liste satırları kademeli girmesin — kart zaten
+   açılırken kendi animasyonunu yapıyor, ikisi üst üste binmesin */
+.is-ay-govde .liste li{ animation:none }
+
+/* Çekmecedeki sürüm yazısı gizli tanı girişi olarak da çalışıyor
+   (5 kez dokun). Dokunma alanı genişletildi ki parmakla ıskalanmasın. */
+.surum{
+  padding:8px 4px;
+  cursor:pointer;
+  -webkit-user-select:none; user-select:none;
+}
+.surum:active{ color:var(--sari) }
