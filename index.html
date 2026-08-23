@@ -352,10 +352,11 @@
       <div class="kart gizli" id="yenilik-kart" style="border-color:var(--sari)">
         <h2>🎁 Neler yeni?</h2>
         <ul style="padding-left:18px;font-size:13.5px;line-height:1.9">
-          <li><b>📋 İş detayı artık sade açılıyor:</b> Ekrana girdiğinde hiçbir ay açık gelmiyor — sadece ay listesi ve üstte hakediş/alınan/kalan özeti görünüyor. İstediğin aya dokunup içine giriyorsun. Önceden son ay otomatik açılıyor, uzun bir liste karşılıyordu</li>
-          <li><b>📅 Aynı anda tek ay açık kalıyor:</b> Bir aya dokununca diğeri kapanıyor. Böylece iki uzun liste üst üste binmiyor, ekran hep sade duruyor</li>
-          <li><b>👆 Günlere dokununca detay açılıyor:</b> Ay içindeki gün satırlarına basınca o günün detay penceresi açılıyor — yevmiye, mesai, şantiye, not, fotoğraf hepsi orada. Düzenleyip kaydedebiliyorsun. Satırların sağındaki › işareti dokunulabilir olduklarını gösteriyor. Gün başka bir aydaysa takvim otomatik o aya geçiyor</li>
-          <li><b>📲 WhatsApp paylaş düğmesi en üste sabitlendi:</b> Eskiden ay listesinin altındaydı, çok aylı bir işte ulaşmak için listeyi geçmek gerekiyordu. Artık listenin üstünde ve sen aşağı kaydırırken ekranın tepesinde asılı kalıyor</li>
+          <li><b>🐞 Tanı ekranı yanlış çalışıyordu — hata bendeydi, düzelttim.</b> "Doğru çalışmıyor" dedin, baktım ve üç ayrı hata buldum. Üçü de benim yazdığım tanı kodundaydı, uygulamanda değil</li>
+          <li><b>1. Sağlam fonksiyonlara "TANIMSIZ" diyordu.</b> Tanı, fonksiyonları yanlış bir yerden arıyordu. JavaScript'te iki farklı yazım şekli var ve bunlardan biri o listede görünmüyor. Bu yüzden gayet çalışan 4 fonksiyon (para biçimlendirme, tarih, Türkçe harf çevirme) her seferinde hatalı raporlanıyordu</li>
+          <li><b>2. Var olmayan 5 ekran öğesini arıyordu.</b> Kontrol listesine yanlış isimler yazmışım — o isimde öğeler hiç yok. Yani tanı her çalıştığında 5 tane sahte "EKSİK" hatası veriyordu. Gerçek isimlerle değiştirildi ve 25 öğenin hepsinin gerçekten var olduğu doğrulandı</li>
+          <li><b>3. En önemli test aslında hiçbir şeyi test etmiyordu.</b> Tanının en değerli kontrolü "ekranda yazan para, verinin söylediğiyle aynı mı" karşılaştırmasıydı. Ama yanlış öğeye baktığı için hiçbir sayı okuyamıyor, karşılaştırma hiç yapılmıyor ve test hep "başarılı" görünüyordu. Şimdi ana ekrandaki gerçek bakiyeyi okuyup, tüm günlerinden hakedişi ve tüm ödemelerinden alınanı yeniden hesaplayarak karşılaştırıyor — aradaki fark 2 TL'yi geçerse hata veriyor</li>
+          <li><b>Sonuç:</b> Artık tanı çalıştığında gördüğün hatalar gerçek hatalar. Çalıştırıp raporu bana gönderebilirsin</li>
         </ul>
         <button class="btn btn-cizgili" id="btn-yenilik-kapat">Süper, kapat</button>
       </div>

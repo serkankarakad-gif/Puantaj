@@ -8039,7 +8039,7 @@ document.addEventListener("DOMContentLoaded", ()=>{
   });
 
   /* Neler yeni kartı */
-  const YENILIK_SURUM = "0.0.3.9";
+  const YENILIK_SURUM = "0.0.4.0";
   window.__SURUM = YENILIK_SURUM;   /* tanı raporu bunu okur */
   try{ $("#cekmece-surum").textContent = "Puantaj Defterim " + YENILIK_SURUM; }catch(e){}
 
@@ -9710,23 +9710,36 @@ async function taniCalistir(){
     taniYaz("bilgi", "Çevrimiçi", navigator.onLine ? "evet" : "HAYIR");
 
     /* ---- 2. EKRAN ÖĞELERİ (köprü kontrolü) ---- */
+    /* DÜZELTME (0.0.4.0): bu listede var olmayan 5 id vardı (ozet-gun, ozet-kazanc,
+       ozet-alinan, ozet-kalan, liste-ekip). Tanı bunları "EKSİK" diye raporluyor,
+       yani her çalıştırmada 5 sahte hata üretiyordu. Gerçek id'lerle değiştirildi. */
     const zorunlu = ["sirket-bakiye","sirket-alt","kur-satir","bugun-kazanc-icerik",
       "hafta-serit","tahmin-kart","krono-yazi","takvim","ay-ad","liste-odemeler",
-      "liste-masraflar","liste-borclar","liste-beklenen","liste-notlar","liste-ekip",
-      "ozet-gun","ozet-kazanc","ozet-alinan","ozet-kalan","liste-maaslar",
-      "toast","bildirim-kutusu","liste-sirket-hareket","liste-santiyeler"];
+      "liste-masraflar","liste-borclar","liste-beklenen","liste-notlar",
+      "liste-isciler","liste-ekip-ozet","ozet-grid","liste-maaslar",
+      "toast","bildirim-kutusu","liste-sirket-hareket","liste-santiyeler",
+      "goruntu-tani","yenilik-tam","is-detay-icerik"];
     const eksikOge = zorunlu.filter(id=> !document.getElementById(id));
     taniYaz(eksikOge.length ? "hata" : "ok", "Ekran öğeleri",
       eksikOge.length ? "EKSİK: " + eksikOge.join(", ") : zorunlu.length + " öğenin hepsi yerinde");
 
     /* ---- 3. FONKSİYONLAR ---- */
-    const fonk = ["girdiKazanc","oranBul","guncelOranlar","hesaplaAralik","sayi","odemeAyi",
-      "enEskiOdenmemisAy","paraFmt","tarihId","hepsiniCiz","anaYukle","ayiYukle",
-      "takvimCiz","odemeListesiCiz","masrafCiz","borcCiz","beklenenCiz","ekipYoklamaCiz",
-      "pdfFontlariYukle","tumOdemeleriGetir","hafifModUygula","trBuyuk","trKucuk"];
-    const eksikFn = fonk.filter(f=> typeof window[f] !== "function");
+    /* DÜZELTME (0.0.4.0): eskiden `typeof window[f]` ile bakılıyordu.
+       `function foo(){}` biçimindekiler window'a yazılır ama `const foo = ()=>{}`
+       biçimindekiler YAZILMAZ — bu yüzden tanı, gayet sağlam olan paraFmt,
+       tarihId, trBuyuk ve trKucuk için "TANIMSIZ" diye SAHTE HATA veriyordu.
+       Artık fonksiyonlara doğrudan referansla bakılıyor; tanımsız olan gerçekten
+       ReferenceError üretir ve catch'e düşer. */
+    const fonkHarita = {
+      girdiKazanc, oranBul, guncelOranlar, hesaplaAralik, sayi, odemeAyi,
+      enEskiOdenmemisAy, paraFmt, tarihId, hepsiniCiz, anaYukle, ayiYukle,
+      takvimCiz, odemeListesiCiz, masrafCiz, borcCiz, beklenenCiz, ekipYoklamaCiz,
+      pdfFontlariYukle, tumOdemeleriGetir, hafifModUygula, trBuyuk, trKucuk, pad, esc
+    };
+    const eksikFn = Object.keys(fonkHarita).filter(f=> typeof fonkHarita[f] !== "function");
     taniYaz(eksikFn.length ? "hata" : "ok", "Fonksiyonlar",
-      eksikFn.length ? "TANIMSIZ: " + eksikFn.join(", ") : fonk.length + " fonksiyonun hepsi tanımlı");
+      eksikFn.length ? "TANIMSIZ: " + eksikFn.join(", ")
+                     : Object.keys(fonkHarita).length + " fonksiyonun hepsi tanımlı");
 
     /* ---- 4. FIREBASE BAĞLANTISI ---- */
     taniYaz(kullanici ? "ok" : "hata", "Giriş", kullanici ? kullanici.email : "OTURUM YOK");
@@ -9800,13 +9813,25 @@ async function taniCalistir(){
           hesapKazanc += k;
         }
       });
-      const ekranGun = taniSayiCek("ozet-gun");
-      const ekranKazanc = taniSayiCek("ozet-kazanc");
-      const gunOk = ekranGun===null || Math.abs(ekranGun - hesapGun) < 0.01;
-      const kazOk = ekranKazanc===null || Math.abs(ekranKazanc - hesapKazanc) < 1;
-      taniYaz(gunOk && kazOk ? "ok" : "hata", "Köprü: özet ↔ veri",
-        "gün ekran=" + ekranGun + " hesap=" + hesapGun +
-        " · kazanç ekran=" + ekranKazanc + " hesap=" + Math.round(hesapKazanc));
+      /* DÜZELTME (0.0.4.0): eskiden var olmayan "ozet-gun"/"ozet-kazanc"
+         öğelerine bakılıyordu; ikisi de null döndüğü için karşılaştırma
+         hiçbir zaman yapılmıyor, test hep "başarılı" görünüyordu — yani
+         tanının EN DEĞERLİ kontrolü aslında hiçbir şeyi test etmiyordu.
+         Artık ana ekrandaki gerçek bakiye öğesine bakılıyor. */
+      const ekranBakiye = taniSayiCek("sirket-bakiye");
+      let hesapAlinan = 0;
+      const buAy = aktifYil+"-"+pad(aktifAy+1);
+      (await tumOdemeleriGetir()).forEach(o=>{
+        if(odemeAyi(o) === buAy) hesapAlinan += Number(o.tutar)||0;
+      });
+      const hesapKalan = hesapKazanc - hesapAlinan;
+      const uyum = ekranBakiye===null || gizliMod || Math.abs(ekranBakiye - hesapKalan) < 2;
+      taniYaz(uyum ? "ok" : "hata", "KÖPRÜ: ekrandaki para ↔ veri",
+        "ekran=" + (ekranBakiye===null ? "okunamadı" : ekranBakiye) +
+        " · hesaplanan=" + Math.round(hesapKalan) +
+        " (hakediş " + Math.round(hesapKazanc) + " − alınan " + Math.round(hesapAlinan) + ")" +
+        (gizliMod ? " · gizli mod açık, karşılaştırma atlandı" : "") +
+        " · " + hesapGun + " gün çalışıldı");
     }catch(e){ taniYaz("hata", "Köprü: özet ↔ veri", e.message); }
 
     /* ---- 9. KÖPRÜ: FIFO / AİT AY TUTARLILIĞI ---- */
