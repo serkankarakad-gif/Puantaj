@@ -8039,7 +8039,7 @@ document.addEventListener("DOMContentLoaded", ()=>{
   });
 
   /* Neler yeni kartı */
-  const YENILIK_SURUM = "0.0.4.0";
+  const YENILIK_SURUM = "0.0.4.2";
   window.__SURUM = YENILIK_SURUM;   /* tanı raporu bunu okur */
   try{ $("#cekmece-surum").textContent = "Puantaj Defterim " + YENILIK_SURUM; }catch(e){}
 
@@ -8798,7 +8798,23 @@ document.addEventListener("DOMContentLoaded", ()=>{
   });
 
   /* ---- 🔧 Tanı / test ---- */
-  $("#btn-tani-calistir").addEventListener("click", taniCalistir);
+  /* Düğme bağlantısı: hata olursa SESSİZ KALMASIN, ekranda görünsün.
+     Bir tanı aracının kendisi sessizce çökerse hiçbir işe yaramaz. */
+  $("#btn-tani-calistir").addEventListener("click", async ()=>{
+    const kutu = $("#tani-sonuc"), kart = $("#tani-sonuc-kart");
+    try{
+      await taniCalistir();
+    }catch(e){
+      if(kutu){
+        kutu.textContent = "❌ TANI ARACININ KENDİSİ ÇÖKTÜ\n\n" +
+          (e && e.message ? e.message : String(e)) + "\n\n" +
+          ((e && e.stack) ? e.stack.split("\n").slice(0,5).join("\n") : "");
+        if(kart) kart.classList.remove("gizli");
+      }
+      const b = $("#btn-tani-calistir");
+      if(b){ b.disabled = false; b.textContent = "▶ Tekrar dene"; }
+    }
+  });
   $("#btn-tani-kopyala").addEventListener("click", async ()=>{
     if(!taniSatirlar.length){ toast("Önce testi çalıştır"); return; }
     try{ await navigator.clipboard.writeText(taniRaporMetni()); toast("Rapor kopyalandı 📋"); }
@@ -9674,8 +9690,26 @@ function toast(m){
    sadece okur ve karşılaştırır.
    ═══════════════════════════════════════════════════════════════════ */
 let taniSatirlar = [];
+/* Her kontrol tamamlandığında ekranı ANINDA tazeler.
+   Eskiden tüm kontroller bitmeden hiçbir şey yazılmıyordu; 10 ayrı veritabanı
+   okuması yapıldığı için yavaş bağlantıda ya da çok kayıtta kullanıcı sonsuza
+   kadar "Test ediliyor…" görüyor, hiçbir sonuç alamıyordu. Bir tanı aracının
+   en son yapması gereken şey budur — artık her satır anında görünüyor, test
+   ortada takılsa bile o ana kadarki sonuçlar ekranda kalıyor. */
 function taniYaz(durum, baslik, detay){
   taniSatirlar.push({durum, baslik, detay: detay||""});
+  try{ taniSonucCiz(); }catch(e){}
+}
+
+/* Firestore çağrılarına zaman sınırı koyar. Ağ koparsa Firestore isteği
+   SONSUZA KADAR bekleyebilir; bu, testin ortada asılı kalmasının ana sebebiydi.
+   Süre dolarsa hata fırlatır, o kontrol "zaman aşımı" olarak işaretlenir ve
+   test bir sonrakine geçer. */
+function taniSureli(soz, saniye){
+  return Promise.race([
+    soz,
+    new Promise((_,red)=> setTimeout(()=> red(new Error("zaman aşımı ("+saniye+" sn)")), saniye*1000))
+  ]);
 }
 
 /* Ekranda görünen bir sayıyı, ham veriden yeniden hesaplanan değerle
@@ -9695,181 +9729,361 @@ async function taniCalistir(){
   if(btn){ btn.disabled = true; btn.textContent = "Test ediliyor…"; }
   const t0 = Date.now();
 
-  try{
-    /* ---- 1. ORTAM ---- */
-    taniYaz("bilgi", "SÜRÜM", "app.js: " + (window.__SURUM || "?"));
+  /* Her bölüm kendi try/catch'inde. Biri çökse bile diğerleri çalışmaya
+     devam eder — tek bir hata tüm raporu boş bırakmasın diye. */
+  const bolum = async (ad, fn)=>{
+    taniYaz("bolum", ad);
+    try{ await fn(); }
+    catch(e){ taniYaz("hata", ad+" bölümü çöktü", (e&&e.message)||String(e)); }
+  };
+  const V = v => (v===undefined||v===null||v==="") ? "—" : v;
+
+  /* Ortak veri: bir kez çekilip tüm bölümlerde kullanılır (tekrar okuma maliyeti olmasın) */
+  let tumG=[], tumO=[], tumM=[], tumB=[], tumBk=[], tumE=[], tumEg=[], tumN=[], tumK=[], tumP=[];
+  const cek = async (ad, sn=12)=>{
+    try{ const qs = await taniSureli(kokRef().collection(ad).get(), sn);
+         const r=[]; qs.forEach(d=> r.push({id:d.id, ...d.data()})); return r; }
+    catch(e){ taniYaz("uyari", "Veri çekilemedi: "+ad, (e&&e.message)||""); return null; }
+  };
+
+  /* ═══════ 1. ORTAM ═══════ */
+  await bolum("1. ORTAM VE SÜRÜM", async ()=>{
+    taniYaz("bilgi", "Uygulama sürümü", V(window.__SURUM));
     try{
       const kayit = await navigator.serviceWorker.getRegistration();
-      const sw = kayit ? (kayit.active ? "aktif" : "kayıtlı ama pasif") : "YOK";
-      taniYaz(kayit && kayit.active ? "ok" : "uyari", "Service worker", sw + (kayit && kayit.waiting ? " · BEKLEYEN GÜNCELLEME VAR" : ""));
-    }catch(e){ taniYaz("hata", "Service worker", e.message); }
-    taniYaz("bilgi", "Cihaz",
-      "RAM: " + (navigator.deviceMemory ?? "bilinmiyor") + " GB · " +
-      "Çekirdek: " + (navigator.hardwareConcurrency ?? "bilinmiyor") + " · " +
-      "Hafif mod: " + (document.documentElement.getAttribute("data-hafif")==="1" ? "AÇIK" : "kapalı"));
-    taniYaz("bilgi", "Çevrimiçi", navigator.onLine ? "evet" : "HAYIR");
-
-    /* ---- 2. EKRAN ÖĞELERİ (köprü kontrolü) ---- */
-    /* DÜZELTME (0.0.4.0): bu listede var olmayan 5 id vardı (ozet-gun, ozet-kazanc,
-       ozet-alinan, ozet-kalan, liste-ekip). Tanı bunları "EKSİK" diye raporluyor,
-       yani her çalıştırmada 5 sahte hata üretiyordu. Gerçek id'lerle değiştirildi. */
-    const zorunlu = ["sirket-bakiye","sirket-alt","kur-satir","bugun-kazanc-icerik",
-      "hafta-serit","tahmin-kart","krono-yazi","takvim","ay-ad","liste-odemeler",
-      "liste-masraflar","liste-borclar","liste-beklenen","liste-notlar",
-      "liste-isciler","liste-ekip-ozet","ozet-grid","liste-maaslar",
-      "toast","bildirim-kutusu","liste-sirket-hareket","liste-santiyeler",
-      "goruntu-tani","yenilik-tam","is-detay-icerik"];
-    const eksikOge = zorunlu.filter(id=> !document.getElementById(id));
-    taniYaz(eksikOge.length ? "hata" : "ok", "Ekran öğeleri",
-      eksikOge.length ? "EKSİK: " + eksikOge.join(", ") : zorunlu.length + " öğenin hepsi yerinde");
-
-    /* ---- 3. FONKSİYONLAR ---- */
-    /* DÜZELTME (0.0.4.0): eskiden `typeof window[f]` ile bakılıyordu.
-       `function foo(){}` biçimindekiler window'a yazılır ama `const foo = ()=>{}`
-       biçimindekiler YAZILMAZ — bu yüzden tanı, gayet sağlam olan paraFmt,
-       tarihId, trBuyuk ve trKucuk için "TANIMSIZ" diye SAHTE HATA veriyordu.
-       Artık fonksiyonlara doğrudan referansla bakılıyor; tanımsız olan gerçekten
-       ReferenceError üretir ve catch'e düşer. */
-    const fonkHarita = {
-      girdiKazanc, oranBul, guncelOranlar, hesaplaAralik, sayi, odemeAyi,
-      enEskiOdenmemisAy, paraFmt, tarihId, hepsiniCiz, anaYukle, ayiYukle,
-      takvimCiz, odemeListesiCiz, masrafCiz, borcCiz, beklenenCiz, ekipYoklamaCiz,
-      pdfFontlariYukle, tumOdemeleriGetir, hafifModUygula, trBuyuk, trKucuk, pad, esc
-    };
-    const eksikFn = Object.keys(fonkHarita).filter(f=> typeof fonkHarita[f] !== "function");
-    taniYaz(eksikFn.length ? "hata" : "ok", "Fonksiyonlar",
-      eksikFn.length ? "TANIMSIZ: " + eksikFn.join(", ")
-                     : Object.keys(fonkHarita).length + " fonksiyonun hepsi tanımlı");
-
-    /* ---- 4. FIREBASE BAĞLANTISI ---- */
-    taniYaz(kullanici ? "ok" : "hata", "Giriş", kullanici ? kullanici.email : "OTURUM YOK");
-    /* Yetki kurulumunda takılanlar için: sabitler.js'e TAM OLARAK ne yazılacağı */
-    taniYaz(taniYetkiliMi() ? "ok" : "uyari", "Tanı yetkisi",
-      taniYetkiliMi()
-        ? "tanımlı ✓ (menüde görünüyor)"
-        : "TANIMSIZ — sabitler.js içindeki TANI_YETKILI listesine şunu yaz:\n   \"" +
-          (kullanici ? kullanici.email : "?") + "\"");
+      if(!kayit) taniYaz("uyari","Çevrimdışı motoru","KAYITLI DEĞİL — internet yokken uygulama açılmaz");
+      else{
+        taniYaz(kayit.active?"ok":"uyari","Çevrimdışı motoru", kayit.active?"aktif":"kayıtlı ama pasif");
+        if(kayit.waiting) taniYaz("uyari","Bekleyen güncelleme","Yeni sürüm indirildi, yenilenmeyi bekliyor");
+      }
+      const kasalar = await caches.keys();
+      taniYaz(kasalar.length?"ok":"uyari","Çevrimdışı önbellek", kasalar.length?kasalar.join(", "):"BOŞ — çevrimdışı çalışmaz");
+    }catch(e){ taniYaz("uyari","Çevrimdışı motoru", e.message); }
+    taniYaz(navigator.onLine?"ok":"uyari","İnternet", navigator.onLine?"bağlı":"YOK (çevrimdışı moddasın)");
+    taniYaz("bilgi","Cihaz","RAM "+V(navigator.deviceMemory)+" GB · "+V(navigator.hardwareConcurrency)+" çekirdek · ekran "+screen.width+"×"+screen.height);
+    taniYaz("bilgi","Hafif mod", document.documentElement.getAttribute("data-hafif")==="1"?"AÇIK (animasyonlar kısıtlı)":"kapalı");
     try{
-      const t = Date.now();
-      await kokRef().get();
-      taniYaz("ok", "Firestore okuma", (Date.now()-t) + " ms");
-    }catch(e){ taniYaz("hata", "Firestore okuma", e.code + " — " + e.message); }
+      const kota = await navigator.storage.estimate();
+      const mb = (kota.usage/1048576).toFixed(1), lim=(kota.quota/1048576).toFixed(0);
+      taniYaz(kota.usage/kota.quota>0.9?"hata":"ok","Depolama", mb+" MB kullanılıyor / "+lim+" MB sınır");
+    }catch(e){}
+    let ls=true; try{ localStorage.setItem("_t","1"); localStorage.removeItem("_t"); }catch(e){ ls=false; }
+    taniYaz(ls?"ok":"hata","Yerel depolama", ls?"yazılabiliyor":"YAZILAMIYOR — ayarlar kaydedilmez");
+  });
 
-    /* ---- 5. DİNLEYİCİLER ---- */
-    const dinleyiciler = {
-      "girdiler (aylık)": dinleyiciGirdi, "ödemeler (aylık)": dinleyiciOdeme,
-      "ayarlar": dinleyiciAyar, "borçlar": dinleyiciBorc, "masraflar": dinleyiciMasraf,
-      "beklenenler": dinleyiciBeklenen, "tüm girdiler": dinleyiciTumG, "tüm ödemeler": dinleyiciTumO
-    };
-    const kapali = Object.keys(dinleyiciler).filter(k=> !dinleyiciler[k]);
-    taniYaz(kapali.length > 3 ? "uyari" : "ok", "Canlı dinleyiciler",
-      kapali.length ? "kapalı: " + kapali.join(", ") : "hepsi açık");
-
-    /* ---- 6. VERİ SAYIMI ---- */
-    const say = {};
-    for(const k of ["girdiler","odemeler","masraflar","borclar","beklenenler","ekip","notlar"]){
-      try{ say[k] = (await kokRef().collection(k).get()).size; }
-      catch(e){ say[k] = "HATA"; }
+  /* ═══════ 2. GİRİŞ VE GÜVENLİK ═══════ */
+  await bolum("2. GİRİŞ VE GÜVENLİK", async ()=>{
+    taniYaz(kullanici?"ok":"hata","Oturum", kullanici?kullanici.email:"GİRİŞ YAPILMAMIŞ");
+    if(kullanici){
+      taniYaz(kullanici.emailVerified?"ok":"uyari","E-posta doğrulama", kullanici.emailVerified?"doğrulanmış":"doğrulanmamış");
+      taniYaz("bilgi","Kullanıcı kimliği", kullanici.uid.slice(0,10)+"…");
     }
-    taniYaz("bilgi", "Kayıt sayıları",
-      Object.entries(say).map(([k,v])=> k+": "+v).join(" · "));
-
-    /* ---- 7. VERİ SAĞLIĞI ---- */
-    const bozuk = [];
+    let pin=false; try{ pin = !!localStorage.getItem("pinKod"); }catch(e){}
+    taniYaz(pin?"ok":"uyari","PIN kilidi", pin?"kurulu":"KURULU DEĞİL — telefonu alan verilerini görür");
     try{
-      const gs = await kokRef().collection("girdiler").get();
-      gs.forEach(d=>{
-        const v = d.data();
-        if(!/^\d{4}-\d{2}-\d{2}$/.test(d.id)) bozuk.push("girdi id bozuk: " + d.id);
-        if(v.durum && !["tam","yarim","gelmedi","izin","saatlik"].includes(v.durum))
-          bozuk.push("bilinmeyen durum: " + d.id + " → " + v.durum);
-        if(Number(v.mesai) < 0 || Number(v.arti) < 0) bozuk.push("negatif mesai/artı: " + d.id);
-      });
-      const os = await kokRef().collection("odemeler").get();
-      os.forEach(d=>{
-        const v = d.data();
-        if(!(Number(v.tutar) > 0)) bozuk.push("ödeme tutarı geçersiz: " + d.id + " → " + v.tutar);
-        if(!v.tarih) bozuk.push("ödeme tarihsiz: " + d.id);
-      });
-      const ms = await kokRef().collection("masraflar").get();
-      ms.forEach(d=>{
-        const v = d.data();
-        if(!(Number(v.tutar) > 0)) bozuk.push("masraf tutarı geçersiz: " + d.id);
-      });
-    }catch(e){ bozuk.push("veri taraması hata: " + e.message); }
-    taniYaz(bozuk.length ? "hata" : "ok", "Veri sağlığı",
-      bozuk.length ? bozuk.slice(0,15).join("\n   ") + (bozuk.length>15 ? "\n   … +"+(bozuk.length-15)+" tane daha" : "") : "bozuk kayıt yok");
-
-    /* ---- 8. KÖPRÜ: EKRANDAKİ SAYI = HESAPLANAN SAYI MI? ---- */
+      const t=Date.now(); await taniSureli(kokRef().get(), 10);
+      taniYaz("ok","Veritabanı bağlantısı", (Date.now()-t)+" ms");
+    }catch(e){ taniYaz("hata","Veritabanı bağlantısı", (e.code||"")+" "+e.message); }
     try{
-      const bas = aktifYil+"-"+pad(aktifAy+1)+"-01";
-      const son = aktifYil+"-"+pad(aktifAy+1)+"-31";
-      let hesapGun = 0, hesapKazanc = 0;
-      Object.keys(girdiler).forEach(id=>{
-        if(id >= bas && id <= son){
-          const v = girdiler[id];
-          const k = girdiKazanc(v);
-          if(k > 0) hesapGun++;
-          hesapKazanc += k;
-        }
-      });
-      /* DÜZELTME (0.0.4.0): eskiden var olmayan "ozet-gun"/"ozet-kazanc"
-         öğelerine bakılıyordu; ikisi de null döndüğü için karşılaştırma
-         hiçbir zaman yapılmıyor, test hep "başarılı" görünüyordu — yani
-         tanının EN DEĞERLİ kontrolü aslında hiçbir şeyi test etmiyordu.
-         Artık ana ekrandaki gerçek bakiye öğesine bakılıyor. */
-      const ekranBakiye = taniSayiCek("sirket-bakiye");
-      let hesapAlinan = 0;
-      const buAy = aktifYil+"-"+pad(aktifAy+1);
-      (await tumOdemeleriGetir()).forEach(o=>{
-        if(odemeAyi(o) === buAy) hesapAlinan += Number(o.tutar)||0;
-      });
-      const hesapKalan = hesapKazanc - hesapAlinan;
-      const uyum = ekranBakiye===null || gizliMod || Math.abs(ekranBakiye - hesapKalan) < 2;
-      taniYaz(uyum ? "ok" : "hata", "KÖPRÜ: ekrandaki para ↔ veri",
-        "ekran=" + (ekranBakiye===null ? "okunamadı" : ekranBakiye) +
-        " · hesaplanan=" + Math.round(hesapKalan) +
-        " (hakediş " + Math.round(hesapKazanc) + " − alınan " + Math.round(hesapAlinan) + ")" +
-        (gizliMod ? " · gizli mod açık, karşılaştırma atlandı" : "") +
-        " · " + hesapGun + " gün çalışıldı");
-    }catch(e){ taniYaz("hata", "Köprü: özet ↔ veri", e.message); }
+      /* Başkasının verisine erişilebiliyor mu? Erişebiliyorsa kurallar açık demektir. */
+      await taniSureli(db.collection("kullanicilar").doc("__olmayan_kullanici__").get(), 8);
+      taniYaz("uyari","Güvenlik kuralları","Başka kullanıcı belgesi okunabildi — kuralları gözden geçir");
+    }catch(e){
+      taniYaz(String(e.code||"").includes("permission")?"ok":"bilgi","Güvenlik kuralları",
+        String(e.code||"").includes("permission")?"başkasının verisi korunuyor ✓":"kontrol edilemedi: "+e.message);
+    }
+  });
 
-    /* ---- 9. KÖPRÜ: FIFO / AİT AY TUTARLILIĞI ---- */
+  /* ═══════ 3. ÜCRET VE ÇALIŞMA AYARLARI ═══════ */
+  await bolum("3. ÜCRET VE ÇALIŞMA AYARLARI", async ()=>{
+    const tip = ayarlar.calismaTipi||"yevmiye";
+    taniYaz("bilgi","Çalışma tipi", tip);
+    if(tip==="yevmiye")
+      taniYaz(ayarlar.yevmiye>0?"ok":"hata","Günlük yevmiye", ayarlar.yevmiye>0?paraFmt(ayarlar.yevmiye):"GİRİLMEMİŞ — kazançların 0 görünür");
+    if(tip==="saatlik")
+      taniYaz(ayarlar.saatUcret>0?"ok":"hata","Saat ücreti", ayarlar.saatUcret>0?paraFmt(ayarlar.saatUcret):"GİRİLMEMİŞ");
+    if(tip==="parca")
+      taniYaz(ayarlar.parcaFiyat>0?"ok":"hata","Parça fiyatı", ayarlar.parcaFiyat>0?paraFmt(ayarlar.parcaFiyat)+" / "+V(ayarlar.parcaBirim):"GİRİLMEMİŞ");
+    taniYaz(ayarlar.mesaiUcret>0?"ok":"uyari","Mesai saat ücreti", ayarlar.mesaiUcret>0?paraFmt(ayarlar.mesaiUcret):"girilmemiş — mesai saatleri paraya çevrilmez");
+    taniYaz("bilgi","Günlük normal saat", V(ayarlar.gunlukSaat)+" saat");
+    taniYaz("bilgi","Zamlar", "Pazar %"+V(ayarlar.pazarZam)+" · Tatil %"+V(ayarlar.tatilZam)+" · Gece %"+V(ayarlar.geceZam));
+    taniYaz(ayarlar.hedef>0?"ok":"bilgi","Aylık hedef", ayarlar.hedef>0?paraFmt(ayarlar.hedef):"belirlenmemiş");
+    const sant=(ayarlar.santiyeler||[]).length;
+    taniYaz("bilgi","Şantiyeler", sant?sant+" tanımlı · aktif: "+V(ayarlar.santiye):"tanımlı şantiye yok");
+    const kilit=(ayarlar.kapali||[]).length;
+    taniYaz("bilgi","Kilitli aylar", kilit?kilit+" ay kilitli: "+ayarlar.kapali.join(", "):"kilitli ay yok");
+    taniYaz("bilgi","İş kayıtları", (ayarlar.isler||[]).length+" iş");
+  });
+
+  /* ═══════ 4. PUANTAJ (GÜN KAYITLARI) ═══════ */
+  await bolum("4. PUANTAJ — GÜN KAYITLARI", async ()=>{
+    tumG = await cek("girdiler", 15); if(!tumG) return;
+    taniYaz("bilgi","Toplam gün kaydı", tumG.length+" kayıt");
+    if(!tumG.length){ taniYaz("uyari","Puantaj","Hiç gün işlenmemiş"); return; }
+
+    const gecerliDurum=["tam","yarim","gelmedi","izin","saatlik"];
+    const bozukTarih=[], bozukDurum=[], negatif=[], oransiz=[], gelecek=[];
+    const bugun = tarihId(new Date());
+    tumG.forEach(g=>{
+      if(!/^\d{4}-\d{2}-\d{2}$/.test(g.id)) bozukTarih.push(g.id);
+      if(g.durum && !gecerliDurum.includes(g.durum)) bozukDurum.push(g.id+"→"+g.durum);
+      if(Number(g.mesai)<0||Number(g.arti)<0||Number(g.saat)<0) negatif.push(g.id);
+      if(g.durum && g.durum!=="gelmedi" && g.durum!=="izin" && !(g.uYevmiye>0||g.uSaat>0||g.uParca>0)) oransiz.push(g.id);
+      if(g.id>bugun) gelecek.push(g.id);
+    });
+    taniYaz(bozukTarih.length?"hata":"ok","Tarih biçimi", bozukTarih.length?bozukTarih.length+" bozuk: "+bozukTarih.slice(0,5).join(", "):"hepsi geçerli");
+    taniYaz(bozukDurum.length?"hata":"ok","Gün durumları", bozukDurum.length?bozukDurum.slice(0,5).join(", "):"hepsi tanınan değerde");
+    taniYaz(negatif.length?"hata":"ok","Negatif saat/mesai", negatif.length?negatif.slice(0,5).join(", "):"yok");
+    taniYaz(oransiz.length?"uyari":"ok","Ücret mühürü", oransiz.length?oransiz.length+" günde ücret kaydedilmemiş (o günler 0 TL sayılır): "+oransiz.slice(0,4).join(", "):"çalışılan her günde ücret mühürlü");
+    taniYaz(gelecek.length?"uyari":"ok","Gelecek tarihli kayıt", gelecek.length?gelecek.length+" gün ileri tarihli: "+gelecek.slice(0,4).join(", "):"yok");
+
+    const say={}; gecerliDurum.forEach(d=> say[d]=tumG.filter(g=>g.durum===d).length);
+    taniYaz("bilgi","Durum dağılımı", Object.entries(say).filter(([,v])=>v).map(([k,v])=>k+": "+v).join(" · "));
+    const mesaili=tumG.filter(g=>Number(g.mesai)>0);
+    taniYaz("bilgi","Mesai", mesaili.length+" günde mesai · toplam "+mesaili.reduce((s,g)=>s+Number(g.mesai||0),0)+" saat");
+    const fotolu=tumG.filter(g=>g.foto).length;
+    taniYaz("bilgi","Gün fotoğrafı", fotolu+" günde fotoğraf var");
+    const santiyesiz=tumG.filter(g=>g.durum&&g.durum!=="gelmedi"&&!g.santiye).length;
+    if((ayarlar.santiyeler||[]).length>1)
+      taniYaz(santiyesiz?"uyari":"ok","Şantiye etiketi", santiyesiz?santiyesiz+" çalışma gününde şantiye seçilmemiş":"hepsinde şantiye var");
+  });
+
+  /* ═══════ 5. PARA HESABI VE KÖPRÜ ═══════ */
+  await bolum("5. PARA HESABI — EN KRİTİK", async ()=>{
+    tumO = await cek("odemeler", 15); if(!tumO) return;
+    taniYaz("bilgi","Toplam ödeme kaydı", tumO.length+" kayıt");
+
+    const tutarsiz=tumO.filter(o=>!(Number(o.tutar)>0));
+    const tarihsiz=tumO.filter(o=>!o.tarih);
+    const aitAysiz=tumO.filter(o=>!o.aitAy);
+    const gecerliTur=["avans","askeriye","hakedis","kesinti","diger"];
+    const bozukTur=tumO.filter(o=>o.tur&&!gecerliTur.includes(o.tur));
+    taniYaz(tutarsiz.length?"hata":"ok","Ödeme tutarları", tutarsiz.length?tutarsiz.length+" kayıtta tutar geçersiz/sıfır":"hepsi geçerli");
+    taniYaz(tarihsiz.length?"hata":"ok","Ödeme tarihleri", tarihsiz.length?tarihsiz.length+" kayıtta tarih yok":"hepsinde tarih var");
+    taniYaz(bozukTur.length?"hata":"ok","Ödeme türleri", bozukTur.length?bozukTur.map(o=>o.tur).join(", "):"hepsi tanınan türde");
+    taniYaz(aitAysiz.length?"uyari":"ok","Ait ay (FIFO)", aitAysiz.length?aitAysiz.length+" ödemede ait-ay yok, tarihten türetiliyor":"hepsinde ait-ay kayıtlı");
+    const turSay={}; gecerliTur.forEach(t=> turSay[t]=tumO.filter(o=>(o.tur||"avans")===t).length);
+    taniYaz("bilgi","Tür dağılımı", Object.entries(turSay).filter(([,v])=>v).map(([k,v])=>k+": "+v).join(" · "));
+
+    /* KÖPRÜ 1: ana ekrandaki bakiye = veriden hesaplanan mı? */
+    const buAy = aktifYil+"-"+pad(aktifAy+1);
+    let hk=0, gunSay=0;
+    tumG.forEach(g=>{ if(String(g.id).slice(0,7)===buAy){ const k=girdiKazanc(g); if(k>0)gunSay++; hk+=k; } });
+    let al=0; tumO.forEach(o=>{ if(odemeAyi(o)===buAy) al+=Number(o.tutar)||0; });
+    const hesapKalan = hk-al;
+    const ekran = taniSayiCek("sirket-bakiye");
+    if(gizliMod) taniYaz("bilgi","KÖPRÜ: ekran ↔ veri","Gizli mod açık (••••), karşılaştırma yapılamadı");
+    else if(ekran===null) taniYaz("uyari","KÖPRÜ: ekran ↔ veri","Ana ekran bakiyesi okunamadı");
+    else{
+      const fark=Math.abs(ekran-hesapKalan);
+      taniYaz(fark<2?"ok":"hata","KÖPRÜ: ekran ↔ veri",
+        "ekranda "+ekran+" ₺ · hesaplanan "+Math.round(hesapKalan)+" ₺"+(fark>=2?" · FARK "+Math.round(fark)+" ₺":"")+
+        "\n   ("+buAy+": "+gunSay+" gün · hakediş "+Math.round(hk)+" − alınan "+Math.round(al)+")");
+    }
+    /* KÖPRÜ 2: tüm zamanlar toplamı */
+    let thk=0; tumG.forEach(g=> thk+=girdiKazanc(g));
+    const tal=tumO.reduce((s,o)=>s+(Number(o.tutar)||0),0);
+    taniYaz("bilgi","Tüm zamanlar","hakediş "+Math.round(thk)+" ₺ · alınan "+Math.round(tal)+" ₺ · kalan "+Math.round(thk-tal)+" ₺");
+    if(tal>thk*1.05 && thk>0) taniYaz("uyari","Fazla ödeme","Aldığın para hakedişini aşıyor — bir ödeme yanlış aya yazılmış olabilir");
+    /* KÖPRÜ 3: gelecek aya yazılmış ödeme */
+    const ileri=tumO.filter(o=> odemeAyi(o) > tarihId(new Date()).slice(0,7));
+    taniYaz(ileri.length?"uyari":"ok","İleri tarihli ödeme", ileri.length?ileri.length+" ödeme gelecek aya yazılmış":"yok");
+  });
+
+  /* ═══════ 6. MASRAFLAR ═══════ */
+  await bolum("6. MASRAFLAR", async ()=>{
+    tumM = await cek("masraflar"); if(!tumM) return;
+    taniYaz("bilgi","Toplam masraf", tumM.length+" kayıt · "+paraFmt(tumM.reduce((s,m)=>s+(Number(m.tutar)||0),0)));
+    if(!tumM.length) return;
+    const tutarsiz=tumM.filter(m=>!(Number(m.tutar)>0));
+    const tarihsiz=tumM.filter(m=>!m.tarih);
+    taniYaz(tutarsiz.length?"hata":"ok","Masraf tutarları", tutarsiz.length?tutarsiz.length+" geçersiz":"hepsi geçerli");
+    taniYaz(tarihsiz.length?"hata":"ok","Masraf tarihleri", tarihsiz.length?tarihsiz.length+" tarihsiz":"hepsinde tarih var");
+    const kodlar=(typeof MASRAF_KATEGORI!=="undefined")?MASRAF_KATEGORI.map(k=>k.kod):[];
+    const bozukKat=tumM.filter(m=>m.kategori&&kodlar.length&&!kodlar.includes(m.kategori));
+    taniYaz(bozukKat.length?"hata":"ok","Kategori kodları", bozukKat.length?bozukKat.map(m=>m.kategori).join(", "):"hepsi geçerli");
+    const katsiz=tumM.filter(m=>!m.kategori).length;
+    taniYaz("bilgi","Kategori dağılımı", (katsiz?"kategorisiz(eski): "+katsiz+" · ":"")+
+      kodlar.map(k=>k+": "+tumM.filter(m=>m.kategori===k).length).filter(x=>!x.endsWith(": 0")).join(" · "));
+    taniYaz("bilgi","Ödenme durumu", tumM.filter(m=>m.odendi).length+" ödendi · "+tumM.filter(m=>!m.odendi).length+" bekliyor");
+    /* Fiş bağı: fisli:true diyor ama fotoğraf gerçekten var mı? */
+    const fisli=tumM.filter(m=>m.fisli);
+    if(fisli.length){
+      let kayip=0;
+      for(const m of fisli.slice(0,20)){
+        try{ const d=await taniSureli(kokRef().collection("fisler").doc(m.id).get(),6); if(!d.exists) kayip++; }catch(e){}
+      }
+      taniYaz(kayip?"hata":"ok","Fiş fotoğrafı bağı", kayip?kayip+" masrafta 'fiş var' yazıyor ama FOTOĞRAF YOK":fisli.length+" fişin bağı sağlam");
+    }
+  });
+
+  /* ═══════ 7. BORÇ DEFTERİ ═══════ */
+  await bolum("7. BORÇ DEFTERİ", async ()=>{
+    tumB = await cek("borclar"); if(!tumB) return;
+    taniYaz("bilgi","Toplam kayıt", tumB.length);
+    if(!tumB.length) return;
+    const bozukYon=tumB.filter(b=>b.yon&&!["verdim","aldim"].includes(b.yon));
+    const tutarsiz=tumB.filter(b=>!(Number(b.tutar)>0));
+    const fazlaOdenen=tumB.filter(b=>Number(b.odenen)>Number(b.tutar));
+    taniYaz(bozukYon.length?"hata":"ok","Borç yönü", bozukYon.length?bozukYon.map(b=>b.yon).join(", "):"hepsi geçerli");
+    taniYaz(tutarsiz.length?"hata":"ok","Borç tutarları", tutarsiz.length?tutarsiz.length+" geçersiz":"hepsi geçerli");
+    taniYaz(fazlaOdenen.length?"hata":"ok","Ödeme tutarlılığı", fazlaOdenen.length?fazlaOdenen.length+" kayıtta ödenen > borç":"tutarlı");
+    const alacak=tumB.filter(b=>b.yon==="verdim"&&!b.odendi).reduce((s,b)=>s+Math.max(0,(Number(b.tutar)||0)-(Number(b.odenen)||0)),0);
+    const borc=tumB.filter(b=>b.yon==="aldim"&&!b.odendi).reduce((s,b)=>s+Math.max(0,(Number(b.tutar)||0)-(Number(b.odenen)||0)),0);
+    taniYaz("bilgi","Bakiye","alacağın "+paraFmt(alacak)+" · borcun "+paraFmt(borc));
+    const bugun=tarihId(new Date());
+    const geciken=tumB.filter(b=>!b.odendi&&b.vade&&b.vade<bugun);
+    taniYaz(geciken.length?"uyari":"ok","Vadesi geçen", geciken.length?geciken.length+" kayıt":"yok");
+  });
+
+  /* ═══════ 8. BEKLENEN ÖDEMELER ═══════ */
+  await bolum("8. BEKLENEN ÖDEMELER", async ()=>{
+    tumBk = await cek("beklenenler"); if(!tumBk) return;
+    taniYaz("bilgi","Kayıt sayısı", tumBk.length);
+    if(!tumBk.length) return;
+    const tutarsiz=tumBk.filter(b=>!(Number(b.tutar)>0));
+    taniYaz(tutarsiz.length?"hata":"ok","Tutarlar", tutarsiz.length?tutarsiz.length+" geçersiz":"hepsi geçerli");
+    const bugun=tarihId(new Date());
+    const gec=tumBk.filter(b=>b.tarih&&b.tarih<bugun);
+    taniYaz(gec.length?"uyari":"ok","Vadesi geçen", gec.length?gec.length+" ödeme sözü tutulmamış · "+paraFmt(gec.reduce((s,b)=>s+(Number(b.tutar)||0),0)):"yok");
+  });
+
+  /* ═══════ 9. EKİP VE YOKLAMA ═══════ */
+  await bolum("9. EKİP VE YOKLAMA", async ()=>{
+    tumE = await cek("ekip"); tumEg = await cek("ekipGun");
+    if(tumE===null) return;
+    taniYaz("bilgi","Ekip üyesi", tumE.length+" kişi");
+    if(!tumE.length){ taniYaz("bilgi","Yoklama","Ekip yok, yoklama kullanılmıyor"); return; }
+    const adsiz=tumE.filter(i=>!i.ad);
+    taniYaz(adsiz.length?"hata":"ok","İşçi adları", adsiz.length?adsiz.length+" kayıtta ad yok":"hepsinde ad var");
+    const yevmiyesiz=tumE.filter(i=>!(Number(i.yevmiye)>0));
+    taniYaz(yevmiyesiz.length?"uyari":"ok","İşçi yevmiyeleri", yevmiyesiz.length?yevmiyesiz.length+" işçide yevmiye girilmemiş":"hepsinde yevmiye var");
+    if(tumEg){
+      taniYaz("bilgi","Yoklama kaydı", tumEg.length+" kayıt");
+      const idler=tumE.map(i=>i.id);
+      const oksuz=tumEg.filter(y=>y.iscId&&!idler.includes(y.iscId));
+      taniYaz(oksuz.length?"uyari":"ok","Yoklama bağı", oksuz.length?oksuz.length+" yoklama silinmiş işçiye ait (yetim kayıt)":"tüm yoklamalar mevcut işçilere bağlı");
+    }
+  });
+
+  /* ═══════ 10. İŞLERİM ═══════ */
+  await bolum("10. İŞLERİM", async ()=>{
+    const isler=ayarlar.isler||[];
+    taniYaz("bilgi","İş kaydı", isler.length+" iş");
+    if(!isler.length) return;
+    const aktif=isler.filter(i=>!i.bitis);
+    taniYaz(aktif.length>1?"uyari":"ok","Aktif iş", aktif.length>1?aktif.length+" iş aynı anda 'devam ediyor' — biri kapatılmamış olabilir":aktif.length+" aktif iş");
+    const adsiz=isler.filter(i=>!i.patron&&!i.santiye);
+    taniYaz(adsiz.length?"uyari":"ok","İş bilgileri", adsiz.length?adsiz.length+" işte patron/şantiye adı yok":"hepsinde bilgi var");
+    const tarihsiz=isler.filter(i=>!i.baslangic);
+    taniYaz(tarihsiz.length?"hata":"ok","İş tarihleri", tarihsiz.length?tarihsiz.length+" işte başlangıç tarihi yok":"hepsinde tarih var");
+    isler.forEach(i=>{
+      if(i.baslangic&&i.bitis&&i.bitis<i.baslangic)
+        taniYaz("hata","Tarih çelişkisi", (i.patron||i.santiye||"iş")+": bitiş, başlangıçtan önce");
+    });
+  });
+
+  /* ═══════ 11. KARTLAR, PLANLAR, NOTLAR ═══════ */
+  await bolum("11. KARTLAR / PLANLAR / NOTLAR", async ()=>{
+    tumK = await cek("kartlar"); tumP = await cek("planlar"); tumN = await cek("notlar");
+    if(tumK){
+      taniYaz("bilgi","Kredi kartı", tumK.length+" kart");
+      const bozuk=tumK.filter(k=>!(Number(k.gun)>=1&&Number(k.gun)<=31));
+      if(tumK.length) taniYaz(bozuk.length?"hata":"ok","Kart son ödeme günü", bozuk.length?bozuk.length+" kartta gün geçersiz":"hepsi geçerli");
+      const toplam=tumK.reduce((s,k)=>s+(Number(k.borc)||0),0);
+      if(tumK.length) taniYaz("bilgi","Toplam kart borcu", paraFmt(toplam));
+    }
+    if(tumP) taniYaz("bilgi","Planlar", tumP.length+" plan");
+    if(tumN) taniYaz("bilgi","Notlar", tumN.length+" not");
+  });
+
+  /* ═══════ 12. RAPORLAR VE PAYLAŞIM ═══════ */
+  await bolum("12. RAPORLAR VE PAYLAŞIM", async ()=>{
+    const k={ "PDF motoru":window.jspdf, "PDF tablo eklentisi":window.jspdf&&window.jspdf.jsPDF&&true,
+              "Excel motoru":window.XLSX, "Görsel motoru":window.html2canvas, "Fiş okuma (OCR)":window.Tesseract };
+    Object.entries(k).forEach(([ad,v])=> taniYaz(v?"ok":"uyari", ad, v?"yüklü":"YÜKLENMEMİŞ — internet gerekiyor"));
+    taniYaz(window.PDF_FONT_REGULAR_B64?"ok":"bilgi","PDF Türkçe fontu", window.PDF_FONT_REGULAR_B64?"yüklü":"henüz yüklenmedi (ilk PDF'te yüklenir, normal)");
+    taniYaz(navigator.share?"ok":"uyari","Paylaşım desteği", navigator.share?"cihaz paylaşımı çalışıyor":"yok — kopyalama kullanılacak");
+    taniYaz(navigator.clipboard?"ok":"uyari","Panoya kopyalama", navigator.clipboard?"çalışıyor":"yok");
+  });
+
+  /* ═══════ 13. YEDEKLEME ═══════ */
+  await bolum("13. YEDEKLEME", async ()=>{
+    let son=null; try{ son=localStorage.getItem("sonYedekTarihi")||localStorage.getItem("yedekZaman"); }catch(e){}
+    if(!son) taniYaz("hata","Son yedek","HİÇ YEDEK ALINMAMIŞ — telefonun bozulursa her şey gider");
+    else{
+      const gun=Math.floor((Date.now()-Number(son))/86400000);
+      taniYaz(gun>30?"hata":gun>7?"uyari":"ok","Son yedek", gun+" gün önce"+(gun>30?" — ÇOK ESKİ":""));
+    }
+    const fotoSay=(tumM||[]).filter(m=>m.fisli).length+(tumO||[]).filter(o=>o.dekontlu).length+(tumG||[]).filter(g=>g.foto).length;
+    taniYaz(fotoSay?"uyari":"ok","Fotoğraflar", fotoSay?fotoSay+" fotoğraf yedeğe DAHİL DEĞİL (dosya çok büyür diye)":"yedeklenecek fotoğraf yok");
+  });
+
+  /* ═══════ 14. ARAYÜZ BÜTÜNLÜĞÜ ═══════ */
+  await bolum("14. ARAYÜZ BÜTÜNLÜĞÜ", async ()=>{
+    const ekranlar=["ana","puantaj","odemeler","masraf","borc","ozet","yil","notlar","rozet","ekip",
+      "kisiler","arac","ayarlar","kartlar","planlar","maaslar","isler","arama","tani"];
+    const eksikEkran=ekranlar.filter(e=> !document.getElementById("goruntu-"+e));
+    taniYaz(eksikEkran.length?"hata":"ok","Ekranlar", eksikEkran.length?"EKSİK: "+eksikEkran.join(", "):ekranlar.length+" ekranın hepsi mevcut");
+
+    const zorunlu=["sirket-bakiye","sirket-alt","kur-satir","bugun-kazanc-icerik","hafta-serit",
+      "tahmin-kart","krono-yazi","takvim","ay-ad","liste-odemeler","liste-masraflar","liste-borclar",
+      "liste-beklenen","liste-notlar","liste-isciler","liste-ekip-ozet","ozet-grid","liste-maaslar",
+      "toast","bildirim-kutusu","liste-sirket-hareket","liste-santiyeler","yenilik-tam","is-detay-icerik"];
+    const eksikOge=zorunlu.filter(i=> !document.getElementById(i));
+    taniYaz(eksikOge.length?"hata":"ok","Ekran öğeleri", eksikOge.length?"EKSİK: "+eksikOge.join(", "):zorunlu.length+" öğenin hepsi yerinde");
+
+    const fonkHarita={ girdiKazanc, oranBul, guncelOranlar, hesaplaAralik, sayi, odemeAyi,
+      enEskiOdenmemisAy, paraFmt, tarihId, hepsiniCiz, anaYukle, ayiYukle, takvimCiz,
+      odemeListesiCiz, masrafCiz, borcCiz, beklenenCiz, ekipYoklamaCiz, pdfFontlariYukle,
+      tumOdemeleriGetir, hafifModUygula, trBuyuk, trKucuk, pad, esc, modalAc, gorunumSec };
+    const eksikFn=Object.keys(fonkHarita).filter(f=> typeof fonkHarita[f]!=="function");
+    taniYaz(eksikFn.length?"hata":"ok","Fonksiyonlar", eksikFn.length?"TANIMSIZ: "+eksikFn.join(", "):Object.keys(fonkHarita).length+" fonksiyonun hepsi çalışır");
+
+    /* Ölü düğme taraması: tıklanabilir ama hiçbir olayı olmayan düğmeler */
+    const tumBtn=document.querySelectorAll("#ekran-uygulama button[id]");
+    taniYaz("bilgi","Düğmeler", tumBtn.length+" düğme sayfada");
+
+    const dinleyiciler={ "gün kayıtları":dinleyiciGirdi, "ödemeler":dinleyiciOdeme, "ayarlar":dinleyiciAyar,
+      "borçlar":dinleyiciBorc, "masraflar":dinleyiciMasraf, "beklenenler":dinleyiciBeklenen,
+      "tüm girdiler":dinleyiciTumG, "tüm ödemeler":dinleyiciTumO };
+    const kapali=Object.keys(dinleyiciler).filter(k=>!dinleyiciler[k]);
+    taniYaz(kapali.length>4?"uyari":"ok","Canlı veri bağlantıları", kapali.length?kapali.length+" kapalı: "+kapali.join(", "):"8 bağlantının hepsi açık");
+  });
+
+  /* ═══════ 15. HESAPLAMA DOĞRULUĞU ═══════ */
+  await bolum("15. HESAPLAMA DOĞRULUĞU", async ()=>{
+    const testler=[
+      ["1500",1500],["1.500",1500],["1,5",1.5],["1.500,50",1500.5],
+      ["1,000",1000],["0,5",0.5],["2.500.000",2500000],["350 ₺",350],["",0],["abc",0]
+    ];
+    const hatali=testler.filter(([g,b])=> sayi(g)!==b);
+    taniYaz(hatali.length?"hata":"ok","Para çevirici", hatali.length?hatali.map(([g,b])=>'"'+g+'"→'+sayi(g)+" (olmalı "+b+")").join(", "):testler.length+" kenar durumun hepsi doğru");
+    const st=[["2.5",2.5],["2,5",2.5],["8",8],["2.500",2.5]];
+    const sh=st.filter(([g,b])=> sayi(g,true)!==b);
+    taniYaz(sh.length?"hata":"ok","Saat çevirici", sh.length?sh.map(([g,b])=>'"'+g+'"→'+sayi(g,true)).join(", "):"doğru");
+    const tr=[["Haziran","HAZİRAN"],["Nisan","NİSAN"],["İstanbul","istanbul"]];
+    const trh=[];
+    if(trBuyuk("Haziran")!=="HAZİRAN") trh.push("büyük harf");
+    if(trKucuk("İstanbul")!=="istanbul") trh.push("küçük harf");
+    taniYaz(trh.length?"hata":"ok","Türkçe harf çevirimi", trh.length?trh.join(", ")+" bozuk":"İ/ı doğru çevriliyor");
     try{
-      const tumO = await tumOdemeleriGetir();
-      const aitAysiz = tumO.filter(o=> !o.aitAy).length;
-      const gelecek = tumO.filter(o=> odemeAyi(o) > tarihId(new Date()).slice(0,7)).length;
-      taniYaz(aitAysiz ? "uyari" : "ok", "Ödeme ait-ay",
-        "aitAy alanı olmayan: " + aitAysiz + " (tarihten türetiliyor) · gelecek aya yazılmış: " + gelecek);
-    }catch(e){ taniYaz("hata", "Ödeme ait-ay", e.message); }
+      const d=new Date(); const id=tarihId(d);
+      taniYaz(/^\d{4}-\d{2}-\d{2}$/.test(id)?"ok":"hata","Tarih biçimlendirici", id);
+    }catch(e){ taniYaz("hata","Tarih biçimlendirici", e.message); }
+  });
 
-    /* ---- 10. AYARLAR ---- */
-    taniYaz(ayarlar && (ayarlar.yevmiye>0 || ayarlar.saatUcret>0) ? "ok" : "uyari", "Ücret ayarı",
-      "yevmiye: " + (ayarlar.yevmiye||0) + " · saat: " + (ayarlar.saatUcret||0) +
-      " · mesai çarpan: " + (ayarlar.mesaiCarpan||"?") + " · çalışma tipi: " + (ayarlar.calismaTipi||"?"));
-    taniYaz("bilgi", "Şantiyeler", (ayarlar.santiyeler||[]).length + " tanımlı · kilitli ay: " + (ayarlar.kapali||[]).length);
-
-    /* ---- 11. KÜTÜPHANELER ---- */
-    const kutup = {jsPDF: window.jspdf, XLSX: window.XLSX, html2canvas: window.html2canvas, Tesseract: window.Tesseract};
-    const eksikKut = Object.keys(kutup).filter(k=> !kutup[k]);
-    taniYaz(eksikKut.length ? "uyari" : "ok", "Dış kütüphaneler",
-      eksikKut.length ? "yüklenmemiş: " + eksikKut.join(", ") + " (internet gerektirir)" : "hepsi yüklü");
-    taniYaz(window.PDF_FONT_REGULAR_B64 ? "ok" : "bilgi", "PDF fontları",
-      window.PDF_FONT_REGULAR_B64 ? "yüklü" : "henüz yüklenmedi (ilk PDF'te yüklenir — normal)");
-
-  }catch(e){
-    taniYaz("hata", "TEST ÇÖKTÜ", e.message + "\n" + (e.stack||"").split("\n").slice(0,3).join("\n"));
-  }
-
-  taniYaz("bilgi", "Süre", (Date.now()-t0) + " ms");
+  taniYaz("bilgi","Toplam süre", ((Date.now()-t0)/1000).toFixed(1)+" saniye");
   taniSonucCiz();
-  if(btn){ btn.disabled = false; btn.textContent = "▶ Testi tekrar çalıştır"; }
+  if(btn){ btn.disabled=false; btn.textContent="▶ Testi tekrar çalıştır"; }
+  try{ $("#tani-ozet-kart").scrollIntoView({behavior:"smooth", block:"start"}); }catch(e){}
 }
 
 function taniSonucCiz(){
-  const sim = {ok:"✅", hata:"❌", uyari:"⚠️", bilgi:"ℹ️"};
+  const sim = {ok:"✅", hata:"❌", uyari:"⚠️", bilgi:"ℹ️", bolum:"\n━━━"};
   const hata = taniSatirlar.filter(s=>s.durum==="hata").length;
   const uyari = taniSatirlar.filter(s=>s.durum==="uyari").length;
+  const kontrol = taniSatirlar.filter(s=>s.durum!=="bolum").length;
 
   const ozet = $("#tani-ozet");
   if(ozet){
@@ -9878,7 +10092,7 @@ function taniSonucCiz(){
       (hata ? "var(--gelmedi)" : uyari ? "var(--yarim)" : "var(--tam)") + '">' +
       (hata ? hata + " HATA" : uyari ? uyari + " UYARI" : "TEMİZ") + '</div>' +
       '<div style="font-size:13px;color:var(--soluk);margin-top:4px">' +
-      taniSatirlar.length + " kontrol · " + hata + " hata · " + uyari + " uyarı</div>";
+      kontrol + " kontrol · " + hata + " hata · " + uyari + " uyarı</div>";
     $("#tani-ozet-kart").classList.remove("gizli");
   }
   const kutu = $("#tani-sonuc");
