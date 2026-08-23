@@ -239,7 +239,7 @@
       <li data-grup="diger"><a href="https://www.turkiye.gov.tr/sgk-tescil-ve-hizmet-dokumu" target="_blank" rel="noopener"><span class="ikon">📄</span> e-Devlet'te SGK Kaydımı Sorgula</a></li>
 
       <li style="margin-top:6px"><button data-goruntu="ayarlar"><span class="ikon">⚙️</span> Ayarlar</button></li>
-      <li class="gizli" id="menu-tani-li"><button data-goruntu="tani"><span class="ikon">🔧</span> Tanı / test</button></li>
+      <li id="menu-tani-li"><button data-goruntu="tani"><span class="ikon">🔧</span> Tanı / test</button></li>
       <li><button id="btn-geribildirim"><span class="ikon">💬</span> Geri bildirim gönder</button></li>
     </ul>
     <div class="cekmece-alt">
@@ -352,9 +352,10 @@
       <div class="kart gizli" id="yenilik-kart" style="border-color:var(--sari)">
         <h2>🎁 Neler yeni?</h2>
         <ul style="padding-left:18px;font-size:13.5px;line-height:1.9">
-          <li><b>🚨 YEDEKLEME EKSİK ÇALIŞIYORDU — kartların, planların ve kaza kayıtların yedeğe HİÇ girmiyordu.</b> "Tüm verimi indir (JSON)" düğmesi 9 tür kaydı yedekliyordu ama üçünü atlıyordu: kredi kartların, planların ve iş kazası kayıtların. Telefonun bozulup yedekten dönseydin bunların hepsi sessizce kaybolacaktı — hiçbir hata mesajı da görmeyecektin. Üçü de artık yedeğe giriyor ve geri yüklemede yazılıyor. Eski yedeklerin hâlâ sorunsuz açılıyor</li>
-          <li><b>📸 Fotoğraflar konusunda artık dürüst uyarı var:</b> Fiş, dekont ve gün fotoğrafları yedeğe bilerek alınmıyor — dosyayı onlarca megabayta çıkarıp telefonda indirilemez hale getirirdi. Ama bunu sana kimse söylemiyordu. Artık yedek indirince "NOT: 14 fotoğraf yedeğe dahil değil" diye açıkça yazıyor. Kayıtların tamamı var, sadece görseller yok</li>
-          <li><b>🔍 Baştan sona denetim yapıldı:</b> 5 dosyanın söz dizimi, 587 ekran öğesi kimliği (tekrar eden yok), 135 düğme (ölü düğme yok), 258 fonksiyon (tekrar tanımlanan yok), tüm HTML etiket dengeleri, CSS parantezleri, sürüm tutarlılığı, Firestore güvenlik kuralları ve kullanıcı verisinin ekrana güvenli basılması. Ayrıca daha önce bulduğum iki hata deseni (onaydan önce silme, uyarının erken çıkışın arkasında kalması) tüm kodda tekrar tarandı — yeni örnek çıkmadı</li>
+          <li><b>📋 İş detayı artık sade açılıyor:</b> Ekrana girdiğinde hiçbir ay açık gelmiyor — sadece ay listesi ve üstte hakediş/alınan/kalan özeti görünüyor. İstediğin aya dokunup içine giriyorsun. Önceden son ay otomatik açılıyor, uzun bir liste karşılıyordu</li>
+          <li><b>📅 Aynı anda tek ay açık kalıyor:</b> Bir aya dokununca diğeri kapanıyor. Böylece iki uzun liste üst üste binmiyor, ekran hep sade duruyor</li>
+          <li><b>👆 Günlere dokununca detay açılıyor:</b> Ay içindeki gün satırlarına basınca o günün detay penceresi açılıyor — yevmiye, mesai, şantiye, not, fotoğraf hepsi orada. Düzenleyip kaydedebiliyorsun. Satırların sağındaki › işareti dokunulabilir olduklarını gösteriyor. Gün başka bir aydaysa takvim otomatik o aya geçiyor</li>
+          <li><b>📲 WhatsApp paylaş düğmesi en üste sabitlendi:</b> Eskiden ay listesinin altındaydı, çok aylı bir işte ulaşmak için listeyi geçmek gerekiyordu. Artık listenin üstünde ve sen aşağı kaydırırken ekranın tepesinde asılı kalıyor</li>
         </ul>
         <button class="btn btn-cizgili" id="btn-yenilik-kapat">Süper, kapat</button>
       </div>
@@ -1873,8 +1874,10 @@
   <div class="tutamak"></div>
   <h3 id="is-detay-baslik">İş detayı</h3>
   <div class="tarih-yazi" id="is-detay-alt">—</div>
+  <div class="is-detay-paylas-cubugu">
+    <button class="btn" id="btn-is-detay-pdf" style="background:#25D366;color:#fff;font-weight:800">📲 Tüm işi WhatsApp'ta paylaş</button>
+  </div>
   <div id="is-detay-icerik"><div class="bos-mesaj">Yükleniyor...</div></div>
-  <button class="btn" id="btn-is-detay-pdf" style="background:#25D366;color:#fff;font-weight:800;margin-top:14px">📲 Tüm işi WhatsApp'ta paylaş</button>
   <div id="is-detay-aylar"></div>
 </div>
 

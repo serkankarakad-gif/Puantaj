@@ -282,13 +282,13 @@ function kullaniciBilgiYaz(){
   const ad = kullanici.displayName || "İşçi kardeşim";
   $("#menu-ad").textContent = ad;
   $("#menu-eposta").textContent = kullanici.email || "";
-  /* Tanı menüsü yalnızca yetkili UID'de görünür. Bu bir GÜVENLİK duvarı değil,
-     sadece normal kullanıcıyı gereksiz bir ekranla meşgul etmemek için.
-     Gerçek koruma Firestore kurallarında: tanı zaten sadece kendi verini okur. */
-  try{
-    const li = document.getElementById("menu-tani-li");
-    if(li) li.classList.toggle("gizli", !taniYetkiliMi());
-  }catch(e){}
+  /* 0.0.3.8: Tanı menüsü artık HERKESE AÇIK.
+     Önceden `TANI_YETKILI` listesindeki e-postaya göre gizleniyordu ama bu
+     sadece sorun çıkardı: e-posta yazılmadığında menü görünmüyor, hiçbir
+     uyarı da çıkmıyordu. Kilidin gerçek bir faydası da yoktu — tanı ekranı
+     yalnızca giriş yapmış kullanıcının KENDİ verisini okur, hiçbir şey
+     yazmaz, başkasının verisine erişemez. Yani birinin görmesi zararsız.
+     Kilit kaldırıldı; kurulum adımı da ortadan kalktı. */
   $("#ayar-ad").value = kullanici.displayName || "";
   avatarCiz();
 }
@@ -6360,12 +6360,16 @@ function isDetayAc(isId){
     a.alinan += Number(o.tutar)||0;
   });
   const ayAnahtarlar = Object.keys(aylar).sort();          /* eskiden yeniye */
-  const sonAy = ayAnahtarlar[ayAnahtarlar.length-1];       /* varsayılan açık */
+  /* 0.0.3.9: artık HİÇBİR ay açık başlamıyor.
+     Önceden son ay otomatik açılıyordu; ekrana girer girmez uzun bir liste
+     karşılıyordu ve "hangi aya bakayım" seçimi kayboluyordu. Artık ekran
+     sade bir ay listesiyle açılıyor, kullanıcı istediği aya dokunup içine
+     giriyor. */
 
   const ayKartlari = ayAnahtarlar.map(ak=>{
     const a = aylar[ak];
     const [yy, aa] = ak.split("-").map(Number);
-    const acik = ak === sonAy;
+    const acik = false;   /* hepsi kapalı başlar */
     const kalan = a.hakedis - a.alinan;
     return (
       '<div class="is-ay-kart'+(acik?" acik":"")+'" data-ay="'+ak+'">'+
@@ -6383,7 +6387,7 @@ function isDetayAc(isId){
           '</div>'+
           (a.gunler.length ?
             '<ul class="liste">'+ a.gunler.map(g=>
-              '<li><div class="rozet" style="background:'+(g.kazancVar?"var(--mesai)":"var(--cizgi)")+'">'+g.d.getDate()+'</div>'+
+              '<li class="is-gun-satir" data-gun="'+g.id+'"><div class="rozet" style="background:'+(g.kazancVar?"var(--mesai)":"var(--cizgi)")+'">'+g.d.getDate()+'</div>'+
               '<div class="orta"><div class="baslik">'+g.i.yev+(g.kazancVar?' · '+g.i.mesai+' saat mesai':'')+'</div>'+
               '<div class="alt-yazi">'+tarihFormatla(g.id)+'</div></div>'+
               '<div class="tutar">'+(g.kazancVar?paraFmt(girdiKazanc(g.v)):'')+'</div></li>').join("")+'</ul>' : '')+
@@ -6410,11 +6414,34 @@ function isDetayAc(isId){
       ayAnahtarlar.length+' ay · aya dokunarak aç</div>'+
     ayKartlari;
 
-  /* Ay kartlarını aç/kapa */
+  /* Ay kartlarını aç/kapa — aynı anda tek ay açık kalsın (akordeon).
+     Böylece uzun listeler üst üste binmiyor, ekran sade kalıyor. */
   $("#is-detay-icerik").querySelectorAll("[data-ay-ac]").forEach(b=>{
     b.addEventListener("click", ()=>{
       const kart = b.closest(".is-ay-kart");
-      if(kart){ kart.classList.toggle("acik"); titret(8); }
+      if(!kart) return;
+      const zatenAcik = kart.classList.contains("acik");
+      $("#is-detay-icerik").querySelectorAll(".is-ay-kart").forEach(k=> k.classList.remove("acik"));
+      if(!zatenAcik) kart.classList.add("acik");
+      titret(8);
+    });
+  });
+
+  /* Gün satırına dokununca o günün detay penceresi açılsın.
+     İş detayı bir alt-sayfa (modal) olduğu için önce onu kapatıyoruz,
+     yoksa iki pencere üst üste biniyor. */
+  $("#is-detay-icerik").querySelectorAll(".is-gun-satir").forEach(li=>{
+    li.addEventListener("click", ()=>{
+      const id = li.dataset.gun;
+      if(!id) return;
+      const t = new Date(id+"T12:00:00");
+      /* Gün başka bir aydaysa takvimi o aya taşı ki modal doğru veriyi göstersin */
+      if(t.getFullYear()!==aktifYil || t.getMonth()!==aktifAy){
+        aktifYil = t.getFullYear(); aktifAy = t.getMonth();
+        ayiYukle();
+      }
+      try{ $("#is-detay-modal").classList.remove("acik"); }catch(e){}
+      setTimeout(()=> modalAc(id), 180);
     });
   });
 
@@ -6852,19 +6879,31 @@ if("serviceWorker" in navigator){
 async function guncellemeBandiGoster(){
   const ekran = $("#guncelleme-ekrani");
   if(!ekran || !ekran.classList.contains("gizli")) return;   /* zaten gösteriliyor ya da HTML yok */
-  /* "Neler yeni?" listesini bu (eski) sayfadan değil, az önce önbelleğe
-     inen YENİ index.html'den okuyoruz — yoksa hâlâ eski sürümün listesini
-     gösterirdik, kafa karıştırırdı. */
-  let liste_html = "<li>Küçük iyileştirmeler ve hata düzeltmeleri</li>";
+  /* 0.0.3.8 — SADELEŞTİRİLDİ.
+     Bu pencere eskiden tüm değişiklik listesini çekip burada gösteriyordu.
+     Gereksizdi: kullanıcı "Şimdi Yenile"ye bastıktan sonra zaten uygulama
+     açılışında TAM EKRAN yenilik penceresi çıkıyor ve her şeyi orada
+     okuyor. Aynı metni iki kez göstermek hem yer kaplıyor hem de bu
+     pencerenin tek işini (—yeni sürüm var, yenile—) gölgeliyordu.
+     Artık yalnızca hangi sürüme geçileceği yazıyor. */
+  let yeniSurum = "";
   try{
-    const r = await fetch("./index.html?guncelleme=" + Date.now());
+    /* Sürüm numarası index.html'de değil app.js içinde (YENILIK_SURUM sabiti)
+       yazıyor — bu yüzden yeni app.js'i çekip oradan okuyoruz. */
+    const r = await fetch("./app.js?guncelleme=" + Date.now());
     const metin = await r.text();
-    const gecici = document.createElement("div");
-    gecici.innerHTML = metin;
-    const yeniListe = gecici.querySelector("#yenilik-kart ul");
-    if(yeniListe) liste_html = yeniListe.innerHTML;
+    const m = metin.match(/YENILIK_SURUM\s*=\s*"([0-9.]+)"/);
+    if(m) yeniSurum = m[1];
   }catch(e){}
-  $("#guncelleme-yenilik-liste").innerHTML = liste_html;
+  $("#guncelleme-yenilik-liste").innerHTML =
+    '<div style="text-align:center;padding:6px 0 2px">' +
+      '<div style="font-family:\'Saira Condensed\';font-size:34px;font-weight:800;color:var(--sari);line-height:1.1">' +
+        (yeniSurum ? "Sürüm " + yeniSurum : "Yeni sürüm") +
+      '</div>' +
+      '<div style="font-size:13.5px;color:var(--soluk);margin-top:6px;line-height:1.5">' +
+        "Yenileyince neler değiştiğini uygulama açılır açılmaz göreceksin." +
+      '</div>' +
+    '</div>';
   ekran.classList.remove("gizli");
   const cubuk = $("#guncelleme-cubuk");
   const btn = $("#btn-guncelleme-yenile");
@@ -8000,7 +8039,7 @@ document.addEventListener("DOMContentLoaded", ()=>{
   });
 
   /* Neler yeni kartı */
-  const YENILIK_SURUM = "0.0.3.7";
+  const YENILIK_SURUM = "0.0.3.9";
   window.__SURUM = YENILIK_SURUM;   /* tanı raporu bunu okur */
   try{ $("#cekmece-surum").textContent = "Puantaj Defterim " + YENILIK_SURUM; }catch(e){}
 
