@@ -1,5 +1,5 @@
 /* Puantaj Defterim — service worker (çevrimdışı kabuk) */
-const KASA = "puantaj-0.0.4.3";
+const KASA = "puantaj-0.0.5.0";
 /* ÇEKİRDEK: uygulamanın açılması için ŞART olan dosyalar. addAll atomiktir —
    biri bile inmezse kurulum tamamen başarısız olur, bu yüzden burada sadece
    gerçekten zorunlu olanlar var. */
@@ -68,7 +68,31 @@ self.addEventListener("fetch", e => {
     );
     return;
   }
-  /* Diğer aynı-kök dosyalar: önce önbellek, yoksa ağ */
+  /* UYGULAMA KODU (app.js, style.css, sabitler.js): önce AĞ, olmazsa önbellek.
+     ─────────────────────────────────────────────────────────────────────
+     Eskiden bunlar da "önce önbellek" ile sunuluyordu. Sonucu şuydu: sunucuya
+     yeni sürüm yüklense bile telefondaki eski service worker eski app.js ve
+     style.css'i vermeye devam ediyor, kullanıcı "hiçbir şey değişmemiş"
+     görüyordu. Yeni kod ancak "Şimdi Yenile"ye basıldıktan sonra devreye
+     giriyordu — basılmazsa hiç.
+     Bu üç dosya uygulamanın kendisi; birkaç yüz milisaniyelik ağ gecikmesi,
+     "güncelleme hiç gelmiyor" sorununa değmez. İnternet yoksa önbellek yedeği
+     zaten devrede, yani çevrimdışı çalışma bozulmuyor. */
+  const yol = new URL(istek.url).pathname;
+  const uygulamaKodu = /\/(app|style|sabitler)\.(js|css)$/.test(yol);
+  if (uygulamaKodu) {
+    e.respondWith(
+      fetch(istek).then(y => {
+        const kopya = y.clone();
+        caches.open(KASA).then(k => k.put(istek, kopya));
+        return y;
+      }).catch(() => caches.match(istek))
+    );
+    return;
+  }
+
+  /* Diğer aynı-kök dosyalar (fontlar, ikonlar, resim): önce önbellek —
+     bunlar sürümle birlikte değişmediği için hızlı sunulmaları daha değerli. */
   e.respondWith(
     caches.match(istek).then(c => c || fetch(istek).then(y => {
       const kopya = y.clone();

@@ -230,7 +230,7 @@ function basla(){
         if(hk==="#avans"){
           history.replaceState(null,"",location.pathname);
           document.querySelector('[data-goruntu="odemeler"]').click();
-          setTimeout(()=>{ const tEl=$("#odeme-tutar"); if(tEl) tEl.focus(); }, 400);
+          setTimeout(()=> formuAcVeOdaklan("#odeme-tutar"), 400);
           return;
         }
         const m = hk.match(/kisi=([A-Za-z0-9]+)/);
@@ -2211,6 +2211,16 @@ function hafifModOtomatikMi(){
     if(typeof cekirdek === "number" && cekirdek <= 2) return true;
   }catch(e){}
   return false;
+}
+/* Görünüm ölçeği: kullanıcı "her şey kocaman" derse küçültebilsin.
+   Varsayılan "normal". Girdi alanları bundan etkilenmez (iOS koruması). */
+function olcekUygula(){
+  let d="normal";
+  try{ d = localStorage.getItem("olcek") || "normal"; }catch(e){}
+  if(!["kucuk","normal","buyuk"].includes(d)) d="normal";
+  document.documentElement.setAttribute("data-olcek", d);
+  document.querySelectorAll("#olcek-secim button").forEach(b=>
+    b.classList.toggle("secili", b.dataset.olcek===d));
 }
 function hafifModUygula(){
   let tercih = null;
@@ -4570,6 +4580,11 @@ function takvimCiz(){
       f.className="foto-nokta"; f.textContent="📸";
       el.appendChild(f);
     }
+    /* İleri tarihli (henüz çalışılmamış) günler: hakedişe dahil oluyorlar ama
+       kullanıcı bunu fark etmiyor ve bakiyesini olduğundan yüksek sanıyor.
+       Görsel olarak ayırıyoruz — renk/anlam aynı kalıyor, sadece "bu henüz
+       gelmedi" bilgisi ekleniyor. */
+    if(id > bugunId && veri) el.classList.add("ileri-tarih");
     if(masrafGunleri.has(id)){
       const mk=document.createElement("span");
       mk.className="masraf-nokta"; mk.textContent="🧾"; mk.title="Bu gün masraf kaydı var";
@@ -7030,6 +7045,42 @@ window.addEventListener("popstate", ()=>{
 
 document.addEventListener("DOMContentLoaded", ()=>{
 
+  /* Bir girdi alanına odaklanılacaksa, o alan kapalı bir "ekle" formunun
+     içindeyse önce formu AÇ. Aksi halde (örn. ana ekrandaki "Avans" düğmesi
+     ya da derin bağlantı) kullanıcı ödemeler ekranına gidiyor ama form kapalı
+     kalıyor, imleç görünmez bir kutuya konuyor ve hiçbir şey olmamış gibi
+     duruyordu. */
+  window.formuAcVeOdaklan = (secici)=>{
+    const el = document.querySelector(secici);
+    if(!el) return;
+    const kart = el.closest(".ekle-kart");
+    if(kart && kart.classList.contains("kapali")) kart.classList.remove("kapali");
+    try{ el.focus(); }catch(e){}
+  };
+
+  /* ── Kapanır "ekle" formları ──────────────────────────────────────
+     Aldığım paralar, Borç defteri, Masraflar, Kartlar, Ekip, Planlar
+     ekranlarında ekleme formu kapalı başlıyor; başlığa dokununca
+     açılıyor. Amaç: kullanıcı ekrana girince önce LİSTESİNİ görsün,
+     boş bir formla karşılaşmasın. Bir form açılınca diğerleri kapanmıyor
+     (aynı ekranda birden fazla olabiliyor, kullanıcıyı şaşırtmayalım). */
+  document.querySelectorAll(".ekle-kart .ekle-bas").forEach(bas=>{
+    const ac = ()=>{
+      const kart = bas.closest(".ekle-kart");
+      if(!kart) return;
+      const acildi = kart.classList.toggle("kapali") === false;
+      titret(8);
+      /* Açılınca forma kaydır ki kullanıcı nereye yazacağını görsün */
+      if(acildi) setTimeout(()=>{
+        try{ kart.scrollIntoView({behavior:"smooth", block:"nearest"}); }catch(e){}
+      }, 210);
+    };
+    bas.addEventListener("click", ac);
+    bas.addEventListener("keydown", e=>{
+      if(e.key==="Enter" || e.key===" "){ e.preventDefault(); ac(); }
+    });
+  });
+
   /* 🔒 EKRAN KİLİDİ: yakınlaştırma yok, yatay kayma yok
      ─────────────────────────────────────────────────────────────────
      CSS'teki `touch-action:pan-x pan-y` çoğu tarayıcıda yeter, ama:
@@ -7070,6 +7121,7 @@ document.addEventListener("DOMContentLoaded", ()=>{
      olmalı, üstelik ilk boyamadan önce uygulanmalı ki açılışta bulanık zemin
      bir an görünüp sonra kaybolmasın. */
   hafifModUygula();
+  olcekUygula();   /* ilk boyamadan önce ölçek geçerli olsun */
 
   /* Açılış ekranı: 3 saniye */
   setTimeout(()=> $("#acilis").classList.add("kapan"), 2600);
@@ -7626,6 +7678,24 @@ document.addEventListener("DOMContentLoaded", ()=>{
   $("#btn-gun-kaydet").addEventListener("click", async ()=>{
     if(!modalTarih) return;
     if(ayKilitli(modalTarih)){ toast("Bu ay kilitli 🔒 Hesap özetinden açabilirsin"); return; }
+
+    /* ⚠️ SESSİZ SIFIR KORUMASI
+       girdiKazanc() mesai kazancını `saat × mesaiUcret` olarak hesaplıyor.
+       Mesai ücreti girilmemişse (0) kullanıcı 5 saat mesai yazsa bile kazanç
+       0 TL çıkıyor — üstelik hiçbir uyarı verilmiyordu. Gerçek kullanım
+       verisinde bunun sonucu net görülüyor: kullanıcı 49 gün işlemiş ama
+       HİÇ mesai girmemiş, çünkü girmenin bir karşılığı yok.
+       Artık mesai/gece mesaisi yazılıp ücret tanımsızsa, kaydetmeden önce
+       uyarılıyor ve doğrudan ayarlara gidebiliyor. */
+    const yazilanMesai = (sayi($("#mesai-saat").value, true)||0) + (sayi($("#gun-gece-mesai").value, true)||0);
+    if(yazilanMesai > 0 && !(Number(ayarlar.mesaiUcret) > 0)){
+      const git = confirm(
+        yazilanMesai + " saat mesai yazdın ama MESAİ SAAT ÜCRETİN girili değil.\n\n" +
+        "Bu hâliyle kaydedersen mesain 0 ₺ sayılır — yani boşa yazmış olursun.\n\n" +
+        "Ayarlara gidip mesai ücretini şimdi girmek ister misin?\n" +
+        "(İptal dersen mesai 0 ₺ olarak kaydedilir)");
+      if(git){ modalKapat(); gorunumSec("ayarlar"); toast("Ücret ayarlarından mesai saat ücretini gir 👇"); return; }
+    }
     const onceki = girdiler[modalTarih] ? {...girdiler[modalTarih]} : null;
     const secId = $("#gun-santiye-sec").value || "";
     const s = (ayarlar.santiyeler||[]).find(x=>x.id===secId);
@@ -8039,9 +8109,21 @@ document.addEventListener("DOMContentLoaded", ()=>{
   });
 
   /* Neler yeni kartı */
-  const YENILIK_SURUM = "0.0.4.3";
+  const YENILIK_SURUM = "0.0.5.0";
   window.__SURUM = YENILIK_SURUM;   /* tanı raporu bunu okur */
   try{ $("#cekmece-surum").textContent = "Puantaj Defterim " + YENILIK_SURUM; }catch(e){}
+  /* Sürümü çekmece başlığında da göster. Sebep: "değişiklik gelmedi" durumunda
+     ilk sorulacak soru "hangi sürüm çalışıyor?" — bunu bulmak için menüyü açıp
+     en alta kaydırmak gerekiyordu. Artık profil bloğunda, göz hizasında. */
+  try{
+    const bas = document.querySelector(".cekmece-bas");
+    if(bas && !document.getElementById("cekmece-surum-rozet")){
+      const r = document.createElement("div");
+      r.id = "cekmece-surum-rozet";
+      r.textContent = "v" + YENILIK_SURUM;
+      bas.appendChild(r);
+    }
+  }catch(e){}
 
   /* 🔧 GİZLİ GİRİŞ — çekmecedeki sürüm yazısına arka arkaya 5 kez dokun.
      Neden gerekli: tanı menüsü `sabitler.js` içindeki TANI_YETKILI listesine
@@ -8828,6 +8910,20 @@ document.addEventListener("DOMContentLoaded", ()=>{
     }catch(e){}
   });
 
+  /* ---- 📏 Görünüm ölçeği ---- */
+  olcekUygula();
+  document.querySelectorAll("#olcek-secim button").forEach(b=>{
+    b.addEventListener("click", ()=>{
+      const d = b.dataset.olcek;
+      try{ localStorage.setItem("olcek", d); }catch(e){}
+      olcekUygula();
+      titret(10);
+      toast(d==="kucuk" ? "📏 Küçük — ekrana daha çok bilgi sığar"
+          : d==="buyuk" ? "📏 Büyük — yazılar iri"
+          : "📏 Normal");
+    });
+  });
+
   /* ---- ⚡ Hafif mod ---- */
   hafifModUygula();   /* kutuyu mevcut duruma göre işaretler (otomatik ya da kayıtlı tercih) */
   $("#ayar-hafif").addEventListener("change", ()=>{
@@ -8943,7 +9039,7 @@ document.addEventListener("DOMContentLoaded", ()=>{
   $("#btn-kart-detay-kapat").addEventListener("click", kartDetayKapat);
   $("#btn-kd-odeme-ekle").addEventListener("click", ()=>{
     $("#kd-odeme-form").classList.remove("gizli");
-    $("#kd-odeme-tutar").focus();
+    formuAcVeOdaklan("#kd-odeme-tutar");
   });
   $("#btn-kd-odeme-vazgec").addEventListener("click", ()=>{
     $("#kd-odeme-form").classList.add("gizli");
@@ -9002,7 +9098,7 @@ document.addEventListener("DOMContentLoaded", ()=>{
        en eski ödenmemiş ayı kendisi bulup oraya yönlendiriyor. */
     ayDetayKapat();
     document.querySelector('[data-goruntu="odemeler"]').click();
-    setTimeout(()=> $("#odeme-tutar").focus(), 300);
+    setTimeout(()=> formuAcVeOdaklan("#odeme-tutar"), 300);
   });
 
   /* Dünü kopyala */
@@ -9703,7 +9799,9 @@ let taniSatirlar = [];
    en son yapması gereken şey budur — artık her satır anında görünüyor, test
    ortada takılsa bile o ana kadarki sonuçlar ekranda kalıyor. */
 function taniYaz(durum, baslik, detay){
-  taniSatirlar.push({durum, baslik, detay: detay||""});
+  /* detay 0 veya "0" olabilir; `detay||""` bunu boşa çeviriyordu
+     ("Kayıt sayısı" satırı bomboş görünüyordu). */
+  taniSatirlar.push({durum, baslik, detay: (detay===undefined||detay===null) ? "" : String(detay)});
   try{ taniSonucCiz(); }catch(e){}
 }
 
@@ -9784,7 +9882,9 @@ async function taniCalistir(){
       taniYaz(kullanici.emailVerified?"ok":"uyari","E-posta doğrulama", kullanici.emailVerified?"doğrulanmış":"doğrulanmamış");
       taniYaz("bilgi","Kullanıcı kimliği", kullanici.uid.slice(0,10)+"…");
     }
-    let pin=false; try{ pin = !!localStorage.getItem("pinKod"); }catch(e){}
+    /* DÜZELTME: anahtar "pinKod" değil "pin" (bkz. localStorage.setItem("pin", …)).
+       Yanlış anahtar yüzünden PIN kurulu olduğu hâlde "KURULU DEĞİL" deniyordu. */
+    let pin=false; try{ pin = !!localStorage.getItem("pin"); }catch(e){}
     taniYaz(pin?"ok":"uyari","PIN kilidi", pin?"kurulu":"KURULU DEĞİL — telefonu alan verilerini görür");
     try{
       const t=Date.now(); await taniSureli(kokRef().get(), 10);
@@ -9792,7 +9892,9 @@ async function taniCalistir(){
     }catch(e){ taniYaz("hata","Veritabanı bağlantısı", (e.code||"")+" "+e.message); }
     try{
       /* Başkasının verisine erişilebiliyor mu? Erişebiliyorsa kurallar açık demektir. */
-      await taniSureli(db.collection("kullanicilar").doc("__olmayan_kullanici__").get(), 8);
+      /* DÜZELTME: "__" ile başlayan doküman kimlikleri Firestore'da REZERVE.
+         Bu yüzden test, kural denemesine hiç ulaşamadan biçim hatası veriyordu. */
+      await taniSureli(db.collection("kullanicilar").doc("tanitest0000000000").get(), 8);
       taniYaz("uyari","Güvenlik kuralları","Başka kullanıcı belgesi okunabildi — kuralları gözden geçir");
     }catch(e){
       taniYaz(String(e.code||"").includes("permission")?"ok":"bilgi","Güvenlik kuralları",
@@ -9841,7 +9943,16 @@ async function taniCalistir(){
     taniYaz(bozukDurum.length?"hata":"ok","Gün durumları", bozukDurum.length?bozukDurum.slice(0,5).join(", "):"hepsi tanınan değerde");
     taniYaz(negatif.length?"hata":"ok","Negatif saat/mesai", negatif.length?negatif.slice(0,5).join(", "):"yok");
     taniYaz(oransiz.length?"uyari":"ok","Ücret mühürü", oransiz.length?oransiz.length+" günde ücret kaydedilmemiş (o günler 0 TL sayılır): "+oransiz.slice(0,4).join(", "):"çalışılan her günde ücret mühürlü");
-    taniYaz(gelecek.length?"uyari":"ok","Gelecek tarihli kayıt", gelecek.length?gelecek.length+" gün ileri tarihli: "+gelecek.slice(0,4).join(", "):"yok");
+    /* İleri tarihli günler hakedişe DAHİL EDİLİYOR — yani henüz çalışmadığın
+       günler bakiyende görünüyor. Bilerek yapıldıysa sorun yok (planlama),
+       ama yanlışlıkla işaretlendiyse elindeki parayı olduğundan fazla
+       sanırsın. O yüzden tutarını da yazıyoruz. */
+    if(gelecek.length){
+      let ileriPara=0; gelecek.forEach(id=>{ const g=tumG.find(x=>x.id===id); if(g) ileriPara+=girdiKazanc(g); });
+      taniYaz("uyari","Gelecek tarihli kayıt",
+        gelecek.length+" gün ileri tarihli ("+gelecek.slice(0,4).join(", ")+(gelecek.length>4?"…":"")+")"+
+        "\n   Bu günler hakedişine DAHİL: "+paraFmt(ileriPara)+" — henüz çalışmadıysan bakiyen olduğundan yüksek görünür");
+    }else taniYaz("ok","Gelecek tarihli kayıt","yok");
 
     const say={}; gecerliDurum.forEach(d=> say[d]=tumG.filter(g=>g.durum===d).length);
     taniYaz("bilgi","Durum dağılımı", Object.entries(say).filter(([,v])=>v).map(([k,v])=>k+": "+v).join(" · "));
@@ -9977,15 +10088,19 @@ async function taniCalistir(){
     const isler=ayarlar.isler||[];
     taniYaz("bilgi","İş kaydı", isler.length+" iş");
     if(!isler.length) return;
-    const aktif=isler.filter(i=>!i.bitis);
+    /* DÜZELTME: alan adları yanlıştı. Gerçek alanlar patronAdi / santiyeAdi /
+       girisTarihi / cikisTarihi. Yanlış adlar yüzünden bilgileri eksiksiz olan
+       bir iş için "patron adı yok" ve "başlangıç tarihi yok" diye SAHTE HATA
+       veriliyordu. */
+    const aktif=isler.filter(i=>!i.cikisTarihi);
     taniYaz(aktif.length>1?"uyari":"ok","Aktif iş", aktif.length>1?aktif.length+" iş aynı anda 'devam ediyor' — biri kapatılmamış olabilir":aktif.length+" aktif iş");
-    const adsiz=isler.filter(i=>!i.patron&&!i.santiye);
+    const adsiz=isler.filter(i=>!i.patronAdi&&!i.santiyeAdi);
     taniYaz(adsiz.length?"uyari":"ok","İş bilgileri", adsiz.length?adsiz.length+" işte patron/şantiye adı yok":"hepsinde bilgi var");
-    const tarihsiz=isler.filter(i=>!i.baslangic);
-    taniYaz(tarihsiz.length?"hata":"ok","İş tarihleri", tarihsiz.length?tarihsiz.length+" işte başlangıç tarihi yok":"hepsinde tarih var");
+    const tarihsiz=isler.filter(i=>!i.girisTarihi);
+    taniYaz(tarihsiz.length?"hata":"ok","İş tarihleri", tarihsiz.length?tarihsiz.length+" işte giriş tarihi yok":"hepsinde tarih var");
     isler.forEach(i=>{
-      if(i.baslangic&&i.bitis&&i.bitis<i.baslangic)
-        taniYaz("hata","Tarih çelişkisi", (i.patron||i.santiye||"iş")+": bitiş, başlangıçtan önce");
+      if(i.girisTarihi&&i.cikisTarihi&&i.cikisTarihi<i.girisTarihi)
+        taniYaz("hata","Tarih çelişkisi", (i.patronAdi||i.santiyeAdi||"iş")+": çıkış, girişten önce");
     });
   });
 
@@ -10015,20 +10130,101 @@ async function taniCalistir(){
 
   /* ═══════ 13. YEDEKLEME ═══════ */
   await bolum("13. YEDEKLEME", async ()=>{
+    /* DÜZELTME: eski mesaj "telefonun bozulursa her şey gider" diyordu — bu YANLIŞ
+       ve gereksiz korkutucuydu. Tüm veri Firestore'da (bulutta) tutuluyor; telefon
+       bozulsa bile başka cihazdan aynı e-postayla girince veriler gelir.
+       Yedek asıl şu üç durum için gerekli:
+         1) hesabına erişemezsen (şifre/e-posta kaybı, hesap ele geçirilmesi),
+         2) yanlışlıkla kendin silersen (silme de buluta senkronize olur),
+         3) Firebase tarafında bir sorun çıkarsa.
+       Bu yüzden seviye "hata"dan "uyarı"ya çekildi ve gerekçe doğru yazıldı. */
+    taniYaz("ok","Bulut senkronizasyonu","Tüm kayıtların Firestore'da — başka telefondan aynı e-postayla girince gelir");
     let son=null; try{ son=localStorage.getItem("sonYedekTarihi")||localStorage.getItem("yedekZaman"); }catch(e){}
-    if(!son) taniYaz("hata","Son yedek","HİÇ YEDEK ALINMAMIŞ — telefonun bozulursa her şey gider");
+    if(!son) taniYaz("uyari","Yerel yedek","Hiç yedek indirilmemiş. Bulut zaten var; yedek, hesabına erişemezsen ya da yanlışlıkla silersen işe yarar");
     else{
       const gun=Math.floor((Date.now()-Number(son))/86400000);
-      taniYaz(gun>30?"hata":gun>7?"uyari":"ok","Son yedek", gun+" gün önce"+(gun>30?" — ÇOK ESKİ":""));
+      taniYaz(gun>60?"uyari":"ok","Yerel yedek", gun+" gün önce alınmış"+(gun>60?" — tazelemekte fayda var":""));
     }
     const fotoSay=(tumM||[]).filter(m=>m.fisli).length+(tumO||[]).filter(o=>o.dekontlu).length+(tumG||[]).filter(g=>g.foto).length;
     taniYaz(fotoSay?"uyari":"ok","Fotoğraflar", fotoSay?fotoSay+" fotoğraf yedeğe DAHİL DEĞİL (dosya çok büyür diye)":"yedeklenecek fotoğraf yok");
   });
 
+  /* ═══════ 13b. UYGULAMANIN KENDİ HATA GÜNLÜĞÜ ═══════ */
+  await bolum("13b. GERÇEK ÇÖKME KAYITLARI", async ()=>{
+    let g=[]; try{ g=JSON.parse(localStorage.getItem("hataGunlugu")||"[]"); }catch(e){}
+    if(!g.length){ taniYaz("ok","Çökme kaydı","Uygulama hiç hata kaydetmemiş — temiz"); return; }
+    taniYaz(g.length>5?"hata":"uyari","Çökme kaydı", g.length+" hata kaydı var (aşağıda en son 6'sı)");
+    /* Gerçek alan adları (bkz. hataKaydet): z (zaman damgası), kaynak, mesaj, kod, yigin */
+    g.slice(-6).reverse().forEach((h,i)=>{
+      const z = h.z ? new Date(h.z).toLocaleString("tr-TR") : "?";
+      taniYaz("hata","Çökme "+(i+1)+" · "+(h.kaynak||"bilinmeyen yer"),
+        z + (h.kod?" · kod: "+h.kod:"") +
+        "\n   " + String(h.mesaj||"").slice(0,200) +
+        (h.yigin ? "\n   " + String(h.yigin).split("\n")[0].slice(0,140) : ""));
+    });
+  });
+
+  /* ═══════ 13c. TUTARLILIK VE BAĞ KONTROLLERİ ═══════ */
+  await bolum("13c. TUTARLILIK VE BAĞLAR", async ()=>{
+    /* Kilitli ayda kayıt var mı — kilit sonrası değişiklik yapılmış olabilir */
+    const kilitli = ayarlar.kapali||[];
+    if(kilitli.length && tumG && tumG.length){
+      const kilitliGun = tumG.filter(g=> kilitli.includes(String(g.id).slice(0,7)));
+      taniYaz("bilgi","Kilitli aylardaki kayıt", kilitliGun.length+" gün kilitli ayda (değiştirilemez)");
+    }
+    /* Girdilerdeki şantiye adları, tanımlı şantiye listesinde var mı */
+    const tanimli = (ayarlar.santiyeler||[]).map(x=> typeof x==="string"?x:(x&&x.ad)||"");
+    if(tanimli.length && tumG){
+      const bilinmeyen=[...new Set(tumG.map(g=>g.santiye).filter(x=>x&&!tanimli.includes(x)))];
+      taniYaz(bilinmeyen.length?"uyari":"ok","Şantiye adları",
+        bilinmeyen.length?"Listede olmayan şantiye adı kullanılmış: "+bilinmeyen.slice(0,4).join(", "):"hepsi tanımlı listede");
+    }
+    /* Dekont bağı: dekontlu:true olan ödemenin fotoğrafı gerçekten var mı */
+    const dek=(tumO||[]).filter(o=>o.dekontlu);
+    if(dek.length){
+      let kayip=0;
+      for(const o of dek.slice(0,15)){
+        try{ const d=await taniSureli(kokRef().collection("dekontlar").doc(o.id).get(),6); if(!d.exists) kayip++; }catch(e){}
+      }
+      taniYaz(kayip?"hata":"ok","Dekont fotoğrafı bağı", kayip?kayip+" ödemede 'dekont var' yazıyor ama FOTOĞRAF YOK":dek.length+" dekontun bağı sağlam");
+    }
+    /* Gün fotoğrafı bağı */
+    const fg=(tumG||[]).filter(g=>g.foto);
+    if(fg.length){
+      let kayip=0;
+      for(const g of fg.slice(0,15)){
+        try{ const d=await taniSureli(kokRef().collection("fotolar").doc(g.id).get(),6); if(!d.exists) kayip++; }catch(e){}
+      }
+      taniYaz(kayip?"hata":"ok","Gün fotoğrafı bağı", kayip?kayip+" günde 'fotoğraf var' yazıyor ama YOK":fg.length+" fotoğrafın bağı sağlam");
+    }
+    /* Takılı kalmış kronometre */
+    let kb=null; try{ kb=localStorage.getItem("kronoBas"); }catch(e){}
+    if(kb){
+      const saat=((Date.now()-Number(kb))/3600000);
+      taniYaz(saat>16?"uyari":"bilgi","Kronometre", saat.toFixed(1)+" saattir çalışıyor"+(saat>16?" — durdurmayı unutmuş olabilirsin":""));
+    }else taniYaz("ok","Kronometre","çalışmıyor");
+    /* Bildirim izni */
+    try{
+      const izin = (typeof Notification!=="undefined") ? Notification.permission : "yok";
+      taniYaz(izin==="granted"?"ok":"bilgi","Bildirim izni", izin==="granted"?"verilmiş":izin==="denied"?"REDDEDİLMİŞ — hatırlatmalar gelmez":"henüz sorulmamış");
+    }catch(e){}
+    /* Kişiler ve kazalar */
+    const kz = await cek("kazalar", 8);
+    if(kz) taniYaz("bilgi","İş kazası kaydı", kz.length+" kayıt");
+    /* Belgeler (ayarlar içinde) */
+    const bel=(ayarlar.belgeler||[]);
+    if(bel.length){
+      const sureli=bel.filter(b=>b.bitis);
+      const bugun=tarihId(new Date());
+      const dolmus=sureli.filter(b=>b.bitis<bugun);
+      taniYaz(dolmus.length?"uyari":"ok","Belgeler", bel.length+" belge"+(dolmus.length?" · "+dolmus.length+" SÜRESİ DOLMUŞ":""));
+    }
+  });
+
   /* ═══════ 14. ARAYÜZ BÜTÜNLÜĞÜ ═══════ */
   await bolum("14. ARAYÜZ BÜTÜNLÜĞÜ", async ()=>{
     const ekranlar=["ana","puantaj","odemeler","masraf","borc","ozet","yil","notlar","rozet","ekip",
-      "kisiler","arac","ayarlar","kartlar","planlar","maaslar","isler","arama","tani"];
+      "kisiler","arac","ayarlar","kartlar","planlar","maaslar","isler","arama","tani","haber","tv","video"];
     const eksikEkran=ekranlar.filter(e=> !document.getElementById("goruntu-"+e));
     taniYaz(eksikEkran.length?"hata":"ok","Ekranlar", eksikEkran.length?"EKSİK: "+eksikEkran.join(", "):ekranlar.length+" ekranın hepsi mevcut");
 
@@ -10110,7 +10306,7 @@ function taniSonucCiz(){
 }
 
 function taniRaporMetni(){
-  const sim = {ok:"[OK]", hata:"[HATA]", uyari:"[UYARI]", bilgi:"[BILGI]"};
+  const sim = {ok:"[OK]", hata:"[HATA]", uyari:"[UYARI]", bilgi:"[BILGI]", bolum:"\n===="};
   return "PUANTAJ DEFTERIM — TANI RAPORU\n" +
     new Date().toLocaleString("tr-TR") + "\n" +
     "Surum: " + (window.__SURUM||"?") + "\n" +

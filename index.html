@@ -184,7 +184,7 @@
         <span></span><span></span><span></span>
       </button>
       <button id="btn-geri" class="gizli" aria-label="Ana ekrana dön"
-        style="width:38px;height:38px;border-radius:12px;background:var(--girdi);border:1.5px solid var(--cizgi);color:var(--sari);font-size:20px;font-weight:800;flex-shrink:0">‹</button>
+        style="width:44px;height:44px;border-radius:12px;background:var(--girdi);border:1.5px solid var(--cizgi);color:var(--sari);font-size:22px;font-weight:800;flex-shrink:0">‹</button>
       <h1 id="topbar-baslik">Puantaj<small id="topbar-alt">Bu ayki çizelgen</small></h1>
     </div>
     <div class="serit"></div>
@@ -352,9 +352,10 @@
       <div class="kart gizli" id="yenilik-kart" style="border-color:var(--sari)">
         <h2>🎁 Neler yeni?</h2>
         <ul style="padding-left:18px;font-size:13.5px;line-height:1.9">
-          <li><b>🐞 Tanı ekranı çöküyordu — sebebi bulundu ve düzeltildi.</b> "$ is not defined" hatası veriyordu. Sebep şuydu: uygulamanın tüm kodu koruyucu bir blok içinde duruyor, ama tanı motorunu yazarken dosyanın en sonuna, o bloğun DIŞINA eklemişim. Bu yüzden uygulamanın hiçbir şeyine ulaşamıyor, daha ilk satırda çöküyordu. 424 satırlık tanı motoru bloğun içine alındı; artık her şeye erişiyor</li>
-          <li><b>🔒 Aynı hatanın tekrarı için koruma:</b> Kodun başına uyarı notu bırakıldı — ileride yeni bir şey eklendiğinde aynı tuzağa düşülmesin</li>
-          <li><b>🔬 Artık gerçekten çalışan 15 bölüm, 107 kontrol:</b> Sürüm ve çevrimdışı motoru, giriş ve güvenlik kuralları, ücret ayarları, gün kayıtları (bozuk tarih, tanınmayan durum, negatif saat, ücreti mühürlenmemiş günler), para hesabı ve üç köprü testi, masraflar ve fiş bağı, borç defteri, beklenen ödemeler, ekip ve yoklama bağları, işlerim, kartlar/planlar/notlar, rapor motorları, yedekleme yaşı, 19 ekran + 24 öğe + 27 fonksiyon, ve hesap motorunun canlı testi</li>
+          <li><b>📏 "Her şey kocaman görünüyor" şikayeti — suçlu bendim, düzelttim.</b> Ölçtüm: 0.0.2.2'den beri her tasarım turunda "biraz daha okunur olsun" diye yazıları büyütmüşüm. Tek tek bakınca hepsi masumdu (46→52, 24→26, 14.5→15…) ama üst üste binince uygulama şişti. <b>11 ayrı yerde %3 ila %13 arası artış</b> birikmiş</li>
+          <li><b>✅ Hepsi geri alındı — hatta orijinalin biraz altına.</b> Bakiye 52→45px, kart başlıkları 19→17px, takvim rakamları 19→17px, liste satırları, menü, alt paneller, kart dolguları… Kontrast ve hizalama iyileştirmeleri korundu, sadece boyutlar indi</li>
+          <li><b>📐 YENİ: Görünüm ölçeği ayarı (Ayarlar → Uygulama teması altında).</b> "Kocaman" herkes için aynı şey değil — gözü zayıf olan büyük ister, genç usta ekrana çok bilgi sığsın ister. Artık <b>Küçük / Normal / Büyük</b> seçebiliyorsun. Bir dokunuşla anında değişiyor</li>
+          <li><b>⚠️ Tek istisna:</b> Yazı yazdığın kutular her ölçekte aynı boyutta kalıyor. Sebebi teknik: iPhone, küçük yazılı bir kutuya dokununca ekranı zorla yakınlaştırıyor ve geri döndürmüyor. Onları küçültsem o sorun geri gelirdi</li>
         </ul>
         <button class="btn btn-cizgili" id="btn-yenilik-kapat">Süper, kapat</button>
       </div>
@@ -555,8 +556,8 @@
         </div>
         <button class="btn btn-cizgili" id="btn-beklenen-ekle">➕ Beklenen ödeme ekle</button>
       </div>
-      <div class="kart">
-        <h2>➕ Para girişi ekle</h2>
+      <div class="kart ekle-kart kapali">
+        <h2 class="ekle-bas" role="button" tabindex="0">➕ Para girişi ekle<span class="ekle-ok">▾</span></h2>
         <div class="alan">
           <label>📅 Bu ödeme hangi ayın hesabına yazılsın?</label>
           <select id="odeme-ait-ay"></select>
@@ -618,8 +619,8 @@
 
     <!-- ===== GÖRÜNÜM: BORÇ DEFTERİ ===== -->
     <section id="goruntu-borc" class="gizli">
-      <div class="kart">
-        <h2>➕ Borç / alacak ekle</h2>
+      <div class="kart ekle-kart kapali">
+        <h2 class="ekle-bas" role="button" tabindex="0">➕ Borç / alacak ekle<span class="ekle-ok">▾</span></h2>
         <div class="alan">
           <label>Ne oldu?</label>
           <select id="borc-yon">
@@ -813,8 +814,8 @@
 
     <!-- ===== GÖRÜNÜM: İŞ MASRAFLARI ===== -->
     <section id="goruntu-masraf" class="gizli">
-      <div class="kart">
-        <h2>➕ Masraf ekle</h2>
+      <div class="kart ekle-kart kapali">
+        <h2 class="ekle-bas" role="button" tabindex="0">➕ Masraf ekle<span class="ekle-ok">▾</span></h2>
         <p style="font-size:13px;color:var(--soluk);margin-bottom:12px;line-height:1.6">
           Cebinden ödediğin, patronun karşılayacağı masraflar (malzeme, yol, nalbur...). Hesapta alacağına eklenir.
         </p>
@@ -870,8 +871,8 @@
         <h2>🧮 Bu ayın ekip özeti <button id="btn-ekip-rapor" style="margin-left:auto;color:var(--sari);font-size:14px;font-family:Rubik;text-transform:none;font-weight:600">📤 Hepsini paylaş</button></h2>
         <ul class="liste" id="liste-ekip-ozet"><div class="bos-mesaj">Yükleniyor...</div></ul>
       </div>
-      <div class="kart">
-        <h2>👥 İşçi ekle</h2>
+      <div class="kart ekle-kart kapali">
+        <h2 class="ekle-bas" role="button" tabindex="0">👥 İşçi ekle<span class="ekle-ok">▾</span></h2>
         <div class="alan">
           <label>Adı</label>
           <input type="text" id="isci-ad" placeholder="Örn: Ramazan">
@@ -932,8 +933,8 @@
 
     <!-- ===== GÖRÜNÜM: KREDİ KARTLARI ===== -->
     <section id="goruntu-kartlar" class="gizli">
-      <div class="kart">
-        <h2>💳 Kart ekle</h2>
+      <div class="kart ekle-kart kapali">
+        <h2 class="ekle-bas" role="button" tabindex="0">💳 Kart ekle<span class="ekle-ok">▾</span></h2>
         <p style="font-size:12px;color:var(--soluk);margin-bottom:12px">🔒 Kart NUMARANI değil, sadece takma adını yaz — bu uygulama kart numarası istemez, saklamaz.</p>
         <div style="display:flex;gap:8px">
           <div class="alan" style="flex:1">
@@ -999,8 +1000,8 @@
 
     <!-- ===== GÖRÜNÜM: PLANLAR ===== -->
     <section id="goruntu-planlar" class="gizli">
-      <div class="kart">
-        <h2>📐 Plan/proje linki ekle</h2>
+      <div class="kart ekle-kart kapali">
+        <h2 class="ekle-bas" role="button" tabindex="0">📐 Plan/proje linki ekle<span class="ekle-ok">▾</span></h2>
         <p style="font-size:12px;color:var(--soluk);margin-bottom:12px;line-height:1.6">
           WhatsApp'tan gelen plan dosyasını (PDF veya fotoğraf) önce Google Drive'a ya da telefonunun galerisine kaydet, oradan "paylaş / link al" seçeneğiyle bir link üret, aşağıya yapıştır. Dokununca tarayıcıda açılır — PDF ise parmaklarınla yakınlaştırıp kolon ölçülerini net okuyabilirsin.
         </p>
@@ -1482,6 +1483,19 @@
         <label style="display:flex;align-items:center;gap:10px;font-size:14px;margin-top:10px">
           <input type="checkbox" id="ayar-ses" style="width:20px;height:20px;accent-color:var(--sari)"> Kayıtta tık sesi
         </label>
+        <div class="alan" style="margin-top:14px;padding-top:14px;border-top:1px solid var(--cizgi)">
+          <label>📏 Görünüm ölçeği</label>
+          <div class="cip-satir" id="olcek-secim">
+            <button type="button" data-olcek="kucuk">Küçük</button>
+            <button type="button" data-olcek="normal">Normal</button>
+            <button type="button" data-olcek="buyuk">Büyük</button>
+          </div>
+          <small style="display:block;color:var(--soluk);font-size:12px;line-height:1.5;margin-top:7px">
+            Yazılar büyük geliyorsa "Küçük"ü seç — ekrana daha çok bilgi sığar.
+            Gözün yorulyorsa "Büyük". Yazı yazdığın kutular her ayarda aynı kalır
+            (telefon kendiliğinden yakınlaştırmasın diye).
+          </small>
+        </div>
         <label style="display:flex;align-items:flex-start;gap:10px;font-size:14px;margin-top:14px;padding-top:14px;border-top:1px solid var(--cizgi)">
           <input type="checkbox" id="ayar-hafif" style="width:20px;height:20px;accent-color:var(--sari);flex-shrink:0;margin-top:1px">
           <span>⚡ Hafif mod <small style="display:block;color:var(--soluk);font-size:12.5px;line-height:1.5;margin-top:3px">Telefon eski veya takılıyorsa aç. Bulanık zemin ve gölge gibi süsler kapanır, kaydırma akıcılaşır. Uygulama telefonunu tanıyıp bunu kendi de açabilir.</small></span>

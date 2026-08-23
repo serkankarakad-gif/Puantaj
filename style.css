@@ -1695,3 +1695,303 @@ html[data-hafif="1"] .eylem-sarmal::after{ display:none }
   content:"›"; color:var(--soluk); margin-left:7px; font-weight:400;
 }
 html[data-hafif="1"] .is-gun-satir{ transition:none }
+
+/* ═══════════════════════════════════════════════════════════════════
+   0.0.4.6 — ÇEKMECE MENÜSÜ YENİDEN TASARIMI
+   ───────────────────────────────────────────────────────────────────
+   Sorun: 32 satırlık düz bir metin listesiydi. Emojiler serbest
+   yüzüyor, her satır aynı ağırlıkta, grup başlıkları listeden
+   ayrışmıyordu — bakınca "sıralanmış kelimeler" görünüyordu.
+
+   Yaklaşım: ikonları kendi kutularına al (hizalanmış bir sütun
+   oluşsun), grupları kart hâline getir, seçili satırı gerçekten
+   belli et. Yapı ve tüm bağlantılar aynen korundu — yalnızca görünüm.
+   ═══════════════════════════════════════════════════════════════════ */
+
+/* ── Başlık: profil alanı ──────────────────────────────────────────*/
+.cekmece-bas{
+  padding:24px 16px 18px;
+  background:linear-gradient(160deg, var(--asfalt2) 0%, var(--asfalt) 100%);
+}
+.cekmece-bas .avatar{
+  width:60px; height:60px; border-radius:17px;
+  box-shadow:0 3px 12px rgba(0,0,0,.35);
+}
+.cekmece-bas .ad{ font-size:17px; font-weight:700; margin-top:11px; letter-spacing:.1px }
+.cekmece-bas .eposta{ font-size:11.5px; margin-top:1px }
+#btn-profili-duzenle{
+  margin-top:11px !important;
+  background:rgba(255,196,0,.12) !important;
+  border:1px solid rgba(255,196,0,.28) !important;
+  border-radius:20px !important;
+  padding:7px 13px !important;
+  font-size:11.5px !important;
+}
+
+/* ── Grup başlıkları: listeden ayrışsın ────────────────────────────*/
+.cekmece .menu-grup{
+  font-size:10.5px;
+  letter-spacing:1.3px;
+  font-weight:800;
+  color:var(--soluk);
+  padding:16px 14px 7px;
+  border-top:none;
+  margin-top:6px;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  cursor:pointer;
+}
+.cekmece .menu-grup:first-of-type{ margin-top:2px }
+.cekmece .menu-grup-ok{ font-size:11px; opacity:.6 }
+
+/* ── Menü satırları: ikon kendi kutusunda ──────────────────────────
+   Emojiler farklı genişlikte olduğu için serbest bırakıldığında
+   metinler hizasız duruyordu. Sabit kutu, düzgün bir sütun kuruyor. */
+.cekmece li button, .cekmece li a{
+  display:flex;
+  align-items:center;
+  gap:12px;
+  width:100%;
+  padding:11px 12px;
+  border-radius:11px;
+  font-size:14.5px;
+  font-weight:500;
+  color:#DDDFE4;
+  background:none;
+  border:none;
+  text-align:left;
+  text-decoration:none;
+}
+.cekmece li button .ikon, .cekmece li a .ikon{
+  width:34px; height:34px;
+  flex-shrink:0;
+  border-radius:10px;
+  background:rgba(255,255,255,.055);
+  display:flex; align-items:center; justify-content:center;
+  font-size:17px;
+  text-align:center;
+}
+.cekmece li button:active, .cekmece li a:active{ background:rgba(255,255,255,.06) }
+
+/* ── Seçili satır: tartışmasız belli olsun ─────────────────────────*/
+.cekmece li button.aktif, .cekmece li a.aktif{
+  background:rgba(255,196,0,.13);
+  color:var(--sari);
+  font-weight:700;
+}
+.cekmece li button.aktif .ikon, .cekmece li a.aktif .ikon{
+  background:var(--sari);
+}
+.cekmece li button.aktif::before, .cekmece li a.aktif::before{
+  content:""; position:absolute; left:0; top:8px; bottom:8px;
+  width:3px; border-radius:0 3px 3px 0; background:var(--sari);
+}
+
+/* Grup açılır/kapanır yüksekliği yeni satır boyuna göre */
+.cekmece li[data-grup]{ max-height:60px }
+
+/* ── Alt bölüm (çıkış) ─────────────────────────────────────────────*/
+.cekmece-alt{ padding:12px 14px max(14px, env(safe-area-inset-bottom)) }
+.cekmece-alt button{ border-radius:11px; padding:12px; font-size:14px }
+
+/* ── Sürüm satırı (gizli tanı girişi) ──────────────────────────────*/
+.surum{ font-size:11px; letter-spacing:.3px; opacity:.75 }
+
+/* ── İleri tarihli (henüz çalışılmamış) işaretli günler ────────────
+   Bu günler hakedişe dahil ediliyor; kullanıcı bunu göremediği için
+   bakiyesini olduğundan yüksek sanıyor. Rengi ve anlamı korunuyor,
+   üzerine "henüz gelmedi" bilgisi ekleniyor: çapraz tarama + soluk. */
+.hucre.ileri-tarih{
+  opacity:.62;
+  background-image:repeating-linear-gradient(135deg,
+    rgba(255,255,255,.14) 0 3px, transparent 3px 7px);
+}
+.hucre.ileri-tarih::after{
+  content:"→"; position:absolute; right:3px; bottom:2px;
+  font-size:9px; opacity:.8; pointer-events:none;
+}
+html[data-hafif="1"] .hucre.ileri-tarih{ background-image:none }
+
+/* ── Hamburger düğmesi ─────────────────────────────────────────────
+   İki düzeltme + görsel yenileme.
+
+   🐞 DÜZELTME: Menü açılınca çizgiler X'e dönüşüyor. Orijinal hesap
+   `gap:5px` + `height:2px` üzerineydi, yani üst çizginin merkeze
+   uzaklığı 2+5 = 7px ve dönüşüm `translateY(7px)` idi. 0.0.2.6'da
+   dokunma hedefi için yükseklik 2.5px yapılınca mesafe 7.5px'e çıktı
+   ama dönüşüm 7px'te kaldı — X yarım piksel kayık çiziliyordu.
+   Artık ikisi de aynı ölçüye dayanıyor.
+
+   🎨 Görünüm: kutu, yeni menü diliyle hizalandı (aynı köşe yarıçapı
+   ve ince kenarlık). Çizgiler hafifçe uzatıldı, orta çizgi biraz
+   kısa bırakıldı — düz üç çubuk yerine karakterli bir işaret. */
+.hamburger{
+  border-radius:12px;
+  background:var(--girdi);
+  border:1px solid var(--cizgi);
+  gap:5px;
+}
+.hamburger span{
+  width:20px; height:2.5px;
+  border-radius:3px;
+  transition:transform .22s cubic-bezier(.34,1.3,.64,1), opacity .16s ease, width .22s ease;
+}
+/* Orta çizgi kısa — kapalıyken karakter, açılırken zaten kayboluyor */
+.hamburger span:nth-child(2){ width:14px }
+.hamburger:active{ border-color:var(--sari) }
+.hamburger:active span{ width:20px }
+
+/* X hâli: mesafe = çizgi yüksekliği (2.5) + boşluk (5) = 7.5px */
+.hamburger.acik{ background:var(--vurgu-zemin); border-color:var(--sari) }
+.hamburger.acik span:nth-child(1){ transform:translateY(7.5px) rotate(45deg); width:20px }
+.hamburger.acik span:nth-child(2){ opacity:0; width:0 }
+.hamburger.acik span:nth-child(3){ transform:translateY(-7.5px) rotate(-45deg); width:20px }
+
+html[data-hafif="1"] .hamburger span{ transition:none }
+
+/* ═══════════════════════════════════════════════════════════════════
+   0.0.4.8 — MENÜ EKRANLARININ TASARIMI
+   ───────────────────────────────────────────────────────────────────
+   Tespit: Aldığım paralar, Borç defteri, Masraflar, Kartlar, Ekip,
+   Planlar — hepsinde aynı ters kurgu vardı. Ekranı açtığında karşına
+   önce BOŞ BİR "EKLE" FORMU çıkıyor, görmeye geldiğin liste onun
+   altında kalıyordu. Kullanıcı borç defterini borçlarını görmek için
+   açıyor; ilk gördüğü şey doldurulacak boş kutular oluyordu.
+
+   Çözüm: ekleme formları kapalı başlıyor, başlığa dokununca açılıyor.
+   Liste artık ekranın en üstünde. Ekleme bir dokunuş uzakta.
+   ═══════════════════════════════════════════════════════════════════ */
+
+.ekle-kart{ padding:0; overflow:hidden }
+.ekle-bas{
+  margin:0 !important;
+  padding:15px 16px !important;
+  cursor:pointer;
+  display:flex; align-items:center; gap:9px;
+  font-size:16px !important;
+  border-left:none !important;
+  user-select:none; -webkit-user-select:none;
+}
+.ekle-bas::before{ display:none !important }
+.ekle-ok{
+  margin-left:auto;
+  font-size:13px; color:var(--soluk);
+  transition:transform .2s ease;
+}
+.ekle-kart:not(.kapali) .ekle-ok{ transform:rotate(180deg); color:var(--sari) }
+.ekle-kart:not(.kapali) .ekle-bas{ color:var(--sari) }
+
+/* Kapalıyken form gövdesi tamamen gizli — DOM'da kalır ama çizilmez,
+   böylece ekran daha hızlı açılır. */
+.ekle-kart.kapali > *:not(.ekle-bas){ display:none }
+.ekle-kart:not(.kapali) > *:not(.ekle-bas){ padding-left:16px; padding-right:16px }
+.ekle-kart:not(.kapali) > *:last-child{ margin-bottom:16px }
+.ekle-kart:not(.kapali){ border-color:var(--sari) }
+
+/* Kapalı hâlde "dokun, açılsın" hissi ver */
+.ekle-kart.kapali .ekle-bas{ color:var(--metin); opacity:.9 }
+.ekle-kart.kapali:active{ border-color:var(--sari) }
+
+/* ── Ekran içi liste başlıkları: içerik başlığı öne çıksın ─────────
+   Artık liste en üstte olduğu için başlığı da güçlendiriyoruz. */
+.kart > h2 > span[id$="-toplam"],
+.kart > h2 > span[id$="-ozet"]{
+  margin-left:auto; font-size:13.5px; font-weight:600;
+}
+
+/* Çekmece başlığındaki sürüm rozeti — "hangi kod çalışıyor" sorusunun
+   cevabı menüyü açar açmaz görünsün diye (en alta kaydırmak gerekmesin). */
+#cekmece-surum-rozet{
+  display:inline-block; margin-top:10px;
+  background:rgba(255,255,255,.07); border:1px solid rgba(255,255,255,.12);
+  color:var(--soluk); font-size:10.5px; font-weight:700; letter-spacing:.5px;
+  padding:4px 9px; border-radius:20px;
+  font-family:'Saira Condensed';
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   0.0.5.0 — ÖLÇEK GERİ ALMA: "her şey kocaman görünüyor"
+   ───────────────────────────────────────────────────────────────────
+   Kullanıcılardan gelen şikayet: uygulama hem iOS'ta hem Android'de
+   fazla büyük görünüyor.
+
+   Sebep bendeydi ve tek bir hatadan değil, BİRİKMEDEN kaynaklandı.
+   0.0.2.2'den beri her tasarım turunda "biraz daha okunur olsun" diye
+   yazı boyutlarını yukarı çekmişim. Tek tek bakınca hepsi masumdu
+   (46→52, 24→26, 14.5→15…) ama üst üste binince uygulama şişti.
+   Ölçüm: 11 ayrı yerde %3 ila %13 arası artış.
+
+   Bu blok o artışları geri alıyor. Orijinal değerler zaten dengeliydi;
+   asıl sorun kontrast ve hizaydı, onlar korunuyor.
+
+   ⚠️ TEK İSTİSNA: girdi alanları 16px kalıyor. iOS Safari, 16px'in
+   altındaki bir alana dokunulunca sayfayı zorla yakınlaştırıyor ve
+   geri döndürmüyor. Küçültmek o hatayı geri getirir.
+   ═══════════════════════════════════════════════════════════════════ */
+
+.banka-kart .bakiye{ font-size:45px; letter-spacing:-.01em }
+.ozet-kut .deger{ font-size:26px }
+.ozet-kut{ padding:12px 11px }
+.ay-bar .ay-ad{ font-size:23px }
+.selam-blok .buyuk{ font-size:23px }
+.selam-blok .alt{ font-size:12.5px }
+.liste .baslik{ font-size:14px }
+.liste .alt-yazi{ font-size:12px }
+.liste .tutar{ font-size:17px }
+.liste li{ padding:12px 0; gap:11px }
+.alt-sayfa h3{ font-size:21px }
+.alt-sayfa .tarih-yazi{ font-size:12.5px }
+.sayac input{ font-size:28px }
+.durum-secim button{ font-size:13px }
+.toast{ font-size:13.5px; padding:11px 17px }
+.bos-mesaj{ font-size:13px; padding:24px 14px }
+.bos-mesaj .buyuk{ font-size:32px }
+.kart h2{ font-size:17px }
+.kart{ padding:14px }
+.hucre > span:first-child{ font-size:17px }
+.takvim .gun-adi, .takvim-baslik .gun-adi{ font-size:10.5px }
+.cekmece li button, .cekmece li a{ font-size:14px; padding:10px 12px }
+.cekmece li button .ikon, .cekmece li a .ikon{ width:31px; height:31px; font-size:15.5px }
+.cekmece-bas .ad{ font-size:15.5px }
+.cekmece li[data-grup]{ max-height:54px }
+.rozet-kut .rad{ font-size:13px }
+.ekle-bas{ font-size:15px !important; padding:13px 15px !important }
+.is-ay-ad{ font-size:18px }
+.topbar h1{ font-size:20px }
+main{ padding:12px 12px 140px }
+
+/* ── Görünüm ölçeği (kullanıcı tercihi) ────────────────────────────
+   "Kocaman görünüyor" şikayeti kişiden kişiye değişir: gözü zayıf
+   olan büyük ister, genç usta ekrana çok bilgi sığsın ister.
+   Sabit bir değere karar vermek yerine seçenek veriyoruz.
+
+   Uygulama: html[data-olcek] üzerinden CSS zoom yerine transform
+   KULLANILMIYOR — ikisi de yerleşimi bozar. Bunun yerine sadece
+   yazı ölçeğini etkileyen bir çarpan uygulanıyor. */
+html[data-olcek="kucuk"]  body{ font-size:13.5px }
+html[data-olcek="normal"] body{ font-size:15px }
+html[data-olcek="buyuk"]  body{ font-size:16.5px }
+
+html[data-olcek="kucuk"] .banka-kart .bakiye{ font-size:40px }
+html[data-olcek="buyuk"] .banka-kart .bakiye{ font-size:50px }
+html[data-olcek="kucuk"] .kart h2{ font-size:15.5px }
+html[data-olcek="buyuk"] .kart h2{ font-size:18.5px }
+html[data-olcek="kucuk"] .liste .baslik{ font-size:13px }
+html[data-olcek="buyuk"] .liste .baslik{ font-size:15.5px }
+html[data-olcek="kucuk"] .liste .tutar{ font-size:15.5px }
+html[data-olcek="buyuk"] .liste .tutar{ font-size:18.5px }
+html[data-olcek="kucuk"] .hucre > span:first-child{ font-size:15.5px }
+html[data-olcek="buyuk"] .hucre > span:first-child{ font-size:18.5px }
+html[data-olcek="kucuk"] .kart{ padding:12px }
+html[data-olcek="buyuk"] .kart{ padding:16px }
+html[data-olcek="kucuk"] .ozet-kut .deger{ font-size:23px }
+html[data-olcek="buyuk"] .ozet-kut .deger{ font-size:28px }
+html[data-olcek="kucuk"] .cekmece li button, html[data-olcek="kucuk"] .cekmece li a{ font-size:13px }
+html[data-olcek="buyuk"] .cekmece li button, html[data-olcek="buyuk"] .cekmece li a{ font-size:15.5px }
+
+/* Girdi alanları ölçekten ETKİLENMEZ — iOS'ta 16px altına inince
+   sayfa zorla yakınlaşıyor. Her ölçekte 16px kalır. */
+@media (pointer: coarse){
+  html[data-olcek] input, html[data-olcek] select, html[data-olcek] textarea{ font-size:16px }
+}
