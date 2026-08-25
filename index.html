@@ -151,10 +151,18 @@
     </div>
     <div class="alan">
       <label>Şifre</label>
-      <input type="password" id="giris-sifre" placeholder="En az 6 karakter" autocomplete="current-password">
+      <div class="sifre-sarmal">
+        <input type="password" id="giris-sifre" placeholder="En az 6 karakter" autocomplete="current-password">
+        <button type="button" id="btn-sifre-goster" aria-label="Şifreyi göster">👁️</button>
+      </div>
     </div>
     <button class="btn btn-sari" id="btn-giris">Giriş yap</button>
     <button id="btn-sifre-unut" style="width:100%;margin-top:14px;color:var(--soluk);font-size:13.5px;text-decoration:underline">Şifremi unuttum</button>
+    <div class="giris-guven">
+      <span>🔒</span>
+      <span>Kayıtların buluta yedeklenir; telefonun bozulsa da başka telefondan
+      aynı e-postayla girince geri gelir. Puantajını senden başkası değiştiremez.</span>
+    </div>
   </div>
 </div>
 
@@ -352,10 +360,10 @@
       <div class="kart gizli" id="yenilik-kart" style="border-color:var(--sari)">
         <h2>🎁 Neler yeni?</h2>
         <ul style="padding-left:18px;font-size:13.5px;line-height:1.9">
-          <li><b>📏 "Her şey kocaman görünüyor" şikayeti — suçlu bendim, düzelttim.</b> Ölçtüm: 0.0.2.2'den beri her tasarım turunda "biraz daha okunur olsun" diye yazıları büyütmüşüm. Tek tek bakınca hepsi masumdu (46→52, 24→26, 14.5→15…) ama üst üste binince uygulama şişti. <b>11 ayrı yerde %3 ila %13 arası artış</b> birikmiş</li>
-          <li><b>✅ Hepsi geri alındı — hatta orijinalin biraz altına.</b> Bakiye 52→45px, kart başlıkları 19→17px, takvim rakamları 19→17px, liste satırları, menü, alt paneller, kart dolguları… Kontrast ve hizalama iyileştirmeleri korundu, sadece boyutlar indi</li>
-          <li><b>📐 YENİ: Görünüm ölçeği ayarı (Ayarlar → Uygulama teması altında).</b> "Kocaman" herkes için aynı şey değil — gözü zayıf olan büyük ister, genç usta ekrana çok bilgi sığsın ister. Artık <b>Küçük / Normal / Büyük</b> seçebiliyorsun. Bir dokunuşla anında değişiyor</li>
-          <li><b>⚠️ Tek istisna:</b> Yazı yazdığın kutular her ölçekte aynı boyutta kalıyor. Sebebi teknik: iPhone, küçük yazılı bir kutuya dokununca ekranı zorla yakınlaştırıyor ve geri döndürmüyor. Onları küçültsem o sorun geri gelirdi</li>
+          <li><b>📊 GRAFİKLER — "Son 6 ay hakediş" grafiği aslında hiç çizilmiyordu.</b> Kod sütunları, yükseklikleri ve etiketleri üretiyordu ama <b>hiçbirinin stili tanımlı değildi</b>. Yani grafik diye bir şey yoktu — üst üste binmiş, hizasız bir yazı yığını vardı. Şimdi gerçek bir sütun grafiği: içinde bulunduğun ay sarı ve parlıyor, geçmiş aylar sönük duruyor, rakamlar sütunların üstünde. Nerede olduğunu ve eskiye göre nasıl gittiğini tek bakışta görüyorsun</li>
+          <li><b>🎨 "Aldığın paraların dağılımı" artık bir şerit.</b> Eskiden düz yazıydı: "Avans: 5.000 ₺ · Hakediş: 20.000 ₺". Oran bilgisi vardı ama kafandan hesaplaman gerekiyordu. Şimdi renkli tek bir şerit — hangi türün payı ne kadar, bakar bakmaz görünüyor. Altında renk açıklamaları ve yüzdeleri var</li>
+          <li><b>🏗️ Şantiye kırılımı da öyle.</b> Nokta nokta sıralanmış bir metindi; hangi şantiyenin daha çok kazandırdığını anlamak için rakamları okuyup karşılaştırman gerekiyordu. Artık her şantiye kendi oran çubuğuyla, en çok kazandıran en üstte</li>
+          <li><b>Neden önemli:</b> Bu üçü de zaten hesaplanıyordu, veri hazırdı. Sadece <b>görünmüyordu</b>. Yani yeni bir özellik eklemedim — var olan bilgiyi nihayet görülebilir hale getirdim</li>
         </ul>
         <button class="btn btn-cizgili" id="btn-yenilik-kapat">Süper, kapat</button>
       </div>
@@ -592,6 +600,10 @@
         <div class="alan">
           <label>Not (isteğe bağlı)</label>
           <input type="text" id="odeme-not" placeholder="Örn: Usta elden verdi">
+          <small style="display:block;color:var(--yarim);font-size:12px;line-height:1.5;margin-top:6px">
+            👁️ <b>Bu kayıt "Kişiler" ekranında herkese görünür</b> — tutarı ve buraya yazdığın not dahil.
+            Kimseye göstermek istemediğin bir şey varsa nota yazma.
+          </small>
         </div>
         <div class="alan">
           <label>Dekont / belge fotoğrafı (isteğe bağlı)</label>
@@ -897,7 +909,7 @@
       <div class="kart">
         <h2>🌍 Kayıtlı kişiler <button id="btn-kisiler-yenile" style="margin-left:auto;color:var(--sari);font-size:14px;font-family:Rubik;text-transform:none;font-weight:600">🔄 Yenile</button></h2>
         <p style="font-size:12.5px;color:var(--soluk);margin-bottom:12px;line-height:1.6">
-          Herkes herkesin puantajını GÖREBİLİR ama kimse kimseninkine yazamaz. Bir kişiye dokun, ayını incele. (Ay değiştirmek için üstteki oklar.)
+          Bu ekran <b>şeffaflık</b> üzerine kurulu: herkes herkesin puantajını <b>ve aldığı paraları</b> görebilir, ama kimse kimseninkine yazamaz. Yani senin aldığın avanslar da burada başkalarına görünür. Bir kişiye dokun, ayını incele.
         </p>
         <div class="alan" style="margin-bottom:10px">
           <input type="text" id="kisi-ara" placeholder="🔎 İsim ara...">
@@ -1083,8 +1095,8 @@
 
     <!-- ===== GÖRÜNÜM: ARAÇLAR & BİLGİ ===== -->
     <section id="goruntu-arac" class="gizli">
-      <div class="kart">
-        <h2>⚖️ Kıdem tazminatı hesaplayıcı</h2>
+      <div class="kart arac-kart kapali">
+        <h2 class="arac-bas" role="button" tabindex="0">⚖️ Kıdem tazminatı hesaplayıcı<span class="arac-ok">▾</span></h2>
         <div style="display:flex;gap:10px">
           <div class="alan" style="flex:1">
             <label>İşe giriş tarihin</label>
@@ -1098,8 +1110,8 @@
         <div id="kidem-sonuc" style="background:var(--girdi);border:1.5px solid var(--cizgi);border-radius:12px;padding:12px 14px;font-size:13.5px;line-height:1.8">Tarih ve ücreti gir, hesaplayayım.</div>
         <p style="font-size:11.5px;color:var(--soluk);margin-top:8px">⚠️ Kaba tahmindir (yıl × 30 günlük brüt). Tavan, vergi ve şartlar için uzmana danış.</p>
       </div>
-      <div class="kart">
-        <h2>🏖️ Yıllık izin hakkın</h2>
+      <div class="kart arac-kart kapali">
+        <h2 class="arac-bas" role="button" tabindex="0">🏖️ Yıllık izin hakkın<span class="arac-ok">▾</span></h2>
         <div id="izin-sonuc" style="background:var(--girdi);border:1.5px solid var(--cizgi);border-radius:12px;padding:12px 14px;font-size:13.5px;line-height:1.8">
           Hesaplamam için Ayarlar → işe giriş tarihini doldur.
         </div>
@@ -1108,8 +1120,8 @@
           18 yaş altı ve 50 yaş üstü için en az 20 gündür. Takvimde "izinli/raporlu" işlediğin günler kullanılan sayılır (raporlu günler aslında yıllık izinden düşmez, kabaca fikir verir).
         </p>
       </div>
-      <div class="kart">
-        <h2>🤝 Zam isteme asistanı</h2>
+      <div class="kart arac-kart kapali">
+        <h2 class="arac-bas" role="button" tabindex="0">🤝 Zam isteme asistanı<span class="arac-ok">▾</span></h2>
         <div id="zam-analiz" style="background:var(--girdi);border:1.5px solid var(--cizgi);border-radius:12px;padding:12px 14px;font-size:13.5px;line-height:1.7;margin-bottom:12px">
           Analiz için birkaç gün işlenmiş olması yeter — sayfayı açınca hesaplarım.
         </div>
@@ -1125,8 +1137,8 @@
         <button class="btn btn-sari gizli" id="btn-zam-paylas" style="margin-top:8px">📤 Patrona gönder</button>
         <p style="font-size:11.5px;color:var(--soluk);margin-top:8px">Mesajı istediğin gibi düzenleyip gönderebilirsin. Pazarlık senin, veri bizden 😉</p>
       </div>
-      <div class="kart">
-        <h2>🧱 İnşaat hesaplayıcıları</h2>
+      <div class="kart arac-kart kapali">
+        <h2 class="arac-bas" role="button" tabindex="0">🧱 İnşaat hesaplayıcıları<span class="arac-ok">▾</span></h2>
         <div class="alan">
           <label>🏗️ Beton: En × Boy × Yükseklik (metre)</label>
           <div style="display:flex;gap:8px">
@@ -1148,8 +1160,8 @@
         </div>
         <p style="font-size:11px;color:var(--soluk);margin-top:10px">Kaba hesaptır: beton %10 fireli · duvar m²'de ~55 tuğla / ~8,5 gazbeton · boya 2 kat, litrede ~5 m². Malzemeye göre değişir.</p>
       </div>
-      <div class="kart">
-        <h2>🔊 Gürültü Ölçer</h2>
+      <div class="kart arac-kart kapali">
+        <h2 class="arac-bas" role="button" tabindex="0">🔊 Gürültü Ölçer<span class="arac-ok">▾</span></h2>
         <p style="font-size:12px;color:var(--soluk);margin-bottom:10px">Şantiyede ortam sesini ölç: <b>85 dB üstü</b> kulağa kalıcı zarar verir — kulak koruyucu ŞART (ve işveren vermek zorunda). Kaba ölçümdür, fikir verir.</p>
         <button class="btn btn-cizgili" id="btn-ses-basla">🔊 Ölçümü başlat</button>
         <div id="ses-alan" class="gizli" style="text-align:center;margin-top:12px">
@@ -1160,8 +1172,8 @@
           </div>
         </div>
       </div>
-      <div class="kart">
-        <h2>🦺 İş Güvenliği Köşesi</h2>
+      <div class="kart arac-kart kapali">
+        <h2 class="arac-bas" role="button" tabindex="0">🦺 İş Güvenliği Köşesi<span class="arac-ok">▾</span></h2>
         <div style="font-size:13px;line-height:1.9;color:var(--soluk)">
           <b style="color:var(--metin)">Hayat kurtaran 8 kural:</b><br>
           1. Baretsiz sahaya adım atma — düşen bir cıvata bile öldürür ⛑️<br>
@@ -1175,8 +1187,8 @@
           <b style="color:var(--metin)">Bil:</b> Baret, kemer, kulaklık, eldiven — hepsi <b>KKD</b>'dir ve işveren ÜCRETSİZ vermek zorundadır. Vermiyorsa ALO 170'e bildirebilirsin. Bu köşeyi arkadaşlarına da göster usta 🙏
         </div>
       </div>
-      <div class="kart">
-        <h2>🧱 Tuğla Ustası — mola oyunu</h2>
+      <div class="kart arac-kart kapali">
+        <h2 class="arac-bas" role="button" tabindex="0">🧱 Tuğla Ustası — mola oyunu<span class="arac-ok">▾</span></h2>
         <p style="font-size:12px;color:var(--soluk);margin-bottom:10px">Kayan tuğlayı tam alttakinin üstüne oturt: ekrana dokun! Kenardan taşan kısım kırılır, tuğla daralır. Kaç kat çıkabilirsin usta?</p>
         <button class="btn btn-cizgili" id="btn-oyun-basla">🧱 Oyunu başlat</button>
         <div id="oyun-alan" class="gizli" style="text-align:center;margin-top:12px">
@@ -1184,8 +1196,8 @@
           <div id="oyun-skor" style="font-family:'Saira Condensed';font-size:22px;font-weight:800;margin-top:6px"></div>
         </div>
       </div>
-      <div class="kart">
-        <h2>📐 Su Terazisi</h2>
+      <div class="kart arac-kart kapali">
+        <h2 class="arac-bas" role="button" tabindex="0">📐 Su Terazisi<span class="arac-ok">▾</span></h2>
         <p style="font-size:12px;color:var(--soluk);margin-bottom:10px">Telefonu yüzeye/duvara daya — baloncuk ortada ve yeşilse terazidedir. Kaba kontrole birebir (hassas iş için gerçek terazi şart).</p>
         <button class="btn btn-cizgili" id="btn-terazi-basla">📐 Teraziyi başlat</button>
         <div id="terazi-alan" class="gizli" style="text-align:center;margin-top:12px">
@@ -1193,8 +1205,8 @@
           <div id="terazi-derece" style="font-family:'Saira Condensed';font-size:34px;font-weight:800;margin-top:4px">—</div>
         </div>
       </div>
-      <div class="kart">
-        <h2>🕌 Namaz Vakitleri</h2>
+      <div class="kart arac-kart kapali">
+        <h2 class="arac-bas" role="button" tabindex="0">🕌 Namaz Vakitleri<span class="arac-ok">▾</span></h2>
         <div class="alan">
           <label>İlin</label>
           <select id="vakit-il"></select>
@@ -1202,8 +1214,8 @@
         <div id="vakit-liste" style="font-size:14px;line-height:2.1"></div>
         <p style="font-size:11px;color:var(--soluk);margin-top:8px">Diyanet hesabına göre (Aladhan servisi). Günde bir güncellenir, internetsizken son indirilen gösterilir.</p>
       </div>
-      <div class="kart">
-        <h2>🚑 İş Kazası Defterim</h2>
+      <div class="kart arac-kart kapali">
+        <h2 class="arac-bas" role="button" tabindex="0">🚑 İş Kazası Defterim<span class="arac-ok">▾</span></h2>
         <p style="font-size:12.5px;color:var(--soluk);line-height:1.6;margin-bottom:12px">
           Kaza olursa O GÜN buraya yaz: tarih, ne olduğu, tanıklar. Olay günü tutulan kayıt,
           SGK ve tazminat işlemlerinde en güçlü delildir. Bu defter sadece sende — kimseyle paylaşılmaz, sen istersen tutanak gönderirsin.
@@ -1246,8 +1258,8 @@
           Bu kayıt resmî belge değildir ama resmî süreçte elini çok güçlendirir.
         </p>
       </div>
-      <div class="kart">
-        <h2>🆘 Acil Durum Kartım</h2>
+      <div class="kart arac-kart kapali">
+        <h2 class="arac-bas" role="button" tabindex="0">🆘 Acil Durum Kartım<span class="arac-ok">▾</span></h2>
         <p style="font-size:12.5px;color:var(--soluk);margin-bottom:12px">Şantiyede bir şey olursa arkadaşların telefonundan bu karta baksın — kan grubu ve acil numara hayat kurtarır.</p>
         <div style="display:flex;gap:8px">
           <div class="alan" style="flex:1">
@@ -1270,8 +1282,8 @@
         <button class="btn btn-cizgili" id="btn-acil-kaydet">💾 Kaydet</button>
         <button class="btn btn-sari" id="btn-acil-goster" style="margin-top:8px">🆘 Kartı TAM EKRAN göster</button>
       </div>
-      <div class="kart">
-        <h2>🪪 İşçi Kimlik Kartım</h2>
+      <div class="kart arac-kart kapali">
+        <h2 class="arac-bas" role="button" tabindex="0">🪪 İşçi Kimlik Kartım<span class="arac-ok">▾</span></h2>
         <div id="kimlik-ozet" style="background:var(--girdi);border:1.5px solid var(--cizgi);border-radius:12px;padding:12px 14px;font-size:13.5px;line-height:1.9;margin-bottom:12px">Hesaplanıyor...</div>
         <button class="btn btn-sari" id="btn-kimlik-kart">📸 Karneyi oluştur ve paylaş</button>
         <p style="font-size:11.5px;color:var(--soluk);margin-top:8px">
@@ -1279,8 +1291,8 @@
           İş görüşmesinde göster: rakamlar lafdan iyi konuşur 💪 Kimse senin hakkında buraya bir şey yazamaz — defter işçinindir.
         </p>
       </div>
-      <div class="kart">
-        <h2>💪 Emek karnem</h2>
+      <div class="kart arac-kart kapali">
+        <h2 class="arac-bas" role="button" tabindex="0">💪 Emek karnem<span class="arac-ok">▾</span></h2>
         <div id="emek-karne" style="font-size:13.5px;line-height:1.9">Hesaplanıyor...</div>
       </div>
       <div class="kart gizli" id="mesai-sinir-satir">
@@ -1295,21 +1307,21 @@
         <p style="font-size:11.5px;color:var(--soluk);margin-top:10px;line-height:1.6">⚠️ Bu, senin kendi girdiğin günlere göre yaptığımız bir <b>tahmin</b> — patronunun SGK'ya gerçekten bildirim yapıp yapmadığını göstermez. Gerçek, resmi kaydını kontrol etmek için:</p>
         <a href="https://www.turkiye.gov.tr/sgk-tescil-ve-hizmet-dokumu" target="_blank" rel="noopener" class="btn btn-cizgili" style="display:block;text-align:center;margin-top:8px;text-decoration:none">📄 e-Devlet'te gerçek SGK kaydımı gör</a>
       </div>
-      <div class="kart">
-        <h2>⏱️ Mesai ücreti kontrolü</h2>
+      <div class="kart arac-kart kapali">
+        <h2 class="arac-bas" role="button" tabindex="0">⏱️ Mesai ücreti kontrolü<span class="arac-ok">▾</span></h2>
         <div class="alan">
           <label>Normal saatlik ücretin (TL)</label>
           <input type="text" id="mesai-kontrol" inputmode="decimal" placeholder="Örn: 200">
         </div>
         <div id="mesai-kontrol-sonuc" style="background:var(--girdi);border:1.5px solid var(--cizgi);border-radius:12px;padding:12px 14px;font-size:13.5px;line-height:1.8">Saat ücretini gir, yasal mesai ücretini göstereyim.</div>
       </div>
-      <div class="kart">
-        <h2>🕌 Namaz vakitleri</h2>
+      <div class="kart arac-kart kapali">
+        <h2 class="arac-bas" role="button" tabindex="0">🕌 Namaz vakitleri<span class="arac-ok">▾</span></h2>
         <button class="btn btn-cizgili" id="btn-namaz">📍 Konumuma göre vakitleri getir</button>
         <div id="namaz-sonuc" style="margin-top:12px"></div>
       </div>
-      <div class="kart">
-        <h2>🚬 Sigara parası hesabı</h2>
+      <div class="kart arac-kart kapali">
+        <h2 class="arac-bas" role="button" tabindex="0">🚬 Sigara parası hesabı<span class="arac-ok">▾</span></h2>
         <div style="display:flex;gap:10px">
           <div class="alan" style="flex:1">
             <label>Paket fiyatı (TL)</label>
@@ -1322,8 +1334,8 @@
         </div>
         <div id="sig-sonuc" style="background:var(--girdi);border:1.5px solid var(--cizgi);border-radius:12px;padding:12px 14px;font-size:13.5px;line-height:1.8">Doldur, kaç yevmiye dumana gidiyor göster 💨</div>
       </div>
-      <div class="kart">
-        <h2>📚 İşçi hakları — bilgi köşesi</h2>
+      <div class="kart arac-kart kapali">
+        <h2 class="arac-bas" role="button" tabindex="0">📚 İşçi hakları — bilgi köşesi<span class="arac-ok">▾</span></h2>
         <div style="font-size:13.5px;line-height:1.7">
           <details style="margin-bottom:10px"><summary style="font-weight:700;cursor:pointer">⏱️ Fazla mesai ücreti</summary><p style="color:var(--soluk);margin-top:6px">Genel kural olarak fazla çalışma saat ücreti, normal saat ücretinin %50 zamlısıdır (1,5 katı). Hafta 45 saati aşan çalışmalar fazla mesai sayılır.</p></details>
           <details style="margin-bottom:10px"><summary style="font-weight:700;cursor:pointer">🛌 Hafta tatili</summary><p style="color:var(--soluk);margin-top:6px">Haftada en az 24 saat kesintisiz dinlenme (hafta tatili) hakkın vardır. Hafta tatilinde çalışırsan ücretin zamlı ödenmesi gerekir.</p></details>

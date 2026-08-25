@@ -1995,3 +1995,377 @@ html[data-olcek="buyuk"] .cekmece li button, html[data-olcek="buyuk"] .cekmece l
 @media (pointer: coarse){
   html[data-olcek] input, html[data-olcek] select, html[data-olcek] textarea{ font-size:16px }
 }
+
+/* ── Araçlar ekranı: 17 kart, hepsi kapalı başlar ──────────────────
+   Bu ekranda 19 ayrı araç var (kıdem tazminatı, izin hakkı, gürültü
+   ölçer, namaz vakitleri, sigara parası…) ve hepsi tam boy açık
+   diziliyordu: 17 KB'lık tek bir kaydırma şeridi. Aradığın aracı
+   bulmak için sayfayı baştan sona taramak gerekiyordu.
+   Artık hepsi kapalı — ekran bir ARAÇ LİSTESİ gibi açılıyor,
+   istediğine dokunup açıyorsun. */
+.arac-kart{ padding:0; overflow:hidden; margin-bottom:9px }
+.arac-bas{
+  margin:0 !important;
+  padding:14px 15px !important;
+  cursor:pointer;
+  display:flex; align-items:center; gap:9px;
+  font-size:15.5px !important;
+  border-left:none !important;
+  user-select:none; -webkit-user-select:none;
+}
+.arac-bas::before{ display:none !important }
+.arac-ok{ margin-left:auto; font-size:13px; color:var(--soluk); transition:transform .2s ease }
+.arac-kart:not(.kapali) .arac-ok{ transform:rotate(180deg); color:var(--sari) }
+.arac-kart:not(.kapali) .arac-bas{ color:var(--sari) }
+.arac-kart:not(.kapali){ border-color:var(--sari) }
+.arac-kart.kapali > *:not(.arac-bas){ display:none }
+.arac-kart:not(.kapali) > *:not(.arac-bas){ padding-left:15px; padding-right:15px }
+.arac-kart:not(.kapali) > *:last-child{ margin-bottom:15px }
+.arac-kart.kapali:active{ border-color:var(--sari) }
+html[data-hafif="1"] .arac-ok{ transition:none }
+
+/* ═══════════════════════════════════════════════════════════════════
+   0.0.5.5 — DEGRADELİ METİN: TOPTAN KORUMA
+   ───────────────────────────────────────────────────────────────────
+   Uygulamada dört yerde "degrade dolgulu yazı" deseni var:
+     .topbar h1 · .giris-ust h1 · #acilis h1 · .banka-kart .bakiye
+   Bu desen `background-clip:text` + `color:transparent` ile çalışır.
+   Desteklemeyen bir tarayıcıda (eski Android WebView) degrade
+   uygulanamaz AMA saydamlık kalır — yani yazı BOMBOŞ görünür.
+
+   0.0.2.2'de bakiye, 0.0.2.6'da üst bar tek tek düzeltilmişti; giriş
+   ve açılış ekranları atlanmıştı. Bunlar uygulamanın İLK açılan iki
+   ekranı — yani en kötü yerde açıkta kalmışlar.
+
+   Bu blok dördünü birden garantiye alıyor: önce düz renk veriliyor,
+   degrade yalnızca destekleyen tarayıcıda uygulanıyor. */
+.topbar h1, .giris-ust h1, #acilis h1, .banka-kart .bakiye{
+  color:var(--sari);
+  background:none;
+  -webkit-text-fill-color:currentColor;
+}
+@supports ((-webkit-background-clip:text) or (background-clip:text)){
+  .topbar h1, .giris-ust h1, #acilis h1{
+    background:linear-gradient(135deg,var(--sari),var(--sari-koyu));
+    -webkit-background-clip:text; background-clip:text;
+    color:transparent; -webkit-text-fill-color:transparent;
+  }
+  .banka-kart .bakiye{
+    background:linear-gradient(160deg,var(--sari) 0%,var(--sari) 55%,var(--sari-koyu) 100%);
+    -webkit-background-clip:text; background-clip:text;
+    color:transparent; -webkit-text-fill-color:transparent;
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   GİRİŞ EKRANI — ilk izlenim
+   ───────────────────────────────────────────────────────────────────
+   Uygulamayı ilk açan herkesin gördüğü ekran ama hiç elden geçmemişti:
+   logo, başlık, iki sekme ve üç kutu. Kimlik unsurları (ikaz şeridi,
+   şantiye sarısı) burada da olmalı ama abartılmadan.
+   ═══════════════════════════════════════════════════════════════════ */
+.giris-ust{ padding:44px 24px 28px; text-align:center }
+.giris-ust .logo{
+  width:68px; height:68px; border-radius:19px;
+  margin:0 auto 16px;
+  box-shadow:0 6px 20px rgba(255,196,0,.22);
+  font-size:36px;
+}
+.giris-ust h1{ font-size:34px; letter-spacing:-.5px }
+.giris-ust p{
+  margin-top:12px; font-size:13.5px; line-height:1.6;
+  color:#B9BBC3; max-width:300px; margin-left:auto; margin-right:auto;
+}
+.giris-kutu{ padding:24px 20px 36px }
+
+/* Sekmeler: hangisinde olduğun net olsun */
+.sekmeler{ padding:5px; border-radius:13px; margin-bottom:18px }
+.sekmeler button{
+  padding:12px; border-radius:10px; font-size:14px;
+  transition:background .16s ease, color .16s ease;
+}
+.sekmeler button.aktif{
+  background:var(--sari); color:#1F1700; font-weight:800;
+  box-shadow:0 2px 6px rgba(0,0,0,.25);
+}
+html[data-hafif="1"] .sekmeler button{ transition:none }
+
+/* Giriş düğmesi: sayfanın asıl eylemi */
+.giris-kutu .btn-sari{ margin-top:6px; padding:16px; font-size:16px }
+#btn-sifre-unut{ padding:12px 0 !important }
+
+/* Güven satırı: "verilerim nereye gidiyor" sorusu ilk ekranda cevaplansın */
+.giris-guven{
+  margin-top:20px; padding-top:16px; border-top:1px solid var(--cizgi);
+  display:flex; align-items:flex-start; gap:9px;
+  color:var(--soluk2); font-size:11.5px; line-height:1.55;
+}
+.giris-guven span:first-child{ font-size:14px; flex-shrink:0 }
+
+/* Şifre göster/gizle — yanlış şifre yazıp "hesabım kilitlendi" sanmanın
+   önüne geçer. Tozlu/eldivenli parmakla yanlış tuşa basmak kolay. */
+.sifre-sarmal{ position:relative }
+.sifre-sarmal input{ padding-right:52px }
+.sifre-sarmal button{
+  position:absolute; right:4px; top:50%; transform:translateY(-50%);
+  width:44px; height:44px; border:none; background:none;
+  font-size:18px; opacity:.55; cursor:pointer;
+}
+.sifre-sarmal button:active{ opacity:1 }
+.sifre-sarmal button.acik{ opacity:1 }
+
+/* ═══════════════════════════════════════════════════════════════════
+   YIL DÖKÜMÜ ve ISI HARİTASI
+   ───────────────────────────────────────────────────────────────────
+   İkisi de hiç elden geçmemişti:
+   • Yıl tablosu 6 sütunlu (Ay/Gün/Mesai/Hakediş/Alınan/Kalan) ve
+     `td` için hiç stil yoktu — dar telefonda rakamlar birbirine
+     giriyordu. Ayrıca satırların tıklanabilir olduğu belli değildi.
+   • Isı haritası hücreleri 11px yüksekliğinde ve tıklanabilir
+     görünmüyordu; oysa bir aya dokununca o ayın takvimine gidiyor.
+   ═══════════════════════════════════════════════════════════════════ */
+
+/* ── Yıl tablosu ───────────────────────────────────────────────────*/
+.yil-tablo{ font-size:12px }
+.yil-tablo th{
+  padding:8px 4px; text-align:right;
+  border-bottom:1px solid var(--cizgi); font-weight:700;
+}
+.yil-tablo th:first-child{ text-align:left }
+.yil-tablo td{
+  padding:11px 4px; text-align:right;
+  border-bottom:1px solid rgba(255,255,255,.045);
+  font-family:'Saira Condensed'; font-variant-numeric:tabular-nums;
+  font-size:14px; font-weight:600;
+}
+/* Ay adı sütunu: rakam değil, ayrı dilde */
+.yil-tablo td:first-child{
+  text-align:left; font-family:'Rubik'; font-size:13px; font-weight:600;
+}
+/* Son sütun (Kalan) asıl merak edilen — vurgula */
+.yil-tablo td:last-child{ color:var(--sari); font-weight:800 }
+/* Tıklanabilir olduğu belli olsun */
+.yil-tablo tr[data-ay]{ cursor:pointer }
+.yil-tablo tr[data-ay]:active td{ background:var(--girdi) }
+.yil-tablo tr[data-ay] td:first-child::after{
+  content:"›"; color:var(--soluk2); margin-left:6px; font-weight:400;
+}
+/* Toplam satırı: tablonun sonucu */
+.yil-tablo tr.toplam td{
+  border-top:2px solid var(--cizgi); border-bottom:none;
+  padding-top:13px; font-weight:800; font-size:15px;
+}
+.yil-tablo tr.toplam td:first-child{
+  font-family:'Saira Condensed'; letter-spacing:.06em; color:var(--soluk);
+  font-size:12px;
+}
+.yil-tablo tr.toplam td:last-child{ color:var(--sari) }
+/* Açılan ay detayı */
+.ay-detay td{
+  background:var(--girdi); border-radius:0 0 10px 10px;
+  font-family:'Rubik' !important; font-size:12.5px !important;
+  font-weight:400 !important; text-align:left !important;
+  line-height:1.9; padding:11px 12px !important; color:var(--soluk);
+}
+.ay-detay td b{ color:var(--metin); font-family:'Saira Condensed'; font-size:14px }
+.ay-detay .eksik-cip{ margin-top:7px; display:inline-block }
+
+/* ── Isı haritası ──────────────────────────────────────────────────*/
+#isi-harita{ margin-bottom:16px }
+.isi-ay{
+  padding:2px 4px; border-radius:7px; margin-bottom:2px;
+  cursor:pointer;
+}
+.isi-ay:active{ background:var(--girdi) }
+.isi-ay .ay-et{
+  width:34px; flex:0 0 34px; font-size:10.5px; font-weight:700;
+  font-family:'Saira Condensed'; letter-spacing:.04em;
+}
+/* Hücreler biraz büyüdü: hem görünür hem dokunulabilir */
+.isi-gunler i{ height:13px; border-radius:3px }
+/* Bugünün ayını işaretle — nerede olduğun belli olsun */
+.isi-ay.bu-ay{ background:var(--vurgu-zemin) }
+.isi-ay.bu-ay .ay-et{ color:var(--sari) }
+html[data-hafif="1"] .isi-ay{ transition:none }
+
+/* ═══════════════════════════════════════════════════════════════════
+   ROZETLER ve NOT DEFTERİ
+   ───────────────────────────────────────────────────────────────────
+   İkisinde de mantık iyi kurulmuş ama görsel taraf eksik kalmış:
+   • Rozetlerde ilerleme çubuğu var (güzel fikir) ama ızgaranın kendisi
+     ve seviye bölümü stilsizdi.
+   • Notlarda renk etiketi ve sabitleme var ama not metni liste satırı
+     gibi görünüyordu — oysa not, okunacak bir şey; kağıt gibi durmalı.
+   ═══════════════════════════════════════════════════════════════════ */
+
+/* ── Rozet ızgarası ────────────────────────────────────────────────*/
+#rozet-grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fill, minmax(104px, 1fr));
+  gap:9px;
+}
+.rozet-kut{ padding:13px 10px; display:flex; flex-direction:column; gap:2px }
+/* Gerçek sınıf adları: .rikon (ikon) ve .rsart (kazanma şartı).
+   İlk yazımda .ikon/.aciklama denenmişti — kodda öyle bir sınıf yok,
+   kurallar hedefsiz kalıyordu. */
+.rozet-kut .rikon{ font-size:27px; line-height:1.15; display:block; margin-bottom:4px }
+.rozet-kut .rad{ font-size:12.5px; line-height:1.3 }
+.rozet-kut .rsart{ font-size:10.5px; color:var(--soluk); line-height:1.4; margin-top:3px }
+
+/* Açılmış rozet: kazanılmış hissi versin */
+.rozet-kut.acildi{
+  border-color:var(--sari);
+  background:var(--vurgu-zemin);
+}
+.rozet-kut.acildi .rad{ color:var(--sari) }
+.rozet-kut.acildi .rsart{ color:#B9BBC3 }
+/* Kilitli rozet: görünsün ama sönük. 0.0.2.6'da opaklık .35 → .5
+   yapılmıştı; gri filtre ile birlikte hâlâ okunması zordu.
+   Kilitli rozetin işlevi "ne kazanabileceğini göstermek" — okunmalı. */
+.rozet-kut.kilitli{ opacity:.62; filter:grayscale(.85) }
+.rozet-kut.kilitli .rikon{ opacity:.7 }
+
+/* İlerleme çubuğu biraz belirginleşti */
+.rz-bar{ height:6px; margin-top:8px }
+.rz-sayi{ font-size:11px; letter-spacing:.02em }
+
+/* ── Not defteri: notlar kağıt gibi dursun ─────────────────────────*/
+#liste-notlar li{
+  background:var(--girdi);
+  border-radius:12px;
+  margin-bottom:9px;
+  padding:12px 13px;
+  border-bottom:none;
+  align-items:flex-start;
+}
+#liste-notlar li .orta{ padding-top:1px }
+#liste-notlar .baslik{
+  font-size:14px; line-height:1.55; font-weight:400 !important;
+  word-break:break-word;
+}
+/* Tarih rozeti biraz küçülsün — asıl olan notun kendisi */
+#liste-notlar .rozet{
+  width:38px; min-width:38px; height:38px; border-radius:10px;
+  font-size:14px;
+}
+#liste-notlar .rozet small{ font-size:8.5px }
+/* Sabitlenmiş notu ayırt etmek için ayrı bir sınıf YOK; kod bunu
+   tarih rozetinin zeminini sarı yaparak belirtiyor. Bu yeterli
+   olduğu için ek kural yazılmadı — hedefi olmayan CSS yazmamak,
+   sonradan "neden çalışmıyor" aramamak demek. */
+
+/* ═══════════════════════════════════════════════════════════════════
+   GRAFİKLER — "Son 6 ay hakediş" çubuk grafiği
+   ───────────────────────────────────────────────────────────────────
+   Kod bu grafiği çiziyordu (sütun + yükseklik yüzdesi + etiketler)
+   ama CSS'te #grafik, .sutun, .cubuk, .deger-yazi, .ay-yazi
+   sınıflarının HİÇBİRİ tanımlı değildi. Yani çubuklar yüksekliksiz,
+   hizasız, üst üste binmiş bir metin yığını olarak görünüyordu.
+   Uygulamanın en görsel öğesi hiç çizilmemişti.
+
+   Tasarım: temiz bir sütun grafiği. Izgara çizgileri yok — rakam
+   zaten çubuğun üstünde yazıyor, ızgara sadece gürültü olurdu.
+   İçinde bulunulan ay sarı, geçmiş aylar sönük: göz "nerede
+   olduğumu" ve "eskiye göre nasıl" sorularını tek bakışta cevaplıyor.
+   ═══════════════════════════════════════════════════════════════════ */
+#grafik{
+  display:flex;
+  align-items:flex-end;
+  justify-content:space-between;
+  gap:7px;
+  height:132px;
+  padding:22px 2px 0;
+  position:relative;
+}
+/* Zemin çizgisi — çubukların oturduğu yer belli olsun */
+#grafik::after{
+  content:""; position:absolute; left:0; right:0; bottom:19px;
+  height:1px; background:var(--cizgi);
+}
+#grafik .sutun{
+  flex:1; height:100%;
+  display:flex; flex-direction:column;
+  align-items:center; justify-content:flex-end;
+  gap:4px; position:relative;
+}
+#grafik .cubuk{
+  width:100%; max-width:34px;
+  background:linear-gradient(180deg, var(--asfalt2) 0%, var(--girdi) 100%);
+  border:1px solid var(--cizgi);
+  border-bottom:none;
+  border-radius:6px 6px 0 0;
+  min-height:4px;
+  transition:height .45s cubic-bezier(.22,1,.36,1);
+}
+/* İçinde bulunulan ay: asıl bakılan sütun */
+#grafik .cubuk.bu-ay{
+  background:linear-gradient(180deg, var(--sari) 0%, var(--sari-koyu) 100%);
+  border-color:var(--sari);
+  box-shadow:0 0 14px rgba(255,196,0,.22);
+}
+#grafik .deger-yazi{
+  font-family:'Saira Condensed';
+  font-size:12px; font-weight:800;
+  color:var(--soluk);
+  line-height:1; white-space:nowrap;
+}
+#grafik .sutun:has(.cubuk.bu-ay) .deger-yazi{ color:var(--sari) }
+#grafik .ay-yazi{
+  font-size:10px; font-weight:700; color:var(--soluk2);
+  letter-spacing:.04em; line-height:1;
+  height:15px; display:flex; align-items:center;
+}
+#grafik .sutun:has(.cubuk.bu-ay) .ay-yazi{ color:var(--sari) }
+html[data-hafif="1"] #grafik .cubuk{ transition:none; box-shadow:none }
+
+/* ── Dağılım şeridi (aldığın paraların türlere göre payı) ──────────
+   Eskiden düz metindi: "Avans: 5.000 ₺ · Hakediş: 20.000 ₺". Oran
+   bilgisi vardı ama kafada hesaplamak gerekiyordu. Tek şerit hâlinde
+   göstermek, "paramın çoğu neyden geliyor" sorusunu bakışta yanıtlıyor. */
+.dagilim-baslik{
+  font-size:11px; font-weight:800; letter-spacing:.9px;
+  color:var(--soluk); margin-bottom:8px;
+}
+.dagilim-serit{
+  display:flex; height:12px; border-radius:7px; overflow:hidden;
+  background:var(--girdi); gap:2px;
+}
+.dagilim-serit i{ display:block; min-width:5px }
+.dagilim-etiket{
+  display:flex; flex-wrap:wrap; gap:6px 14px; margin-top:10px;
+  font-size:12px; color:var(--soluk);
+}
+.dagilim-etiket span{ display:flex; align-items:center; gap:6px }
+.dagilim-etiket b{
+  width:9px; height:9px; border-radius:3px; display:inline-block; flex-shrink:0;
+}
+.dagilim-etiket em{
+  font-style:normal; font-family:'Saira Condensed';
+  font-weight:800; font-size:13.5px; color:var(--metin);
+}
+.dagilim-etiket small{ font-size:10.5px; opacity:.7 }
+
+/* ── Şantiye kırılımı: her şantiye kendi oran çubuğuyla ────────────*/
+.sk-satir{
+  display:flex; align-items:center; gap:9px;
+  padding:7px 0; font-size:12.5px;
+}
+.sk-ad{
+  flex:0 0 82px; overflow:hidden; text-overflow:ellipsis;
+  white-space:nowrap; color:#C6C8CE; font-weight:600;
+}
+.sk-bar{
+  flex:1; height:9px; background:var(--girdi);
+  border-radius:5px; overflow:hidden;
+}
+.sk-bar i{
+  display:block; height:100%; border-radius:5px;
+  background:linear-gradient(90deg, var(--sari-koyu), var(--sari));
+  transition:width .5s cubic-bezier(.22,1,.36,1);
+}
+.sk-tutar{
+  flex:0 0 auto; font-family:'Saira Condensed';
+  font-weight:800; font-size:13.5px; white-space:nowrap;
+}
+.sk-daha{ font-size:11.5px; color:var(--soluk2); padding-top:5px }
+html[data-hafif="1"] .sk-bar i{ transition:none }

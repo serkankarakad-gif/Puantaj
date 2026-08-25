@@ -1869,12 +1869,23 @@ async function kisiVeriYukle(){
   $("#kisi-ozet").innerHTML = '<div class="bos-mesaj" style="grid-column:1/-1">Yükleniyor...</div>';
   iskeletGoster($("#kisi-gunler"), 4);
   try{
-    const [gSnap, oSnap] = await Promise.all([
-      ref.collection("girdiler")
+    /* 0.0.5.1: Başkasının ÖDEMELERİ artık güvenlik kurallarıyla kapalı
+       (avans tutarları ve notları kişisel bilgi). Kendi profiline
+       bakıyorsan okunuyor, başkasınınkinde izin reddi geliyor.
+       Bu yüzden ödeme okuması Promise.all'dan ÇIKARILDI: eskiden tek bir
+       izin reddi tüm kişi detayını çökertiyordu — puantaj bile
+       görünmüyordu. Artık ayrı ve hata toleranslı. */
+    /* Ödemeler bilinçli olarak herkese açık (uygulama sahibinin kararı).
+       Yine de okuma AYRI tutuluyor ve hata toleranslı: eskiden girdiler ve
+       ödemeler tek Promise.all içindeydi ve ödeme okumasında herhangi bir
+       sorun (izin, ağ, kota) çıkarsa TÜM kişi detayı çöküyor, puantaj bile
+       görünmüyordu. Artık ödeme okunamasa da puantaj görünmeye devam eder. */
+    const kendisiMi = seciliKisi.uid === kullanici.uid;
+    const gSnap = await ref.collection("girdiler")
         .where(firebase.firestore.FieldPath.documentId(), ">=", bas)
-        .where(firebase.firestore.FieldPath.documentId(), "<=", son).get(),
-      ref.collection("odemeler").get()
-    ]);
+        .where(firebase.firestore.FieldPath.documentId(), "<=", son).get();
+    let oSnap = null;
+    try{ oSnap = await ref.collection("odemeler").get(); }catch(e){ oSnap = null; }
     let gun=0, mesai=0, hak=0;
     const gunUl = $("#kisi-gunler"); gunUl.innerHTML = "";
     const kayitlar = [];
@@ -1897,9 +1908,16 @@ async function kisiVeriYukle(){
     if(!kayitlar.length) gunUl.innerHTML = '<div class="bos-mesaj">Bu ay kaydı yok.</div>';
     let alinan = 0;
     const odUl = $("#kisi-odemeler"); odUl.innerHTML = "";
+    if(!oSnap){
+      odUl.innerHTML = '<div class="bos-mesaj" style="padding:14px 10px;font-size:12.5px">'+
+        'Ödeme kayıtları okunamadı (bağlantı veya izin). Puantaj yukarıda.</div>';
+    }
     const buAy = aktifYil + "-" + pad(aktifAy+1);
     const odListe = [];
-    oSnap.forEach(doc=>{
+    /* oSnap yalnızca KENDİ profiline bakarken dolu gelir; başkasınınkinde
+       null olur (ödemeler artık kişisel). null'da forEach çağırmak
+       çökertirdi — koruma eklendi. */
+    if(oSnap) oSnap.forEach(doc=>{
       const d = doc.data();
       if(odemeAyi(d) === buAy) odListe.push(d);
     });
@@ -4931,10 +4949,32 @@ function ozetCiz(){
   /* Ödeme türü dağılımı */
   const dag = {};
   odemeler.forEach(o=>{ const k=odemeTurEtiket(o.tur); dag[k]=(dag[k]||0)+(Number(o.tutar)||0); });
+  /* Eskiden düz metindi: "Alınanlar → Avans: 5.000 ₺ · Hakediş: 20.000 ₺".
+     Oran bilgisi vardı ama görülmüyordu — okuyup kafada hesaplaman
+     gerekiyordu. Artık tek satırlık bir oran şeridi: hangi türün payı
+     ne kadar, bakar bakmaz görülüyor. */
   const dEl = $("#odeme-dagilim");
-  if(dEl) dEl.textContent = Object.keys(dag).length
-    ? "Alınanlar → " + Object.entries(dag).map(([k,v])=> k+": "+paraFmt(v)).join(" · ")
-    : "";
+  if(dEl){
+    const girisler = Object.entries(dag).filter(([,v])=> v>0);
+    if(!girisler.length){ dEl.innerHTML = ""; }
+    else{
+      const toplam = girisler.reduce((t,[,v])=> t+v, 0);
+      const renk = { "Avans":"var(--sari)", "Hakediş":"var(--tam)", "Askeriye":"var(--mesai)",
+                     "Kesinti":"var(--gelmedi)", "Diğer":"var(--soluk)" };
+      girisler.sort((a,b)=> b[1]-a[1]);
+      dEl.innerHTML =
+        '<div class="dagilim-baslik">Aldığın paraların dağılımı</div>'+
+        '<div class="dagilim-serit">'+
+          girisler.map(([k,v])=>
+            '<i style="flex:'+v+';background:'+(renk[k]||"var(--soluk)")+'" title="'+k+'"></i>').join("")+
+        '</div>'+
+        '<div class="dagilim-etiket">'+
+          girisler.map(([k,v])=>
+            '<span><b style="background:'+(renk[k]||"var(--soluk)")+'"></b>'+k+
+            ' <em>'+paraFmt(v)+'</em> <small>%'+Math.round(v/toplam*100)+'</small></span>').join("")+
+        '</div>';
+    }
+  }
 }
 
 /* ---------- Aylık hedef çubuğu (hem Hesap özeti hem Ana ekranda kullanılır) ---------- */
@@ -5260,9 +5300,20 @@ async function ozetDetayYukle(){
     if(skEl){
       const sirali = Object.keys(santiyeHak).sort((a,b)=> santiyeHak[b]-santiyeHak[a]);
       if(sirali.length >= 2){
-        skEl.innerHTML = "🏗️ <b>Şantiye kırılımı:</b> " +
-          sirali.slice(0,5).map(ad2=> ad2.replace(/</g,"&lt;")+" <b>"+paraFmt(santiyeHak[ad2])+"</b>").join(" · ") +
-          (sirali.length>5 ? " · +"+(sirali.length-5)+" şantiye" : "");
+        /* Eskiden nokta ile ayrılmış tek satır metindi; hangi şantiyenin
+           daha çok kazandırdığı ancak rakamları okuyup karşılaştırınca
+           anlaşılıyordu. Artık her şantiye kendi oran çubuğuyla. */
+        const enBuyuk = santiyeHak[sirali[0]] || 1;
+        skEl.innerHTML =
+          '<div class="dagilim-baslik">🏗️ Şantiye kırılımı</div>' +
+          sirali.slice(0,5).map(ad2=>{
+            const v = santiyeHak[ad2];
+            return '<div class="sk-satir">'+
+              '<span class="sk-ad">'+ad2.replace(/</g,"&lt;")+'</span>'+
+              '<span class="sk-bar"><i style="width:'+Math.max(4,Math.round(v/enBuyuk*100))+'%"></i></span>'+
+              '<span class="sk-tutar">'+paraFmt(v)+'</span></div>';
+          }).join("") +
+          (sirali.length>5 ? '<div class="sk-daha">+'+(sirali.length-5)+' şantiye daha</div>' : "");
       }else skEl.textContent = "";
     }
     /* 📊 Geçen yılla kıyas */
@@ -5545,7 +5596,7 @@ function isiHaritaCiz(gunKazanc){
   const degerler = Object.values(gunKazanc);
   if(!degerler.length){ kap.innerHTML = ""; return; }
   const maks = Math.max(...degerler);
-  let html = '<div style="font-size:12px;color:var(--soluk);margin-bottom:8px">🗓️ Yılın haritası — koyu sarı = çok kazandığın gün</div>';
+  let html = '<div style="font-size:12px;color:var(--soluk);margin-bottom:9px;line-height:1.5">🗓️ Yılın haritası — koyu sarı = çok kazandığın gün.<br>Bir aya dokun, o ayın takvimine git.</div>';
   for(let ay=0; ay<12; ay++){
     const gunSayi = new Date(aktifYil, ay+1, 0).getDate();
     let hucre = "";
@@ -5560,7 +5611,10 @@ function isiHaritaCiz(gunKazanc){
         hucre += '<i></i>';
       }
     }
-    html += '<div class="isi-ay" data-ay="'+ay+'" style="cursor:pointer"><span class="ay-et">'+AYLAR[ay].slice(0,3)+'</span><div class="isi-gunler">'+hucre+'</div></div>';
+    /* İçinde bulunulan ayı işaretle — kullanıcı haritada nerede olduğunu görsün.
+       (Yalnızca görüntülenen yıl, gerçek bugünün yılıysa anlamlı.) */
+    const buAyMi = (aktifYil === new Date().getFullYear() && ay === new Date().getMonth());
+    html += '<div class="isi-ay'+(buAyMi?" bu-ay":"")+'" data-ay="'+ay+'"><span class="ay-et">'+AYLAR[ay].slice(0,3)+'</span><div class="isi-gunler">'+hucre+'</div></div>';
   }
   kap.innerHTML = html;
   $$("#isi-harita .isi-ay").forEach(el=>{
@@ -7064,6 +7118,41 @@ document.addEventListener("DOMContentLoaded", ()=>{
      açılıyor. Amaç: kullanıcı ekrana girince önce LİSTESİNİ görsün,
      boş bir formla karşılaşmasın. Bir form açılınca diğerleri kapanmıyor
      (aynı ekranda birden fazla olabiliyor, kullanıcıyı şaşırtmayalım). */
+  /* Araçlar ekranındaki 17 kart da aynı mantıkla kapanır. Aralarındaki
+     tek fark: burada AKORDEON — bir araç açılınca diğerleri kapanıyor.
+     Sebep: araçlar birbirinden bağımsız ve uzun; ikisi birden açık
+     kalırsa ekran yine kaydırma şeridine dönüyor. */
+  /* Şifre göster/gizle. Küçük ama gerçek bir sorunu çözüyor: kullanıcı
+     yanlış şifre yazdığını göremediği için "hesabım kilitlendi" sanıp
+     şifre sıfırlamaya gidiyor. Tozlu/eldivenli parmakla yanlış tuşa
+     basmak da kolay. */
+  try{
+    const gz = $("#btn-sifre-goster"), inp = $("#giris-sifre");
+    if(gz && inp) gz.addEventListener("click", ()=>{
+      const gorunur = inp.type === "text";
+      inp.type = gorunur ? "password" : "text";
+      gz.classList.toggle("acik", !gorunur);
+      gz.setAttribute("aria-label", gorunur ? "Şifreyi göster" : "Şifreyi gizle");
+      inp.focus();
+    });
+  }catch(e){}
+
+  document.querySelectorAll(".arac-kart .arac-bas").forEach(bas=>{
+    const ac = ()=>{
+      const kart = bas.closest(".arac-kart");
+      if(!kart) return;
+      const zatenAcik = !kart.classList.contains("kapali");
+      document.querySelectorAll(".arac-kart").forEach(k=> k.classList.add("kapali"));
+      if(!zatenAcik){
+        kart.classList.remove("kapali");
+        setTimeout(()=>{ try{ kart.scrollIntoView({behavior:"smooth", block:"start"}); }catch(e){} }, 210);
+      }
+      titret(8);
+    };
+    bas.addEventListener("click", ac);
+    bas.addEventListener("keydown", e=>{ if(e.key==="Enter"||e.key===" "){ e.preventDefault(); ac(); } });
+  });
+
   document.querySelectorAll(".ekle-kart .ekle-bas").forEach(bas=>{
     const ac = ()=>{
       const kart = bas.closest(".ekle-kart");
@@ -8109,7 +8198,7 @@ document.addEventListener("DOMContentLoaded", ()=>{
   });
 
   /* Neler yeni kartı */
-  const YENILIK_SURUM = "0.0.5.0";
+  const YENILIK_SURUM = "0.0.5.7";
   window.__SURUM = YENILIK_SURUM;   /* tanı raporu bunu okur */
   try{ $("#cekmece-surum").textContent = "Puantaj Defterim " + YENILIK_SURUM; }catch(e){}
   /* Sürümü çekmece başlığında da göster. Sebep: "değişiklik gelmedi" durumunda
@@ -9947,11 +10036,22 @@ async function taniCalistir(){
        günler bakiyende görünüyor. Bilerek yapıldıysa sorun yok (planlama),
        ama yanlışlıkla işaretlendiyse elindeki parayı olduğundan fazla
        sanırsın. O yüzden tutarını da yazıyoruz. */
+    /* DÜZELTME: eskiden ileri tarihli her kayıt için "bakiyen olduğundan
+       yüksek görünür" uyarısı veriliyordu. Oysa o günler "gelmedi" ya da
+       "izinli" işaretliyse 0 ₺ ediyor, yani bakiyeyi hiç etkilemiyor —
+       kullanıcının raporunda tam olarak bu oldu (6 gün ileri tarihli,
+       parasal etki 0 ₺) ve gereksiz alarm üretti.
+       Artık uyarı yalnızca GERÇEKTEN para etkisi varsa veriliyor. */
     if(gelecek.length){
       let ileriPara=0; gelecek.forEach(id=>{ const g=tumG.find(x=>x.id===id); if(g) ileriPara+=girdiKazanc(g); });
-      taniYaz("uyari","Gelecek tarihli kayıt",
-        gelecek.length+" gün ileri tarihli ("+gelecek.slice(0,4).join(", ")+(gelecek.length>4?"…":"")+")"+
-        "\n   Bu günler hakedişine DAHİL: "+paraFmt(ileriPara)+" — henüz çalışmadıysan bakiyen olduğundan yüksek görünür");
+      if(ileriPara > 0){
+        taniYaz("uyari","Gelecek tarihli kayıt",
+          gelecek.length+" gün ileri tarihli ("+gelecek.slice(0,4).join(", ")+(gelecek.length>4?"…":"")+")"+
+          "\n   Bu günler hakedişine DAHİL: "+paraFmt(ileriPara)+" — henüz çalışmadıysan bakiyen olduğundan yüksek görünür");
+      }else{
+        taniYaz("bilgi","Gelecek tarihli kayıt",
+          gelecek.length+" gün ileri tarihli ama hepsi 0 ₺ ediyor (gelmedi/izinli) — bakiyeni etkilemiyor");
+      }
     }else taniYaz("ok","Gelecek tarihli kayıt","yok");
 
     const say={}; gecerliDurum.forEach(d=> say[d]=tumG.filter(g=>g.durum===d).length);
