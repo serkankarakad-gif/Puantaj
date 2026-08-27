@@ -300,7 +300,6 @@ main{padding:14px 14px 150px;max-width:560px;margin:0 auto}
   background:linear-gradient(135deg,var(--sari),var(--sari-koyu));
   -webkit-background-clip:text;background-clip:text;color:transparent;
 }
-.giris-ust p{color:#A9ABB4;margin-top:8px;font-size:14px;max-width:300px}
 .giris-kutu{
   flex:1;background:var(--beton);border-radius:26px 26px 0 0;
   padding:26px 22px 40px;max-width:560px;width:100%;margin:0 auto;
@@ -739,7 +738,6 @@ html[data-tema="acik"] .alt-nav{background:rgba(255,255,255,.94)}
 .rozet-kut{background:var(--girdi);border:1.5px solid var(--cizgi);border-radius:14px;padding:14px;text-align:center}
 .rozet-kut .rikon{font-size:34px;display:block;margin-bottom:6px}
 .rozet-kut .rad{font-weight:700;font-size:13.5px}
-.rozet-kut .rsart{font-size:11.5px;color:var(--soluk);margin-top:3px}
 .rozet-kut.kilitli{opacity:.35;filter:grayscale(1)}
 .rozet-kut.acildi{border-color:var(--sari)}
 .seviye-satir{display:flex;align-items:center;gap:14px}
@@ -1239,7 +1237,6 @@ header.topbar{
    tam olarak BUDUR). Opaklık biraz yükseltildi, gri filtre korundu. */
 .rozet-kut.kilitli{ opacity:.5 }
 .rozet-kut.acildi{ border-width:2px; background:var(--vurgu-zemin) }
-.rozet-kut .rad{ font-size:14px }
 
 /* ── 7. Hafif mod kapsaması ────────────────────────────────────────
    Bu turda eklenen gölgeler hafif modda ucuzlatılıyor. */
@@ -1931,70 +1928,14 @@ html[data-hafif="1"] .hamburger span{ transition:none }
    ═══════════════════════════════════════════════════════════════════ */
 
 .banka-kart .bakiye{ font-size:45px; letter-spacing:-.01em }
-.ozet-kut .deger{ font-size:26px }
 .ozet-kut{ padding:12px 11px }
-.ay-bar .ay-ad{ font-size:23px }
-.selam-blok .buyuk{ font-size:23px }
-.selam-blok .alt{ font-size:12.5px }
-.liste .baslik{ font-size:14px }
-.liste .alt-yazi{ font-size:12px }
-.liste .tutar{ font-size:17px }
 .liste li{ padding:12px 0; gap:11px }
-.alt-sayfa h3{ font-size:21px }
-.alt-sayfa .tarih-yazi{ font-size:12.5px }
-.sayac input{ font-size:28px }
-.durum-secim button{ font-size:13px }
 .toast{ font-size:13.5px; padding:11px 17px }
-.bos-mesaj{ font-size:13px; padding:24px 14px }
-.bos-mesaj .buyuk{ font-size:32px }
-.kart h2{ font-size:17px }
 .kart{ padding:14px }
-.hucre > span:first-child{ font-size:17px }
 .takvim .gun-adi, .takvim-baslik .gun-adi{ font-size:10.5px }
-.cekmece li button, .cekmece li a{ font-size:14px; padding:10px 12px }
-.cekmece li button .ikon, .cekmece li a .ikon{ width:31px; height:31px; font-size:15.5px }
-.cekmece-bas .ad{ font-size:15.5px }
 .cekmece li[data-grup]{ max-height:54px }
-.rozet-kut .rad{ font-size:13px }
-.ekle-bas{ font-size:15px !important; padding:13px 15px !important }
-.is-ay-ad{ font-size:18px }
-.topbar h1{ font-size:20px }
 main{ padding:12px 12px 140px }
 
-/* ── Görünüm ölçeği (kullanıcı tercihi) ────────────────────────────
-   "Kocaman görünüyor" şikayeti kişiden kişiye değişir: gözü zayıf
-   olan büyük ister, genç usta ekrana çok bilgi sığsın ister.
-   Sabit bir değere karar vermek yerine seçenek veriyoruz.
-
-   Uygulama: html[data-olcek] üzerinden CSS zoom yerine transform
-   KULLANILMIYOR — ikisi de yerleşimi bozar. Bunun yerine sadece
-   yazı ölçeğini etkileyen bir çarpan uygulanıyor. */
-html[data-olcek="kucuk"]  body{ font-size:13.5px }
-html[data-olcek="normal"] body{ font-size:15px }
-html[data-olcek="buyuk"]  body{ font-size:16.5px }
-
-html[data-olcek="kucuk"] .banka-kart .bakiye{ font-size:40px }
-html[data-olcek="buyuk"] .banka-kart .bakiye{ font-size:50px }
-html[data-olcek="kucuk"] .kart h2{ font-size:15.5px }
-html[data-olcek="buyuk"] .kart h2{ font-size:18.5px }
-html[data-olcek="kucuk"] .liste .baslik{ font-size:13px }
-html[data-olcek="buyuk"] .liste .baslik{ font-size:15.5px }
-html[data-olcek="kucuk"] .liste .tutar{ font-size:15.5px }
-html[data-olcek="buyuk"] .liste .tutar{ font-size:18.5px }
-html[data-olcek="kucuk"] .hucre > span:first-child{ font-size:15.5px }
-html[data-olcek="buyuk"] .hucre > span:first-child{ font-size:18.5px }
-html[data-olcek="kucuk"] .kart{ padding:12px }
-html[data-olcek="buyuk"] .kart{ padding:16px }
-html[data-olcek="kucuk"] .ozet-kut .deger{ font-size:23px }
-html[data-olcek="buyuk"] .ozet-kut .deger{ font-size:28px }
-html[data-olcek="kucuk"] .cekmece li button, html[data-olcek="kucuk"] .cekmece li a{ font-size:13px }
-html[data-olcek="buyuk"] .cekmece li button, html[data-olcek="buyuk"] .cekmece li a{ font-size:15.5px }
-
-/* Girdi alanları ölçekten ETKİLENMEZ — iOS'ta 16px altına inince
-   sayfa zorla yakınlaşıyor. Her ölçekte 16px kalır. */
-@media (pointer: coarse){
-  html[data-olcek] input, html[data-olcek] select, html[data-olcek] textarea{ font-size:16px }
-}
 
 /* ── Araçlar ekranı: 17 kart, hepsi kapalı başlar ──────────────────
    Bu ekranda 19 ayrı araç var (kıdem tazminatı, izin hakkı, gürültü
@@ -2369,3 +2310,259 @@ html[data-hafif="1"] #grafik .cubuk{ transition:none; box-shadow:none }
 }
 .sk-daha{ font-size:11.5px; color:var(--soluk2); padding-top:5px }
 html[data-hafif="1"] .sk-bar i{ transition:none }
+
+/* ── Özet kutusu kullanan ama ızgarası olmayan üç bölüm ────────────
+   `.ozet-kut` kutuları dört ayrı yerde kullanılıyor: #ozet-grid,
+   #genel-grid, #kisi-ozet, #ekip-ozet. Ama ızgara tanımı yalnızca
+   ilkinde vardı — diğer üçünde kutular alt alta, tam genişlikte
+   diziliyordu. Aynı bileşen, üç ekranda farklı görünüyordu. */
+#genel-grid, #kisi-ozet, #ekip-ozet{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:10px;
+}
+/* Dar ekranda üç rakamlı kutular sıkışmasın diye ölçü sınırı */
+@media (max-width:340px){
+  .ozet-grid, #genel-grid, #kisi-ozet, #ekip-ozet{ gap:8px }
+  .ozet-kut{ padding:11px 9px }
+}
+
+/* Kutulardaki renk şeridi: hangi rakamın ne olduğu bakışta anlaşılsın.
+   Kod zaten tam-r / mesai-r / eksi sınıflarını üretiyordu ama bunların
+   görsel bir karşılığı yoktu. */
+.ozet-kut{ position:relative; overflow:hidden }
+.ozet-kut::before{
+  content:""; position:absolute; left:0; top:0; bottom:0; width:3px;
+  background:var(--cizgi);
+}
+.ozet-kut.tam-r::before{ background:var(--tam) }
+.ozet-kut.mesai-r::before{ background:var(--mesai) }
+.ozet-kut.eksi::before{ background:var(--gelmedi) }
+.ozet-kut .et{ letter-spacing:.06em }
+
+/* ── Geçen yılla kıyas: metin yığını → okunur satırlar ─────────────*/
+#yil-kiyas{ font-size:13px; line-height:1.85 }
+#yil-kiyas b{ font-family:'Saira Condensed'; font-size:15px; font-weight:800 }
+
+/* ── Zam geçmişi ───────────────────────────────────────────────────*/
+#zam-gecmisi{ font-size:12.5px; line-height:1.8; color:var(--soluk) }
+#zam-gecmisi b{ color:var(--metin); font-family:'Saira Condensed'; font-size:14px }
+
+/* ── Hedef çubuğu: yüzde çubuğun İÇİNDE yazsın ─────────────────────
+   24px yüksekliğinde bir çubuk ama içi boştu; oran ancak dolgunun
+   uzunluğundan tahmin ediliyordu. */
+.hedef-bar{ position:relative }
+.hedef-bar .yuzde-yazi{
+  position:absolute; inset:0;
+  display:flex; align-items:center; justify-content:center;
+  font-family:'Saira Condensed'; font-size:13px; font-weight:800;
+  color:var(--metin); text-shadow:0 1px 3px rgba(0,0,0,.55);
+  pointer-events:none; letter-spacing:.02em;
+}
+
+/* ── Ekip yoklama düğmeleri ────────────────────────────────────────
+   Bu iki sınıf JS'te üretiliyordu ama CSS'te tanımı yoktu; tüm görünüm
+   satır içi `style` ile veriliyordu. İki sorun:
+     1) Düğme 38×38 px idi — dokunma hedefi sınırının (44px) altında.
+        Üstelik burası ustanın HER GÜN kullandığı ekran ve genelde
+        eldivenli/tozlu parmakla dokunuluyor.
+     2) Görünüm koda gömülü olduğu için tema değişse bile sabit kalıyordu.
+   Artık boyut/biçim burada; JS yalnızca seçili durumun rengini veriyor. */
+.yok-btn{
+  width:44px; height:44px;
+  border-radius:11px;
+  font-weight:800; font-size:15px;
+  border:2px solid var(--cizgi);
+  background:var(--kart);
+  color:var(--soluk);
+  flex-shrink:0;
+  transition:transform .1s ease;
+}
+.yok-btn.aktif{ color:#fff }
+.yok-btn:active{ transform:scale(.93) }
+
+.yok-mesai{
+  width:60px;
+  padding:11px 4px;
+  text-align:center;
+  border-radius:11px;
+  border:1.5px solid var(--cizgi);
+  background:var(--girdi);
+  color:var(--metin);
+  font-weight:700;
+  font-family:'Saira Condensed';
+  flex-shrink:0;
+}
+.yok-mesai:focus{ border-color:var(--sari); outline:none }
+html[data-hafif="1"] .yok-btn{ transition:none }
+
+/* Yoklama satırı iki katlı: isim üstte, kontroller altta.
+   Tek satırdayken 360px'lik telefonda isme ~90px kalıyordu ("Mehmet
+   Yılmaz" sığmıyordu). Düğmeleri küçültmek yerine satırı böldük —
+   dokunma hedefi 44px kalsın diye. */
+.yok-satir{
+  padding:11px 0;
+  border-bottom:1px solid var(--cizgi);
+}
+.yok-satir:last-child{ border-bottom:none }
+.yok-ad{
+  font-weight:600; font-size:14.5px;
+  margin-bottom:9px;
+  overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+}
+.yok-kontrol{ display:flex; align-items:center; gap:10px }
+.yok-mesai-sar{
+  display:flex; align-items:center; gap:7px;
+  margin-left:auto; font-size:11px; color:var(--soluk);
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   0.0.6.0 — TOPTAN KÜÇÜLTME
+   ───────────────────────────────────────────────────────────────────
+   Kullanıcılardan ikinci kez "her şey kocaman" şikayeti geldi.
+   0.0.5.0'da bir kez küçültmüştüm ama yetmemiş; üstelik sonraki
+   sürümlerde dokunma hedefi gerekçesiyle tekrar büyüttüm
+   (yoklama düğmeleri 44px, satır iki kata bölündü).
+
+   Kabul: benim eriştiğim erişilebilirlik ölçütü (44px) ile sahadaki
+   kullanıcının istediği (ekrana çok bilgi sığsın) çelişiyor ve bu
+   uygulamada kullanıcı haklı — telefonu her gün eline alan o.
+   Varsayılan ölçek "kucuk" yapıldı, üstüne bu blok geldi.
+   Büyük isteyen Ayarlar → Görünüm ölçeği ile büyütebiliyor.
+   ═══════════════════════════════════════════════════════════════════ */
+
+/* Yoklama: tek satıra döndü, düğmeler 38px */
+.yok-satir{ padding:8px 0 }
+.yok-ad{ margin-bottom:0; font-size:13.5px }
+.yok-kontrol{ gap:8px }
+.yok-btn{ width:38px; height:38px; border-radius:9px; font-size:13.5px }
+.yok-mesai{ width:52px; padding:8px 3px; border-radius:9px }
+.yok-mesai-sar{ font-size:10px; gap:5px }
+
+/* Kartlar ve boşluklar daralıyor: ekrana daha çok satır sığsın */
+main{ padding:10px 10px 132px }
+.kart{ padding:12px; margin-bottom:11px; border-radius:14px }
+.kart h2{ font-size:15.5px; margin-bottom:10px }
+
+/* Listeler */
+.liste li{ padding:10px 0; gap:10px }
+.liste .baslik{ font-size:13.5px }
+.liste .alt-yazi{ font-size:11.5px }
+.liste .tutar{ font-size:15.5px }
+.liste .rozet{ width:40px; min-width:40px; height:40px; font-size:14px }
+
+/* Para kartı */
+.banka-kart{ padding:14px }
+.banka-kart .bakiye{ font-size:38px; margin:4px 0 3px }
+.banka-kart .kart-ust{ font-size:10.5px }
+
+/* Özet kutuları */
+.ozet-kut{ padding:10px 9px }
+.ozet-kut .deger{ font-size:22px }
+.ozet-kut .et{ font-size:10px }
+
+/* Takvim */
+.hucre > span:first-child{ font-size:15px }
+.takvim{ gap:4px }
+
+/* Üst bar ve menü */
+.topbar h1{ font-size:18px }
+.topbar h1 small{ font-size:10.5px }
+.cekmece li button, .cekmece li a{ font-size:13.5px; padding:9px 11px }
+.cekmece li button .ikon, .cekmece li a .ikon{ width:29px; height:29px; font-size:14.5px }
+.cekmece li[data-grup]{ max-height:50px }
+.cekmece-bas{ padding:20px 15px 15px }
+.cekmece-bas .avatar{ width:52px; height:52px; border-radius:15px }
+.cekmece-bas .ad{ font-size:14.5px }
+
+/* Ay gezgini ve selamlama */
+.ay-bar .ay-ad{ font-size:20px }
+.selam-blok .buyuk{ font-size:20px }
+.selam-blok .alt{ font-size:12px }
+
+/* Düğmeler */
+.btn{ padding:13px; font-size:15px; border-radius:11px }
+.ekle-bas{ font-size:14px !important; padding:11px 13px !important }
+.arac-bas{ font-size:14px !important; padding:12px 13px !important }
+
+/* Alt sayfa */
+.alt-sayfa h3{ font-size:19px }
+.alt-sayfa .tarih-yazi{ font-size:12px }
+.sayac input{ font-size:25px }
+.durum-secim button{ font-size:12.5px; padding:11px 6px }
+
+/* Grafikler */
+#grafik{ height:112px; padding:18px 2px 0 }
+#grafik .deger-yazi{ font-size:11px }
+.is-ay-ad{ font-size:16px }
+.rozet-kut{ padding:11px 8px }
+.rozet-kut .rikon{ font-size:23px }
+.bos-mesaj{ padding:20px 12px; font-size:12.5px }
+.bos-mesaj .buyuk{ font-size:27px }
+
+/* ═══════════════════════════════════════════════════════════════════
+   ⚠️ BU BLOK DOSYANIN EN SONUNDA KALMALI
+   ───────────────────────────────────────────────────────────────────
+   Görünüm ölçeği (Küçük/Normal/Büyük) kullanıcı tercihidir ve diğer
+   tüm kuralları geçersiz kılabilmelidir. 0.0.6.0'da toptan küçültme
+   bloğu bunun ALTINA yazılınca ölçek seçici sessizce etkisiz kaldı —
+   kullanıcı "Büyük" seçse bile hiçbir şey değişmiyordu.
+   Yeni kural eklerken bu bloğun ÜSTÜNE ekleyin.
+   ═══════════════════════════════════════════════════════════════════ */
+/* ── Görünüm ölçeği (kullanıcı tercihi) ────────────────────────────
+   "Kocaman görünüyor" şikayeti kişiden kişiye değişir: gözü zayıf
+   olan büyük ister, genç usta ekrana çok bilgi sığsın ister.
+   Sabit bir değere karar vermek yerine seçenek veriyoruz.
+
+   Uygulama: html[data-olcek] üzerinden CSS zoom yerine transform
+   KULLANILMIYOR — ikisi de yerleşimi bozar. Bunun yerine sadece
+   yazı ölçeğini etkileyen bir çarpan uygulanıyor. */
+html[data-olcek="kucuk"]  body{ font-size:13.5px }
+html[data-olcek="normal"] body{ font-size:15px }
+html[data-olcek="buyuk"]  body{ font-size:16.5px }
+
+html[data-olcek="kucuk"] .banka-kart .bakiye{ font-size:36px }
+html[data-olcek="buyuk"] .banka-kart .bakiye{ font-size:50px }
+html[data-olcek="kucuk"] .kart h2{ font-size:15px }
+html[data-olcek="buyuk"] .kart h2{ font-size:18.5px }
+html[data-olcek="kucuk"] .liste .baslik{ font-size:13px }
+html[data-olcek="buyuk"] .liste .baslik{ font-size:15.5px }
+html[data-olcek="kucuk"] .liste .tutar{ font-size:15px }
+html[data-olcek="buyuk"] .liste .tutar{ font-size:18.5px }
+html[data-olcek="kucuk"] .hucre > span:first-child{ font-size:14.5px }
+html[data-olcek="buyuk"] .hucre > span:first-child{ font-size:18.5px }
+html[data-olcek="kucuk"] .kart{ padding:12px }
+html[data-olcek="buyuk"] .kart{ padding:16px }
+html[data-olcek="kucuk"] .ozet-kut .deger{ font-size:21px }
+html[data-olcek="buyuk"] .ozet-kut .deger{ font-size:28px }
+html[data-olcek="kucuk"] .cekmece li button, html[data-olcek="kucuk"] .cekmece li a{ font-size:13px }
+html[data-olcek="buyuk"] .cekmece li button, html[data-olcek="buyuk"] .cekmece li a{ font-size:15.5px }
+
+/* Girdi alanları ölçekten ETKİLENMEZ — iOS'ta 16px altına inince
+   sayfa zorla yakınlaşıyor. Her ölçekte 16px kalır. */
+@media (pointer: coarse){
+  html[data-olcek] input, html[data-olcek] select, html[data-olcek] textarea{ font-size:16px }
+}
+
+/* ── Küçük çipler (ödeme filtresi, hazır tutarlar) ─────────────────
+   `.secili-f` ve `.tutar-cip` HTML'de kullanılıyordu ama CSS'te tanımı
+   yoktu; görünümleri 10 ayrı yerde satır içi `style` ile tekrarlanıyordu.
+   Ayrıca `.secili-f` sınıfını JS hiç yönetmiyordu — seçili filtre
+   yalnızca kenarlık rengiyle işaretleniyor, "Tümü" düğmesi de sen başka
+   filtre seçsen bile seçili görünüyordu. */
+.tutar-cip, #odeme-filtre .eksik-cip{
+  font-size:12px;
+  padding:7px 11px;
+}
+/* Seçili filtre: ince kenarlık yerine dolgu — dar ekranda net görünür */
+#odeme-filtre .eksik-cip.secili-f{
+  background:var(--sari);
+  border-color:var(--sari);
+  color:#1F1700;
+  font-weight:700;
+}
+
+/* Etikete dokununca girdiye odaklanma artık çalışıyor (for= bağı).
+   Dokunma alanını görsel olarak da belli et. */
+.alan label{ cursor:pointer; display:inline-block; padding-bottom:2px }
+.alan label:active{ color:var(--sari) }

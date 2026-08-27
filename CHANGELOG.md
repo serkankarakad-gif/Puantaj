@@ -5,6 +5,67 @@ kullanır: `0.0.0.X` — X, her güncellemede 1 artar. Uygulama içindeki sürü
 (alt bilgi + "Neler yeni" kartı) ve dağıtılan zip dosyasının adı her zaman
 birebir aynıdır.
 
+## 0.0.6.5 — 🚨 Paylaşılan raporda anlam belirsizliği (patron ters okuyabilirdi)
+- Yeni inceleme alanı: uygulamanın dış çıktısı — patrona/ustabaşına gönderilen rapor içeriği. Şimdiye kadar yalnızca teknik tarafı (font, çökme, eksik ödeme) ele alınmıştı, METİN hiç okunmamıştı
+- 🚨 **BULGU: çalışılan gün "X" ile gösteriliyordu.** İçeride bu "çalışıldı" demek, ancak raporu okuyan kişi için "X" günlük dilde "olmadı / gelmedi" anlamına gelir — anlam tam tersine dönüyordu. Ek olarak "0" hem "gelinmedi" hem "sıfır artı" için kullanılıyordu ve işaretleri açıklayan bir lejant yoktu. Ödeme anlaşmazlığında işçi aleyhine yorumlanabilecek bir belirsizlik
+- ✅ **Düzeltme**: yeni `gunDurumAdi()` yardımcısı kısa işaretleri açık kelimelere çeviriyor — `X`→"Tam", `/`→"Yarım", `İ`→"İzin", `0`→"—", saatlik gösterim ("7s") olduğu gibi kalıyor
+  - **Dört çıktıda birden uygulandı**: WhatsApp metni (`raporPaylas`), PNG görseli (`gorselPaylas`), PDF tablosu (`pdfBlobOlustur`), asistan özeti
+  - WhatsApp metnine lejant satırı eklendi: "_Tam = tam yevmiye · Yarım = yarım gün · — = gelinmedi_"
+  - Sütun başlıkları "YEVMİYE" → "DURUM" (PNG ve PDF); başlık artık içerikle uyumlu
+- 📉 **Rapor kısaldı**: `raporPaylas` ayın tüm günlerini listeliyordu (hiç işlenmemiş boş günler dahil). Artık yalnızca kaydı olan günler yazılıyor; kayıt yoksa "(bu aralıkta işlenmiş gün yok)" satırı
+- Üç yerde sürüm güncellendi: `app.js`, `sw.js`, zip adı — hepsi `0.0.6.5`
+
+## 0.0.6.4 — 🐞 Korumasız async fonksiyonlar: sessiz çökme noktaları kapatıldı
+- Tarama: `await` kullanan ama `try/catch`'i olmayan async fonksiyonlar çıkarıldı → 6 aday
+  - 3'ü çağıran tarafında korunduğu doğrulanarak elendi (`bildirimJetonKaydet`, `haberCek`, `asistanSor`)
+- 🐞 **`odemeAitAySecDoldur()` — en kritik.** `await enEskiOdenmemisAy()` çağrısı korumasızdı. Ağ kopması veya izin hatasında fonksiyon yakalanmayan bir promise reddiyle sonlanıyor, `#odeme-ait-ay` seçicisi **boş kalıyor** ve kullanıcı ödeme kaydedemiyordu — üstelik ekranda hiçbir hata görünmüyordu
+  - Düzeltme: `let enEski = null` + `try/catch`. Hata durumunda FIFO önerisi atlanıyor ama seçenekler yine dolduruluyor; kullanıcı ayı elle seçebiliyor. Hata `hataKaydet()` ile günlüğe düşüyor
+- 📊 **`tumOdemeleriGetir()`** CSV/Excel/PDF raporlarını besliyor; `kokRef().collection("odemeler").get()` korumasızdı. Hata durumunda rapor üretimi komple çöküyordu. Artık boş liste dönüp rapor üretilebiliyor
+- 💱 **`kurSatirYaz()`** dış kur servisine gidiyor; erişilemezse yakalanmayan reddi vardı. Artık satır sessizce boşalıyor
+- Not: kodda 150 tamamen boş `catch` bloğu var. Çoğu bilinçli (localStorage, titreşim gibi kritik olmayan işlemler); toptan değiştirmek yerine kritik olanlar tek tek ele alınıyor
+- Üç yerde sürüm güncellendi: `app.js`, `sw.js`, zip adı — hepsi `0.0.6.4`
+
+## 0.0.6.3 — 👆 Form etiketleri girdilere bağlandı (102 adet)
+- 112 `<label>`'ın yalnızca 5'i girdisiyle ilişkiliydi; etikete dokunmak hiçbir şey yapmıyordu. 102 etikete `for=` eklendi, dokunma alanı iki katına çıktı
+- ⚠️ İlk deneme dosyayı bozdu: regex girdiyi de yeniden yazıp **85 girdinin `type` özniteliğini sildi** (`password`, `date` dahil). Yedekten geri alındı; ikinci yöntem yalnızca `<label>` etiketini değiştiriyor. Doğrulama: öznitelik kaybı 0, `type=` 106 (değişmedi), kırık/çakışan bağ 0
+- `#ayar-maas` `type="number"` → `text` + `inputmode="numeric"` (mobil artırma okları kazara değer değiştiriyordu)
+
+## 0.0.3.0 – 0.0.6.2 — TOPLU ÖZET (girişler kaybolmuştu, aşağıda özetlendi)
+
+> ⚠️ **Kayıt hatası**: 0.0.3.0'dan itibaren CHANGELOG girişleri, ekleme
+> yönteminin çapa metnini bulamaması yüzünden sessizce yazılmadı. Hata
+> 0.0.6.3'te fark edildi. Bu aralık aşağıda özetlenmiştir; ayrıntılar
+> her sürümün "Neler yeni" kartında mevcuttur.
+
+**Üretim kalitesi ve uyum (0.0.3.0)**
+- iOS'ta girdi alanına dokununca ekranın zorla yakınlaşması düzeltildi (16px kuralı)
+- Türkçe harf çevirimi 17 yerde düzeltildi ("HAZIRAN"→"HAZİRAN"; "İbrahim" araması)
+- Service worker güncellemesi kullanıcı onayına bağlandı (form doldururken veri kaybı riski)
+- Firestore dinleyicileri arka planda kapatılıyor (30 dk yeniden faturalama tuzağı)
+- Manifest tamamlandı; `KVKK-VE-GIZLILIK.md` ve `YAYIN-KONTROL-LISTESI.md` eklendi
+
+**Ana ekran ve İşlerim (0.0.3.1 – 0.0.3.9)**
+- Para kartı en üste alındı; "bugün kazancı" satırında tutar kırpılması düzeltildi
+- Günlük akışa animasyonlar eklendi; hafif modun ucuz animasyonları da kapattığı fark edilip düzeltildi
+- Tanı/test ekranı eklendi (yetkili giriş), tam ekran güncelleme penceresi, sabit eylem çubuğu
+- İşlerim ay ay kartlara ayrıldı; aylar kapalı açılıyor, günler tıklanabilir, paylaş üste sabitlendi
+
+**Tanı motoru (0.0.4.0 – 0.0.4.5)**
+- Motor baştan yazıldı: 17 bölüm, 121 kontrol; üç köprü testi; çökme günlüğü okuma
+- Motorun IIFE dışında kaldığı ve hiç çalışmadığı bulundu (`$ is not defined`) — içeri alındı
+- Sahte alarm üreten yanlış alan/anahtar adları düzeltildi (iş kayıtları, PIN, güvenlik testi)
+
+**Tasarım (0.0.4.6 – 0.0.5.9)**
+- Çekmece menüsü, giriş ekranı, yıl tablosu, ısı haritası, rozetler, notlar yenilendi
+- Degradeli metin yedeği dört ekranda garantiye alındı (desteklenmeyen tarayıcıda yazı görünmüyordu)
+- Grafikler: "son 6 ay hakediş" grafiğinin hiç çizilmediği bulundu; ödeme dağılımı ve şantiye kırılımı metinden görsele çevrildi
+- Ekip yoklamasında stilsiz sınıflar bulundu, dokunma hedefi ve yerleşim düzeltildi
+
+**Ölçek ve temizlik (0.0.6.0 – 0.0.6.2)**
+- Kullanıcı şikayeti üzerine toptan küçültme; varsayılan ölçek `kucuk` yapıldı
+- Aynı seçicinin 3-5 kez yeniden tanımlandığı bulundu; 25 etkisiz kural silindi (585 ölçü karşılaştırıldı, 0 fark)
+- Hiç çalışmayan PIN başarı animasyonu bağlandı; ödeme filtresinde seçim göstergesinin bozuk olduğu bulundu
+
 ## 0.0.2.9 — 🔒 EKRAN KİLİDİ: yakınlaştırma engeli + yatay kayma düzeltmesi
 - Kullanıcı isteği: "ekran büyüyüp küçülmesin, sağa sola kesinlikle kaymasın"
 - 🔒 **Yakınlaştırma kilidi.** `<meta viewport>` zaten `user-scalable=no, maximum-scale=1.0` içeriyordu ama iki boşluk vardı:

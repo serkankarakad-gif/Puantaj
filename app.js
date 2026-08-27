@@ -877,7 +877,15 @@ async function odemeAitAySecDoldur(){
   /* Varsayılan: bulunduğun ay değil, EN ESKİ ödenmemiş ay (FIFO) — hepsi
      ödenmişse bulunduğun aya (ya da bugüne) düş. Veri az sonra gelirse
      (async), kullanıcı henüz formu değiştirmediyse üzerine yazarız. */
-  const enEski = await enEskiOdenmemisAy();
+  /* enEskiOdenmemisAy() Firestore'a gidiyor; ağ koparsa ya da izin
+     reddedilirse bu fonksiyon yakalanmayan bir söz reddiyle ölüyordu.
+     Sonucu: "Hangi ayın hesabına yazılsın?" seçicisi BOŞ kalıyor,
+     kullanıcı ödeme kaydedemiyor ve ekranda hiçbir hata görünmüyordu.
+     Artık hata olursa FIFO önerisi atlanıyor ama seçici yine doluyor —
+     kullanıcı ayı elle seçip devam edebiliyor. */
+  let enEski = null;
+  try{ enEski = await enEskiOdenmemisAy(); }
+  catch(e){ try{ hataKaydet("odemeAitAySecDoldur", e); }catch(_){} }
   if(duzenlenenOdeme) return;   /* bu arada bir kaydı düzenlemeye başlamışsa dokunma */
   let hedefAy = enEski || (aktifYil+"-"+pad(aktifAy+1));
   if(enEski && ![...sel.options].some(o=>o.value===enEski)){
@@ -1677,19 +1685,32 @@ function ekipYoklamaCiz(){
   ekipListe.forEach(i=>{
     const y = yoklama[i.id] || {durum:"yok", mesai:0};
     const sat = document.createElement("div");
-    sat.style.cssText = "display:flex;align-items:center;gap:8px;padding:9px 0;border-bottom:1px solid var(--cizgi)";
+    /* TEK SATIR. Bir önceki sürümde iki kata bölünmüştü (düğmeler 44px
+       olsun diye) ama bu, ekip listesini iki katına çıkarıp ekranı
+       şişirdi — kullanıcılardan "her şey kocaman" şikayeti geldi.
+       Düğmeler 38px'e döndü, satır tek kata indi. 38px, WCAG'ın asgari
+       24px sınırının fazlasıyla üstünde; ideal 44 değil ama sahadaki
+       tercih yoğunluktan yana. */
+    sat.className = "yok-satir";
     sat.innerHTML =
-      '<div style="flex:1;font-weight:600;font-size:14px;min-width:0;overflow:hidden;text-overflow:ellipsis">'+esc(i.ad)+'</div>'+
-      '<div style="display:flex;gap:5px">'+
+      '<div class="yok-ad">'+esc(i.ad)+'</div>'+
+      '<div class="yok-kontrol">'+
+      '<div style="display:flex;gap:6px">'+
         ['tam|T','yarim|Y','yok|0'].map(x=>{
           const [d,et]=x.split("|");
           const aktif = y.durum===d;
           const renk = d==="tam"?"var(--tam)":d==="yarim"?"var(--yarim)":"var(--gelmedi)";
-          return '<button class="yok-btn" data-isc="'+i.id+'" data-d="'+d+'" style="width:38px;height:38px;border-radius:10px;font-weight:800;border:2px solid '+(aktif?renk:"var(--cizgi)")+';background:'+(aktif?renk:"var(--kart)")+';color:'+(aktif?"#fff":"var(--soluk)")+'">'+et+'</button>';
+          /* Boyut/görünüm artık CSS'te (.yok-btn) — burada yalnızca duruma
+             göre değişen renk kalıyor. Düğme 38→44px büyütüldü: bu ekran her
+             gün kullanılıyor ve tozlu/eldivenli parmakla 38px küçük kalıyordu. */
+          return '<button class="yok-btn'+(aktif?' aktif':'')+'" data-isc="'+i.id+'" data-d="'+d+'"'+
+            (aktif?' style="border-color:'+renk+';background:'+renk+'"':'')+'>'+et+'</button>';
         }).join("")+
       '</div>'+
-      '<input type="text" class="yok-mesai" data-isc="'+i.id+'" value="'+(y.mesai||0)+'" min="0" step="0.5" inputmode="decimal" '+
-      'style="width:56px;padding:9px 4px;text-align:center;border-radius:10px;border:1.5px solid var(--cizgi);background:var(--girdi);color:var(--metin);font-weight:700" title="Mesai saat">';
+      '<label class="yok-mesai-sar"><span>mesai</span>'+
+        '<input type="text" class="yok-mesai" data-isc="'+i.id+'" value="'+(y.mesai||0)+'" min="0" step="0.5" inputmode="decimal" title="Mesai saat">'+
+      '</label>'+
+      '</div>';
     kap.appendChild(sat);
   });
   $(".yok-btn").forEach(b=>{
@@ -2043,7 +2064,9 @@ function pngOzetBlobOlustur(gBas, gSon){
   /* başlık satırı */
   const kolX = [24, 330, 480, 620, 740];
   c.fillStyle = "#555"; c.font = "bold 15px Arial";
-  ["TARİH","YEVMİYE","ARTI","MESAİ"].forEach((k,i)=> c.fillText(k, kolX[i], ustH-8));
+  /* Sütun başlığı "YEVMİYE" idi ama altındaki hücrelerde artık "Tam/Yarım"
+     yazıyor — başlıkla içerik uyumsuzdu. "DURUM" daha doğru. */
+  ["TARİH","DURUM","ARTI","MESAİ"].forEach((k,i)=> c.fillText(k, kolX[i], ustH-8));
   c.strokeStyle = "#CCC";
   for(let g=t.gBas; g<=t.gSon; g++){
     const i = g - t.gBas;
@@ -2056,7 +2079,7 @@ function pngOzetBlobOlustur(gBas, gSon){
     c.font = "15px Arial";
     c.fillText(pad(g)+" / "+pad(aktifAy+1)+" — "+GUNLER[d.getDay()], kolX[0], y+23);
     c.font = "bold 17px Arial";
-    c.fillText(isr.yev, kolX[1]+20, y+23);
+    c.fillText(gunDurumAdi(isr.yev), kolX[1]+20, y+23);
     c.fillText(isr.arti, kolX[2]+8, y+23);
     c.fillText(isr.mesai, kolX[3]+8, y+23);
     c.beginPath(); c.moveTo(0,y+satirY); c.lineTo(W,y+satirY); c.stroke();
@@ -2234,7 +2257,13 @@ function hafifModOtomatikMi(){
    Varsayılan "normal". Girdi alanları bundan etkilenmez (iOS koruması). */
 function olcekUygula(){
   let d="normal";
-  try{ d = localStorage.getItem("olcek") || "normal"; }catch(e){}
+  /* VARSAYILAN ARTIK "kucuk" (0.0.6.0).
+     Gerekçe: kullanıcılardan tekrar tekrar "her şey kocaman" şikayeti geldi.
+     "Normal" ölçek benim dokunma hedefi / okunurluk kaygımla belirlenmişti;
+     sahadaki kullanıcı ekrana daha çok bilgi sığmasını istiyor. Büyük
+     görmek isteyen Ayarlar'dan tek dokunuşla değiştirebiliyor — ama
+     varsayılan, çoğunluğun istediği yer olmalı. */
+  try{ d = localStorage.getItem("olcek") || "kucuk"; }catch(e){}
   if(!["kucuk","normal","buyuk"].includes(d)) d="normal";
   document.documentElement.setAttribute("data-olcek", d);
   document.querySelectorAll("#olcek-secim button").forEach(b=>
@@ -2311,7 +2340,11 @@ async function kurGetir(){
 async function kurSatirYaz(kalan){
   const el = $("#kur-satir"); if(!el) return;
   if(gizliMod || !(kalan>0)){ el.textContent = ""; return; }
-  const k = await kurGetir();
+  /* Kur servisi dış bir kaynak; erişilemezse burası yakalanmayan bir söz
+     reddi üretiyordu. Ana ekranın "≈ X dolar · Y gram altın" satırı sessizce
+     boş kalmalı, hata fırlatmamalı. */
+  let k = null;
+  try{ k = await kurGetir(); }catch(e){ el.textContent = ""; return; }
   if(!k || !(k.usd>0 || k.gram>0)){ el.textContent = ""; return; }
   /* kur beklerken kart değişmiş olabilir; güncel değeri esas al */
   const simdiki = Number($("#sirket-bakiye").dataset.deger);
@@ -4028,8 +4061,15 @@ function tumVeriDinle(){
 async function tumOdemeleriGetir(){
   const liste = [];
   if(tumOdemelerQS){ tumOdemelerQS.forEach(d=> liste.push(d.data())); return liste; }
-  const qs = await kokRef().collection("odemeler").get();
-  qs.forEach(d=> liste.push(d.data()));
+  /* Bu fonksiyon CSV/Excel/PDF raporlarını besliyor. Hata olursa (ağ, kota,
+     izin) rapor üretimi tamamen çöküyordu. Artık boş liste dönüyor: rapor
+     ödemesiz de olsa üretilebiliyor ve hata günlüğe düşüyor. */
+  try{
+    const qs = await kokRef().collection("odemeler").get();
+    qs.forEach(d=> liste.push(d.data()));
+  }catch(e){
+    try{ hataKaydet("tumOdemeleriGetir", e); }catch(_){}
+  }
   return liste;
 }
 /* PDF üreten zincirlerin bir kısmı senkron (jsPDF çağrıları iç içe), yani içeride
@@ -4989,9 +5029,13 @@ function hedefCiz(t, kartId, icerikId){
     '<div style="display:flex;justify-content:space-between;font-size:13.5px">'+
     '<span><b>'+paraFmt(t.hakedis)+'</b> / '+paraFmt(ayarlar.hedef)+'</span>'+
     '<b>%'+yuzde+'</b></div>'+
-    '<div class="hedef-bar"><div class="dolu'+(yuzde>=100?' tamamlandi':'')+'" style="width:'+yuzde+'%"></div></div>'+
+    /* Çubuğun içine yüzde YAZILMADI: yüzde zaten hemen üstteki satırda
+       duruyor, tekrar etmek gürültü olurdu. Onun yerine kalan tutar
+       yazılıyor — çubuğa bakarken merak edilen şey "ne kadar kaldı". */
+    '<div class="hedef-bar"><div class="dolu'+(yuzde>=100?' tamamlandi':'')+'" style="width:'+yuzde+'%"></div>'+
+      '<span class="yuzde-yazi">'+(kaldi>0 ? paraFmt(kaldi)+' kaldı' : 'Hedef tamam ✓')+'</span></div>'+
     '<div style="font-size:13px;color:var(--soluk);margin-top:8px">'+
-    (kaldi>0 ? 'Hedefe '+paraFmt(kaldi)+' kaldı, gaza devam 💪' : '🎉 Hedefi geçtin, helal olsun usta!')+'</div>';
+    (kaldi>0 ? 'Gaza devam 💪' : '🎉 Hedefi geçtin, helal olsun usta!')+'</div>';
 }
 /* ---------- 📅 Ana ekran: bugünkü kazanç kartı ---------- */
 function bugunKazancCiz(v, kazanc){
@@ -5793,6 +5837,20 @@ function santiyeOzetMetni(bloklar, ay){
   return bloklar.map(b=> (b.ilk===b.son ? b.ilk : b.ilk+"–"+b.son)+" "+AYLAR[ay].slice(0,3)+": "+b.ad).join(" · ");
 }
 
+/* Rapor/görsel çıktılarda kullanılan kısa işaretleri, RAPORU OKUYAN kişinin
+   anlayacağı kelimelere çevirir.
+   Neden gerekli: içeride "X" çalışıldı, "0" gelinmedi demek. Ama raporu
+   patron/ustabaşı okuyor ve günlük dilde "X" tam tersini — "olmadı,
+   gelmedi" — çağrıştırıyor. Bir ödeme anlaşmazlığında bu belirsizlik
+   işçinin aleyhine yorumlanabilir. Tüm dış çıktılarda (WhatsApp metni,
+   PNG görseli, PDF tablosu) aynı açık dil kullanılıyor. */
+function gunDurumAdi(yev){
+  return yev==="X" ? "Tam"
+       : yev==="/" ? "Yarım"
+       : yev==="İ" ? "İzin"
+       : yev==="0" ? "—"
+       : yev;                 /* saatlik gösterim: "7s" gibi, zaten açık */
+}
 function gunIsaret(v){
   const calisti = v && (v.durum==="tam" || v.durum==="yarim" ||
     (v.durum==="saatlik" && (Number(v.saat)||0)>0));
@@ -5886,18 +5944,35 @@ async function raporPaylas(gBas, gSon){
   const t = hesaplaAralik(gBas, gSon);
   const ad = (kullanici && kullanici.displayName) || "";
   const kolon = (s,n) => String(s).padEnd(n," ");
-  let satirlar = "TARİH     YEVMİYE  ARTI  MESAİ\n";
+  /* RAPOR OKUNURLUĞU (0.0.6.5)
+     Eski hâlde çalışılan gün "X", gelinmeyen gün "0" ile gösteriliyordu.
+     Bu, raporu OKUYAN kişi (patron/ustabaşı) için tehlikeliydi: "X" günlük
+     dilde "olmadı / gelmedi" anlamına gelir, oysa burada TAM TERSİ —
+     çalışıldığını belirtiyordu. Ayrıca hangi işaretin ne demek olduğunu
+     açıklayan bir satır yoktu. Bir ödeme anlaşmazlığında bu, işçinin
+     aleyhine yorumlanabilecek bir belirsizlikti.
+     Yeni gösterim kendi kendini açıklıyor: "Tam", "Yarım", "—", "İzin". */
+  let calisilanSatir = 0;
+  let satirlar = "TARİH      DURUM    ARTI  MESAİ\n";
   for(let g=t.gBas; g<=t.gSon; g++){
     const id = aktifYil+"-"+pad(aktifAy+1)+"-"+pad(g);
     const d = new Date(aktifYil, aktifAy, g);
-    const i = gunIsaret(girdiler[id]);
-    satirlar += kolon(pad(g)+"."+pad(aktifAy+1)+" "+GUNLER[d.getDay()].slice(0,2), 10)
-              + kolon(i.yev,9) + kolon(i.arti,6) + i.mesai + "\n";
+    const v = girdiler[id];
+    const i = gunIsaret(v);
+    /* Boş günleri (hiç işlenmemiş) rapora yazma — 31 satırın çoğu boşsa
+       rapor okunmaz hâle geliyor. Yalnızca kaydı olan günler listeleniyor. */
+    if(!v) continue;
+    calisilanSatir++;
+    const durumAd = gunDurumAdi(i.yev);
+    satirlar += kolon(pad(g)+"."+pad(aktifAy+1)+" "+GUNLER[d.getDay()].slice(0,2), 11)
+              + kolon(durumAd,9) + kolon(i.arti||"",6) + i.mesai + "\n";
   }
+  if(!calisilanSatir) satirlar += "(bu aralıkta işlenmiş gün yok)\n";
   const metin =
     "📋 *PUANTAJ — " + AYLAR[aktifAy] + " " + aktifYil + t.etiket + "*\n" +
     (ad ? "👷 " + ad + "\n" : "") +
     "```\n" + satirlar + "```\n" +
+    "_Tam = tam yevmiye · Yarım = yarım gün · — = gelinmedi_\n" +
     "✅ Çalışılan: " + t.gunSayisi + " gün" +
     (t.saatToplam>0 ? " ("+t.saatToplam+" saat)" : "") + "\n" +
     (t.artiToplam>0 ? "➕ Gün içi artı: " + t.artiToplam + "\n" : "") +
@@ -5983,7 +6058,7 @@ function raporIcerikUret(gBas, gSon){
     const kazancVar = i.yev!=="0" || (v && Number(v.mesai)>0);
     const pazar = d.getDay()===0 ? " style='background:#F4F4F4;color:#999'" : "";
     satirlar += "<tr"+pazar+"><td>"+pad(g)+" / "+pad(aktifAy+1)+" / "+aktifYil+" — "+GUNLER[d.getDay()]+
-      "</td><td class='orta-h'>"+i.yev+"</td><td class='orta-h'>"+i.arti+"</td><td class='orta-h'>"+i.mesai+
+      "</td><td class='orta-h'>"+gunDurumAdi(i.yev)+"</td><td class='orta-h'>"+i.arti+"</td><td class='orta-h'>"+i.mesai+
       "</td><td>"+(kazancVar ? esc(gunSantiyeAdi(v)) : "")+
       "</td><td class='sag'>"+(kazancVar ? paraFmt(girdiKazanc(v)) : "")+"</td></tr>";
   }
@@ -6036,7 +6111,7 @@ function raporIcerikUret(gBas, gSon){
   const govde = '<div class="pdf-rapor">'+
     '<h1>PUANTAJ ÇİZELGESİ — '+AYLAR[aktifAy]+' '+aktifYil+t.etiket+'</h1>'+
     (ad ? '<p><b>İşçi:</b> '+esc(ad)+(santiyeOzeti?' &nbsp;·&nbsp; <b>Şantiye:</b> '+esc(santiyeOzeti):'')+'</p>' : '')+
-    '<table><tr><th>TARİH</th><th style="text-align:center">YEVMİYE</th><th style="text-align:center">GÜN İÇİ ARTI</th><th style="text-align:center">MESAİ</th><th>ŞANTİYE</th><th class="sag">KAZANÇ</th></tr>'+
+    '<table><tr><th>TARİH</th><th style="text-align:center">DURUM</th><th style="text-align:center">GÜN İÇİ ARTI</th><th style="text-align:center">MESAİ</th><th>ŞANTİYE</th><th class="sag">KAZANÇ</th></tr>'+
     satirlar+
     '<tr class="ozet"><td>TOPLAM: '+t.gunSayisi+' gün'+(t.artiToplam>0?' · '+t.artiToplam+' artı':'')+' · '+t.mesaiToplam+' saat mesai</td><td colspan="4">HAKEDİŞ</td><td class="sag">'+paraFmt(t.hakedis)+'</td></tr>'+
     '<tr class="ozet"><td></td><td colspan="4">ALINAN (avans/ödeme)</td><td class="sag">'+paraFmt(t.alinan)+'</td></tr>'+
@@ -8198,7 +8273,7 @@ document.addEventListener("DOMContentLoaded", ()=>{
   });
 
   /* Neler yeni kartı */
-  const YENILIK_SURUM = "0.0.5.7";
+  const YENILIK_SURUM = "0.0.6.5";
   window.__SURUM = YENILIK_SURUM;   /* tanı raporu bunu okur */
   try{ $("#cekmece-surum").textContent = "Puantaj Defterim " + YENILIK_SURUM; }catch(e){}
   /* Sürümü çekmece başlığında da göster. Sebep: "değişiklik gelmedi" durumunda
@@ -8300,9 +8375,12 @@ document.addEventListener("DOMContentLoaded", ()=>{
   $$("#odeme-filtre button").forEach(b=>{
     b.addEventListener("click", ()=>{
       odemeFiltre = b.dataset.f;
-      $$("#odeme-filtre button").forEach(x=>{
-        x.style.borderColor = x===b ? "var(--sari)" : "var(--cizgi)";
-      });
+      /* Seçili filtre eskiden yalnızca kenarlık rengiyle belirtiliyordu —
+         sarı ince bir çizgi, dar ekranda fark edilmiyordu. Üstelik HTML'de
+         `secili-f` diye bir sınıf vardı ama JS onu HİÇ kullanmıyordu, yani
+         "Tümü" düğmesi sen başka filtre seçsen bile seçili görünüyordu.
+         Artık sınıf üzerinden yönetiliyor ve dolgu rengiyle belli oluyor. */
+      $$("#odeme-filtre button").forEach(x=> x.classList.toggle("secili-f", x===b));
       odemeListesiCiz();
     });
   });
@@ -8345,7 +8423,7 @@ document.addEventListener("DOMContentLoaded", ()=>{
       const d = new Date(pzt); d.setDate(pzt.getDate()+i);
       const v = girdiler[tarihId(d)];
       const isr = gunIsaret(v);
-      satir += GUNLER_KISA[i]+" "+pad(d.getDate())+": "+(isr.yev||"0")+(isr.mesai&&isr.mesai!=="0"?" +"+isr.mesai+" mesai":"")+"\n";
+      satir += GUNLER_KISA[i]+" "+pad(d.getDate())+": "+gunDurumAdi(isr.yev||"0")+(isr.mesai&&isr.mesai!=="0"?" +"+isr.mesai+" mesai":"")+"\n";
       if(v){ gun += girdiGun(v); mesai += Number(v.mesai)||0; kazanc += girdiKazanc(v); }
     }
     const metin = "📆 *BU HAFTA* — "+((kullanici&&kullanici.displayName)||"")+"\n```\n"+satir+"```\n"+
@@ -8444,6 +8522,27 @@ document.addEventListener("DOMContentLoaded", ()=>{
     $("#pin-ekran").classList.add("acik");
   };
   const pinNoktalariCiz = ()=> $$("#pin-noktalar span").forEach((el,i)=> el.classList.toggle("dolu", i<pinGirilen.length));
+  /* PIN doğru girildiğinde: noktalar yeşile dönüp dalgalanıyor, ardından
+     ekran yumuşakça kapanıyor.
+     Bu iki animasyon (.basarili ve .kapaniyor) CSS'te ZATEN TANIMLIYDI ama
+     JS hiç tetiklemiyordu — hazırlanmış ama hiç çalışmayan bir efekt olarak
+     duruyordu. Ölü CSS taramasında bulundu; silmek yerine bağlandı.
+     Eskiden doğru PIN girilince ekran hiçbir geri bildirim vermeden anında
+     kayboluyordu. */
+  const pinBasariKapat = ()=>{
+    const ekran = document.getElementById("pin-ekran");
+    const noktalar = document.querySelector(".pin-noktalar");
+    if(noktalar) noktalar.classList.add("basarili");
+    titret(18);
+    setTimeout(()=>{
+      if(ekran) ekran.classList.add("kapaniyor");
+      setTimeout(()=>{
+        if(ekran) ekran.classList.remove("acik","kapaniyor");
+        if(noktalar) noktalar.classList.remove("basarili");
+      }, 240);
+    }, 260);
+  };
+
   const pinHataGoster = (msg, sonra)=>{
     $("#pin-hata").textContent = msg;
     $("#pin-noktalar").classList.add("titre");
@@ -8462,7 +8561,7 @@ document.addEventListener("DOMContentLoaded", ()=>{
     }else if(pinModu==="gir"){
       let pin=null; try{ pin=localStorage.getItem("pin"); }catch(e){}
       if(pinGirilen===pin){
-        $("#pin-ekran").classList.remove("acik");
+        pinBasariKapat();
       }else{
         pinHataGoster("PIN yanlış, tekrar dene", ()=>{ pinGirilen=""; pinNoktalariCiz(); });
       }
@@ -8474,7 +8573,7 @@ document.addEventListener("DOMContentLoaded", ()=>{
       if(pinGirilen===pinIlkGiris){
         try{ localStorage.setItem("pin", pinGirilen); }catch(e){ toast("Bu tarayıcıda kaydedilemedi"); }
         toast(pinDegistiriliyor ? "🔒 PIN değiştirildi" : "🔒 PIN oluşturuldu");
-        $("#pin-ekran").classList.remove("acik");
+        pinBasariKapat();
       }else{
         pinHataGoster("PIN'ler eşleşmedi, baştan dene", ()=>{
           pinGirilen=""; pinIlkGiris=""; pinModu="olustur1";

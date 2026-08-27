@@ -142,15 +142,15 @@
     <div id="giris-hata" class="hata"></div>
 
     <div class="alan gizli" id="alan-ad">
-      <label>Adın Soyadın</label>
+      <label for="giris-ad">Adın Soyadın</label>
       <input type="text" id="giris-ad" placeholder="Örn: Mehmet Yılmaz" autocomplete="name">
     </div>
     <div class="alan">
-      <label>E-posta</label>
+      <label for="giris-eposta">E-posta</label>
       <input type="email" id="giris-eposta" placeholder="ornek@mail.com" autocomplete="email">
     </div>
     <div class="alan">
-      <label>Şifre</label>
+      <label for="giris-sifre">Şifre</label>
       <div class="sifre-sarmal">
         <input type="password" id="giris-sifre" placeholder="En az 6 karakter" autocomplete="current-password">
         <button type="button" id="btn-sifre-goster" aria-label="Şifreyi göster">👁️</button>
@@ -360,10 +360,11 @@
       <div class="kart gizli" id="yenilik-kart" style="border-color:var(--sari)">
         <h2>🎁 Neler yeni?</h2>
         <ul style="padding-left:18px;font-size:13.5px;line-height:1.9">
-          <li><b>📊 GRAFİKLER — "Son 6 ay hakediş" grafiği aslında hiç çizilmiyordu.</b> Kod sütunları, yükseklikleri ve etiketleri üretiyordu ama <b>hiçbirinin stili tanımlı değildi</b>. Yani grafik diye bir şey yoktu — üst üste binmiş, hizasız bir yazı yığını vardı. Şimdi gerçek bir sütun grafiği: içinde bulunduğun ay sarı ve parlıyor, geçmiş aylar sönük duruyor, rakamlar sütunların üstünde. Nerede olduğunu ve eskiye göre nasıl gittiğini tek bakışta görüyorsun</li>
-          <li><b>🎨 "Aldığın paraların dağılımı" artık bir şerit.</b> Eskiden düz yazıydı: "Avans: 5.000 ₺ · Hakediş: 20.000 ₺". Oran bilgisi vardı ama kafandan hesaplaman gerekiyordu. Şimdi renkli tek bir şerit — hangi türün payı ne kadar, bakar bakmaz görünüyor. Altında renk açıklamaları ve yüzdeleri var</li>
-          <li><b>🏗️ Şantiye kırılımı da öyle.</b> Nokta nokta sıralanmış bir metindi; hangi şantiyenin daha çok kazandırdığını anlamak için rakamları okuyup karşılaştırman gerekiyordu. Artık her şantiye kendi oran çubuğuyla, en çok kazandıran en üstte</li>
-          <li><b>Neden önemli:</b> Bu üçü de zaten hesaplanıyordu, veri hazırdı. Sadece <b>görünmüyordu</b>. Yani yeni bir özellik eklemedim — var olan bilgiyi nihayet görülebilir hale getirdim</li>
+          <li><b>🚨 PATRONA GÖNDERDİĞİN RAPOR TERS ANLAŞILABİLİYORDU.</b> Bu, uygulamanın dışarıya çıkan tek ürünü ve şimdiye kadar hiç bakmamıştım. Raporda çalıştığın günler <b>"X"</b> ile gösteriliyordu. Ama günlük dilde "X" tam tersini çağrıştırır — "olmadı, gelmedi". Yani patronun listeye bakıp "bu adam 19 gün gelmemiş" diye okuyabilirdi</li>
+          <li><b>Üstelik "0" hem "gelmedim" hem "sıfır artı" anlamında kullanılıyordu</b> ve hangi işaretin ne demek olduğunu açıklayan hiçbir satır yoktu. Bir ödeme anlaşmazlığında bu belirsizlik senin aleyhine yorumlanabilirdi</li>
+          <li><b>✅ Artık açık Türkçe:</b> "Tam", "Yarım", "İzin", "—" (gelinmedi). Altına da açıklama satırı eklendi. Sütun başlığı "YEVMİYE" yerine "DURUM" oldu — içerikle uyumlu</li>
+          <li><b>📄 Dört çıktının hepsinde düzeltildi:</b> WhatsApp metni, paylaşılan görsel (PNG), PDF raporu ve asistan özeti. Hepsi aynı dili konuşuyor</li>
+          <li><b>📉 Rapor kısaldı:</b> Eskiden ayın 31 gününün hepsi listeleniyordu, hiç işlemediğin boş günler dahil. Artık sadece kaydı olan günler yazılıyor — patron 31 satır yerine gerçek çalışma günlerini görüyor</li>
         </ul>
         <button class="btn btn-cizgili" id="btn-yenilik-kapat">Süper, kapat</button>
       </div>
@@ -541,16 +542,16 @@
         <ul class="liste" id="liste-beklenen" style="margin-bottom:12px"></ul>
         <div style="display:flex;gap:10px">
           <div class="alan" style="flex:1">
-            <label>Tutar (TL)</label>
+            <label for="beklenen-tutar">Tutar (TL)</label>
             <input type="text" id="beklenen-tutar" inputmode="decimal" placeholder="5000">
           </div>
           <div class="alan" style="flex:1">
-            <label>Beklenen tarih</label>
+            <label for="beklenen-tarih">Beklenen tarih</label>
             <input type="date" id="beklenen-tarih">
           </div>
         </div>
         <div class="alan">
-          <label>Ne olarak sayılsın? (tahsil edince bu tür ile işlenir)</label>
+          <label for="beklenen-tur">Ne olarak sayılsın? (tahsil edince bu tür ile işlenir)</label>
           <select id="beklenen-tur">
             <option value="avans">Avans</option>
             <option value="hakedis">Hakediş / Maaş ödemesi</option>
@@ -559,7 +560,7 @@
           </select>
         </div>
         <div class="alan">
-          <label>Not (isteğe bağlı)</label>
+          <label for="beklenen-not">Not (isteğe bağlı)</label>
           <input type="text" id="beklenen-not" placeholder="Örn: Ahmet usta Cuma verecek">
         </div>
         <button class="btn btn-cizgili" id="btn-beklenen-ekle">➕ Beklenen ödeme ekle</button>
@@ -567,28 +568,28 @@
       <div class="kart ekle-kart kapali">
         <h2 class="ekle-bas" role="button" tabindex="0">➕ Para girişi ekle<span class="ekle-ok">▾</span></h2>
         <div class="alan">
-          <label>📅 Bu ödeme hangi ayın hesabına yazılsın?</label>
+          <label for="odeme-ait-ay">📅 Bu ödeme hangi ayın hesabına yazılsın?</label>
           <select id="odeme-ait-ay"></select>
           <div style="font-size:11.5px;color:var(--soluk);margin-top:6px;line-height:1.5">
             💡 Parayı geç aldıysan (örn. Temmuz'un parası Ağustos'ta geldiyse), buradan <b>Temmuz'u seç</b> — parayı fiilen ne zaman aldığın önemli değil, hangi ayın alacağını kapattığı önemli. Temmuz'un "kalanı" böyle sıfırlanır, Ağustos'un kendi hesabına karışmaz.
           </div>
         </div>
         <div class="alan">
-          <label>Tarih (parayı fiilen aldığın gün — dekont/hatırlama için)</label>
+          <label for="odeme-tarih">Tarih (parayı fiilen aldığın gün — dekont/hatırlama için)</label>
           <input type="date" id="odeme-tarih">
         </div>
         <div class="alan">
-          <label>Tutar (TL)</label>
+          <label for="odeme-tutar">Tutar (TL)</label>
           <input type="text" id="odeme-tutar" inputmode="decimal" placeholder="Örn: 5000">
           <div style="display:flex;gap:6px;margin-top:8px;flex-wrap:wrap">
-            <button class="eksik-cip tutar-cip" data-hedef="odeme-tutar" data-deger="1000" style="font-size:12px;padding:7px 11px">1.000</button>
-            <button class="eksik-cip tutar-cip" data-hedef="odeme-tutar" data-deger="2000" style="font-size:12px;padding:7px 11px">2.000</button>
-            <button class="eksik-cip tutar-cip" data-hedef="odeme-tutar" data-deger="5000" style="font-size:12px;padding:7px 11px">5.000</button>
-            <button class="eksik-cip tutar-cip" data-hedef="odeme-tutar" data-deger="10000" style="font-size:12px;padding:7px 11px">10.000</button>
+            <button class="eksik-cip tutar-cip" data-hedef="odeme-tutar" data-deger="1000">1.000</button>
+            <button class="eksik-cip tutar-cip" data-hedef="odeme-tutar" data-deger="2000">2.000</button>
+            <button class="eksik-cip tutar-cip" data-hedef="odeme-tutar" data-deger="5000">5.000</button>
+            <button class="eksik-cip tutar-cip" data-hedef="odeme-tutar" data-deger="10000">10.000</button>
           </div>
         </div>
         <div class="alan">
-          <label>Tür</label>
+          <label for="odeme-tur">Tür</label>
           <select id="odeme-tur">
             <option value="avans">Avans</option>
             <option value="askeriye">Askeriye (ilk gelen kısım)</option>
@@ -598,7 +599,7 @@
           </select>
         </div>
         <div class="alan">
-          <label>Not (isteğe bağlı)</label>
+          <label for="odeme-not">Not (isteğe bağlı)</label>
           <input type="text" id="odeme-not" placeholder="Örn: Usta elden verdi">
           <small style="display:block;color:var(--yarim);font-size:12px;line-height:1.5;margin-top:6px">
             👁️ <b>Bu kayıt "Kişiler" ekranında herkese görünür</b> — tutarı ve buraya yazdığın not dahil.
@@ -606,7 +607,7 @@
           </small>
         </div>
         <div class="alan">
-          <label>Dekont / belge fotoğrafı (isteğe bağlı)</label>
+          <label for="dekont-foto-sec">Dekont / belge fotoğrafı (isteğe bağlı)</label>
           <input type="file" id="dekont-foto-sec" accept="image/*" style="display:none">
           <button class="eksik-cip" id="btn-dekont-foto">🏦 Dekont fotoğrafı ekle</button>
           <img id="dekont-onizle" class="gizli" style="width:100%;border-radius:12px;margin-top:8px;border:1.5px solid var(--cizgi)" alt="">
@@ -616,12 +617,12 @@
       </div>
       <div class="kart">
         <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px" id="odeme-filtre">
-          <button class="eksik-cip secili-f" data-f="" style="font-size:12px;padding:7px 11px;border-color:var(--sari)">Tümü</button>
-          <button class="eksik-cip" data-f="avans" style="font-size:12px;padding:7px 11px">Avans</button>
-          <button class="eksik-cip" data-f="askeriye" style="font-size:12px;padding:7px 11px">Askeriye</button>
-          <button class="eksik-cip" data-f="hakedis" style="font-size:12px;padding:7px 11px">Hakediş</button>
-          <button class="eksik-cip" data-f="kesinti" style="font-size:12px;padding:7px 11px">Kesinti</button>
-          <button class="eksik-cip" data-f="diger" style="font-size:12px;padding:7px 11px">Diğer</button>
+          <button class="eksik-cip secili-f" data-f="">Tümü</button>
+          <button class="eksik-cip" data-f="avans">Avans</button>
+          <button class="eksik-cip" data-f="askeriye">Askeriye</button>
+          <button class="eksik-cip" data-f="hakedis">Hakediş</button>
+          <button class="eksik-cip" data-f="kesinti">Kesinti</button>
+          <button class="eksik-cip" data-f="diger">Diğer</button>
         </div>
         <div class="alan" style="margin-bottom:10px"><input type="text" id="odeme-ara" placeholder="🔎 Ödeme notlarında ara..."></div>
         <h2>💵 Bu ay aldıkların <span id="odeme-toplam" style="margin-left:auto;font-size:14px;color:var(--soluk);font-family:Rubik;text-transform:none"></span></h2>
@@ -634,32 +635,32 @@
       <div class="kart ekle-kart kapali">
         <h2 class="ekle-bas" role="button" tabindex="0">➕ Borç / alacak ekle<span class="ekle-ok">▾</span></h2>
         <div class="alan">
-          <label>Ne oldu?</label>
+          <label for="borc-yon">Ne oldu?</label>
           <select id="borc-yon">
             <option value="verdim">Ben para verdim (alacaklıyım)</option>
             <option value="aldim">Ben borç aldım (borçluyum)</option>
           </select>
         </div>
         <div class="alan">
-          <label>Kim?</label>
+          <label for="borc-kisi">Kim?</label>
           <input type="text" id="borc-kisi" placeholder="Örn: Hüseyin usta">
         </div>
         <div style="display:flex;gap:10px">
           <div class="alan" style="flex:1">
-            <label>Tutar (TL)</label>
+            <label for="borc-tutar">Tutar (TL)</label>
             <input type="text" id="borc-tutar" inputmode="decimal" placeholder="2000">
           </div>
           <div class="alan" style="flex:1">
-            <label>Tarih</label>
+            <label for="borc-tarih">Tarih</label>
             <input type="date" id="borc-tarih">
           </div>
         </div>
         <div class="alan">
-          <label>Söz verilen ödeme günü (isteğe bağlı — geçerse uyarırım)</label>
+          <label for="borc-vade">Söz verilen ödeme günü (isteğe bağlı — geçerse uyarırım)</label>
           <input type="date" id="borc-vade">
         </div>
         <div class="alan">
-          <label>Not (isteğe bağlı)</label>
+          <label for="borc-not">Not (isteğe bağlı)</label>
           <input type="text" id="borc-not" placeholder="Örn: Maaş gelince ödeyecek">
         </div>
         <button class="btn btn-sari" id="btn-borc-ekle">Kaydet</button>
@@ -684,11 +685,11 @@
         <p style="font-size:13px;color:var(--soluk);margin-bottom:12px">"Şu kadar çalışırsam ne kazanırım?" — dene bak:</p>
         <div style="display:flex;gap:10px">
           <div class="alan" style="flex:1">
-            <label>Gün</label>
+            <label for="sim-gun">Gün</label>
             <input type="text" id="sim-gun" inputmode="decimal" value="26" min="0">
           </div>
           <div class="alan" style="flex:1">
-            <label>Toplam mesai (saat)</label>
+            <label for="sim-mesai">Toplam mesai (saat)</label>
             <input type="text" id="sim-mesai" inputmode="decimal" value="0" min="0">
           </div>
         </div>
@@ -833,16 +834,16 @@
         </p>
         <div style="display:flex;gap:10px">
           <div class="alan" style="flex:1">
-            <label>Tutar (TL)</label>
+            <label for="masraf-tutar">Tutar (TL)</label>
             <input type="text" id="masraf-tutar" inputmode="decimal" placeholder="350">
           </div>
           <div class="alan" style="flex:1">
-            <label>Tarih</label>
+            <label for="masraf-tarih">Tarih</label>
             <input type="date" id="masraf-tarih">
           </div>
         </div>
         <div class="alan">
-          <label>Ne aldın / ne ödedin?</label>
+          <label for="masraf-aciklama">Ne aldın / ne ödedin?</label>
           <input type="text" id="masraf-aciklama" placeholder="Örn: Nalburdan vida + silikon">
         </div>
         <div class="alan">
@@ -850,7 +851,7 @@
           <div class="cip-satir" id="masraf-kategori-cipler"></div>
         </div>
         <div class="alan">
-          <label>Fiş / fatura fotoğrafı (isteğe bağlı — "fiş nerede?" derdine son)</label>
+          <label for="masraf-foto-sec">Fiş / fatura fotoğrafı (isteğe bağlı — "fiş nerede?" derdine son)</label>
           <input type="file" id="masraf-foto-sec" accept="image/*" style="display:none">
           <button class="eksik-cip" id="btn-masraf-foto">🧾 Fiş fotoğrafı ekle</button>
           <img id="masraf-foto-onizle" class="gizli" style="width:100%;border-radius:12px;margin-top:8px;border:1.5px solid var(--cizgi)" alt="">
@@ -873,7 +874,7 @@
       <div class="kart">
         <h2>📋 Günlük yoklama</h2>
         <div class="alan">
-          <label>Tarih</label>
+          <label for="ekip-tarih">Tarih</label>
           <input type="date" id="ekip-tarih">
         </div>
         <div id="ekip-yoklama"></div>
@@ -886,16 +887,16 @@
       <div class="kart ekle-kart kapali">
         <h2 class="ekle-bas" role="button" tabindex="0">👥 İşçi ekle<span class="ekle-ok">▾</span></h2>
         <div class="alan">
-          <label>Adı</label>
+          <label for="isci-ad">Adı</label>
           <input type="text" id="isci-ad" placeholder="Örn: Ramazan">
         </div>
         <div style="display:flex;gap:10px">
           <div class="alan" style="flex:1">
-            <label>Yevmiyesi (TL)</label>
+            <label for="isci-yevmiye">Yevmiyesi (TL)</label>
             <input type="text" id="isci-yevmiye" inputmode="decimal" placeholder="1800">
           </div>
           <div class="alan" style="flex:1">
-            <label>Mesai (TL/saat)</label>
+            <label for="isci-mesai">Mesai (TL/saat)</label>
             <input type="text" id="isci-mesai" inputmode="decimal" placeholder="250">
           </div>
         </div>
@@ -950,20 +951,20 @@
         <p style="font-size:12px;color:var(--soluk);margin-bottom:12px">🔒 Kart NUMARANI değil, sadece takma adını yaz — bu uygulama kart numarası istemez, saklamaz.</p>
         <div style="display:flex;gap:8px">
           <div class="alan" style="flex:1">
-            <label>Banka</label>
+            <label for="kart-banka">Banka</label>
             <input type="text" id="kart-banka" placeholder="Örn: Garanti BBVA">
           </div>
           <div class="alan" style="flex:1.4">
-            <label>Kartın adı</label>
+            <label for="kart-ad">Kartın adı</label>
             <input type="text" id="kart-ad" placeholder="Örn: Bonus, Axess...">
           </div>
           <div class="alan" style="flex:1">
-            <label>Son ödeme (ayın kaçı?)</label>
+            <label for="kart-gun">Son ödeme (ayın kaçı?)</label>
             <input type="text" id="kart-gun" inputmode="numeric" placeholder="Örn: 26">
           </div>
         </div>
         <div class="alan">
-          <label>Güncel dönem borcu (TL)</label>
+          <label for="kart-borc">Güncel dönem borcu (TL)</label>
           <input type="text" id="kart-borc" inputmode="decimal" placeholder="Örn: 8500">
         </div>
         <button class="btn btn-sari" id="btn-kart-ekle">Kaydet</button>
@@ -994,7 +995,7 @@
       <button class="btn btn-sari" id="btn-kd-odeme-ekle" style="margin-top:14px">💰 Ödeme işle</button>
       <div class="gizli" id="kd-odeme-form" style="margin-top:12px;background:var(--girdi);border:1.5px solid var(--cizgi);border-radius:12px;padding:14px">
         <div class="alan">
-          <label>Ne kadar ödedin? (TL)</label>
+          <label for="kd-odeme-tutar">Ne kadar ödedin? (TL)</label>
           <input type="text" id="kd-odeme-tutar" inputmode="decimal" placeholder="Örn: 2000">
         </div>
         <div style="display:flex;gap:8px">
@@ -1018,15 +1019,15 @@
           WhatsApp'tan gelen plan dosyasını (PDF veya fotoğraf) önce Google Drive'a ya da telefonunun galerisine kaydet, oradan "paylaş / link al" seçeneğiyle bir link üret, aşağıya yapıştır. Dokununca tarayıcıda açılır — PDF ise parmaklarınla yakınlaştırıp kolon ölçülerini net okuyabilirsin.
         </p>
         <div class="alan">
-          <label>Plan adı</label>
+          <label for="plan-ad">Plan adı</label>
           <input type="text" id="plan-ad" placeholder="Örn: Zemin kat kolon planı">
         </div>
         <div class="alan">
-          <label>Link (Google Drive / WhatsApp / diğer)</label>
+          <label for="plan-link">Link (Google Drive / WhatsApp / diğer)</label>
           <input type="url" id="plan-link" inputmode="url" placeholder="https://drive.google.com/...">
         </div>
         <div class="alan gizli" id="alan-plan-santiye-sec">
-          <label>Hangi şantiye? (opsiyonel)</label>
+          <label for="plan-santiye-sec">Hangi şantiye? (opsiyonel)</label>
           <select id="plan-santiye-sec"></select>
         </div>
         <button class="btn btn-sari" id="btn-plan-ekle">Kaydet</button>
@@ -1099,11 +1100,11 @@
         <h2 class="arac-bas" role="button" tabindex="0">⚖️ Kıdem tazminatı hesaplayıcı<span class="arac-ok">▾</span></h2>
         <div style="display:flex;gap:10px">
           <div class="alan" style="flex:1">
-            <label>İşe giriş tarihin</label>
+            <label for="kidem-giris">İşe giriş tarihin</label>
             <input type="date" id="kidem-giris">
           </div>
           <div class="alan" style="flex:1">
-            <label>Günlük brüt ücret (TL)</label>
+            <label for="kidem-ucret">Günlük brüt ücret (TL)</label>
             <input type="text" id="kidem-ucret" inputmode="decimal" placeholder="2000">
           </div>
         </div>
@@ -1126,7 +1127,7 @@
           Analiz için birkaç gün işlenmiş olması yeter — sayfayı açınca hesaplarım.
         </div>
         <div class="alan">
-          <label>İstediğin yeni yevmiye (TL)</label>
+          <label for="zam-hedef">İstediğin yeni yevmiye (TL)</label>
           <input type="text" id="zam-hedef" inputmode="decimal" placeholder="Örn: 3000">
         </div>
         <div style="display:flex;gap:8px;margin-bottom:10px">
@@ -1140,7 +1141,7 @@
       <div class="kart arac-kart kapali">
         <h2 class="arac-bas" role="button" tabindex="0">🧱 İnşaat hesaplayıcıları<span class="arac-ok">▾</span></h2>
         <div class="alan">
-          <label>🏗️ Beton: En × Boy × Yükseklik (metre)</label>
+          <label for="bet-en">🏗️ Beton: En × Boy × Yükseklik (metre)</label>
           <div style="display:flex;gap:8px">
             <input type="text" id="bet-en" inputmode="decimal" placeholder="En" style="flex:1">
             <input type="text" id="bet-boy" inputmode="decimal" placeholder="Boy" style="flex:1">
@@ -1149,12 +1150,12 @@
           <div id="bet-sonuc" style="font-size:13.5px;margin-top:8px;font-weight:700"></div>
         </div>
         <div class="alan">
-          <label>🧱 Duvar: kaç metrekare öreceksin?</label>
+          <label for="duv-m2">🧱 Duvar: kaç metrekare öreceksin?</label>
           <input type="text" id="duv-m2" inputmode="decimal" placeholder="Örn: 24">
           <div id="duv-sonuc" style="font-size:13.5px;margin-top:8px;font-weight:700"></div>
         </div>
         <div class="alan" style="margin-bottom:0">
-          <label>🎨 Boya: kaç metrekare duvar/tavan?</label>
+          <label for="boy-m2">🎨 Boya: kaç metrekare duvar/tavan?</label>
           <input type="text" id="boy-m2" inputmode="decimal" placeholder="Örn: 60">
           <div id="boy-sonuc" style="font-size:13.5px;margin-top:8px;font-weight:700"></div>
         </div>
@@ -1208,7 +1209,7 @@
       <div class="kart arac-kart kapali">
         <h2 class="arac-bas" role="button" tabindex="0">🕌 Namaz Vakitleri<span class="arac-ok">▾</span></h2>
         <div class="alan">
-          <label>İlin</label>
+          <label for="vakit-il">İlin</label>
           <select id="vakit-il"></select>
         </div>
         <div id="vakit-liste" style="font-size:14px;line-height:2.1"></div>
@@ -1221,23 +1222,23 @@
           SGK ve tazminat işlemlerinde en güçlü delildir. Bu defter sadece sende — kimseyle paylaşılmaz, sen istersen tutanak gönderirsin.
         </p>
         <div class="alan">
-          <label>Kaza tarihi</label>
+          <label for="kaza-tarih">Kaza tarihi</label>
           <input type="date" id="kaza-tarih">
         </div>
         <div class="alan">
-          <label>Ne oldu? (yer, saat, nasıl olduğu)</label>
+          <label for="kaza-aciklama">Ne oldu? (yer, saat, nasıl olduğu)</label>
           <textarea id="kaza-aciklama" rows="3" placeholder="Örn: 14:30 gibi 2. katta iskelede kalas kaydı, sol ayak bileğim burkuldu..."></textarea>
         </div>
         <div class="alan">
-          <label>Tanıklar (isim isim yaz)</label>
+          <label for="kaza-tanik">Tanıklar (isim isim yaz)</label>
           <input type="text" id="kaza-tanik" placeholder="Örn: Ali usta, Mehmet kalfa">
         </div>
         <div class="alan">
-          <label>Hastane / rapor durumu</label>
+          <label for="kaza-rapor">Hastane / rapor durumu</label>
           <input type="text" id="kaza-rapor" placeholder="Örn: Devlet hastanesine gittim, 5 gün rapor verildi">
         </div>
         <div class="alan">
-          <label>SGK'ya bildirildi mi?</label>
+          <label for="kaza-sgk">SGK'ya bildirildi mi?</label>
           <select id="kaza-sgk">
             <option value="bilmiyorum">Bilmiyorum</option>
             <option value="evet">Evet, bildirildi</option>
@@ -1245,7 +1246,7 @@
           </select>
         </div>
         <div class="alan">
-          <label>Fotoğraf (isteğe bağlı — olay yeri, yara, kırık kalas... delilin kralıdır)</label>
+          <label for="kaza-foto-sec">Fotoğraf (isteğe bağlı — olay yeri, yara, kırık kalas... delilin kralıdır)</label>
           <input type="file" id="kaza-foto-sec" accept="image/*" style="display:none">
           <button class="eksik-cip" id="btn-kaza-foto">📷 Fotoğraf ekle</button>
           <img id="kaza-foto-onizle" class="gizli" style="width:100%;border-radius:12px;margin-top:8px;border:1.5px solid var(--cizgi)" alt="">
@@ -1263,7 +1264,7 @@
         <p style="font-size:12.5px;color:var(--soluk);margin-bottom:12px">Şantiyede bir şey olursa arkadaşların telefonundan bu karta baksın — kan grubu ve acil numara hayat kurtarır.</p>
         <div style="display:flex;gap:8px">
           <div class="alan" style="flex:1">
-            <label>Kan grubun</label>
+            <label for="acil-kan">Kan grubun</label>
             <select id="acil-kan">
               <option value="">Seç</option>
               <option>A Rh+</option><option>A Rh-</option><option>B Rh+</option><option>B Rh-</option>
@@ -1271,12 +1272,12 @@
             </select>
           </div>
           <div class="alan" style="flex:1.6">
-            <label>Acil durumda aranacak kişi + no</label>
+            <label for="acil-kisi">Acil durumda aranacak kişi + no</label>
             <input type="text" id="acil-kisi" placeholder="Örn: Eşim Ayşe 05xx xxx xx xx">
           </div>
         </div>
         <div class="alan">
-          <label>Alerji / kronik rahatsızlık / kullandığın ilaç (yoksa boş bırak)</label>
+          <label for="acil-not">Alerji / kronik rahatsızlık / kullandığın ilaç (yoksa boş bırak)</label>
           <input type="text" id="acil-not" placeholder="Örn: penisilin alerjisi, şeker hastası">
         </div>
         <button class="btn btn-cizgili" id="btn-acil-kaydet">💾 Kaydet</button>
@@ -1310,7 +1311,7 @@
       <div class="kart arac-kart kapali">
         <h2 class="arac-bas" role="button" tabindex="0">⏱️ Mesai ücreti kontrolü<span class="arac-ok">▾</span></h2>
         <div class="alan">
-          <label>Normal saatlik ücretin (TL)</label>
+          <label for="mesai-kontrol">Normal saatlik ücretin (TL)</label>
           <input type="text" id="mesai-kontrol" inputmode="decimal" placeholder="Örn: 200">
         </div>
         <div id="mesai-kontrol-sonuc" style="background:var(--girdi);border:1.5px solid var(--cizgi);border-radius:12px;padding:12px 14px;font-size:13.5px;line-height:1.8">Saat ücretini gir, yasal mesai ücretini göstereyim.</div>
@@ -1324,11 +1325,11 @@
         <h2 class="arac-bas" role="button" tabindex="0">🚬 Sigara parası hesabı<span class="arac-ok">▾</span></h2>
         <div style="display:flex;gap:10px">
           <div class="alan" style="flex:1">
-            <label>Paket fiyatı (TL)</label>
+            <label for="sig-fiyat">Paket fiyatı (TL)</label>
             <input type="text" id="sig-fiyat" inputmode="decimal" placeholder="90">
           </div>
           <div class="alan" style="flex:1">
-            <label>Günde kaç paket?</label>
+            <label for="sig-paket">Günde kaç paket?</label>
             <input type="text" id="sig-paket" inputmode="decimal" step="0.5" placeholder="1">
           </div>
         </div>
@@ -1352,41 +1353,41 @@
       <div class="kart">
         <h2>⚙️ Ücret ayarları</h2>
         <div class="alan">
-          <label>Çalışma şeklin</label>
+          <label for="ayar-tip">Çalışma şeklin</label>
           <select id="ayar-tip">
             <option value="yevmiye">Yevmiyeli (günlük ücret)</option>
             <option value="saatlik">Saatlik (saat ücreti)</option>
           </select>
         </div>
         <div class="alan">
-          <label>Günlük yevmiye (TL)</label>
+          <label for="ayar-yevmiye">Günlük yevmiye (TL)</label>
           <input type="text" id="ayar-yevmiye" inputmode="decimal" placeholder="Örn: 1500">
         </div>
         <div style="display:flex;gap:10px">
           <div class="alan" style="flex:1">
-            <label>Saat ücreti (TL) — saatlik mod</label>
+            <label for="ayar-saat">Saat ücreti (TL) — saatlik mod</label>
             <input type="text" id="ayar-saat" inputmode="decimal" placeholder="Örn: 200">
           </div>
           <div class="alan" style="flex:1">
-            <label>Standart gün (saat)</label>
+            <label for="ayar-gunsaat">Standart gün (saat)</label>
             <input type="text" id="ayar-gunsaat" inputmode="decimal" placeholder="8">
           </div>
         </div>
         <div class="alan">
-          <label>Mesai saat ücreti (TL/saat)</label>
+          <label for="ayar-mesai">Mesai saat ücreti (TL/saat)</label>
           <input type="text" id="ayar-mesai" inputmode="decimal" placeholder="Örn: 200">
         </div>
         <div class="alan">
-          <label>Günlük yol + yemek parası (TL, yoksa 0)</label>
+          <label for="ayar-ek">Günlük yol + yemek parası (TL, yoksa 0)</label>
           <input type="text" id="ayar-ek" inputmode="decimal" placeholder="Örn: 150">
         </div>
         <div style="display:flex;gap:10px">
           <div class="alan" style="flex:1">
-            <label>🛐 Pazar günü zammı (%)</label>
+            <label for="ayar-pazar-zam">🛐 Pazar günü zammı (%)</label>
             <input type="text" id="ayar-pazar-zam" inputmode="decimal" placeholder="0">
           </div>
           <div class="alan" style="flex:1">
-            <label>🎉 Resmi/dini bayram zammı (%)</label>
+            <label for="ayar-tatil-zam">🎉 Resmi/dini bayram zammı (%)</label>
             <input type="text" id="ayar-tatil-zam" inputmode="decimal" placeholder="0">
           </div>
         </div>
@@ -1394,7 +1395,7 @@
           Örn: %50 girersen, pazar günü veya resmi/dini bayramda işlenen bir gün, o günkü yevmiye + mesai + yol-yemek üzerinden %50 fazlasıyla hesaplanır. 0 bırakırsan hiçbir şey değişmez. Zam, günü kaydettiğin andaki oranla mühürlenir — sonradan zam oranını değiştirsen bile geçmiş günler etkilenmez.
         </div>
         <div class="alan">
-          <label>🌙 Gece mesaisi zammı (%) — normal mesai ücretine ek</label>
+          <label for="ayar-gece-zam">🌙 Gece mesaisi zammı (%) — normal mesai ücretine ek</label>
           <input type="text" id="ayar-gece-zam" inputmode="decimal" placeholder="0">
         </div>
         <div class="kart" style="background:transparent;border:none;padding:0 0 4px;margin:-6px 0 12px;font-size:12px;color:var(--soluk)">
@@ -1402,11 +1403,11 @@
         </div>
         <div style="display:flex;gap:10px">
           <div class="alan" style="flex:1">
-            <label>📦 Parça başı birimi</label>
+            <label for="ayar-parca-birim">📦 Parça başı birimi</label>
             <input type="text" id="ayar-parca-birim" placeholder="Örn: m², kg, adet, sefer">
           </div>
           <div class="alan" style="flex:1">
-            <label>📦 Birim fiyatı (TL)</label>
+            <label for="ayar-parca-fiyat">📦 Birim fiyatı (TL)</label>
             <input type="text" id="ayar-parca-fiyat" inputmode="decimal" placeholder="0">
           </div>
         </div>
@@ -1414,28 +1415,28 @@
           Yevmiyenin yanında ekstra iş yaptığında (örn. günde 20 m² fayans döşedin) gün ekranında miktarını gir, otomatik hesaplansın. 0 bırakırsan bu alan gün ekranında görünmez.
         </div>
         <div class="alan">
-          <label>Aylık kazanç hedefin (TL, istemezsen 0)</label>
+          <label for="ayar-hedef">Aylık kazanç hedefin (TL, istemezsen 0)</label>
           <input type="text" id="ayar-hedef" inputmode="decimal" placeholder="Örn: 45000">
         </div>
         <div class="alan">
-          <label>Alacak uyarı eşiği (TL — şirkette bu kadar birikince uyar, istemezsen 0)</label>
+          <label for="ayar-esik">Alacak uyarı eşiği (TL — şirkette bu kadar birikince uyar, istemezsen 0)</label>
           <input type="text" id="ayar-esik" inputmode="decimal" placeholder="Örn: 20000">
         </div>
         <div class="alan">
-          <label>Hızlı not şablonların (virgülle ayır)</label>
+          <label for="ayar-cipler">Hızlı not şablonların (virgülle ayır)</label>
           <input type="text" id="ayar-cipler" placeholder="Yağmur, Malzeme gelmedi, Erken paydos, Başka şantiye">
         </div>
         <div class="alan">
-          <label>Çalıştığın şantiye / firma</label>
+          <label for="ayar-santiye">Çalıştığın şantiye / firma</label>
           <input type="text" id="ayar-santiye" placeholder="Örn: Konut projesi - Ali usta">
         </div>
         <div class="alan">
-          <label>İşe giriş tarihin (yıllık izin ve kıdem hesabı için)</label>
+          <label for="ayar-giris">İşe giriş tarihin (yıllık izin ve kıdem hesabı için)</label>
           <input type="date" id="ayar-giris">
         </div>
         <div class="alan">
-          <label>Maaş günü (ayın kaçında alıyorsun? boş bırakabilirsin)</label>
-          <input type="number" inputmode="numeric" min="1" max="31" id="ayar-maas" placeholder="Örn: 15">
+          <label for="ayar-maas">Maaş günü (ayın kaçında alıyorsun? boş bırakabilirsin)</label>
+          <input type="text" inputmode="numeric" maxlength="2" id="ayar-maas" placeholder="Örn: 15">
         </div>
         <button class="btn btn-sari" id="btn-ayar-kaydet">Ayarları kaydet</button>
       </div>
@@ -1446,17 +1447,17 @@
         </p>
         <ul class="liste" id="liste-santiyeler"></ul>
         <div class="alan" style="margin-top:8px">
-          <label>Şantiye / patron adı</label>
+          <label for="yeni-santiye-ad">Şantiye / patron adı</label>
           <input type="text" id="yeni-santiye-ad" placeholder="Örn: Ali usta - villa">
         </div>
         <div style="display:flex;gap:10px">
           <div class="alan" style="flex:1">
-            <label>Yevmiye (TL)</label>
+            <label for="yeni-santiye-yevmiye">Yevmiye (TL)</label>
             <input type="text" id="yeni-santiye-yevmiye" inputmode="decimal" placeholder="1800">
             <div id="yevmiye-asgari-uyari" class="gizli" style="font-size:11.5px;color:#FF8A65;margin-top:5px;line-height:1.5">⚠️ Bu, 2026 yasal günlük asgari ücretin (1.101₺ brüt) altında</div>
           </div>
           <div class="alan" style="flex:1">
-            <label>Mesai (TL/saat)</label>
+            <label for="yeni-santiye-mesai">Mesai (TL/saat)</label>
             <input type="text" id="yeni-santiye-mesai" inputmode="decimal" placeholder="250">
           </div>
         </div>
@@ -1469,11 +1470,11 @@
         </p>
         <ul class="liste" id="liste-belgeler"></ul>
         <div class="alan" style="margin-top:8px">
-          <label>Belge adı</label>
+          <label for="yeni-belge-ad">Belge adı</label>
           <input type="text" id="yeni-belge-ad" placeholder="Örn: Ehliyet (B sınıfı)">
         </div>
         <div class="alan">
-          <label>Son geçerlilik tarihi</label>
+          <label for="yeni-belge-tarih">Son geçerlilik tarihi</label>
           <input type="date" id="yeni-belge-tarih">
         </div>
         <button class="btn btn-cizgili" id="btn-belge-ekle">➕ Belge ekle</button>
@@ -1482,7 +1483,7 @@
         <h2>🌙 Görünüm</h2>
         <button class="btn btn-cizgili" id="btn-tema">Karanlık moda geç</button>
         <div class="alan" style="margin-top:14px">
-          <label>Yazı boyutu</label>
+          <label for="ayar-yazi">Yazı boyutu</label>
           <select id="ayar-yazi">
             <option value="14">Küçük</option>
             <option value="15" selected>Normal</option>
@@ -1527,11 +1528,11 @@
         </p>
         <div style="display:flex;gap:10px">
           <div class="alan" style="flex:1">
-            <label>Mevcut prim günün</label>
+            <label for="ayar-sgk">Mevcut prim günün</label>
             <input type="text" id="ayar-sgk" inputmode="numeric" placeholder="Örn: 2400">
           </div>
           <div class="alan" style="flex:1">
-            <label>Hedef (gün)</label>
+            <label for="ayar-sgk-hedef">Hedef (gün)</label>
             <input type="text" id="ayar-sgk-hedef" inputmode="numeric" placeholder="7200">
           </div>
         </div>
@@ -1619,7 +1620,7 @@
           </div>
         </div>
         <div class="alan">
-          <label>Adın Soyadın</label>
+          <label for="ayar-ad">Adın Soyadın</label>
           <input type="text" id="ayar-ad">
         </div>
         <button class="btn btn-cizgili" id="btn-ad-kaydet">Adı güncelle</button>
@@ -1671,7 +1672,7 @@
   </div>
 
   <div class="alan gizli" id="alan-saat">
-    <label>Çalıştığım normal saat</label>
+    <label for="gun-saat">Çalıştığım normal saat</label>
     <div class="sayac">
       <button id="saat-eksi">−</button>
       <input type="text" id="gun-saat" inputmode="decimal" min="0" step="0.5" value="8">
@@ -1681,16 +1682,16 @@
 
   <div style="display:flex;gap:10px">
     <div class="alan" style="flex:1">
-      <label>İşe başlama (isteğe bağlı)</label>
+      <label for="gun-bas-saat">İşe başlama (isteğe bağlı)</label>
       <input type="time" id="gun-bas-saat">
     </div>
     <div class="alan" style="flex:1">
-      <label>Paydos</label>
+      <label for="gun-bit-saat">Paydos</label>
       <input type="time" id="gun-bit-saat">
     </div>
   </div>
   <div class="alan">
-    <label>Mesai (saat)</label>
+    <label for="mesai-saat">Mesai (saat)</label>
     <div class="sayac">
       <button id="mesai-eksi">−</button>
       <input type="text" id="mesai-saat" inputmode="decimal" min="0" step="0.5" value="0">
@@ -1699,7 +1700,7 @@
   </div>
 
   <div class="alan">
-    <label>Gün içi artı — tam: 1 (X) · yarım: 0.5 (/)</label>
+    <label for="gun-arti">Gün içi artı — tam: 1 (X) · yarım: 0.5 (/)</label>
     <div class="sayac">
       <button id="arti-eksi">−</button>
       <input type="text" id="gun-arti" inputmode="decimal" min="0" step="0.5" value="0">
@@ -1708,7 +1709,7 @@
   </div>
 
   <div class="alan">
-    <label>🌙 Gece mesaisi (saat) — normal mesaiden ayrı, opsiyonel</label>
+    <label for="gun-gece-mesai">🌙 Gece mesaisi (saat) — normal mesaiden ayrı, opsiyonel</label>
     <div class="sayac">
       <button id="gece-eksi">−</button>
       <input type="text" id="gun-gece-mesai" inputmode="decimal" min="0" step="0.5" value="0">
@@ -1717,17 +1718,17 @@
   </div>
 
   <div class="alan gizli" id="alan-parca">
-    <label id="parca-etiket">📦 Parça başı miktar (bugün)</label>
+    <label id="parca-etiket" for="gun-parca-miktar">📦 Parça başı miktar (bugün)</label>
     <input type="text" id="gun-parca-miktar" inputmode="decimal" min="0" step="0.5" placeholder="0">
   </div>
 
   <div class="alan gizli" id="alan-santiye-sec">
-    <label>Hangi şantiye / patron?</label>
+    <label for="gun-santiye-sec">Hangi şantiye / patron?</label>
     <select id="gun-santiye-sec"></select>
   </div>
 
   <div class="alan">
-    <label>Şantiye (isteğe bağlı)</label>
+    <label for="gun-santiye">Şantiye (isteğe bağlı)</label>
     <input type="text" id="gun-santiye" placeholder="Boş bırakırsan ayarlardaki şantiye yazılır">
   </div>
   <div class="alan">
@@ -1736,7 +1737,7 @@
     <div id="gun-konum-yazi" style="font-size:12.5px;color:var(--soluk);margin-top:6px"></div>
   </div>
   <div class="alan">
-    <label>İş fotoğrafı (isteğe bağlı — yaptığın işin kanıtı)</label>
+    <label for="gun-foto-sec">İş fotoğrafı (isteğe bağlı — yaptığın işin kanıtı)</label>
     <input type="file" id="gun-foto-sec" accept="image/*" style="display:none">
     <div style="display:flex;gap:8px">
       <button class="eksik-cip" id="btn-foto-ekle" style="flex:1">📸 Fotoğraf çek / seç</button>
@@ -1854,23 +1855,23 @@
   <h3>🏗️ İşe Giriş Yap</h3>
   <div class="tarih-yazi">Yeni bir iş/şantiye/patron için giriş kaydı aç. Bu bilgiler zorunlu — puantajının ve raporlarının doğru ayrışması için gerekiyor.</div>
   <div class="alan">
-    <label>Adın *</label>
+    <label for="is-giris-ad">Adın *</label>
     <input type="text" id="is-giris-ad" placeholder="Örn: Serkan">
   </div>
   <div class="alan">
-    <label>Soyadın *</label>
+    <label for="is-giris-soyad">Soyadın *</label>
     <input type="text" id="is-giris-soyad" placeholder="Örn: Karakaş">
   </div>
   <div class="alan">
-    <label>Şantiye adı *</label>
+    <label for="is-giris-santiye">Şantiye adı *</label>
     <input type="text" id="is-giris-santiye" placeholder="Örn: Semadem Orhan Oypan">
   </div>
   <div class="alan">
-    <label>Patron / firma adı *</label>
+    <label for="is-giris-patron">Patron / firma adı *</label>
     <input type="text" id="is-giris-patron" placeholder="Örn: Ali usta">
   </div>
   <div class="alan">
-    <label>Giriş tarihi *</label>
+    <label for="is-giris-tarih">Giriş tarihi *</label>
     <input type="date" id="is-giris-tarih">
   </div>
   <p style="font-size:11.5px;color:var(--soluk);margin:-4px 0 12px">💡 Ücretin de değiştiyse, Ayarlar → Şantiyeler'den yeni ücreti de ekle — buradaki kayıt sadece raporlarını ayırmak için, ücret hesaplamayı etkilemez.</p>
@@ -1883,7 +1884,7 @@
   <h3>🚪 İşten Çıkış Yap</h3>
   <div id="is-cikis-bilgi" class="tarih-yazi">—</div>
   <div class="alan">
-    <label>Çıkış tarihi *</label>
+    <label for="is-cikis-tarih">Çıkış tarihi *</label>
     <input type="date" id="is-cikis-tarih">
   </div>
   <button class="btn btn-sari" id="btn-is-cikis-kaydet">✅ Çıkışı kaydet</button>
@@ -1926,16 +1927,16 @@
   <div class="tarih-yazi">Seçtiğin tarih aralığındaki bütün günleri tek seferde işaretler.</div>
   <div style="display:flex;gap:10px">
     <div class="alan" style="flex:1">
-      <label>Başlangıç</label>
+      <label for="toplu-bas">Başlangıç</label>
       <input type="date" id="toplu-bas">
     </div>
     <div class="alan" style="flex:1">
-      <label>Bitiş</label>
+      <label for="toplu-son">Bitiş</label>
       <input type="date" id="toplu-son">
     </div>
   </div>
   <div class="alan">
-    <label>Durum</label>
+    <label for="toplu-durum">Durum</label>
     <select id="toplu-durum">
       <option value="tam">Tam yevmiye</option>
       <option value="yarim">Yarım yevmiye</option>
@@ -1944,7 +1945,7 @@
     </select>
   </div>
   <div class="alan">
-    <label>Her güne mesai (saat)</label>
+    <label for="toplu-mesai">Her güne mesai (saat)</label>
     <input type="text" id="toplu-mesai" inputmode="decimal" min="0" step="0.5" value="0">
   </div>
   <label style="display:flex;align-items:center;gap:10px;font-size:14px;margin-bottom:6px">
