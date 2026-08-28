@@ -43,6 +43,39 @@ function kayitTikGoster(){
   setTimeout(()=> d.remove(), 900);
 }
 
+/* ---------- 🛡️ Girdi sınırları ----------
+   Neden gerekli: `sayi()` çeviriciyi doğru yapıyor ama MAKUL olup olmadığına
+   bakmıyordu. Kullanıcı yanlışlıkla "999" yazsa (mesela 9'a basılı kalsa)
+   999 saat mesai kaydediliyor ve hakediş milyonlara çıkıyordu. Eksi değer de
+   kabul ediliyordu — negatif mesai kazancı düşürüyordu.
+   Bu sınırlar veriyi reddetmiyor, KIRPIYOR ve kullanıcıyı uyarıyor; böylece
+   bir yazım hatası aylarca fark edilmeyen yanlış bir bakiyeye dönüşmüyor.
+
+   Sınırlar bilinçli olarak GENİŞ: amaç gerçek kullanımı engellemek değil,
+   açıkça hatalı girişi yakalamak. Bir günde 18 saatten fazla mesai, tek
+   kalemde 1 milyon TL'nin üstünde ödeme gerçekçi değil. */
+const SINIR = {
+  mesaiSaat: 18,        /* bir günde en fazla mesai saati */
+  calismaSaat: 24,      /* saatlik çalışmada bir günün tamamı */
+  artiGun: 5,           /* gün içi "artı yevmiye" adedi */
+  tutar: 1000000,       /* tek kalemde tutar (TL) */
+  yevmiye: 100000       /* günlük yevmiye / saat ücreti üst sınırı */
+};
+/* Değeri 0 ile üst sınır arasına kırpar. Kırpma olduysa kullanıcıya söyler. */
+function sinirla(deger, ust, ad, birim){
+  let d = Number(deger)||0;
+  if(d < 0){
+    toast("⚠️ " + ad + " eksi olamaz, 0 kabul edildi");
+    return 0;
+  }
+  if(d > ust){
+    toast("⚠️ " + ad + " çok yüksek görünüyor (" + d + " " + (birim||"") + "). " +
+          ust + " " + (birim||"") + " olarak kaydedildi — yanlışsa düzelt.");
+    return ust;
+  }
+  return d;
+}
+
 function titret(desen){
   try{
     if(!navigator.vibrate) return;
@@ -1025,6 +1058,12 @@ function hataCeviriGenel(e){
   if(k.includes("not-found")) return "Aradığın kayıt bulunamadı, silinmiş olabilir.";
   if(k.includes("cancelled")) return "İşlem iptal edildi.";
   if(m.includes("quota")) return "Günlük kullanım sınırına yaklaşıldı, birazdan tekrar dene.";
+  if(k.includes("failed-precondition")) return "Bu işlem için gereken bir ayar eksik. Geliştiriciye haber ver.";
+  if(k.includes("aborted")) return "İşlem yarıda kaldı, tekrar dener misin?";
+  if(k.includes("invalid-argument")) return "Girilen bilgide bir sorun var, kontrol edip tekrar dene.";
+  if(k.includes("out-of-range")) return "Girilen değer beklenen aralığın dışında.";
+  if(m.includes("offline") || m.includes("Failed to fetch"))
+    return "İnternet yok gibi görünüyor. Kayıtların telefonda bekliyor, bağlanınca gönderilecek.";
   return "";
 }
 function hataGunluguCiz(){
@@ -1058,7 +1097,13 @@ function hataGoster(e, kaynak){
     return;
   }
   const dostMesaj = hataCeviriGenel(e);
-  toast(dostMesaj ? dostMesaj : "Hata: " + (e && e.message ? e.message : "bağlantı sorunu"));
+  /* Bilinmeyen hatada bile kullanıcıya HAM İNGİLİZCE mesaj gösterilmiyor.
+     Eskiden "Hata: FirebaseError: Missing or insufficient permissions" gibi
+     bir metin çıkıyordu — işçi için hiçbir anlamı yok, üstelik korkutucu.
+     Teknik ayrıntı zaten hataKaydet() ile günlüğe yazıldı; tanı ekranından
+     okunabiliyor. Kullanıcıya ne yapacağını söylüyoruz. */
+  toast(dostMesaj ? dostMesaj
+      : "Bir sorun oldu, işlem tamamlanamadı. İnternetini kontrol edip tekrar dene.");
 }
 
 /* ---------- 🚨 Global hata yakalayıcı: try/catch dışında kalan her şeyi
@@ -6223,11 +6268,26 @@ function pdfBlobOlustur(gBas, gSon){
   doc.setDrawColor(255,196,0); doc.setLineWidth(2.5);
   doc.line(solX, y, sagX, y);
   y += 16;
+  /* BELGE KÜNYESİ
+     Bu PDF'in altında İŞÇİ / İŞVEREN imza alanı var — yani bir ödeme
+     anlaşmazlığında delil niteliği taşıyor. Böyle bir belgede iki temel
+     bilgi eksikti:
+       1) DÜZENLENME TARİHİ — belgenin ne zaman hazırlandığı yazmıyordu
+       2) UYGULANAN ÜCRET — anlaşmazlığın konusu genelde tam olarak budur
+          ("günlüğün kaçtı?"). Tabloda yalnızca sonuç tutarları vardı,
+          hangi ücretten hesaplandığı belirtilmiyordu. */
+  doc.setFont(yaziTipi,"normal"); doc.setFontSize(9.5); doc.setTextColor(60);
   if(ad || santiyeOzeti){
-    doc.setFont(yaziTipi,"normal"); doc.setFontSize(9.5); doc.setTextColor(60);
     doc.text("İşçi: "+(ad||"—")+(santiyeOzeti ? "   ·   Şantiye: "+santiyeOzeti : ""), solX, y);
-    doc.setTextColor(0);
+    y += 12;
   }
+  const ucretSatiri = [];
+  if(Number(ayarlar.yevmiye)>0)    ucretSatiri.push("Günlük yevmiye: "+paraFmt(ayarlar.yevmiye));
+  if(Number(ayarlar.saatUcret)>0)  ucretSatiri.push("Saat ücreti: "+paraFmt(ayarlar.saatUcret));
+  if(Number(ayarlar.mesaiUcret)>0) ucretSatiri.push("Mesai saati: "+paraFmt(ayarlar.mesaiUcret));
+  if(ucretSatiri.length){ doc.text(ucretSatiri.join("   ·   "), solX, y); y += 12; }
+  doc.text("Belge düzenlenme tarihi: "+new Date().toLocaleDateString("tr-TR"), solX, y);
+  doc.setTextColor(0);
 
   /* Ana çizelge tablosu */
   const gunSatir = [];
@@ -6239,14 +6299,14 @@ function pdfBlobOlustur(gBas, gSon){
     const kazancVar = i.yev!=="0" || (v && Number(v.mesai)>0);
     gunSatir.push([
       pad(g)+" / "+pad(aktifAy+1)+" / "+aktifYil+" — "+GUNLER[d.getDay()],
-      i.yev, i.arti, i.mesai,
+      gunDurumAdi(i.yev), i.arti, i.mesai,
       kazancVar ? gunSantiyeAdi(v) : "",
       kazancVar ? paraFmt(girdiKazanc(v)) : ""
     ]);
   }
   doc.autoTable({
     startY: y+8, margin:{left:solX, right: 595-sagX},
-    head: [["TARİH","YEVMİYE","GÜN İÇİ ARTI","MESAİ","ŞANTİYE","KAZANÇ"]],
+    head: [["TARİH","DURUM","GÜN İÇİ ARTI","MESAİ","ŞANTİYE","KAZANÇ"]],
     body: gunSatir,
     styles:{fontSize:8, cellPadding:4, lineColor:[200,200,200], lineWidth:0.5},
     headStyles:{fillColor:[242,242,242], textColor:20, fontStyle:"bold"},
@@ -6302,14 +6362,48 @@ function pdfBlobOlustur(gBas, gSon){
     y2 += 20;
   }
 
+  /* ── MUTABAKAT ÖZETİ (imzanın hemen üstünde) ──────────────────────
+     Toplamlar tablonun alt satırındaydı; çok günlü bir ayda tablo birkaç
+     sayfa sürebiliyor ve imza atan kişi neyi onayladığını görmeden
+     imzalıyordu. İmzanın hemen üstüne, tek cümlelik ve rakamlı bir
+     mutabakat metni kondu. */
+  if(y2 > 690){ doc.addPage(); y2 = 60; } else { y2 += 24; }
+  doc.setFillColor(255,247,220);
+  doc.rect(solX, y2-13, sagX-solX, 46, "F");
+  doc.setFont(yaziTipi,"bold"); doc.setFontSize(9.5); doc.setTextColor(20);
+  doc.text("MUTABAKAT", solX+8, y2);
+  doc.setFont(yaziTipi,"normal"); doc.setFontSize(9);
+  doc.text(
+    AYLAR[aktifAy]+" "+aktifYil+t.etiket+" dönemi için "+t.gunSayisi+" gün çalışma karşılığı "+
+    paraFmt(t.hakedis)+" hakediş doğmuş, "+paraFmt(t.alinan)+" ödenmiştir.",
+    solX+8, y2+14);
+  doc.setFont(yaziTipi,"bold");
+  doc.text("Kalan alacak: "+paraFmt(t.kalan), solX+8, y2+27);
+  doc.setTextColor(0);
+  y2 += 46;
+
   /* İmza satırları */
-  if(y2 > 720){ doc.addPage(); y2 = 60; } else { y2 += 40; }
+  if(y2 > 720){ doc.addPage(); y2 = 60; } else { y2 += 34; }
   doc.setDrawColor(30); doc.setLineWidth(1);
   doc.line(solX, y2, solX+180, y2);
   doc.line(sagX-180, y2, sagX, y2);
   doc.setFont(yaziTipi,"normal"); doc.setFontSize(9);
   doc.text("İşçi", solX, y2+14); doc.text("Ad Soyad / İmza", solX, y2+26);
+  doc.text("Tarih: ......../......../..........", solX, y2+40);
   doc.text("İşveren", sagX-180, y2+14); doc.text("Ad Soyad / İmza", sagX-180, y2+26);
+  doc.text("Tarih: ......../......../..........", sagX-180, y2+40);
+
+  /* ── SAYFA NUMARALARI ─────────────────────────────────────────────
+     İmzalanan çok sayfalı bir belgeden bir sayfa çıkarılsa fark
+     edilmiyordu. "Sayfa 2 / 4" bunu görünür kılıyor. */
+  const toplamSayfa = doc.internal.getNumberOfPages();
+  for(let sf=1; sf<=toplamSayfa; sf++){
+    doc.setPage(sf);
+    doc.setFont(yaziTipi,"normal"); doc.setFontSize(8); doc.setTextColor(120);
+    doc.text("Sayfa "+sf+" / "+toplamSayfa, sagX-60, 820);
+    doc.text("Puantaj Defterim", solX, 820);
+    doc.setTextColor(0);
+  }
 
   return doc.output("blob");
 }
@@ -6642,12 +6736,12 @@ function isPdfBlobOlustur(is, aySecim){
     const ayHakedis = gunlerBuAy.reduce((s,g)=> s+(g.v?girdiKazanc(g.v):0), 0);
     const gunSatir = gunlerBuAy.map(g=> [
       tarihFormatla(g.id)+" — "+GUNLER[g.d.getDay()],
-      g.i.yev, g.i.arti, g.i.mesai,
+      gunDurumAdi(g.i.yev), g.i.arti, g.i.mesai,
       g.kazancVar ? paraFmt(girdiKazanc(g.v)) : ""
     ]);
     doc.autoTable({
       startY: y+4, margin:{left:solX, right: 595-sagX},
-      head: [["TARİH","YEVMİYE","GÜN İÇİ ARTI","MESAİ","KAZANÇ"]],
+      head: [["TARİH","DURUM","GÜN İÇİ ARTI","MESAİ","KAZANÇ"]],
       body: gunSatir,
       styles:{fontSize:8, cellPadding:4, lineColor:[200,200,200], lineWidth:0.5},
       headStyles:{fillColor:[242,242,242], textColor:20, fontStyle:"bold"},
@@ -6803,14 +6897,14 @@ function yilPdfBlobOlustur(){
       const kazancVar = i.yev!=="0" || (v && Number(v.mesai)>0);
       gunSatir.push([
         pad(g)+" / "+pad(ayIndex+1)+" — "+GUNLER[d.getDay()],
-        i.yev, i.arti, i.mesai,
+        gunDurumAdi(i.yev), i.arti, i.mesai,
         kazancVar ? gunSantiyeAdi(v) : "",
         kazancVar ? paraFmt(girdiKazanc(v)) : ""
       ]);
     }
     doc.autoTable({
       startY: y2+4, margin:{left:solX, right: 595-sagX},
-      head: [["TARİH","YEVMİYE","GÜN İÇİ ARTI","MESAİ","ŞANTİYE","KAZANÇ"]],
+      head: [["TARİH","DURUM","GÜN İÇİ ARTI","MESAİ","ŞANTİYE","KAZANÇ"]],
       body: gunSatir,
       styles:{fontSize:7.5, cellPadding:3, lineColor:[200,200,200], lineWidth:0.4},
       headStyles:{fillColor:[242,242,242], textColor:20, fontStyle:"bold"},
@@ -7320,7 +7414,28 @@ document.addEventListener("DOMContentLoaded", ()=>{
     if(k.includes("email-already-in-use")) return "Bu e-posta ile zaten hesap var. Giriş yapmayı dene.";
     if(k.includes("invalid-credential")||k.includes("wrong-password")||k.includes("user-not-found")) return "E-posta ya da şifre yanlış.";
     if(k.includes("network")) return "İnternet bağlantısını kontrol et.";
-    return "Bir sorun oldu: " + (e.message||k);
+    /* Eksik olan ve kullanıcıyı gerçekten kilitleyen durumlar (0.0.6.8).
+       Bunlar olmayınca ekrana ham İngilizce Firebase mesajı düşüyordu —
+       "Bir sorun oldu: Firebase: Error (auth/too-many-requests)" gibi.
+       Kullanıcı ne yapacağını bilemiyor, çoğu bu noktada uygulamayı bırakıyor. */
+    if(k.includes("too-many-requests"))
+      return "Çok fazla denediğin için hesabın geçici olarak kilitlendi. 15-20 dakika bekleyip tekrar dene, ya da 'Şifremi unuttum'a bas.";
+    if(k.includes("user-disabled"))
+      return "Bu hesap kapatılmış. Yardım için geliştiriciye ulaş.";
+    if(k.includes("operation-not-allowed"))
+      return "E-posta ile giriş şu an kapalı görünüyor. Geliştiriciye haber ver.";
+    if(k.includes("missing-password"))
+      return "Şifre alanı boş kalmış.";
+    if(k.includes("invalid-login-credentials"))
+      return "E-posta ya da şifre yanlış.";
+    if(k.includes("requires-recent-login"))
+      return "Güvenlik için tekrar giriş yapman gerekiyor. Çıkış yapıp yeniden gir.";
+    if(k.includes("internal-error"))
+      return "Sunucuda geçici bir sorun var. Birkaç dakika sonra tekrar dene.";
+    /* Bilinmeyen hatada bile ham İngilizce mesaj GÖSTERİLMİYOR; teknik ayrıntı
+       hata günlüğüne yazılıyor, kullanıcıya anlaşılır bir şey söyleniyor. */
+    try{ hataKaydet("giris", e); }catch(_){}
+    return "Giriş yapılamadı. İnternetini kontrol edip tekrar dene. Sorun sürerse geliştiriciye yaz.";
   };
 
   $("#btn-giris").addEventListener("click", async ()=>{
@@ -7788,7 +7903,7 @@ document.addEventListener("DOMContentLoaded", ()=>{
   $("#borc-tarih").value = tarihId(new Date());
   $("#btn-borc-ekle").addEventListener("click", async ()=>{
     const kisi = $("#borc-kisi").value.trim();
-    const tutar = sayi($("#borc-tutar").value);
+    const tutar = sinirla(sayi($("#borc-tutar").value), SINIR.tutar, "Borç tutarı", "TL");
     const tarih = $("#borc-tarih").value || tarihId(new Date());
     if(!kisi || !tutar || tutar<=0){ toast("Kişi ve tutarı doldur kanka"); return; }
     /* ÇİFT KAYIT KORUMASI: bu ".add()" ile her tıklamada YENİ, rastgele ID'li
@@ -7866,17 +7981,20 @@ document.addEventListener("DOMContentLoaded", ()=>{
     const saatlikMod = ayarlar.calismaTipi==="saatlik";
     const veri = {
       durum: saatlikMod ? "saatlik" : modalDurum,
-      mesai: sayi($("#mesai-saat").value, true)||0,
-      arti: Math.max(0, Math.round((sayi($("#gun-arti").value, true)||0)*2)/2),
+      /* Sınırlama (0.0.6.9): eskiden buraya ne yazılsa o kaydediliyordu.
+         "999" yazılırsa 999 saat mesai kaydolup hakediş milyonlara çıkıyordu;
+         eksi değer de kabul edilip kazancı düşürüyordu. */
+      mesai: sinirla(sayi($("#mesai-saat").value, true), SINIR.mesaiSaat, "Mesai", "saat"),
+      arti: Math.round(sinirla(sayi($("#gun-arti").value, true), SINIR.artiGun, "Gün içi artı", "yevmiye")*2)/2,
       santiyeId: secId,
       santiye: $("#gun-santiye").value.trim() || (s ? s.ad : (ayarlar.santiye||"")),
       not: $("#gun-not").value.trim(),
       ...guncelOranlar(secId, modalTarih),
       guncelleme: firebase.firestore.FieldValue.serverTimestamp()
     };
-    if(saatlikMod) veri.saat = sayi($("#gun-saat").value, true)||0;
+    if(saatlikMod) veri.saat = sinirla(sayi($("#gun-saat").value, true), SINIR.calismaSaat, "Çalışma", "saat");
     if((ayarlar.parcaFiyat||0) > 0) veri.parcaMiktar = Math.max(0, sayi($("#gun-parca-miktar").value, true)||0);
-    veri.geceMesai = Math.max(0, Math.round((sayi($("#gun-gece-mesai").value, true)||0)*2)/2);
+    veri.geceMesai = Math.round(sinirla(sayi($("#gun-gece-mesai").value, true), SINIR.mesaiSaat, "Gece mesaisi", "saat")*2)/2;
     if(gunKonum) veri.konum = gunKonum;
     const bs = $("#gun-bas-saat").value, bts = $("#gun-bit-saat").value;
     if(bs) veri.basSaat = bs;
@@ -8273,7 +8391,7 @@ document.addEventListener("DOMContentLoaded", ()=>{
   });
 
   /* Neler yeni kartı */
-  const YENILIK_SURUM = "0.0.6.5";
+  const YENILIK_SURUM = "0.0.7.0";
   window.__SURUM = YENILIK_SURUM;   /* tanı raporu bunu okur */
   try{ $("#cekmece-surum").textContent = "Puantaj Defterim " + YENILIK_SURUM; }catch(e){}
   /* Sürümü çekmece başlığında da göster. Sebep: "değişiklik gelmedi" durumunda
@@ -8693,7 +8811,7 @@ document.addEventListener("DOMContentLoaded", ()=>{
   /* ---- ⏳ Beklenen ödemeler ---- */
   $("#beklenen-tarih").value = tarihId(new Date());
   $("#btn-beklenen-ekle").addEventListener("click", async ()=>{
-    const tutar = sayi($("#beklenen-tutar").value);
+    const tutar = sinirla(sayi($("#beklenen-tutar").value), SINIR.tutar, "Tutar", "TL");
     const tarih = $("#beklenen-tarih").value || tarihId(new Date());
     if(!tutar || tutar<=0){ toast("Tutarı yaz kanka"); return; }
     const btn = $("#btn-beklenen-ekle");
@@ -8717,7 +8835,7 @@ document.addEventListener("DOMContentLoaded", ()=>{
   $("#masraf-tarih").value = tarihId(new Date());
   masrafKategoriCizGoster();
   $("#btn-masraf-ekle").addEventListener("click", async ()=>{
-    const tutar = sayi($("#masraf-tutar").value);
+    const tutar = sinirla(sayi($("#masraf-tutar").value), SINIR.tutar, "Masraf tutarı", "TL");
     const tarih = $("#masraf-tarih").value || tarihId(new Date());
     if(!tutar || tutar<=0){ toast("Tutarı yaz kanka"); return; }
     /* Not: ödemelerde olduğu gibi burada da "ay kilitli" engeli BİLEREK yok —
@@ -9025,7 +9143,30 @@ document.addEventListener("DOMContentLoaded", ()=>{
     $("#cevrim-bant").style.display = navigator.onLine ? "none" : "block";
     if(navigator.onLine===false) toast("İnternet gitti 📴 Merak etme, kayıtların telefonda birikiyor");
   };
-  window.addEventListener("online", ()=>{ $("#cevrim-bant").style.display="none"; toast("İnternet geldi, eşitleniyor 🔄"); });
+  /* İnternet dönünce: "eşitleniyor" demek YETMEZ, gerçekten eşitlendiğini
+     doğrulamak gerekir. Eskiden bu mesaj gösterilip geçiliyordu; kullanıcı
+     mesaja güvenip uygulamayı kapatıyordu ama yazmalar hâlâ beklemede
+     olabiliyordu (sunucu yavaşsa, oturum düştüyse, kural hatası varsa).
+     Firestore'un waitForPendingWrites() metodu tam bunun için var:
+     bekleyen tüm yazmalar sunucuya ULAŞINCA çözülüyor. */
+  window.addEventListener("online", async ()=>{
+    $("#cevrim-bant").style.display = "none";
+    toast("İnternet geldi, kayıtların gönderiliyor 🔄");
+    try{
+      if(db && db.waitForPendingWrites){
+        /* Süre sınırı: sunucu cevap vermezse kullanıcı sonsuza kadar
+           "gönderiliyor" mesajıyla kalmasın. */
+        await Promise.race([
+          db.waitForPendingWrites(),
+          new Promise((_,red)=> setTimeout(()=> red(new Error("zaman aşımı")), 20000))
+        ]);
+        toast("✅ Tüm kayıtların sunucuya ulaştı");
+      }
+    }catch(e){
+      toast("⚠️ Bazı kayıtlar hâlâ gönderilemedi. Uygulamayı açık tut, tekrar denenecek.");
+      try{ hataKaydet("esitleme", e); }catch(_){}
+    }
+  });
   window.addEventListener("offline", cevrimYaz);
   if(!navigator.onLine) $("#cevrim-bant").style.display = "block";
 
@@ -9413,7 +9554,7 @@ document.addEventListener("DOMContentLoaded", ()=>{
   });
   $("#btn-odeme-ekle").addEventListener("click", async ()=>{
     const tarih = $("#odeme-tarih").value;
-    const tutar = sayi($("#odeme-tutar").value);
+    const tutar = sinirla(sayi($("#odeme-tutar").value), SINIR.tutar, "Tutar", "TL");
     const aitAy = ($("#odeme-ait-ay") && $("#odeme-ait-ay").value) || (tarih ? tarih.slice(0,7) : "");
     if(!tarih || !tutar || tutar<=0){ toast("Tarih ve tutarı doldur kanka"); return; }
     /* Not: "Ay kilitli" kontrolü BİLEREK burada yok — kilit, sadece o ayın
@@ -9534,11 +9675,14 @@ document.addEventListener("DOMContentLoaded", ()=>{
   $("#btn-ayar-kaydet").addEventListener("click", async ()=>{
     try{
       await kokRef().set({
-        yevmiye: sayi($("#ayar-yevmiye").value)||0,
-        mesaiUcret: sayi($("#ayar-mesai").value)||0,
-        ekGunluk: sayi($("#ayar-ek").value)||0,
-        saatUcret: sayi($("#ayar-saat").value)||0,
-        gunlukSaat: sayi($("#ayar-gunsaat").value)||8,
+        /* Ücret ayarları en kritik alanlar: yanlış girilen bir yevmiye
+           TÜM geçmiş hesabı bozar (yeni kayıtlar bu orandan mühürlenir).
+           Bu yüzden burada da sınır var. */
+        yevmiye: sinirla(sayi($("#ayar-yevmiye").value), SINIR.yevmiye, "Günlük yevmiye", "TL"),
+        mesaiUcret: sinirla(sayi($("#ayar-mesai").value), SINIR.yevmiye, "Mesai ücreti", "TL"),
+        ekGunluk: sinirla(sayi($("#ayar-ek").value), SINIR.yevmiye, "Ek günlük", "TL"),
+        saatUcret: sinirla(sayi($("#ayar-saat").value), SINIR.yevmiye, "Saat ücreti", "TL"),
+        gunlukSaat: sinirla(sayi($("#ayar-gunsaat").value), SINIR.calismaSaat, "Günlük saat", "saat")||8,
         calismaTipi: $("#ayar-tip").value,
         hedef: sayi($("#ayar-hedef").value)||0,
         uyariEsik: sayi($("#ayar-esik").value)||0,

@@ -1,5 +1,5 @@
 /* Puantaj Defterim — service worker (çevrimdışı kabuk) */
-const KASA = "puantaj-0.0.6.5";
+const KASA = "puantaj-0.0.7.0";
 /* ÇEKİRDEK: uygulamanın açılması için ŞART olan dosyalar. addAll atomiktir —
    biri bile inmezse kurulum tamamen başarısız olur, bu yüzden burada sadece
    gerçekten zorunlu olanlar var. */
@@ -52,8 +52,38 @@ self.addEventListener("activate", e => {
 self.addEventListener("fetch", e => {
   const istek = e.request;
   if (istek.method !== "GET") return;
-  const ayniKok = new URL(istek.url).origin === self.location.origin;
-  if (!ayniKok) return; /* Firebase/API istekleri SW'ye takılmasın */
+  const url = new URL(istek.url);
+  const ayniKok = url.origin === self.location.origin;
+
+  /* ── DIŞ KÜTÜPHANELER: çevrimdışı için önbelleğe al ────────────────
+     Uygulama 10 dış kütüphane kullanıyor (Firebase SDK, jsPDF, SheetJS,
+     html2canvas, Tesseract). Eskiden bunların tamamı `if(!ayniKok) return`
+     ile service worker'ı atlıyordu — yani ÖNBELLEĞE HİÇ ALINMIYORLARDI.
+     Sonuç: internet yokken uygulama açılıyor ama Firebase bile yüklenemiyor;
+     PDF/Excel çıkarmak da mümkün olmuyordu. Çevrimdışı çalışma iddiası
+     kısmen boştu.
+
+     Bunlar sürüm numaralı, sabit adresler (örn. jspdf/2.5.1/...) — yani
+     içerikleri hiç değişmez. Bu yüzden "önce önbellek" güvenli.
+     API çağrıları (hava durumu, haber, kur, Firestore) BU LİSTEDE YOK:
+     onların taze olması gerekiyor, önbelleğe alınmamalı. */
+  const KUTUPHANE = /^https:\/\/(www\.gstatic\.com\/firebasejs|cdn\.sheetjs\.com|cdnjs\.cloudflare\.com|cdn\.jsdelivr\.net\/npm\/tesseract|fonts\.googleapis\.com|fonts\.gstatic\.com)/;
+  if (!ayniKok) {
+    if (KUTUPHANE.test(istek.url)) {
+      e.respondWith(
+        caches.match(istek).then(c => c || fetch(istek).then(y => {
+          /* Yalnızca başarılı yanıtları sakla; hatalı/kısmi yanıt önbelleğe
+             girerse kütüphane kalıcı olarak bozuk kalır. */
+          if (y && (y.ok || y.type === "opaque")) {
+            const kopya = y.clone();
+            caches.open(KASA).then(k => k.put(istek, kopya));
+          }
+          return y;
+        }).catch(() => caches.match(istek)))
+      );
+    }
+    return; /* Firebase/API istekleri SW'ye takılmasın */
+  }
 
   /* Sayfa: önce ağ, olmazsa önbellek (çevrimdışı açılış) */
   if (istek.mode === "navigate") {

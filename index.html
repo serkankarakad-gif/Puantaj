@@ -360,11 +360,10 @@
       <div class="kart gizli" id="yenilik-kart" style="border-color:var(--sari)">
         <h2>🎁 Neler yeni?</h2>
         <ul style="padding-left:18px;font-size:13.5px;line-height:1.9">
-          <li><b>🚨 PATRONA GÖNDERDİĞİN RAPOR TERS ANLAŞILABİLİYORDU.</b> Bu, uygulamanın dışarıya çıkan tek ürünü ve şimdiye kadar hiç bakmamıştım. Raporda çalıştığın günler <b>"X"</b> ile gösteriliyordu. Ama günlük dilde "X" tam tersini çağrıştırır — "olmadı, gelmedi". Yani patronun listeye bakıp "bu adam 19 gün gelmemiş" diye okuyabilirdi</li>
-          <li><b>Üstelik "0" hem "gelmedim" hem "sıfır artı" anlamında kullanılıyordu</b> ve hangi işaretin ne demek olduğunu açıklayan hiçbir satır yoktu. Bir ödeme anlaşmazlığında bu belirsizlik senin aleyhine yorumlanabilirdi</li>
-          <li><b>✅ Artık açık Türkçe:</b> "Tam", "Yarım", "İzin", "—" (gelinmedi). Altına da açıklama satırı eklendi. Sütun başlığı "YEVMİYE" yerine "DURUM" oldu — içerikle uyumlu</li>
-          <li><b>📄 Dört çıktının hepsinde düzeltildi:</b> WhatsApp metni, paylaşılan görsel (PNG), PDF raporu ve asistan özeti. Hepsi aynı dili konuşuyor</li>
-          <li><b>📉 Rapor kısaldı:</b> Eskiden ayın 31 gününün hepsi listeleniyordu, hiç işlemediğin boş günler dahil. Artık sadece kaydı olan günler yazılıyor — patron 31 satır yerine gerçek çalışma günlerini görüyor</li>
+          <li><b>📴 ÇEVRİMDIŞI ÇALIŞMA İDDİASI KISMEN BOŞMUŞ.</b> Uygulama 10 dış kütüphane kullanıyor (Firebase, PDF, Excel, görsel, fiş okuma) ve <b>hiçbiri çevrimdışı için saklanmıyordu</b>. Yani internet yokken uygulama açılıyordu ama Firebase bile yüklenemiyor, PDF ya da Excel çıkaramıyordun. Şantiyede internet sürekli kesildiği için bu ciddi bir eksikti</li>
+          <li><b>✅ Artık kütüphaneler telefonda saklanıyor.</b> Bir kez internetle açtıktan sonra çevrimdışı da PDF çıkarabiliyor, Excel indirebiliyorsun. Bunlar sürüm numaralı sabit dosyalar, yani içerikleri hiç değişmiyor — saklamak güvenli. Hava durumu, haber, kur gibi <b>taze olması gereken veriler saklanmıyor</b>, onlar her seferinde sunucudan geliyor</li>
+          <li><b>🔄 "Eşitleniyor" mesajı artık doğruyu söylüyor.</b> İnternet gelince "eşitleniyor 🔄" yazıp geçiyordu — ama gerçekten eşitlenip eşitlenmediğini hiç kontrol etmiyordu. Sen mesaja güvenip uygulamayı kapatabilirdin, oysa kayıtlar hâlâ beklemede olabilirdi. Artık bekleyen tüm kayıtlar sunucuya <b>gerçekten ulaşınca</b> "✅ Tüm kayıtların sunucuya ulaştı" diyor. Ulaşamazsa da açıkça söylüyor: <i>"Bazı kayıtlar hâlâ gönderilemedi, uygulamayı açık tut."</i></li>
+          <li><b>⏱ Sonsuz bekleme koruması:</b> Sunucu cevap vermezse 20 saniye sonra vazgeçip uyarıyor — "gönderiliyor" mesajıyla asılı kalmıyorsun</li>
         </ul>
         <button class="btn btn-cizgili" id="btn-yenilik-kapat">Süper, kapat</button>
       </div>

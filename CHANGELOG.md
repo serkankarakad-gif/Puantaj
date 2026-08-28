@@ -5,6 +5,53 @@ kullanır: `0.0.0.X` — X, her güncellemede 1 artar. Uygulama içindeki sürü
 (alt bilgi + "Neler yeni" kartı) ve dağıtılan zip dosyasının adı her zaman
 birebir aynıdır.
 
+## 0.0.7.0 — 📴 Çevrimdışı: dış kütüphaneler önbelleğe alındı + gerçek eşitleme onayı
+- Yeni inceleme alanı: çevrimdışı davranış. `enablePersistence` ve çevrimdışı bandı mevcuttu, ancak iki temel eksik bulundu
+- 📴 **Dış kütüphaneler hiç önbelleğe alınmıyordu.** `sw.js` içindeki `if (!ayniKok) return;` satırı, farklı kökenli TÜM istekleri service worker'ın dışında bırakıyordu. Uygulama 10 dış kütüphaneye bağımlı (Firebase SDK ×5, jsPDF, jsPDF-autoTable, SheetJS, html2canvas, Tesseract) — internet yokken bunların hiçbiri yüklenemiyordu. Çevrimdışı açılış çalışıyor görünse de Firebase yüklenemediği için işlevsizdi; PDF/Excel üretimi de mümkün değildi
+  - Yeni `KUTUPHANE` deseni: sürüm numaralı sabit CDN adresleri (gstatic/firebasejs, cdn.sheetjs.com, cdnjs.cloudflare.com, jsdelivr/tesseract, Google Fonts) cache-first sunuluyor. İçerikleri değişmediği için güvenli
+  - **API çağrıları bilinçli olarak dışarıda**: hava durumu, haber, kur, namaz vakti, Firestore — bunların taze olması gerekiyor
+  - Yalnızca `y.ok || y.type === "opaque"` yanıtlar saklanıyor; hatalı yanıtın kalıcı önbelleğe girip kütüphaneyi bozması önlendi
+  - Desen 9 örnek adresle test edildi: 5 kütüphane önbelleğe alınıyor, 4 API geçiyor — 9/9 doğru
+- 🔄 **"Eşitleniyor" mesajı doğrulanmıyordu.** `online` olayında toast gösterilip geçiliyordu; bekleyen yazmaların sunucuya ulaşıp ulaşmadığı kontrol edilmiyordu. Kullanıcı mesaja güvenip uygulamayı kapatabilir, yazmalar beklemede kalabilirdi
+  - `db.waitForPendingWrites()` ile gerçek onay: başarılıysa "✅ Tüm kayıtların sunucuya ulaştı", değilse "⚠️ Bazı kayıtlar hâlâ gönderilemedi. Uygulamayı açık tut."
+  - 20 saniyelik zaman sınırı: sunucu yanıtsız kalırsa kullanıcı süresiz "gönderiliyor" durumunda bırakılmıyor
+  - Metot varlığı (`db.waitForPendingWrites`) kontrol ediliyor; hata `hataKaydet()` ile günlüğe yazılıyor
+- Üç yerde sürüm güncellendi: `app.js`, `sw.js`, zip adı — hepsi `0.0.7.0`
+
+## 0.0.6.9 — 🛡️ Girdi sınırları: yazım hatası artık hesabı bozmuyor
+- Yeni inceleme alanı: girdi doğrulama. `sayi()` çevirici doğru çalışıyor ancak değerin MAKUL olup olmadığına bakılmıyordu. Test edildi: `999` saat mesai, `-50` saat, `999999999` TL — hepsi kabul ediliyor ve doğrudan hakedişe yansıyordu
+- **Somut risk**: mesai alanına yanlışlıkla 999 yazılması (tuşa basılı kalması) o güne 999 saat mesai kaydediyor, bakiye milyonlara çıkıyordu. Hata aylar sonra fark edilse bile kaynağını bulmak zordu
+- 🛡️ **Yeni `SINIR` sabiti ve `sinirla()` yardımcısı**: mesai 18 sa/gün, çalışma 24 sa/gün, gün içi artı 5, tek kalem tutar 1.000.000 TL, ücret ayarları 100.000 TL. Sınırlar bilinçli olarak geniş — amaç gerçek kullanımı engellemek değil, açıkça hatalı girişi yakalamak
+- **Davranış**: kayıt reddedilmiyor, değer kırpılıyor ve kullanıcı bilgilendiriliyor ("⚠️ Mesai çok yüksek görünüyor (999 saat). 18 saat olarak kaydedildi — yanlışsa düzelt."). Negatif değerler 0'a çekiliyor. İş akışı durmuyor ama sessiz bozulma engelleniyor
+- **Uygulandığı alanlar**: gün kaydı (mesai, gün içi artı, saatlik çalışma, gece mesaisi), dört tutar alanı (borç, beklenen, masraf, ödeme) ve ücret ayarları (yevmiye, mesai ücreti, ek günlük, saat ücreti, günlük saat)
+- Ücret ayarları özellikle kritik: yanlış girilen yevmiye, `guncelOranlar()` ile o günden sonraki tüm kayıtlara mühürleniyor
+- **Test**: 5 senaryo (aşırı yüksek, negatif, normal değer, aşırı tutar, normal tutar) — 5/5 doğru; normal değerlerde uyarı üretilmiyor
+- Üç yerde sürüm güncellendi: `app.js`, `sw.js`, zip adı — hepsi `0.0.6.9`
+
+## 0.0.6.8 — 💬 Hata mesajları: ham İngilizce sızıntısı kapatıldı
+- Yeni inceleme alanı: uygulamanın kullanıcıyla konuştuğu dil. İki çevirici mevcuttu — `hataCevir` (giriş/kayıt) ve `hataCeviriGenel` (Firestore) — ancak ikisi de bilinmeyen durumda **ham İngilizce Firebase mesajını** ekrana basıyordu ("Bir sorun oldu: Firebase: Error (auth/too-many-requests)")
+- 🔐 **Giriş çeviricisine 7 durum eklendi**, en önemlisi `too-many-requests`: Firebase art arda hatalı denemede hesabı geçici kilitliyor; kullanıcı bunu "hesabım gitti" diye okuyabiliyordu. Yeni mesaj bekleme süresini ve alternatifi (şifre sıfırlama) söylüyor. Ayrıca `user-disabled`, `operation-not-allowed`, `missing-password`, `invalid-login-credentials`, `requires-recent-login`, `internal-error`
+- 🌐 **Genel çeviriciye 6 durum eklendi**: `failed-precondition`, `aborted`, `invalid-argument`, `out-of-range` ve çevrimdışı belirtileri (`offline`, `Failed to fetch`). Çevrimdışı mesajı verinin kaybolmadığını açıkça söylüyor
+- 🚫 **Ham mesaj sızıntısı kapatıldı**: her iki çeviricinin de son çaresi artık anlaşılır Türkçe. Teknik ayrıntı `hataKaydet()` ile günlüğe yazılıyor ve tanı ekranından okunabiliyor — bilgi kaybolmuyor, yalnızca kullanıcıya gösterilmiyor
+- Doğrulama: `toast()` çağrılarında `e.message` doğrudan kullanan başka nokta kalmadı
+- Üç yerde sürüm güncellendi: `app.js`, `sw.js`, zip adı — hepsi `0.0.6.8`
+
+## 0.0.6.7 — 🤝 PDF: mutabakat özeti, sayfa numarası, imza tarihi
+- Belge kalitesi incelemesi sürüyor. `pdfBlobOlustur()` çıktısı, altında İşçi/İşveren imza alanı bulunduğu için mutabakat belgesi niteliğinde; bu gözle üç eksik giderildi
+- 🤝 **Mutabakat özeti**: toplamlar `autoTable` `foot` satırındaydı, yani tablonun sonunda. Uzun aylarda tablo birden fazla sayfa sürdüğü için imzalayan kişi neyi onayladığını görmeden imzalayabiliyordu. İmzanın hemen üstüne vurgulu bir kutu eklendi: dönem, gün sayısı, hakediş, alınan ve **kalan alacak** tek cümlede
+- 📄 **Sayfa numarası**: çok sayfalı imzalı belgeden sayfa çıkarılması fark edilemiyordu. Tüm sayfalara `doc.setPage()` döngüsüyle "Sayfa N / Toplam" ve sol alta "Puantaj Defterim" eklendi
+- ✍️ **İmza tarihi alanı**: her iki imza bloğuna "Tarih: ..../..../......" satırı. Düzenleme tarihi 0.0.6.6'da eklenmişti; imza tarihi ondan ayrı ve mutabakat açısından gerekli
+- 📐 **Taşma denetimi**: yeni bloklar sayfa sonuna denk gelirse kırpılma riski vardı. Senaryolar hesaplandı — mutabakat eşiği `y2>690`, imza eşiği `y2>720`; en kötü durumda içerik 744pt'de bitiyor, alt bilgi 820pt'de (A4 = 842pt). Çakışma yok, sığmayan durumda otomatik sayfa geçişi mevcut
+- Üç yerde sürüm güncellendi: `app.js`, `sw.js`, zip adı — hepsi `0.0.6.7`
+
+## 0.0.6.6 — 📋 PDF çizelgesi: üç yolda daha "X" düzeltildi + belge künyesi
+- ⚠️ **0.0.6.5 eksik kalmış**: uygulamada **beş ayrı rapor üretim yolu** var, o sürümde yalnızca ikisi (WhatsApp metni, HTML-tablo PDF'i) düzeltilmişti. Atlanan üç yol `autoTable` tabanlıydı ve bunlardan biri **altında İşçi/İşveren imza alanı bulunan asıl puantaj çizelgesi**
+  - Beş yol da tarandı; `gunDurumAdi()` 8 noktada uygulanıyor. Ham `i.yev` kullanımı **0**, `"TARİH","YEVMİYE"` başlığı **0** (dördü de `"DURUM"` oldu)
+- 📋 **Belge künyesi eklendi.** İmza alanı taşıyan bu PDF, ödeme anlaşmazlığında delil niteliği taşıyor ancak iki temel bilgi eksikti:
+  - **Düzenlenme tarihi** — imzalanan bir belgede ne zaman hazırlandığı yazmalı
+  - **Uygulanan ücret** — anlaşmazlığın konusu genelde tam olarak budur. Tabloda yalnızca sonuç tutarları vardı, hangi yevmiye/saat ücretinden hesaplandığı belirtilmiyordu. Artık başlık altında "Günlük yevmiye: X · Saat ücreti: Y · Mesai saati: Z" yazıyor (yalnızca tanımlı olanlar). Belge kendi kendini açıklıyor, karşı taraf hesabı doğrulayabiliyor
+- Üç yerde sürüm güncellendi: `app.js`, `sw.js`, zip adı — hepsi `0.0.6.6`
+
 ## 0.0.6.5 — 🚨 Paylaşılan raporda anlam belirsizliği (patron ters okuyabilirdi)
 - Yeni inceleme alanı: uygulamanın dış çıktısı — patrona/ustabaşına gönderilen rapor içeriği. Şimdiye kadar yalnızca teknik tarafı (font, çökme, eksik ödeme) ele alınmıştı, METİN hiç okunmamıştı
 - 🚨 **BULGU: çalışılan gün "X" ile gösteriliyordu.** İçeride bu "çalışıldı" demek, ancak raporu okuyan kişi için "X" günlük dilde "olmadı / gelmedi" anlamına gelir — anlam tam tersine dönüyordu. Ek olarak "0" hem "gelinmedi" hem "sıfır artı" için kullanılıyordu ve işaretleri açıklayan bir lejant yoktu. Ödeme anlaşmazlığında işçi aleyhine yorumlanabilecek bir belirsizlik
