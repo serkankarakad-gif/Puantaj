@@ -3790,6 +3790,16 @@ async function aksamDurt(bugunIsli){
       vibrate: [80, 40, 80]
     });
     localStorage.setItem("durt:" + bugun, "1");
+    /* Eski işaretleri temizle. Bu anahtar her gün bir tane ekleniyordu ve
+       hiç silinmiyordu — bir yılda 365, üç yılda 1000+ anahtar. Tek başına
+       az yer kaplıyor ama localStorage sınırlı ve dolduğunda AYARLARIN
+       kaydedilememesine yol açar. Yalnızca son 7 gün tutuluyor. */
+    try{
+      const esik = tarihId(new Date(Date.now() - 7*86400000));
+      Object.keys(localStorage)
+        .filter(k => k.startsWith("durt:") && k.slice(5) < esik)
+        .forEach(k => localStorage.removeItem(k));
+    }catch(e){}
   }catch(e){}
 }
 
@@ -6458,13 +6468,75 @@ async function pdfPaylas(gBas, gSon){
     pdfYazdir(gBas, gSon);
     return;
   }
-  /* ÖNCE PDF'i telefona GERÇEK, kalıcı bir dosya olarak indir (İndirilenler klasörü).
-     Sebep: navigator.share() ile WhatsApp'a gönderilen dosya, tarayıcının SİLİNEBİLEN
-     geçici bir alanındaki kaynağa bakıyor — zayıf bağlantıda WhatsApp'ın yükleme işi
-     yarıda kalırsa, o geçici kaynak zaten kaybolmuş olabileceğinden "yeniden gönder"
-     de işe yaramıyor (kullanıcıdan gelen gerçek şikayet buydu). Dosyayı önce kalıcı
-     olarak kaydedince, paylaşım penceresi ne olursa olsun elde GERÇEK bir PDF kalıyor
-     ve WhatsApp'tan ataç (📎) → Belge ile elle eklenebiliyor — bu asla başarısız olmaz. */
+  await pdfDosyaPaylas(blob, dosyaAdi, "Puantaj Çizelgesi — "+AYLAR[aktifAy]+" "+aktifYil);
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   📤 PDF PAYLAŞIMI — iOS ve Android için ayrı yol
+   ───────────────────────────────────────────────────────────────────
+   iPhone kullanıcılarından "PDF gönderemiyorum" şikayeti geldi, Android'de
+   sorun yoktu. İki ayrı sebep bulundu:
+
+   1) DOKUNUŞ İZNİ TÜKENİYOR (asıl sebep)
+      iOS Safari, navigator.share() çağrısının kullanıcı dokunuşundan hemen
+      sonra yapılmasını şart koşar. Eski akış şöyleydi:
+        dokunuş → font indir (ilk seferde 1 MB!) → PDF üret → sahte indirme
+        tıklaması → navigator.share()
+      Bu zincir birkaç saniye sürüyor; iOS o noktada izni geri alıp
+      NotAllowedError fırlatıyor. Android bu konuda gevşek olduğu için
+      orada sorun görünmüyordu.
+
+   2) a.download iOS'ta ÇALIŞMIYOR
+      iOS'ta "İndirilenler klasörü" kavramı yok ve Safari blob için
+      download özniteliğini yok sayıyor. Yani "PDF telefonuna kaydedildi
+      (İndirilenler)" mesajı iPhone'da yanlış bilgi veriyordu. Üstelik o
+      sahte tıklama paylaşım akışını da bozuyordu.
+
+   Çözüm: iOS'ta indirme adımı atlanıp DOĞRUDAN paylaşım penceresi
+   açılıyor. İzin tükenmişse kullanıcıya anlaşılır bir yönlendirme
+   veriliyor (ikinci dokunuşta fontlar önbellekte olduğu için hızlı
+   çalışıyor). Android'de eski davranış korunuyor — orada indirme
+   gerçekten işe yarıyor ve zayıf bağlantıda yedek sağlıyor.
+   ═══════════════════════════════════════════════════════════════════ */
+function iosMu(){
+  return /iPad|iPhone|iPod/.test(navigator.userAgent) ||
+         (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+}
+
+async function pdfDosyaPaylas(blob, dosyaAdi, baslik){
+  const dosya = new File([blob], dosyaAdi, {type:"application/pdf"});
+  const paylasilabilir = navigator.canShare && navigator.canShare({files:[dosya]});
+
+  if(iosMu()){
+    /* iOS: önce paylaş, indirme yok. */
+    if(paylasilabilir){
+      try{
+        await navigator.share({files:[dosya], title: baslik});
+        return;
+      }catch(e){
+        /* Kullanıcı iptal ettiyse sessiz geç; izin hatasıysa yönlendir. */
+        if(e && e.name === "AbortError") return;
+        if(e && e.name === "NotAllowedError"){
+          toast("Paylaşım açılamadı — PDF hazır, düğmeye bir kez daha bas 👆");
+          return;
+        }
+      }
+    }
+    /* Paylaşım hiç desteklenmiyorsa: PDF'i yeni sekmede aç.
+       Kullanıcı oradan iOS'un kendi paylaş düğmesiyle gönderebiliyor. */
+    const url = URL.createObjectURL(blob);
+    window.open(url, "_blank");
+    setTimeout(()=> URL.revokeObjectURL(url), 30000);
+    toast("PDF açıldı — paylaşmak için köşedeki ⬆️ düğmesini kullan");
+    return;
+  }
+
+  /* ANDROID / MASAÜSTÜ: önce kalıcı indirme, sonra paylaşım.
+     Sebep (eski ve hâlâ geçerli): paylaşım penceresine verilen dosya
+     tarayıcının silinebilen geçici alanında duruyor; zayıf bağlantıda
+     WhatsApp'ın yüklemesi yarıda kalırsa "yeniden gönder" de çalışmıyor.
+     Önce kalıcı kaydedilince elde her hâlükârda gerçek bir PDF kalıyor,
+     WhatsApp'tan ataç (📎) → Belge ile elle eklenebiliyor. */
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
   a.href = url; a.download = dosyaAdi; a.click();
@@ -6472,14 +6544,8 @@ async function pdfPaylas(gBas, gSon){
   toast("PDF telefonuna kaydedildi 📥 (İndirilenler)");
 
   try{
-    const dosya = new File([blob], dosyaAdi, {type:"application/pdf"});
-    if(navigator.canShare && navigator.canShare({files:[dosya]})){
-      await navigator.share({files:[dosya], title:"Puantaj Çizelgesi — "+AYLAR[aktifAy]+" "+aktifYil});
-    }
-  }catch(e){
-    /* Paylaşım penceresi iptal edildi ya da başarısız oldu — sorun değil, PDF zaten
-       kalıcı olarak kaydedildi; WhatsApp'tan ataç (📎) → Belge ile elle eklenebilir. */
-  }
+    if(paylasilabilir) await navigator.share({files:[dosya], title: baslik});
+  }catch(e){ /* iptal ya da hata — PDF zaten kaydedildi */ }
 }
 
 /* ---------- Yıl Özeti: gerçek (metin tabanlı) PDF raporu ----------
@@ -6809,17 +6875,8 @@ async function isPdfPaylas(is, aySecim){
   if(!blob){ toast("PDF motoru yüklenemedi, internetini kontrol et"); return; }
   const ayEki = aySecim ? "-"+AYLAR[aySecim.ay]+"-"+aySecim.yil : "";
   const dosyaAdi = "Is-Raporu-"+String(is.patronAdi).replace(/[^a-zA-Z0-9ğüşıöçĞÜŞİÖÇ]+/g,"-")+ayEki+".pdf";
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url; a.download = dosyaAdi; a.click();
-  setTimeout(()=> URL.revokeObjectURL(url), 15000);
-  toast("PDF telefonuna kaydedildi 📥 (İndirilenler)");
-  try{
-    const dosya = new File([blob], dosyaAdi, {type:"application/pdf"});
-    if(navigator.canShare && navigator.canShare({files:[dosya]})){
-      await navigator.share({files:[dosya], title:"İş Raporu — "+is.patronAdi+(aySecim ? " ("+AYLAR[aySecim.ay]+" "+aySecim.yil+")" : "")});
-    }
-  }catch(e){ /* iptal/başarısız oldu — sorun değil, PDF zaten kaydedildi */ }
+  await pdfDosyaPaylas(blob, dosyaAdi, "İş Raporu — "+is.patronAdi+(aySecim ? " ("+AYLAR[aySecim.ay]+" "+aySecim.yil+")" : ""));
+
 }
 
 function yilPdfBlobOlustur(){
@@ -6962,17 +7019,8 @@ async function yilPdfPaylas(){
   const dosyaAdi = "Yil-Raporu-"+yilSon.yil+".pdf";
   /* Diğer PDF paylaşımlarıyla aynı desen: önce kalıcı dosya olarak indir,
      sonra paylaşım penceresini dene — WhatsApp'ta takılıp kalma sorununu önler. */
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url; a.download = dosyaAdi; a.click();
-  setTimeout(()=> URL.revokeObjectURL(url), 15000);
-  toast("PDF telefonuna kaydedildi 📥 (İndirilenler)");
-  try{
-    const dosya = new File([blob], dosyaAdi, {type:"application/pdf"});
-    if(navigator.canShare && navigator.canShare({files:[dosya]})){
-      await navigator.share({files:[dosya], title:"Yıl Raporu — "+yilSon.yil});
-    }
-  }catch(e){ /* iptal/başarısız oldu — sorun değil, PDF zaten kaydedildi */ }
+  await pdfDosyaPaylas(blob, dosyaAdi, "Yıl Raporu — "+yilSon.yil);
+
 }
 
 /* ---------- Gün modalı ---------- */
@@ -7652,7 +7700,41 @@ document.addEventListener("DOMContentLoaded", ()=>{
       bd.innerHTML = "<b style='color:var(--tam)'>Açık ✅</b> — bu telefon duyuru listesinde.";
     }
   }catch(e){}
+  /* PDF fontlarını ARKA PLANDA önceden indir (yalnızca iOS'ta).
+     Gerekçe: iOS Safari, paylaşım penceresinin kullanıcı dokunuşundan hemen
+     sonra açılmasını istiyor. Fontlar paylaşım anında indiriliyordu (ilk
+     seferde ~1 MB) ve bu gecikme izni tüketip paylaşımı engelliyordu.
+     Açılıştan 12 saniye sonra, kullanıcı hiçbir şey beklemeden arka planda
+     indiriliyor; böylece PDF'e basıldığında font zaten hazır oluyor.
+     Android'de gerek yok (orada izin kuralı gevşek) — gereksiz veri
+     harcamamak için yalnızca iOS'ta yapılıyor. */
+  if(iosMu()) setTimeout(()=>{ pdfFontlariYukle().catch(()=>{}); }, 12000);
+
   setTimeout(bildirimSessizTazele, 7000);
+
+  /* 🌙 Akşam hatırlatmasını UYGULAMA KAPALIYKEN de çalışacak şekilde kaydet.
+     Mevcut hatırlatma yalnızca ana ekran çizilirken tetikleniyordu — yani
+     kullanıcı uygulamayı açtığında. Ama zaten açtıysa hatırlatmaya ihtiyacı
+     yok; özellik tam gerektiği anda sessizdi.
+     Periodic Background Sync desteği sınırlı (Chrome/Android'de var, iOS'ta
+     yok) ve tarayıcı izin/kullanım sıklığına göre karar veriyor. Bu yüzden
+     eski kontrol KALDIRILMADI — destekleyen cihazda kapalıyken, diğerlerinde
+     açılışta hatırlatılıyor. */
+  setTimeout(async ()=>{
+    try{
+      if(localStorage.getItem("bildirimAcik") !== "1") return;
+      if(!("Notification" in window) || Notification.permission !== "granted") return;
+      const kayit = await navigator.serviceWorker.ready;
+      if(!kayit.periodicSync) return;                 /* desteklenmiyor, sessiz geç */
+      const izin = await navigator.permissions.query({name:"periodic-background-sync"});
+      if(izin.state !== "granted") return;
+      const mevcut = await kayit.periodicSync.getTags();
+      if(mevcut.includes("aksam-hatirlatma")) return; /* zaten kayıtlı */
+      await kayit.periodicSync.register("aksam-hatirlatma", {
+        minInterval: 12 * 60 * 60 * 1000              /* en sık 12 saatte bir */
+      });
+    }catch(e){ /* tarayıcı desteklemiyorsa sorun değil, eski yol devrede */ }
+  }, 9000);
   insaatHesaplaKur();
   $("#btn-kimlik-kart").addEventListener("click", kimlikKartOlustur);
   let kazaFoto = null;
@@ -8391,7 +8473,7 @@ document.addEventListener("DOMContentLoaded", ()=>{
   });
 
   /* Neler yeni kartı */
-  const YENILIK_SURUM = "0.0.7.0";
+  const YENILIK_SURUM = "0.0.7.1";
   window.__SURUM = YENILIK_SURUM;   /* tanı raporu bunu okur */
   try{ $("#cekmece-surum").textContent = "Puantaj Defterim " + YENILIK_SURUM; }catch(e){}
   /* Sürümü çekmece başlığında da göster. Sebep: "değişiklik gelmedi" durumunda

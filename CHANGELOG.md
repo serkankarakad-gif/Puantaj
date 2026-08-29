@@ -5,6 +5,17 @@ kullanır: `0.0.0.X` — X, her güncellemede 1 artar. Uygulama içindeki sürü
 (alt bilgi + "Neler yeni" kartı) ve dağıtılan zip dosyasının adı her zaman
 birebir aynıdır.
 
+## 0.0.7.1 — 🍎 iOS'ta PDF paylaşılamıyordu (kullanıcı şikayeti)
+- Kullanıcı bildirimi: "iOS telefon kullanıcıları PDF gönderemiyor, Android'de sorun yok"
+- 🍎 **Sebep 1 — geçici kullanıcı izni (transient activation) tükeniyordu.** iOS Safari, `navigator.share()` çağrısının kullanıcı jestinden kısa süre içinde yapılmasını zorunlu kılıyor. `pdfPaylas()` akışı şöyleydi: `await pdfFontlariYukle()` (ilk kullanımda ~1 MB indirme) → `pdfBlobOlustur()` → sentetik `a.click()` indirme → `await navigator.share()`. Bu zincir saniyeler sürüyor; iOS izni geri alıp `NotAllowedError` fırlatıyordu. Android'in politikası gevşek olduğu için orada görünmüyordu
+- 🍎 **Sebep 2 — `a.download` iOS'ta çalışmıyor.** iOS'ta İndirilenler klasörü kavramı yok, Safari blob URL'leri için `download` özniteliğini yok sayıyor. "PDF telefonuna kaydedildi (İndirilenler)" mesajı iPhone'da yanlış bilgiydi; ayrıca sentetik tıklama paylaşım akışını bozuyordu
+- ✅ **Yeni ortak `pdfDosyaPaylas(blob, dosyaAdi, baslik)`** platforma göre ayrışıyor:
+  - **iOS**: indirme adımı atlanıp doğrudan `navigator.share()`. `AbortError` (kullanıcı iptali) sessiz geçiliyor; `NotAllowedError` durumunda "düğmeye bir kez daha bas" yönlendirmesi. Paylaşım hiç desteklenmiyorsa PDF yeni sekmede açılıyor, kullanıcı iOS'un kendi paylaş düğmesini kullanabiliyor
+  - **Android/masaüstü**: önceki davranış korundu (önce kalıcı indirme, sonra paylaşım) — orada indirme gerçekten çalışıyor ve zayıf bağlantıda WhatsApp yüklemesi yarıda kalırsa yedek sağlıyor
+- ⚡ **iOS'ta fontlar önceden yükleniyor**: açılıştan 12 sn sonra arka planda `pdfFontlariYukle()`. Paylaşım anındaki en büyük gecikme kaynağı bu indirmeydi. Yalnızca iOS'ta yapılıyor (Android'de gereksiz veri harcamamak için)
+- Üç PDF yolu da (`pdfPaylas`, `isPdfPaylas`, `yilPdfPaylas`) aynı hataya sahipti; üçü de ortak fonksiyona bağlandı
+- Üç yerde sürüm güncellendi: `app.js`, `sw.js`, zip adı — hepsi `0.0.7.1`
+
 ## 0.0.7.0 — 📴 Çevrimdışı: dış kütüphaneler önbelleğe alındı + gerçek eşitleme onayı
 - Yeni inceleme alanı: çevrimdışı davranış. `enablePersistence` ve çevrimdışı bandı mevcuttu, ancak iki temel eksik bulundu
 - 📴 **Dış kütüphaneler hiç önbelleğe alınmıyordu.** `sw.js` içindeki `if (!ayniKok) return;` satırı, farklı kökenli TÜM istekleri service worker'ın dışında bırakıyordu. Uygulama 10 dış kütüphaneye bağımlı (Firebase SDK ×5, jsPDF, jsPDF-autoTable, SheetJS, html2canvas, Tesseract) — internet yokken bunların hiçbiri yüklenemiyordu. Çevrimdışı açılış çalışıyor görünse de Firebase yüklenemediği için işlevsizdi; PDF/Excel üretimi de mümkün değildi

@@ -1,5 +1,5 @@
 /* Puantaj Defterim — service worker (çevrimdışı kabuk) */
-const KASA = "puantaj-0.0.7.0";
+const KASA = "puantaj-0.0.7.1";
 /* ÇEKİRDEK: uygulamanın açılması için ŞART olan dosyalar. addAll atomiktir —
    biri bile inmezse kurulum tamamen başarısız olur, bu yüzden burada sadece
    gerçekten zorunlu olanlar var. */
@@ -161,6 +161,63 @@ self.addEventListener("push", e => {
       await kasa.put("/kutu", new Response(JSON.stringify(liste), {headers:{"content-type":"application/json"}}));
     }catch(err){}
     await self.registration.showNotification(baslik, secenek);
+  })());
+});
+
+/* ═══════════════════════════════════════════════════════════════════
+   🌙 AKŞAM HATIRLATMASI — uygulama KAPALIYKEN de çalışır
+   ───────────────────────────────────────────────────────────────────
+   Sorun: "Bugünü işlemedin" hatırlatması app.js içinde, ana ekran
+   çizilirken tetikleniyordu. Yani yalnızca kullanıcı uygulamayı
+   AÇTIĞINDA çalışıyordu — ama zaten açtıysa hatırlatmaya ihtiyacı yok.
+   Özellik tam ihtiyaç duyulan anda (uygulama kapalıyken) sessizdi.
+
+   Çözüm: Periodic Background Sync. Tarayıcı, uygulama kapalıyken bile
+   belirli aralıklarla bu olayı tetikleyebiliyor. Destek her cihazda yok
+   (Chrome/Android'de var, iOS'ta yok) — bu yüzden app.js içindeki
+   mevcut kontrol de KALDIRILMADI, ikisi birlikte çalışıyor:
+   destekleyen cihazda kapalıyken, desteklemeyende açılışta hatırlatır.
+
+   Aynı gün iki kez bildirim gitmemesi için işaret paylaşılıyor
+   (durt:YYYY-AA-GG anahtarı), ancak service worker localStorage'a
+   erişemediği için burada Cache API üzerinden basit bir işaret tutuluyor. */
+async function durtIsaretiVarMi(gun){
+  try{
+    const k = await caches.open("puantaj-durt");
+    const y = await k.match("/durt/"+gun);
+    return !!y;
+  }catch(e){ return false; }
+}
+async function durtIsaretiKoy(gun){
+  try{
+    const k = await caches.open("puantaj-durt");
+    await k.put("/durt/"+gun, new Response("1"));
+    /* Eski işaretleri temizle: yalnızca son 3 günü tut, sonsuz birikmesin */
+    const anahtarlar = await k.keys();
+    if(anahtarlar.length > 3){
+      anahtarlar.slice(0, anahtarlar.length-3).forEach(a=> k.delete(a));
+    }
+  }catch(e){}
+}
+
+self.addEventListener("periodicsync", e => {
+  if (e.tag !== "aksam-hatirlatma") return;
+  e.waitUntil((async ()=>{
+    const simdi = new Date();
+    /* Yalnızca akşam 19:00–23:00 arası. Gündüz tetiklenirse sessiz kal. */
+    if (simdi.getHours() < 19 || simdi.getHours() > 22) return;
+    const gun = simdi.getFullYear()+"-"+String(simdi.getMonth()+1).padStart(2,"0")+"-"+String(simdi.getDate()).padStart(2,"0");
+    if (await durtIsaretiVarMi(gun)) return;
+    /* Service worker kullanıcının o günü işleyip işlemediğini BİLEMEZ
+       (Firestore'a erişimi yok). Bu yüzden mesaj emin bir dille değil,
+       hatırlatma dilinde yazıldı — yanlışlıkla "işlemedin" demiyoruz. */
+    await self.registration.showNotification("Puantaj hatırlatması 📅", {
+      body: "Bugünü işledin mi usta? İki dokunuş, defter tamam 💪",
+      tag: "aksam-durt",
+      vibrate: [80, 40, 80],
+      data: { yol: "./" }
+    });
+    await durtIsaretiKoy(gun);
   })());
 });
 
