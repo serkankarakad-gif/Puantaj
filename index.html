@@ -360,11 +360,10 @@
       <div class="kart gizli" id="yenilik-kart" style="border-color:var(--sari)">
         <h2>🎁 Neler yeni?</h2>
         <ul style="padding-left:18px;font-size:13.5px;line-height:1.9">
-          <li><b>🍎 iPhone'da PDF gönderilememesi düzeltildi.</b> Android'de sorun yoktu, iPhone'da olmasının sebebi şuydu: <b>iOS, paylaşım penceresinin senin dokunuşundan hemen sonra açılmasını şart koşuyor.</b> Bizim akışta araya font indirme (ilk seferde 1 MB), PDF üretimi ve bir indirme adımı giriyordu — birkaç saniye sürüyor ve iOS bu noktada izni geri alıp paylaşımı engelliyordu. Android bu konuda gevşek olduğu için orada görünmüyordu</li>
-          <li><b>📥 İkinci sorun: "PDF telefonuna kaydedildi (İndirilenler)" mesajı iPhone'da YANLIŞ bilgi veriyordu.</b> iOS'ta İndirilenler klasörü diye bir şey yok ve Safari o indirme komutunu yok sayıyor. Yani hiçbir şey kaydedilmiyordu, üstelik o adım paylaşımı da bozuyordu</li>
-          <li><b>✅ Artık iPhone'da doğrudan paylaşım penceresi açılıyor</b>, indirme adımı atlanıyor. Paylaşım yine de açılamazsa PDF yeni sekmede açılıyor ve iOS'un kendi ⬆️ düğmesiyle gönderilebiliyor</li>
-          <li><b>⚡ Gecikmeyi de kaldırdım:</b> iPhone'da PDF fontları artık uygulama açıldıktan 12 saniye sonra arka planda indiriliyor. Böylece PDF düğmesine bastığında beklemek gerekmiyor, paylaşım anında açılıyor</li>
-          <li><b>📄 Üç PDF de düzeltildi:</b> aylık puantaj, iş raporu ve yıl raporu — üçünde de aynı hata vardı, artık ortak ve doğru bir yol kullanıyorlar. Android'deki davranış korundu (orada indirme gerçekten çalışıyor ve zayıf bağlantıda yedek sağlıyor)</li>
+          <li><b>📅 Tarih hesapları sınır durumlarıyla test edildi — hepsi temiz çıktı.</b> Bu sınıf hata kodu okuyarak bulunamaz; ancak gerçekten çalıştırınca ortaya çıkar. Yaz saati geçişinde ya da artık yılda bir günlük kayma olsa <b>o ayın tüm hesabı bozulurdu</b> ve fark etmek çok zor olurdu</li>
+          <li><b>Test edilenler:</b> yaz saatine geçiş gecesi (saat 03:00), yılbaşı gecesi 23:59, artık yıldaki 29 Şubat, gece yarısı 00:00 ve 23:59. Beşinde de gün kayması yok. Artık yıl hesabı doğru (2028 Şubat 29 gün, 2027 Şubat 28 gün)</li>
+          <li><b>Bir şüphemi de doğruladım:</b> Ay sorgularında Şubat için bile "31" kullanılıyor. Metin sıralaması kullanıldığı için bu güvenli — Şubat'ın son günü sorguya dahil oluyor ve Mart'tan kayıt sızmıyor. Test ettim, doğru çalışıyor</li>
+          <li><b>🔁 Bu testler artık tanıya kalıcı olarak eklendi.</b> Her çalıştırdığında bu sınır durumları yeniden denenecek. Böylece ileride bir değişiklik tarih hesabını bozarsa anında görülecek — bir yıl sonra yanlış puantajla karşılaşmak yerine</li>
         </ul>
         <button class="btn btn-cizgili" id="btn-yenilik-kapat">Süper, kapat</button>
       </div>

@@ -5,6 +5,28 @@ kullanır: `0.0.0.X` — X, her güncellemede 1 artar. Uygulama içindeki sürü
 (alt bilgi + "Neler yeni" kartı) ve dağıtılan zip dosyasının adı her zaman
 birebir aynıdır.
 
+## 0.0.7.3 — 📅 Tarih sınır durumları test edildi ve tanıya eklendi
+- 0.0.7.2'deki yöntem değişikliğinin devamı: statik taramanın bulamayacağı, yalnızca çalıştırınca ortaya çıkan hata sınıfları aranıyor. Bu turda tarih/saat hesapları
+- **Önce iOS'ta çalışmayan web özellikleri tarandı**: `SpeechRecognition`, `navigator.vibrate`, `wakeLock`, `geolocation`, `Notification.requestPermission`. Beşi de varlık kontrolüyle korunmuş, çökme riski yok — değişiklik gerekmedi
+- **Kronometre iddiası doğrulandı**: "Uygulamayı kapatsan da saymaya devam eder" mesajı doğru; `kronoBas` zaman damgası saklanıp fark üzerinden hesaplanıyor
+- 📅 **Tarih sınır testleri (hepsi geçti)**: yaz saati geçişi (2027-03-28 03:00), yılbaşı gecesi (2026-12-31 23:59), artık yıl (2028-02-29), gece yarısı 00:00 ve 23:59. `tarihId()` ile üretilip geri okunduğunda gün/ay/yıl kayması yok. Bu sınıf bir hata olsaydı ilgili ayın tüm hesabı sessizce bozulurdu
+- **Ay sorgu sınırı doğrulandı**: kod tüm aylar için `"-31"` üst sınırı kullanıyor. Metin karşılaştırması olduğu için Şubat'ın son günü dahil ediliyor (`"2026-02-28" <= "2026-02-31"` → true) ve komşu ay sızmıyor (`"2026-03-01" <= "2026-02-31"` → false)
+- 🔁 **Testler tanıya kalıcı eklendi** (bölüm 15): her çalıştırmada 5 sınır durumu, artık yıl hesabı ve ay sorgu sınırı yeniden deneniyor. İleride bir değişiklik tarih mantığını bozarsa anında görünecek. Kontrol sayısı 121 → 134
+- Üç yerde sürüm güncellendi: `app.js`, `sw.js`, zip adı — hepsi `0.0.7.3`
+
+## 0.0.7.2 — 🔍 Tanıya platform uyumluluk bölümü (statik taramanın kör noktası)
+- Bağlam: iOS'taki PDF paylaşım hatası (0.0.7.1) gerçek kullanıcıdan geldi, tanı ekranı bulamadı. Sebep bir eksiklik değil, **yöntemsel kör nokta**: tanının tüm kontrolleri statikti — eksik ayar, bağlanmamış fonksiyon, bozuk kayıt, veri tutarlılığı. iOS sorununda kodda hiçbir şey hatalı değildi; sorun yalnızca o platformda, çalışma anında ortaya çıkıyordu
+- 🔍 **Yeni bölüm 11b — "BU CİHAZDA NE ÇALIŞIYOR"**: kodu değil, tanıyı çalıştıran cihazın yeteneklerini sorguluyor
+  - Platform tespiti (iOS / Android / masaüstü)
+  - `navigator.canShare({files})` ile gerçek dosya paylaşım desteği — PDF gönderilebiliyor mu
+  - Dosya indirme desteği; iOS'ta İndirilenler klasörü olmadığı ayrıca belirtiliyor
+  - iOS'a özel: PDF fontunun önceden yüklenip yüklenmediği (0.0.7.1'deki gecikme sorununun göstergesi)
+  - Bildirim izni ve `periodicSync` desteği (uygulama kapalıyken hatırlatma)
+  - `navigator.storage.persisted()` ile depolama kalıcılığı
+- **Pratik faydası**: "PDF gönderemiyorum" diyen kullanıcıya tanıyı çalıştırıp rapor göndermesi söylenebiliyor; rapor o cihazda tam olarak neyin desteklenmediğini yazıyor
+- Bölüm sayısı 17 → 18
+- Üç yerde sürüm güncellendi: `app.js`, `sw.js`, zip adı — hepsi `0.0.7.2`
+
 ## 0.0.7.1 — 🍎 iOS'ta PDF paylaşılamıyordu (kullanıcı şikayeti)
 - Kullanıcı bildirimi: "iOS telefon kullanıcıları PDF gönderemiyor, Android'de sorun yok"
 - 🍎 **Sebep 1 — geçici kullanıcı izni (transient activation) tükeniyordu.** iOS Safari, `navigator.share()` çağrısının kullanıcı jestinden kısa süre içinde yapılmasını zorunlu kılıyor. `pdfPaylas()` akışı şöyleydi: `await pdfFontlariYukle()` (ilk kullanımda ~1 MB indirme) → `pdfBlobOlustur()` → sentetik `a.click()` indirme → `await navigator.share()`. Bu zincir saniyeler sürüyor; iOS izni geri alıp `NotAllowedError` fırlatıyordu. Android'in politikası gevşek olduğu için orada görünmüyordu

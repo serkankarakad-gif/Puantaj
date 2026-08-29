@@ -8473,7 +8473,7 @@ document.addEventListener("DOMContentLoaded", ()=>{
   });
 
   /* Neler yeni kartı */
-  const YENILIK_SURUM = "0.0.7.1";
+  const YENILIK_SURUM = "0.0.7.3";
   window.__SURUM = YENILIK_SURUM;   /* tanı raporu bunu okur */
   try{ $("#cekmece-surum").textContent = "Puantaj Defterim " + YENILIK_SURUM; }catch(e){}
   /* Sürümü çekmece başlığında da göster. Sebep: "değişiklik gelmedi" durumunda
@@ -10543,6 +10543,65 @@ async function taniCalistir(){
     if(tumN) taniYaz("bilgi","Notlar", tumN.length+" not");
   });
 
+  /* ═══════ 11b. PLATFORM UYUMLULUĞU ═══════
+     Bu bölüm, kodu okuyarak BULUNAMAYAN hataları yakalamak için var.
+     iOS'ta PDF paylaşım sorunu tam olarak böyleydi: kodda hiçbir şey
+     yanlış görünmüyordu ama gerçek cihazda çalışmıyordu. Statik tarama
+     bu sınıf hatayı asla bulamaz — cihazın kendi yeteneklerini SORMAK
+     gerekiyor. Bu bölüm tanıyı çalıştıran cihazda gerçekten neyin
+     çalışıp neyin çalışmadığını rapor ediyor. */
+  await bolum("11b. BU CİHAZDA NE ÇALIŞIYOR", async ()=>{
+    const ios = /iPad|iPhone|iPod/.test(navigator.userAgent) ||
+                (navigator.platform==="MacIntel" && navigator.maxTouchPoints>1);
+    taniYaz("bilgi","Platform", ios ? "iOS (iPhone/iPad)" : /Android/.test(navigator.userAgent) ? "Android" : "Masaüstü/diğer");
+
+    /* Dosya paylaşımı — PDF/görsel göndermenin temeli */
+    let dosyaPaylasim = false;
+    try{
+      const t = new File(["x"], "t.pdf", {type:"application/pdf"});
+      dosyaPaylasim = !!(navigator.canShare && navigator.canShare({files:[t]}));
+    }catch(e){}
+    taniYaz(dosyaPaylasim ? "ok" : "hata", "PDF/dosya paylaşımı",
+      dosyaPaylasim ? "destekleniyor" : "DESTEKLENMİYOR — PDF gönderilemez, yeni sekmede açılır");
+
+    /* İndirme — iOS'ta çalışmaz, kullanıcıya yanlış mesaj vermeyelim */
+    const indirmeVar = !ios && "download" in document.createElement("a");
+    taniYaz(indirmeVar ? "ok" : "uyari", "Dosya indirme",
+      indirmeVar ? "İndirilenler klasörüne kaydedilebiliyor"
+                 : ios ? "iOS'ta İndirilenler klasörü yok — dosyalar paylaşım penceresinden gönderilir"
+                       : "desteklenmiyor");
+
+    /* iOS'ta paylaşımın kullanıcı dokunuşuna bağlı olması — PDF hatasının sebebi */
+    if(ios){
+      taniYaz(window.PDF_FONT_REGULAR_B64 ? "ok" : "uyari", "PDF fontu hazır mı",
+        window.PDF_FONT_REGULAR_B64
+          ? "önceden yüklenmiş — paylaşım gecikmeden açılır"
+          : "henüz yüklenmedi. iOS paylaşımı dokunuştan hemen sonra ister; ilk PDF denemesi gecikip engellenebilir. Uygulamayı 15 sn açık bırakınca hazırlanır");
+    }
+
+    /* Bildirim — hatırlatmaların çalışıp çalışmayacağı */
+    const bildirimVar = "Notification" in window;
+    taniYaz(bildirimVar ? "ok" : "uyari", "Bildirim desteği",
+      bildirimVar ? "izin durumu: "+Notification.permission : "bu tarayıcıda yok");
+    try{
+      const kayit = await navigator.serviceWorker.ready;
+      taniYaz(kayit.periodicSync ? "ok" : "bilgi", "Kapalıyken hatırlatma",
+        kayit.periodicSync ? "destekleniyor" : "desteklenmiyor (iOS'ta yok) — hatırlatma yalnızca uygulama açılınca");
+    }catch(e){}
+
+    /* Çevrimdışı yazma */
+    taniYaz("bilgi","Çevrimdışı kayıt","Firestore yerel önbelleği aktif — internet yokken de gün işlenebiliyor");
+
+    /* Depolama kalıcılığı: iOS bazen önbelleği siler */
+    try{
+      if(navigator.storage && navigator.storage.persisted){
+        const kalici = await navigator.storage.persisted();
+        taniYaz(kalici ? "ok" : "uyari", "Depolama kalıcılığı",
+          kalici ? "korumalı" : "korumasız — telefon yer açmak için önbelleği silebilir (veriler bulutta güvende)");
+      }
+    }catch(e){}
+  });
+
   /* ═══════ 12. RAPORLAR VE PAYLAŞIM ═══════ */
   await bolum("12. RAPORLAR VE PAYLAŞIM", async ()=>{
     const k={ "PDF motoru":window.jspdf, "PDF tablo eklentisi":window.jspdf&&window.jspdf.jsPDF&&true,
@@ -10698,6 +10757,36 @@ async function taniCalistir(){
       const d=new Date(); const id=tarihId(d);
       taniYaz(/^\d{4}-\d{2}-\d{2}$/.test(id)?"ok":"hata","Tarih biçimlendirici", id);
     }catch(e){ taniYaz("hata","Tarih biçimlendirici", e.message); }
+
+    /* Tarih SINIR DURUMLARI — bu sınıf hata kodu okuyarak bulunamaz,
+       ancak gerçekten çalıştırınca ortaya çıkar. Yaz saati geçişinde
+       veya artık yılda bir gün kayması, tüm ayın hesabını bozar. */
+    try{
+      const sinirTest=[
+        ["yaz saati",  new Date(2027,2,28,3,0,0)],
+        ["yılbaşı",    new Date(2026,11,31,23,59,0)],
+        ["artık yıl",  new Date(2028,1,29,12,0,0)],
+        ["gece 00:00", new Date(2026,7,15,0,0,0)],
+        ["gece 23:59", new Date(2026,7,15,23,59,59)]
+      ];
+      const bozuk=[];
+      sinirTest.forEach(([ad,d])=>{
+        const geri=new Date(tarihId(d)+"T12:00:00");
+        if(geri.getDate()!==d.getDate() || geri.getMonth()!==d.getMonth() || geri.getFullYear()!==d.getFullYear())
+          bozuk.push(ad);
+      });
+      taniYaz(bozuk.length?"hata":"ok","Tarih sınır durumları",
+        bozuk.length ? "GÜN KAYMASI: "+bozuk.join(", ") : sinirTest.length+" sınır durumu doğru (yaz saati, artık yıl, gece yarısı)");
+      /* Artık yıl: Şubat gün sayısı */
+      const sub2028=new Date(2028,2,0).getDate(), sub2027=new Date(2027,2,0).getDate();
+      taniYaz((sub2028===29 && sub2027===28)?"ok":"hata","Artık yıl hesabı",
+        "2028 Şubat "+sub2028+" gün · 2027 Şubat "+sub2027+" gün");
+      /* Ay sorgusu sınırı: "-31" tüm aylarda güvenli mi */
+      const subatSon = "2026-02-28" <= "2026-02-31";
+      const martSizmaz = !("2026-03-01" <= "2026-02-31");
+      taniYaz((subatSon && martSizmaz)?"ok":"hata","Ay sorgu sınırı",
+        subatSon && martSizmaz ? "kısa aylarda son gün dahil, komşu ay sızmıyor" : "SORUNLU");
+    }catch(e){ taniYaz("hata","Tarih sınır durumları", e.message); }
   });
 
   taniYaz("bilgi","Toplam süre", ((Date.now()-t0)/1000).toFixed(1)+" saniye");
