@@ -100,7 +100,7 @@
     <button data-tus="1">1</button><button data-tus="2">2</button><button data-tus="3">3</button>
     <button data-tus="4">4</button><button data-tus="5">5</button><button data-tus="6">6</button>
     <button data-tus="7">7</button><button data-tus="8">8</button><button data-tus="9">9</button>
-    <button class="pin-bos"></button><button data-tus="0">0</button><button id="pin-sil">⌫</button>
+    <button class="pin-bos"></button><button data-tus="0">0</button><button id="pin-sil" aria-label="Son rakamı sil">⌫</button>
   </div>
   <button class="pin-unuttum" id="btn-pin-unuttum">PIN'imi unuttum</button>
 </div>
@@ -288,7 +288,7 @@
       <div id="rehber-kart" class="kart gizli" style="border:1.5px solid var(--sari)">
         <div style="display:flex;justify-content:space-between;align-items:center">
           <h2 style="margin:0">🚀 Hoş geldin! 3 adımda başla</h2>
-          <button id="btn-rehber-kapat" style="color:var(--soluk);font-size:18px;min-width:44px;min-height:44px">✕</button>
+          <button id="btn-rehber-kapat" aria-label="Rehberi kapat" style="color:var(--soluk);font-size:18px;min-width:44px;min-height:44px">✕</button>
         </div>
         <div style="font-size:14px;line-height:1.7;margin-top:8px">
           <div id="rehber-a1">1️⃣ Günlük yevmiyeni gir → <button class="eksik-cip" id="btn-rehber-yevmiye">⚙️ Ayarlara git</button></div>
@@ -302,7 +302,7 @@
         <div class="alt" id="gunun-soz" style="margin-top:6px;color:var(--sari);font-style:italic"></div>
       </div>
       <div class="banka-kart sirket" id="sirket-kart">
-        <div class="kart-ust"><span>🏢 Şirket Hesap Kartı</span><button id="btn-goz" style="color:#fff;font-size:17px">👁️</button></div>
+        <div class="kart-ust"><span>🏢 Şirket Hesap Kartı</span><button id="btn-goz" aria-label="Tutarları gizle veya göster" style="color:#fff;font-size:17px">👁️</button></div>
         <div class="bakiye" id="sirket-bakiye">—</div>
         <div class="kart-alt" id="sirket-alt">Çalıştıkça artar, avans aldıkça azalır</div>
         <div class="kart-alt" id="kur-satir" style="margin-top:6px;font-weight:700"></div>
@@ -360,10 +360,10 @@
       <div class="kart gizli" id="yenilik-kart" style="border-color:var(--sari)">
         <h2>🎁 Neler yeni?</h2>
         <ul style="padding-left:18px;font-size:13.5px;line-height:1.9">
-          <li><b>📅 Tarih hesapları sınır durumlarıyla test edildi — hepsi temiz çıktı.</b> Bu sınıf hata kodu okuyarak bulunamaz; ancak gerçekten çalıştırınca ortaya çıkar. Yaz saati geçişinde ya da artık yılda bir günlük kayma olsa <b>o ayın tüm hesabı bozulurdu</b> ve fark etmek çok zor olurdu</li>
-          <li><b>Test edilenler:</b> yaz saatine geçiş gecesi (saat 03:00), yılbaşı gecesi 23:59, artık yıldaki 29 Şubat, gece yarısı 00:00 ve 23:59. Beşinde de gün kayması yok. Artık yıl hesabı doğru (2028 Şubat 29 gün, 2027 Şubat 28 gün)</li>
-          <li><b>Bir şüphemi de doğruladım:</b> Ay sorgularında Şubat için bile "31" kullanılıyor. Metin sıralaması kullanıldığı için bu güvenli — Şubat'ın son günü sorguya dahil oluyor ve Mart'tan kayıt sızmıyor. Test ettim, doğru çalışıyor</li>
-          <li><b>🔁 Bu testler artık tanıya kalıcı olarak eklendi.</b> Her çalıştırdığında bu sınır durumları yeniden denenecek. Böylece ileride bir değişiklik tarih hesabını bozarsa anında görülecek — bir yıl sonra yanlış puantajla karşılaşmak yerine</li>
+          <li><b>🐞 GERÇEK HATA: Düğmeye basıyorsun, hiçbir şey olmuyor sanıyordun.</b> Uygulama 6 yerde düğmeyi geçici olarak kapatıyor — kaydederken, PDF çıkarırken, fiş okurken. Ama <b>kapalıyken bile normal görünüyordu</b>. Sen basıyorsun, tepki gelmiyor, tekrar basıyorsun, işlemin sürdüğünü anlamıyorsun. Artık kapalı düğmeler soluk görünüyor ve basılamıyor</li>
+          <li><b>🔊 22 düğmenin adı yoktu.</b> Sadece simge içeren düğmeler (✕ kapat, − + sayaçlar, 👁️ gizle, ⌫ sil, ➤ gönder) ekran okuyucu kullanan biri için <b>isimsizdi</b> — "düğme" diye okunuyorlardı. Hepsine anlaşılır isim verildi: "Mesai saatini artır", "Tutarları gizle veya göster" gibi</li>
+          <li><b>⌨️ Klavye ile gezenler için odak halkası eklendi.</b> Harici klavyeli tablet ya da bilgisayardan kullananlar nerede olduklarını göremiyordu. Parmakla kullanımı hiç etkilemiyor — sadece klavye kullanınca çıkıyor</li>
+          <li><b>🔍 Harf harf denetim yaptım, kod mantığında hata yok:</b> Atama/karşılaştırma karışıklığı yok, boş koşul bloğu yok, unutulmuş bekleme yok. Şüpheli görünen 8 eşitlik kontrolü tek tek incelendi — hepsi bilinçli ve doğru yazılmış</li>
         </ul>
         <button class="btn btn-cizgili" id="btn-yenilik-kapat">Süper, kapat</button>
       </div>
@@ -394,6 +394,9 @@
         <h2>⚠️ İşlenmemiş günler</h2>
         <p style="font-size:13px;color:var(--soluk);margin-bottom:10px">Bu ay şu günleri boş bırakmışsın (pazarlar hariç). Dokun, hemen işle:</p>
         <div id="eksik-icerik" style="display:flex;flex-wrap:wrap;gap:8px"></div>
+        <!-- Parasal etki: boş günlerin kaç liraya denk geldiği. Uyarının
+             soyut kalmaması için — "3 gün boş" yerine "7.500 ₺ görünmüyor". -->
+        <div id="eksik-para" class="gizli"></div>
       </div>
       <div class="kart gizli" id="hafta-kart">
         <h2>📆 Bu hafta <button id="btn-hafta-paylas" style="margin-left:auto;color:var(--sari);font-size:14px;font-family:Rubik;text-transform:none;font-weight:600">📤 Paylaş</button></h2>
@@ -408,6 +411,12 @@
           <div class="gun-adi">Per</div><div class="gun-adi">Cum</div><div class="gun-adi">Cmt</div><div class="gun-adi">Paz</div>
         </div>
         <div class="takvim" id="takvim"></div>
+        <!-- AY ÖZETİ — takvimin hemen altında.
+             Bu rakamlar (çalışılan gün, hakediş, mesai) yalnızca Hesap
+             Özeti ekranındaydı. Kullanıcı takvime bakarken "bu ay ne
+             oldu" sorusunun cevabı için başka bir ekrana gitmek
+             zorundaydı; oysa soru tam da takvime bakarken doğuyor. -->
+        <div id="takvim-ozet" class="takvim-ozet"></div>
         <div class="lejant">
           <span><i style="background:var(--tam)"></i> Tam yevmiye</span>
           <span><i style="background:var(--yarim)"></i> Yarım</span>
@@ -460,7 +469,7 @@
     <div class="gizli" id="hava-tam-ekran" style="position:fixed;inset:0;z-index:200;background:linear-gradient(160deg,#1B4B91,#2F6FCB 45%,#5B93DD);color:#fff;overflow-y:auto">
       <div style="display:flex;justify-content:space-between;align-items:center;padding:18px 18px 0">
         <div style="font-size:12px;letter-spacing:.08em;text-transform:uppercase;opacity:.8">🌤️ Hava Durumu</div>
-        <button id="btn-hava-kapat" style="color:#fff;font-size:22px;min-width:44px;min-height:44px;background:rgba(255,255,255,.15);border-radius:50%">✕</button>
+        <button id="btn-hava-kapat" aria-label="Hava durumunu kapat" style="color:#fff;font-size:22px;min-width:44px;min-height:44px;background:rgba(255,255,255,.15);border-radius:50%">✕</button>
       </div>
       <div id="hte-yildizlar" style="text-align:center;font-size:13px;opacity:.5;letter-spacing:8px;height:16px;overflow:hidden"></div>
       <div style="text-align:center;padding:8px 20px 10px">
@@ -484,7 +493,7 @@
       <div class="tutamak"></div>
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
         <h3 id="ay-detay-baslik" style="margin:0">Ay detayı</h3>
-        <button id="btn-ay-detay-kapat" style="font-size:20px;color:var(--soluk);min-width:44px;min-height:44px">✕</button>
+        <button id="btn-ay-detay-kapat" aria-label="Ay detayını kapat" style="font-size:20px;color:var(--soluk);min-width:44px;min-height:44px">✕</button>
       </div>
 
       <div class="banka-kart sirket">
@@ -713,7 +722,7 @@
         <p style="font-size:13px;color:var(--soluk);margin-bottom:12px;line-height:1.6">
           Ayın hesabı bitti, ödemeni aldınsa ayı kilitle — yanlışlıkla bir şey değişmesin. İstediğin zaman geri açarsın.
         </p>
-        <button class="btn btn-cizgili" id="btn-kilit">—</button>
+        <button class="btn btn-cizgili" id="btn-kilit" aria-label="Ayı kilitle veya aç">—</button>
       </div>
       <div class="kart">
         <h2>🏗️ Şantiye dökümü (bu ay)</h2>
@@ -984,7 +993,7 @@
       <div class="tutamak"></div>
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
         <h3 id="kd-baslik" style="margin:0">Kart detayı</h3>
-        <button id="btn-kart-detay-kapat" style="font-size:20px;color:var(--soluk);min-width:44px;min-height:44px">✕</button>
+        <button id="btn-kart-detay-kapat" aria-label="Kart detayını kapat" style="font-size:20px;color:var(--soluk);min-width:44px;min-height:44px">✕</button>
       </div>
       <div class="banka-kart sirket">
         <div class="kart-ust"><span id="kd-banka">🏦 Banka</span></div>
@@ -1138,7 +1147,7 @@
         <p style="font-size:11.5px;color:var(--soluk);margin-top:8px">Mesajı istediğin gibi düzenleyip gönderebilirsin. Pazarlık senin, veri bizden 😉</p>
       </div>
       <div class="kart arac-kart kapali">
-        <h2 class="arac-bas" role="button" tabindex="0">🧱 İnşaat hesaplayıcıları<span class="arac-ok">▾</span></h2>
+        <h2 class="arac-bas" role="button" tabindex="0">🧱 İnşaat hesapları (beton, boya, tuğla)<span class="arac-ok">▾</span></h2>
         <div class="alan">
           <label for="bet-en">🏗️ Beton: En × Boy × Yükseklik (metre)</label>
           <div style="display:flex;gap:8px">
@@ -1161,7 +1170,7 @@
         <p style="font-size:11px;color:var(--soluk);margin-top:10px">Kaba hesaptır: beton %10 fireli · duvar m²'de ~55 tuğla / ~8,5 gazbeton · boya 2 kat, litrede ~5 m². Malzemeye göre değişir.</p>
       </div>
       <div class="kart arac-kart kapali">
-        <h2 class="arac-bas" role="button" tabindex="0">🔊 Gürültü Ölçer<span class="arac-ok">▾</span></h2>
+        <h2 class="arac-bas" role="button" tabindex="0">🔊 Gürültü ölçer<span class="arac-ok">▾</span></h2>
         <p style="font-size:12px;color:var(--soluk);margin-bottom:10px">Şantiyede ortam sesini ölç: <b>85 dB üstü</b> kulağa kalıcı zarar verir — kulak koruyucu ŞART (ve işveren vermek zorunda). Kaba ölçümdür, fikir verir.</p>
         <button class="btn btn-cizgili" id="btn-ses-basla">🔊 Ölçümü başlat</button>
         <div id="ses-alan" class="gizli" style="text-align:center;margin-top:12px">
@@ -1173,7 +1182,7 @@
         </div>
       </div>
       <div class="kart arac-kart kapali">
-        <h2 class="arac-bas" role="button" tabindex="0">🦺 İş Güvenliği Köşesi<span class="arac-ok">▾</span></h2>
+        <h2 class="arac-bas" role="button" tabindex="0">🦺 İş güvenliği bilgileri<span class="arac-ok">▾</span></h2>
         <div style="font-size:13px;line-height:1.9;color:var(--soluk)">
           <b style="color:var(--metin)">Hayat kurtaran 8 kural:</b><br>
           1. Baretsiz sahaya adım atma — düşen bir cıvata bile öldürür ⛑️<br>
@@ -1188,7 +1197,7 @@
         </div>
       </div>
       <div class="kart arac-kart kapali">
-        <h2 class="arac-bas" role="button" tabindex="0">🧱 Tuğla Ustası — mola oyunu<span class="arac-ok">▾</span></h2>
+        <h2 class="arac-bas" role="button" tabindex="0">🧱 Tuğla ustası — mola oyunu<span class="arac-ok">▾</span></h2>
         <p style="font-size:12px;color:var(--soluk);margin-bottom:10px">Kayan tuğlayı tam alttakinin üstüne oturt: ekrana dokun! Kenardan taşan kısım kırılır, tuğla daralır. Kaç kat çıkabilirsin usta?</p>
         <button class="btn btn-cizgili" id="btn-oyun-basla">🧱 Oyunu başlat</button>
         <div id="oyun-alan" class="gizli" style="text-align:center;margin-top:12px">
@@ -1197,7 +1206,7 @@
         </div>
       </div>
       <div class="kart arac-kart kapali">
-        <h2 class="arac-bas" role="button" tabindex="0">📐 Su Terazisi<span class="arac-ok">▾</span></h2>
+        <h2 class="arac-bas" role="button" tabindex="0">📐 Su terazisi<span class="arac-ok">▾</span></h2>
         <p style="font-size:12px;color:var(--soluk);margin-bottom:10px">Telefonu yüzeye/duvara daya — baloncuk ortada ve yeşilse terazidedir. Kaba kontrole birebir (hassas iş için gerçek terazi şart).</p>
         <button class="btn btn-cizgili" id="btn-terazi-basla">📐 Teraziyi başlat</button>
         <div id="terazi-alan" class="gizli" style="text-align:center;margin-top:12px">
@@ -1206,7 +1215,7 @@
         </div>
       </div>
       <div class="kart arac-kart kapali">
-        <h2 class="arac-bas" role="button" tabindex="0">🕌 Namaz Vakitleri<span class="arac-ok">▾</span></h2>
+        <h2 class="arac-bas" role="button" tabindex="0">🕌 Namaz vakitleri — şehrine göre<span class="arac-ok">▾</span></h2>
         <div class="alan">
           <label for="vakit-il">İlin</label>
           <select id="vakit-il"></select>
@@ -1215,7 +1224,7 @@
         <p style="font-size:11px;color:var(--soluk);margin-top:8px">Diyanet hesabına göre (Aladhan servisi). Günde bir güncellenir, internetsizken son indirilen gösterilir.</p>
       </div>
       <div class="kart arac-kart kapali">
-        <h2 class="arac-bas" role="button" tabindex="0">🚑 İş Kazası Defterim<span class="arac-ok">▾</span></h2>
+        <h2 class="arac-bas" role="button" tabindex="0">🚑 İş kazası defterim<span class="arac-ok">▾</span></h2>
         <p style="font-size:12.5px;color:var(--soluk);line-height:1.6;margin-bottom:12px">
           Kaza olursa O GÜN buraya yaz: tarih, ne olduğu, tanıklar. Olay günü tutulan kayıt,
           SGK ve tazminat işlemlerinde en güçlü delildir. Bu defter sadece sende — kimseyle paylaşılmaz, sen istersen tutanak gönderirsin.
@@ -1259,7 +1268,7 @@
         </p>
       </div>
       <div class="kart arac-kart kapali">
-        <h2 class="arac-bas" role="button" tabindex="0">🆘 Acil Durum Kartım<span class="arac-ok">▾</span></h2>
+        <h2 class="arac-bas" role="button" tabindex="0">🆘 Acil durum kartım<span class="arac-ok">▾</span></h2>
         <p style="font-size:12.5px;color:var(--soluk);margin-bottom:12px">Şantiyede bir şey olursa arkadaşların telefonundan bu karta baksın — kan grubu ve acil numara hayat kurtarır.</p>
         <div style="display:flex;gap:8px">
           <div class="alan" style="flex:1">
@@ -1283,7 +1292,7 @@
         <button class="btn btn-sari" id="btn-acil-goster" style="margin-top:8px">🆘 Kartı TAM EKRAN göster</button>
       </div>
       <div class="kart arac-kart kapali">
-        <h2 class="arac-bas" role="button" tabindex="0">🪪 İşçi Kimlik Kartım<span class="arac-ok">▾</span></h2>
+        <h2 class="arac-bas" role="button" tabindex="0">🪪 İşçi kimlik kartım<span class="arac-ok">▾</span></h2>
         <div id="kimlik-ozet" style="background:var(--girdi);border:1.5px solid var(--cizgi);border-radius:12px;padding:12px 14px;font-size:13.5px;line-height:1.9;margin-bottom:12px">Hesaplanıyor...</div>
         <button class="btn btn-sari" id="btn-kimlik-kart">📸 Karneyi oluştur ve paylaş</button>
         <p style="font-size:11.5px;color:var(--soluk);margin-top:8px">
@@ -1292,7 +1301,7 @@
         </p>
       </div>
       <div class="kart arac-kart kapali">
-        <h2 class="arac-bas" role="button" tabindex="0">💪 Emek karnem<span class="arac-ok">▾</span></h2>
+        <h2 class="arac-bas" role="button" tabindex="0">💪 Emek karnem — toplam emeğin<span class="arac-ok">▾</span></h2>
         <div id="emek-karne" style="font-size:13.5px;line-height:1.9">Hesaplanıyor...</div>
       </div>
       <div class="kart gizli" id="mesai-sinir-satir">
@@ -1308,7 +1317,7 @@
         <a href="https://www.turkiye.gov.tr/sgk-tescil-ve-hizmet-dokumu" target="_blank" rel="noopener" class="btn btn-cizgili" style="display:block;text-align:center;margin-top:8px;text-decoration:none">📄 e-Devlet'te gerçek SGK kaydımı gör</a>
       </div>
       <div class="kart arac-kart kapali">
-        <h2 class="arac-bas" role="button" tabindex="0">⏱️ Mesai ücreti kontrolü<span class="arac-ok">▾</span></h2>
+        <h2 class="arac-bas" role="button" tabindex="0">⏱️ Mesai ücretin doğru mu?<span class="arac-ok">▾</span></h2>
         <div class="alan">
           <label for="mesai-kontrol">Normal saatlik ücretin (TL)</label>
           <input type="text" id="mesai-kontrol" inputmode="decimal" placeholder="Örn: 200">
@@ -1316,7 +1325,7 @@
         <div id="mesai-kontrol-sonuc" style="background:var(--girdi);border:1.5px solid var(--cizgi);border-radius:12px;padding:12px 14px;font-size:13.5px;line-height:1.8">Saat ücretini gir, yasal mesai ücretini göstereyim.</div>
       </div>
       <div class="kart arac-kart kapali">
-        <h2 class="arac-bas" role="button" tabindex="0">🕌 Namaz vakitleri<span class="arac-ok">▾</span></h2>
+        <h2 class="arac-bas" role="button" tabindex="0">🕌 Sonraki vakte ne kadar var<span class="arac-ok">▾</span></h2>
         <button class="btn btn-cizgili" id="btn-namaz">📍 Konumuma göre vakitleri getir</button>
         <div id="namaz-sonuc" style="margin-top:12px"></div>
       </div>
@@ -1439,8 +1448,8 @@
         </div>
         <button class="btn btn-sari" id="btn-ayar-kaydet">Ayarları kaydet</button>
       </div>
-      <div class="kart">
-        <h2>🏗️ Şantiyeler / Patronlar</h2>
+      <div class="kart ayar-kart kapali">
+        <h2 class="ayar-bas" role="button" tabindex="0">🏗️ Şantiyeler / Patronlar<span class="ayar-ok">▾</span></h2>
         <p style="font-size:13px;color:var(--soluk);margin-bottom:12px;line-height:1.6">
           Farklı yerlerde farklı ücretle çalışıyorsan buraya ekle. Gün işlerken hangi şantiye olduğunu seçersin, hesap o ücrete göre yapılır.
         </p>
@@ -1462,8 +1471,8 @@
         </div>
         <button class="btn btn-cizgili" id="btn-santiye-ekle">➕ Şantiye ekle</button>
       </div>
-      <div class="kart">
-        <h2>📄 Belgeler / Sertifikalar</h2>
+      <div class="kart ayar-kart kapali">
+        <h2 class="ayar-bas" role="button" tabindex="0">📄 Belgeler / Sertifikalar<span class="ayar-ok">▾</span></h2>
         <p style="font-size:13px;color:var(--soluk);margin-bottom:12px;line-height:1.6">
           Ehliyet, SRC, MYK ustalık belgesi gibi süresi dolan belgelerini ekle — süresi 30 gün kalınca bildirim gönderip haber veririm.
         </p>
@@ -1478,8 +1487,8 @@
         </div>
         <button class="btn btn-cizgili" id="btn-belge-ekle">➕ Belge ekle</button>
       </div>
-      <div class="kart">
-        <h2>🌙 Görünüm</h2>
+      <div class="kart ayar-kart kapali">
+        <h2 class="ayar-bas" role="button" tabindex="0">🌙 Karanlık mod ve yazı boyutu<span class="ayar-ok">▾</span></h2>
         <button class="btn btn-cizgili" id="btn-tema">Karanlık moda geç</button>
         <div class="alan" style="margin-top:14px">
           <label for="ayar-yazi">Yazı boyutu</label>
@@ -1513,15 +1522,15 @@
           <span>⚡ Hafif mod <small style="display:block;color:var(--soluk);font-size:12.5px;line-height:1.5;margin-top:3px">Telefon eski veya takılıyorsa aç. Bulanık zemin ve gölge gibi süsler kapanır, kaydırma akıcılaşır. Uygulama telefonunu tanıyıp bunu kendi de açabilir.</small></span>
         </label>
       </div>
-      <div class="kart">
-        <h2>🧹 Depolama</h2>
+      <div class="kart ayar-kart kapali">
+        <h2 class="ayar-bas" role="button" tabindex="0">🧹 Uygulama takılırsa — önbelleği temizle<span class="ayar-ok">▾</span></h2>
         <p style="font-size:13px;color:var(--soluk);margin-bottom:12px;line-height:1.6">
           Uygulama açılışta yavaşladıysa ya da eski bir sürümde takılı kaldıysa, önbelleği temizleyip yeniden yükleyebilirsin. <b>Kayıtların silinmez</b> — onlar Firestore'da (bulutta) duruyor, bu sadece uygulamanın kendi dosya önbelleğini boşaltır.
         </p>
         <button class="btn btn-cizgili" id="btn-onbellek-temizle">🧹 Önbelleği temizle ve yenile</button>
       </div>
-      <div class="kart">
-        <h2>🏖️ SGK / Emeklilik</h2>
+      <div class="kart ayar-kart kapali">
+        <h2 class="ayar-bas" role="button" tabindex="0">🏖️ SGK gün sayım ve emeklilik<span class="ayar-ok">▾</span></h2>
         <p style="font-size:13px;color:var(--soluk);margin-bottom:12px;line-height:1.6">
           Şu ana kadarki SGK prim gününü yaz; uygulamada işlediğin günler üstüne eklenir, ana ekranda emekliliğe ne kaldığını görürsün.
         </p>
@@ -1537,8 +1546,8 @@
         </div>
         <button class="btn btn-cizgili" id="btn-sgk-kaydet">Kaydet</button>
       </div>
-      <div class="kart">
-        <h2>🎨 Uygulama teması</h2>
+      <div class="kart ayar-kart kapali">
+        <h2 class="ayar-bas" role="button" tabindex="0">🎨 Renk teması<span class="ayar-ok">▾</span></h2>
         <p style="font-size:13px;color:var(--soluk);margin-bottom:12px">Rengini seç, anında değişir. Amoled (tam siyah) pil de az yer.</p>
         <button class="btn btn-cizgili" id="btn-buyuk-yazi" style="margin-bottom:14px">🔠 Büyük yazı: <b id="buyuk-yazi-durum">kapalı</b></button>
         <div id="tema-secim" style="display:flex;gap:12px;align-items:center">
@@ -1550,24 +1559,24 @@
           <button data-tema="amoled" style="background:#000;border:3px solid #333" aria-label="Tam siyah">🌑</button>
         </div>
       </div>
-      <div class="kart">
-        <h2>🔔 Bildirimler</h2>
+      <div class="kart ayar-kart kapali">
+        <h2 class="ayar-bas" role="button" tabindex="0">🔔 Bildirimler<span class="ayar-ok">▾</span></h2>
         <p style="font-size:13px;color:var(--soluk);margin-bottom:12px">Aç ki yeni özellik duyuruları ve hatırlatmalar WhatsApp mesajı gibi telefonuna düşsün. İstediğin an telefon ayarlarından kapatabilirsin.</p>
         <button class="btn btn-sari" id="btn-bildirim">🔔 Bildirimleri aç</button>
         <button class="btn btn-cizgili" id="btn-bildirim-dene" style="margin-top:8px">🧪 Deneme bildirimi gönder</button>
         <div id="bildirim-durum" style="margin-top:10px;font-size:13px;color:var(--soluk)"></div>
         <div id="cihaz-sayi" style="margin-top:4px;font-size:12px;color:var(--soluk)"></div>
-        <h2 style="margin-top:18px">📣 Duyuru kutusu</h2>
+        <h2 style="margin-top:18px">📣 Geliştiriciden duyurular</h2>
         <div id="duyuru-liste" style="font-size:13px;line-height:1.7;color:var(--soluk)">Henüz duyuru yok — gelenler burada birikecek, kaçırdığın hiçbir duyuru kaybolmayacak.</div>
       </div>
-      <div class="kart">
-        <h2>🩺 Bağlantı testi</h2>
+      <div class="kart ayar-kart kapali">
+        <h2 class="ayar-bas" role="button" tabindex="0">🩺 İnternet ve sunucu testi<span class="ayar-ok">▾</span></h2>
         <p style="font-size:13px;color:var(--soluk);margin-bottom:12px">Haber, kur veya TV açılmıyorsa buna bas — hangi hat kopuk tek tek gösterir. Sonucu ekran görüntüsüyle geliştiriciye at, anında teşhis konur.</p>
         <button class="btn btn-cizgili" id="btn-saglik">🩺 Hatları test et</button>
         <div id="saglik-sonuc" style="margin-top:12px;font-size:13.5px;line-height:2"></div>
       </div>
-      <div class="kart">
-        <h2>🪵 Hata günlüğü</h2>
+      <div class="kart ayar-kart kapali">
+        <h2 class="ayar-bas" role="button" tabindex="0">🪵 Hata kayıtları (destek için)<span class="ayar-ok">▾</span></h2>
         <p style="font-size:13px;color:var(--soluk);margin-bottom:12px">
           Uygulama beklenmedik bir hatayla karşılaşırsa burada birikir (son 30 tanesi, sadece bu telefonda saklanır). Bir sorun yaşarsan "Kopyala"ya basıp geliştiriciye WhatsApp'tan atabilirsin.
         </p>
@@ -1577,23 +1586,23 @@
         </div>
         <div id="hata-gunlugu-sonuc" style="font-size:12.5px;line-height:1.8;color:var(--soluk);max-height:220px;overflow-y:auto"></div>
       </div>
-      <div class="kart">
-        <h2>🩹 Tutar onarımı</h2>
+      <div class="kart ayar-kart kapali">
+        <h2 class="ayar-bas" role="button" tabindex="0">🩹 Eski kayıtlarda tutar düzeltme<span class="ayar-ok">▾</span></h2>
         <p style="font-size:13px;color:var(--soluk);margin-bottom:12px;line-height:1.6">
           Eskiden "5.000" gibi noktayla yazılan tutarlar yanlışlıkla "5 TL" kaydediliyordu (özellikle iPhone'da).
           Bu araç öyle görünen kayıtları bulur, sana listeyi gösterir, onaylarsan düzeltir.
         </p>
         <button class="btn btn-cizgili" id="btn-onarim">🩹 Bozuk tutarları tara ve düzelt</button>
       </div>
-      <div class="kart">
-        <h2>🐞 Sorun bildir</h2>
+      <div class="kart ayar-kart kapali">
+        <h2 class="ayar-bas" role="button" tabindex="0">🐞 Sorun bildir<span class="ayar-ok">▾</span></h2>
         <p style="font-size:13px;color:var(--soluk);margin-bottom:12px">Hata mı gördün, fikrin mi var? Direkt geliştiriciye ulaş:</p>
         <a class="btn btn-cizgili" style="display:block;text-align:center;text-decoration:none;margin-bottom:10px" href="https://wa.me/905051252339?text=Puantaj%20Defterim%20hakkında:" target="_blank">💬 WhatsApp'tan yaz</a>
         <a class="btn btn-cizgili" style="display:block;text-align:center;text-decoration:none" href="tel:05051252339">📞 0505 125 23 39</a>
         <p style="font-size:11px;color:var(--soluk);margin-top:12px;text-align:center">Sürüm: 0.0.1.6 · Serkan Karakaş</p>
       </div>
-      <div class="kart">
-        <h2>🔒 PIN kilidi</h2>
+      <div class="kart ayar-kart kapali">
+        <h2 class="ayar-bas" role="button" tabindex="0">🔒 PIN kilidi<span class="ayar-ok">▾</span></h2>
         <p style="font-size:13px;color:var(--soluk);margin-bottom:12px;line-height:1.6">
           Uygulama her açıldığında 6 haneli PIN'ini soruyor — bu artık zorunlu, kapatılamıyor. Telefonunu eline alan yevmiyeni göremesin.
         </p>
@@ -1601,8 +1610,8 @@
         <button class="btn btn-cizgili gizli" id="btn-biyometrik-ac" style="margin-top:10px">🫆 Parmak izi/Yüz ile açmayı etkinleştir</button>
         <p style="font-size:11px;color:var(--soluk);margin-top:8px;line-height:1.6">🔒 Parmak izin/yüzün hiçbir zaman bu uygulamaya ya da bir sunucuya gönderilmiyor — eşleştirme tamamen telefonunun kendi güvenli donanımında (Face ID/parmak izi çipi) oluyor, biz sadece "eşleşti" cevabını alıyoruz.</p>
       </div>
-      <div class="kart">
-        <h2>💾 Yedek</h2>
+      <div class="kart ayar-kart kapali">
+        <h2 class="ayar-bas" role="button" tabindex="0">💾 Yedek al / geri yükle<span class="ayar-ok">▾</span></h2>
         <p style="font-size:13px;color:var(--soluk);margin-bottom:12px;line-height:1.6">
           Bütün puantaj, ödeme ve ayarlarını tek dosya olarak telefonuna indirir. Ara sıra yedek al, garanti olsun.
         </p>
@@ -1610,8 +1619,8 @@
         <button class="btn btn-cizgili" id="btn-geri-yukle" style="margin-top:10px">⬆️ Yedekten geri yükle</button>
         <input type="file" id="yedek-dosya" accept=".json,application/json" class="gizli">
       </div>
-      <div class="kart">
-        <h2>👤 Hesap</h2>
+      <div class="kart ayar-kart kapali">
+        <h2 class="ayar-bas" role="button" tabindex="0">👤 Hesabım ve çıkış<span class="ayar-ok">▾</span></h2>
         <div style="display:flex;align-items:center;gap:14px;margin-bottom:16px">
           <div class="avatar" id="ayar-avatar-onizle" style="width:64px;height:64px;border-radius:16px;background:var(--sari);color:var(--asfalt);display:flex;align-items:center;justify-content:center;font-family:'Saira Condensed';font-size:28px;font-weight:800;background-size:cover;background-position:center;flex-shrink:0">?</div>
           <div style="flex:1">
@@ -1673,15 +1682,45 @@
   <div class="alan gizli" id="alan-saat">
     <label for="gun-saat">Çalıştığım normal saat</label>
     <div class="sayac">
-      <button id="saat-eksi">−</button>
+      <button id="saat-eksi" aria-label="Çalışma saatini azalt">−</button>
       <input type="text" id="gun-saat" inputmode="decimal" min="0" step="0.5" value="8">
-      <button id="saat-arti">＋</button>
+      <button id="saat-arti" aria-label="Çalışma saatini artır">＋</button>
     </div>
   </div>
 
+  <div class="alan">
+    <label for="mesai-saat">Mesai (saat)</label>
+    <div class="sayac">
+      <button id="mesai-eksi" aria-label="Mesai saatini azalt">−</button>
+      <input type="text" id="mesai-saat" inputmode="decimal" min="0" step="0.5" value="0">
+      <button id="mesai-arti" aria-label="Mesai saatini artır">＋</button>
+    </div>
+  </div>
+
+  <div class="alan">
+    <label for="gun-arti">Gün içi artı — tam: 1 (X) · yarım: 0.5 (/)</label>
+    <div class="sayac">
+      <button id="arti-eksi" aria-label="Gün içi artıyı azalt">−</button>
+      <input type="text" id="gun-arti" inputmode="decimal" min="0" step="0.5" value="0">
+      <button id="arti-arti" aria-label="Gün içi artıyı artır">＋</button>
+    </div>
+  </div>
+
+
+  <!-- ── SEYREK KULLANILAN ALANLAR — katlanır ──────────────────────
+       Modal 10 alanla açılıyordu; kullanım verisinde bunların çoğu hiç
+       doldurulmuyor. Silinmediler, bir dokunuş arkasına alındılar.
+       Dolu olan alan varsa düğme bunu SAYIYLA gösteriyor, böylece
+       kapalıyken de içeride bir şey olduğu görülüyor. -->
+  <button type="button" id="btn-gun-detay" class="gun-detay-ac">
+    <span>⋯ Saat aralığı, gece mesaisi, konum</span>
+    <span class="gun-detay-rozet gizli" id="gun-detay-rozet"></span>
+    <span class="gun-detay-ok">▾</span>
+  </button>
+  <div id="gun-detay-alanlar" class="gizli">
   <div style="display:flex;gap:10px">
     <div class="alan" style="flex:1">
-      <label for="gun-bas-saat">İşe başlama (isteğe bağlı)</label>
+      <label for="gun-bas-saat">İşe başlama</label>
       <input type="time" id="gun-bas-saat">
     </div>
     <div class="alan" style="flex:1">
@@ -1690,36 +1729,24 @@
     </div>
   </div>
   <div class="alan">
-    <label for="mesai-saat">Mesai (saat)</label>
+    <label for="gun-gece-mesai">🌙 Gece mesaisi (saat) — normal mesaiden ayrı</label>
     <div class="sayac">
-      <button id="mesai-eksi">−</button>
-      <input type="text" id="mesai-saat" inputmode="decimal" min="0" step="0.5" value="0">
-      <button id="mesai-arti">＋</button>
-    </div>
-  </div>
-
-  <div class="alan">
-    <label for="gun-arti">Gün içi artı — tam: 1 (X) · yarım: 0.5 (/)</label>
-    <div class="sayac">
-      <button id="arti-eksi">−</button>
-      <input type="text" id="gun-arti" inputmode="decimal" min="0" step="0.5" value="0">
-      <button id="arti-arti">＋</button>
-    </div>
-  </div>
-
-  <div class="alan">
-    <label for="gun-gece-mesai">🌙 Gece mesaisi (saat) — normal mesaiden ayrı, opsiyonel</label>
-    <div class="sayac">
-      <button id="gece-eksi">−</button>
+      <button id="gece-eksi" aria-label="Gece mesaisini azalt">−</button>
       <input type="text" id="gun-gece-mesai" inputmode="decimal" min="0" step="0.5" value="0">
-      <button id="gece-arti">＋</button>
+      <button id="gece-arti" aria-label="Gece mesaisini artır">＋</button>
     </div>
   </div>
-
   <div class="alan gizli" id="alan-parca">
     <label id="parca-etiket" for="gun-parca-miktar">📦 Parça başı miktar (bugün)</label>
     <input type="text" id="gun-parca-miktar" inputmode="decimal" min="0" step="0.5" placeholder="0">
   </div>
+
+  <div class="alan">
+    <label>Konum damgası — "buradaydım" kanıtı</label>
+    <button class="eksik-cip" id="btn-konum" style="width:100%">📍 Şu anki konumu damgala</button>
+    <div id="gun-konum-yazi" style="font-size:12.5px;color:var(--soluk);margin-top:6px"></div>
+  </div>
+  </div><!-- /gun-detay-alanlar -->
 
   <div class="alan gizli" id="alan-santiye-sec">
     <label for="gun-santiye-sec">Hangi şantiye / patron?</label>
@@ -1729,11 +1756,6 @@
   <div class="alan">
     <label for="gun-santiye">Şantiye (isteğe bağlı)</label>
     <input type="text" id="gun-santiye" placeholder="Boş bırakırsan ayarlardaki şantiye yazılır">
-  </div>
-  <div class="alan">
-    <label>Konum damgası (isteğe bağlı, "buradaydım" kanıtı)</label>
-    <button class="eksik-cip" id="btn-konum" style="width:100%">📍 Şu anki konumu damgala</button>
-    <div id="gun-konum-yazi" style="font-size:12.5px;color:var(--soluk);margin-top:6px"></div>
   </div>
   <div class="alan">
     <label for="gun-foto-sec">İş fotoğrafı (isteğe bağlı — yaptığın işin kanıtı)</label>
@@ -1764,7 +1786,7 @@
       <b id="tvo-ad"></b>
       <div style="font-size:11px;color:#FF5B52;font-weight:800;letter-spacing:1px">● CANLI YAYIN</div>
     </div>
-    <button id="btn-tvo-kapat" style="color:#fff;font-size:24px;min-width:44px;min-height:44px">✕</button>
+    <button id="btn-tvo-kapat" aria-label="Yayını kapat" style="color:#fff;font-size:24px;min-width:44px;min-height:44px">✕</button>
   </div>
   <div style="width:100%;aspect-ratio:16/9;background:#000;position:relative">
     <iframe id="tvo-iframe" style="width:100%;height:100%;border:0" allow="autoplay; fullscreen; encrypted-media; picture-in-picture" allowfullscreen></iframe>
@@ -1782,14 +1804,14 @@
 <div id="haber-detay" class="gizli" style="position:fixed;left:10px;right:10px;bottom:calc(10px + env(safe-area-inset-bottom));z-index:8600;max-height:78vh;overflow-y:auto;background:#F4EFE3;color:#1B1B18;border:1px solid #D8D0BC;border-radius:20px;box-shadow:0 -8px 30px rgba(0,0,0,.5);padding:18px 16px">
   <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px">
     <div style="font-size:10px;letter-spacing:2px;color:#A33;font-weight:800">HABER DETAYI</div>
-    <button id="btn-haber-detay-kapat" style="font-size:20px;color:#5A5646;min-width:44px;min-height:44px">✕</button>
+    <button id="btn-haber-detay-kapat" aria-label="Haberi kapat" style="font-size:20px;color:#5A5646;min-width:44px;min-height:44px">✕</button>
   </div>
   <div id="hd-baslik" style="font-family:Georgia,'Times New Roman',serif;font-size:22px;line-height:1.35;font-weight:800;margin-top:8px"></div>
   <div id="hd-kaynak" style="font-size:12px;color:#7A745E;margin-top:8px;letter-spacing:.3px;border-bottom:1px solid #DDD6C2;padding-bottom:12px"></div>
   <div id="hd-ilgili"></div>
   <div style="display:flex;gap:8px;margin-top:16px">
     <button class="btn btn-sari" id="btn-hd-oku" style="flex:1">📖 Haberi kaynağında oku</button>
-    <button class="btn btn-cizgili" id="btn-hd-paylas" style="flex:0 0 auto;padding-left:16px;padding-right:16px">📤</button>
+    <button class="btn btn-cizgili" id="btn-hd-paylas" aria-label="Haberi paylaş" style="flex:0 0 auto;padding-left:16px;padding-right:16px">📤</button>
   </div>
 </div>
 
@@ -1805,14 +1827,14 @@
       <b>Usta</b>
       <div style="font-size:11.5px;color:var(--soluk)">Hesabını bilir, hemen cevaplar</div>
     </div>
-    <button id="asistan-kapat" style="font-size:20px;color:var(--soluk);min-width:44px;min-height:44px">✕</button>
+    <button id="asistan-kapat" aria-label="Asistanı kapat" style="font-size:20px;color:var(--soluk);min-width:44px;min-height:44px">✕</button>
   </div>
   <div id="asistan-mesajlar"></div>
   <div id="asistan-cipler"></div>
   <div id="asistan-giris">
     <button id="btn-asistan-mik" class="gizli" aria-label="Sesle sor" style="font-size:20px;padding:0 10px">🎙️</button>
     <input type="text" id="asistan-soru" placeholder="Usta'ya sor..." autocomplete="off">
-    <button id="asistan-gonder">➤</button>
+    <button id="asistan-gonder" aria-label="Soruyu gönder">➤</button>
   </div>
 </div>
 
@@ -1911,9 +1933,9 @@
   <div class="tutamak"></div>
   <h3>📅 Ay seç</h3>
   <div class="ay-bar" style="margin:10px 0 14px">
-    <button id="sec-onceki-yil">‹</button>
+    <button id="sec-onceki-yil" aria-label="Önceki yıl">‹</button>
     <div class="ay-ad" id="sec-yil">2026</div>
-    <button id="sec-sonraki-yil">›</button>
+    <button id="sec-sonraki-yil" aria-label="Sonraki yıl">›</button>
   </div>
   <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px" id="sec-aylar"></div>
   <button class="btn btn-sari" id="btn-sec-bugun" style="margin-top:14px">📍 Bugüne dön</button>

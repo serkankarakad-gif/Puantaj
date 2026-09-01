@@ -4577,6 +4577,39 @@ function eksikCiz(){
     b2.addEventListener("click", ()=> modalAc(x.id));
     kap.appendChild(b2);
   });
+
+  /* PARASAL ETKİ
+     Uyarı "3 gün boş bırakmışsın" diyordu — doğru ama soyut. Bu günlerin
+     bir kısmı gerçekten gelmediğin gün, bir kısmı İŞARETLEMEYİ UNUTTUĞUN
+     gün olabilir; aradaki fark doğrudan cebinden çıkan para.
+     Rakamı yazınca uyarı bir hatırlatmadan çok bir uyarıya dönüşüyor.
+     Tahmin, o günler TAM ÇALIŞILMIŞ sayılarak yapılıyor — üst sınır;
+     metin de bunu "çalıştıysan" diye koşullu söylüyor, kesin bir kayıp
+     iddia etmiyor. */
+  const paraEl = $("#eksik-para");
+  if(paraEl){
+    const gunlukTahmin = (function(){
+      /* Aynı aydaki gerçek kayıtlardan ortalama al; yoksa ayarlardaki yevmiye */
+      const buAyKazanc = Object.keys(girdiler)
+        .filter(k=> k.startsWith(aktifYil+"-"+pad(aktifAy+1)))
+        .map(k=> girdiKazanc(girdiler[k]))
+        .filter(v=> v>0);
+      if(buAyKazanc.length) return buAyKazanc.reduce((a,b2)=>a+b2,0)/buAyKazanc.length;
+      return Number(ayarlar.yevmiye)||0;
+    })();
+    if(gunlukTahmin > 0){
+      const toplam = gunlukTahmin * eksik.length;
+      paraEl.innerHTML =
+        '<div class="eksik-para-kutu">'+
+          '<span class="ik">💸</span>'+
+          '<span class="yz">Bu günlerde çalıştıysan <b>'+paraFmt(toplam)+'</b> hesabında görünmüyor demektir.'+
+          (eksik.length>1 ? ' <small>(günlük ≈'+paraFmt(gunlukTahmin)+')</small>' : '')+'</span>'+
+        '</div>';
+      paraEl.classList.remove("gizli");
+    }else{
+      paraEl.classList.add("gizli");
+    }
+  }
 }
 
 /* ---------- Şantiye dökümü (bu ay) ---------- */
@@ -4730,6 +4763,27 @@ function takvimCiz(){
     });
     kap.appendChild(el);
   }
+
+  /* ── AY ÖZETİ ────────────────────────────────────────────────────
+     Çalışılan gün / hakediş / mesai, takvimin hemen altında.
+     Bu rakamlar Hesap Özeti ekranında zaten hesaplanıyordu ama
+     kullanıcı takvime bakarken oraya gitmek zorundaydı — soru tam da
+     takvime bakarken doğuyor. hesaplaAralik() yeniden kullanılıyor,
+     yeni bir hesap yazılmadı: tek kaynak, tutarsızlık riski yok. */
+  try{
+    const oz = document.getElementById("takvim-ozet");
+    if(oz){
+      const t = hesaplaAralik(1, new Date(aktifYil, aktifAy+1, 0).getDate());
+      oz.innerHTML =
+        '<div class="to-kut g"><span class="e">ÇALIŞILAN</span>'+
+          '<b>'+t.gunSayisi+'</b><small>gün</small></div>'+
+        '<div class="to-kut p"><span class="e">HAKEDİŞ</span>'+
+          '<b>'+(gizliMod ? "••••" : paraKisa(t.hakedis))+'</b><small>₺</small></div>'+
+        '<div class="to-kut m"><span class="e">MESAİ</span>'+
+          '<b>'+t.mesaiToplam+'</b><small>saat</small></div>';
+    }
+  }catch(e){}
+
 }
 
 function durumEtiket(d){
@@ -7091,6 +7145,27 @@ function modalAc(id){
   $("#btn-gun-sil").style.display = girdiler[id] ? "block" : "none";
   durumButonYenile();
   modalKazancGuncelle();
+
+  /* Seyrek alanlar bölümü: kapalı başlar, AMA içinde dolu bir şey varsa
+     otomatik açılır. Sebep: kullanıcı geçen sefer gece mesaisi girdiyse
+     ve bu sefer bölüm kapalı gelirse, girdisini göremez ve "kaybolmuş"
+     sanır. Dolu içerik asla gizli kalmıyor. */
+  try{
+    const kap = $("#gun-detay-alanlar"), btn = $("#btn-gun-detay");
+    if(kap && btn){
+      const alanlar = ["gun-bas-saat","gun-bit-saat","gun-gece-mesai","gun-parca-miktar"];
+      let doluVar = alanlar.some(aid=>{
+        const el = document.getElementById(aid);
+        if(!el) return false;
+        const d = (el.value||"").trim();
+        return d && d!=="0" && d!=="0.0";
+      }) || !!gunKonum;
+      kap.classList.toggle("gizli", !doluVar);
+      btn.classList.toggle("acik", doluVar);
+    }
+    if(window.gunDetayRozetGuncelle) gunDetayRozetGuncelle();
+  }catch(e){}
+
   geriKaydet();
   $("#modal-perde").classList.add("acik");
   $("#gun-modal").classList.add("acik");
@@ -7353,6 +7428,24 @@ document.addEventListener("DOMContentLoaded", ()=>{
       inp.focus();
     });
   }catch(e){}
+
+  /* Ayarlar kartları — Araçlar ile aynı akordeon mantığı.
+     Ücret ayarları HTML'de açık başlıyor; ona dokunulmuyor. */
+  document.querySelectorAll(".ayar-kart .ayar-bas").forEach(bas=>{
+    const ac = ()=>{
+      const kart = bas.closest(".ayar-kart");
+      if(!kart) return;
+      const zatenAcik = !kart.classList.contains("kapali");
+      document.querySelectorAll(".ayar-kart").forEach(k=> k.classList.add("kapali"));
+      if(!zatenAcik){
+        kart.classList.remove("kapali");
+        setTimeout(()=>{ try{ kart.scrollIntoView({behavior:"smooth", block:"start"}); }catch(e){} }, 210);
+      }
+      titret(8);
+    };
+    bas.addEventListener("click", ac);
+    bas.addEventListener("keydown", e=>{ if(e.key==="Enter"||e.key===" "){ e.preventDefault(); ac(); } });
+  });
 
   document.querySelectorAll(".arac-kart .arac-bas").forEach(bas=>{
     const ac = ()=>{
@@ -8473,7 +8566,7 @@ document.addEventListener("DOMContentLoaded", ()=>{
   });
 
   /* Neler yeni kartı */
-  const YENILIK_SURUM = "0.0.7.3";
+  const YENILIK_SURUM = "0.0.8.6";
   window.__SURUM = YENILIK_SURUM;   /* tanı raporu bunu okur */
   try{ $("#cekmece-surum").textContent = "Puantaj Defterim " + YENILIK_SURUM; }catch(e){}
   /* Sürümü çekmece başlığında da göster. Sebep: "değişiklik gelmedi" durumunda
@@ -9288,6 +9381,44 @@ document.addEventListener("DOMContentLoaded", ()=>{
   $("#ayar-ses").addEventListener("change", ()=>{
     try{ localStorage.setItem("ses", $("#ayar-ses").checked?"1":"0"); }catch(e){}
     if($("#ayar-ses").checked) tik();
+  });
+
+  /* ---- Gün modalı: seyrek alanları aç/kapa ----
+     Kapalıyken içeride dolu alan varsa düğmede sayı gösteriliyor;
+     kullanıcı bir şey girdiğini unutmasın diye. */
+  const gunDetayRozetGuncelle = ()=>{
+    try{
+      const alanlar = ["gun-bas-saat","gun-bit-saat","gun-gece-mesai","gun-parca-miktar"];
+      let dolu = alanlar.filter(id=>{
+        const el = document.getElementById(id);
+        if(!el) return false;
+        const d = (el.value||"").trim();
+        return d && d!=="0" && d!=="0.0";
+      }).length;
+      if(gunKonum) dolu++;
+      const rz = $("#gun-detay-rozet");
+      if(rz){
+        rz.textContent = dolu ? dolu+" dolu" : "";
+        rz.classList.toggle("gizli", dolu===0);
+      }
+    }catch(e){}
+  };
+  window.gunDetayRozetGuncelle = gunDetayRozetGuncelle;
+
+  /* Alanlar değiştikçe rozet güncellensin */
+  ["gun-bas-saat","gun-bit-saat","gun-gece-mesai","gun-parca-miktar"].forEach(aid=>{
+    const el = document.getElementById(aid);
+    if(el) el.addEventListener("input", gunDetayRozetGuncelle);
+  });
+
+  $("#btn-gun-detay").addEventListener("click", ()=>{
+    const kap = $("#gun-detay-alanlar"), btn = $("#btn-gun-detay");
+    const acildi = kap.classList.toggle("gizli") === false;
+    btn.classList.toggle("acik", acildi);
+    titret(8);
+    if(acildi) setTimeout(()=>{
+      try{ kap.scrollIntoView({behavior:"smooth", block:"nearest"}); }catch(e){}
+    }, 180);
   });
 
   /* ---- 🔧 Tanı / test ---- */
@@ -10761,6 +10892,59 @@ async function taniCalistir(){
     /* Tarih SINIR DURUMLARI — bu sınıf hata kodu okuyarak bulunamaz,
        ancak gerçekten çalıştırınca ortaya çıkar. Yaz saati geçişinde
        veya artık yılda bir gün kayması, tüm ayın hesabını bozar. */
+    /* KAZANÇ HESABI sınır testleri. Para hesabı uygulamanın çekirdeği;
+       buradaki sessiz bir sapma aylarca fark edilmeden yanlış bakiye
+       üretir. Test, geçici sahte kayıtlarla yapılıyor — hiçbir gerçek
+       veriye dokunulmuyor, hiçbir şey kaydedilmiyor. */
+    try{
+      const ky = Number(ayarlar.yevmiye)||0, km = Number(ayarlar.mesaiUcret)||0;
+      if(ky > 0){
+        const kt = [
+          ["tam gün",            {durum:"tam",   uYevmiye:ky, uMesai:km}, ky],
+          ["yarım gün",          {durum:"yarim", uYevmiye:ky, uMesai:km}, ky/2],
+          ["gelmedi",            {durum:"gelmedi",uYevmiye:ky, uMesai:km}, 0],
+          ["izinli",             {durum:"izin",  uYevmiye:ky, uMesai:km}, 0],
+          ["tam + 1 artı",       {durum:"tam",   arti:1, uYevmiye:ky, uMesai:km}, ky*2],
+          ["tam + 2 sa mesai",   {durum:"tam",   mesai:2, uYevmiye:ky, uMesai:km}, ky + 2*km]
+        ];
+        const sapan = kt.filter(([,v,bek])=> Math.abs(girdiKazanc(v)-bek) > 0.01)
+                        .map(([ad,v,bek])=> ad+" ("+girdiKazanc(v)+" ≠ "+bek+")");
+        taniYaz(sapan.length?"hata":"ok","Kazanç hesabı",
+          sapan.length ? "SAPMA: "+sapan.join(", ")
+                       : kt.length+" senaryo doğru (tam/yarım/gelmedi/izin/artı/mesai)");
+      }else{
+        taniYaz("bilgi","Kazanç hesabı","Yevmiye girilmemiş, test yapılamadı");
+      }
+      /* Ücret mühürlenmemiş gün: BİLİNÇLİ olarak güncel ayara düşülüyor
+         ("kimse 0 liraya çalışmaz" — oranBul içinde belgelenmiş).
+         Bu davranışın korunduğunu doğrula; sessizce değişirse eski günler
+         0 TL olur ve kullanıcı parasını kaybetmiş görünür. */
+      if(ky > 0){
+        const muhursuz = girdiKazanc({durum:"tam"});
+        taniYaz(Math.abs(muhursuz-ky)<0.01 ? "ok":"uyari", "Ücretsiz eski kayıtlar",
+          Math.abs(muhursuz-ky)<0.01
+            ? "güncel yevmiyeye düşülüyor (doğru davranış)"
+            : "beklenmedik: "+muhursuz+" — eski günler yanlış hesaplanabilir");
+      }
+    }catch(e){ taniYaz("hata","Kazanç hesabı", e.message); }
+
+    /* ÖDEMENİN HANGİ AYA SAYILDIĞI (FIFO çekirdeği).
+       Bu mantık bozulursa avanslar yanlış aya yazılır ve bakiye sessizce
+       kayar — kullanıcının en çok güvendiği kural bu. */
+    try{
+      const ot = [
+        ["aitAy yazılı",       {aitAy:"2026-07", tarih:"2026-08-01"}, "2026-07"],
+        ["aitAy yok",          {tarih:"2026-08-15"},                  "2026-08"],
+        ["aitAy boş",          {aitAy:"", tarih:"2026-08-15"},        "2026-08"],
+        ["ikisi de yok",       {},                                     ""],
+        ["yılbaşı sınırı",     {tarih:"2027-01-01"},                  "2027-01"]
+      ];
+      const sapan = ot.filter(([,v,bek])=> odemeAyi(v)!==bek).map(([ad])=>ad);
+      taniYaz(sapan.length?"hata":"ok","Ödeme ay eşleştirme",
+        sapan.length ? "SAPMA: "+sapan.join(", ")
+                     : ot.length+" senaryo doğru (ait-ay önceliği, tarihten türetme, yıl sınırı)");
+    }catch(e){ taniYaz("hata","Ödeme ay eşleştirme", e.message); }
+
     try{
       const sinirTest=[
         ["yaz saati",  new Date(2027,2,28,3,0,0)],

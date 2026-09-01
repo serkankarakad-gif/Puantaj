@@ -5,6 +5,167 @@ kullanır: `0.0.0.X` — X, her güncellemede 1 artar. Uygulama içindeki sürü
 (alt bilgi + "Neler yeni" kartı) ve dağıtılan zip dosyasının adı her zaman
 birebir aynıdır.
 
+## 0.0.8.6 — 🐞 Devre dışı düğme göstergesi + 22 erişilebilirlik etiketi
+- Kullanıcı isteği: "harf harf incele, hata yoksa yeni özellik/tasarım ekle"
+- **Kod mantığı denetimi — hata bulunamadı**: `if` içinde atama yok, boş koşul bloğu yok, erişilemez kod yok. `==` kullanılan 8 yer tek tek incelendi; hepsi `==null` deseni (null + undefined birlikte yakalar), bilinçli. `await`siz görünen 6 async çağrı incelendi; hepsi "başlat ve bekleme" niteliğinde
+- 🐞 **BULUNAN HATA: `:disabled` için hiç CSS kuralı yoktu.** Kod 6 noktada düğmeyi geçici devre dışı bırakıyor (`btn.disabled = true` — gün kaydetme, PDF üretimi, OCR, tanı testi, ödeme kaydetme). Düğme devre dışıyken **görsel olarak hiç değişmiyordu**: kullanıcı basıyor, tepki alamıyor, işlemin sürdüğünü anlamadan tekrar basıyor
+  - `button/​.btn/​input/​select:disabled` → `opacity:.45`, `cursor:not-allowed`, `pointer-events:none`; `.btn-sari:disabled` ayrıca sarı zeminini kaybediyor
+- 🔊 **22 düğmede `aria-label` yoktu.** Yalnızca simge içeren düğmeler (`✕`, `−`, `＋`, `👁️`, `⌫`, `➤`, `‹`, `›`) ekran okuyucuda isimsiz okunuyordu. PIN tuşları (rakamlar) zaten anlamlı olduğu için hariç tutuldu. Hepsine eylem odaklı Türkçe etiket eklendi
+- ⌨️ **Klavye odak halkası genişletildi**: mevcut 10 `:focus-visible` kuralı düğme/girdi/bağlantıların çoğunu kapsamıyordu. Genel bir kural eklendi (`outline:2px var(--sari)`). `:focus-visible` yalnızca klavye odağında devreye girdiği için dokunmatik kullanımı etkilemiyor
+- Yeni CSS ölçek bloklarının ÜSTÜNE eklendi; sıralama doğrulandı (`disabled` < `buyuk` < girdi koruması)
+- HTML dengesi korundu (button 231/231, div 571/571); `aria-label` sayısı 21 → 43
+- Üç yerde sürüm güncellendi: `app.js`, `sw.js`, zip adı — hepsi `0.0.8.6`
+
+## 0.0.8.5 — 🔍 Tam denetim + yeniden biriken ölü CSS temizliği
+- Kullanıcı isteği: "dosyaları incele, sorun nerelerde var"
+- **Denetim sonuçları — uygulamada hata bulunamadı:**
+  - Söz dizimi: 5 JS dosyası ✓, `manifest.webmanifest` geçerli JSON ✓
+  - Yapı: 16 HTML etiket türünde denge ✓, CSS parantez ve yorum dengesi ✓, sürüm tutarlılığı ✓
+  - 594 `id` — tekrar eden yok; 137 düğme — ölü yok; 264 fonksiyon — tekrar tanımlanan yok
+  - JS'in aradığı 3 id HTML'de yok (`ayar-kumbara`, `cuzdan-tarih` yorum satırında; `cekmece-surum-rozet` `createElement` ile üretiliyor) — yanlış alarm
+  - JS'in ürettiği 4 sınıf CSS'te tanımsız (`imza`, `pdf-rapor` PDF belgesinin kendi stilinde; `secili-` dinamik birleştirme; `ozet` PDF içi) — yanlış alarm
+  - Son 20 sürümde eklenen 10 bileşen (katlanır kartlar ×3, gün modalı detayı, takvim özeti, boş gün parası, sabit eylem çubuğu, tam ekran yenilik, tanı ekranı, ölçek seçici) — hepsi html/js/css üçlüsüyle bağlı ✓
+  - Katlanır kartlarda iç içelik taraması: gerçek iç içe kart 0 ✓
+  - Yedekleme 12 koleksiyon; dışarıdakiler bilinçli (3 fotoğraf koleksiyonu + `cihazlar`) ✓
+  - Ölçek kural sıralaması: `kucuk` < `buyuk` < `normal` < girdi koruması ✓
+- 🧹 **Bulunan gerçek sorun: gölgelenmiş CSS yeniden birikmiş.** `.ozet-kut` 6×, `.liste li` 6×, `.kart` 5×, `.banka-kart .bakiye` 5×, `main` ve `.topbar h1` 4× yeniden tanımlanmış. 0.0.6.1'de bir kez temizlenmişti; 0.0.7.5–0.0.8.4 arasındaki tasarım turlarında tekrar oluşmuş
+  - **46 tamamen gölgelenmiş kural silindi** (yalnızca özellikleri sonraki tanımın alt kümesi olanlar; kısmi gölgelenmelere dokunulmadı). Ölçek blokları ve `@keyframes` korundu
+  - **Doğrulama**: 1159 (seçici, özellik) çiftinin nihai değeri silme öncesi/sonrası karşılaştırıldı → **0 fark**. Görünüm birebir korundu
+  - CSS 133 → 131 KB
+- Yalnızca `style.css`; `app.js` ve `index.html` bir önceki sürümle aynı
+- Üç yerde sürüm güncellendi: `app.js`, `sw.js`, zip adı — hepsi `0.0.8.5`
+
+## 0.0.8.4 — 📏 İkinci küçültme turu + "Büyük" ölçek kurtarıldı
+- Kullanıcı bildirimi (ikinci kez): "uygulamaya girdiğimde her şey kocaman çıkıyor, düzelt". 0.0.6.0'daki tur yetersiz kalmış
+- **Önce doğrulandı**: 0.0.8.3'te `font-size`'a hiç dokunulmamıştı (yalnızca `border-radius`), yani büyüme olmamıştı — mevcut değerler zaten yetersizdi
+- 📏 **Varsayılan (`kucuk`) ölçek bir kademe daha indirildi**: `body` 13.5→12.5, bakiye 36→32, `.kart h2` 15→14, `.liste .baslik` 13→12.5, `.liste .tutar` 15→14, `.ozet-kut .deger` 21→19, takvim rakamı 14.5→13.5, `.topbar h1` 18→16.5, `.ay-bar .ay-ad` 20→18, çekmece 13.5→12.5. Kart dolgusu 12→11, `main` 10→9, liste satır dolgusu 10→9px
+- 👆 **Dokunma hedefleri korundu**: yalnızca yazı boyutları düştü; düğme yükseklikleri, `.yok-btn`, `.hamburger` gibi basılan alanlar değişmedi
+- 🐞 **YAKALANAN HATA — "Büyük" ölçek sessizce bozuluyordu.** Yeni `html[data-olcek="kucuk"]` kuralları dosya sonuna eklenince mevcut `buyuk` kurallarının ALTINA düştü; aynı özgüllükte sonraki kural kazandığı için kullanıcı "Büyük" seçse bile küçük değerler geçerli kalacaktı
+  - **Aynı hata 0.0.6.0'da da yapılmıştı** (orada da yayın öncesi yakalanmıştı). Bu kez de yayınlanmadan önce sıra kontrolü yapılıp `buyuk` ve `normal` blokları en sona yeniden yazıldı
+  - Doğrulama: son kural konumları `kucuk` < `buyuk` < `normal`; bakiye değerleri 32 / 40 / 50px olarak üç ölçekte farklı
+- Girdi alanları `@media (pointer: coarse)` altında her ölçekte 16px (iOS odaklanma yakınlaştırması)
+- Yalnızca `style.css`; `app.js` ve `index.html` bir önceki sürümle aynı
+- Üç yerde sürüm güncellendi: `app.js`, `sw.js`, zip adı — hepsi `0.0.8.4`
+
+## 0.0.8.3 — 📐 Tasarım sistemi denetimi: köşe yarıçapları ölçeğe oturtuldu
+- Kullanıcı isteği: "nasıl tasarım olmuş bak incele". Bu kadar sürümden sonra bütünün tutarlılığı ilk kez ölçüldü
+- **Ölçüm sonuçları** (126 KB, 935 kural, 2925 satır):
+  - `border-radius`: **24 farklı değer** — 13, 15, 17, 18, 19px gibi çoğu tek kullanımlık, yani tesadüfi
+  - `font-size`: 42 farklı değer
+  - Sabit renk kodu: 138 kullanım / 88 farklı renk; `var(--…)` 404 kullanım → %25 sabit
+- 📐 **Köşe yarıçapları 24 → 10'a indirildi.** Ölçek: 2 / 3 / 6 / 10 / 12 / 16 / 20 (+ bilinçli istisnalar)
+  - Kural: her değer en yakın basamağa yuvarlandı, ancak **sapma 2px'i aşıyorsa dokunulmadı** (o değer bilinçli seçilmiş demektir)
+  - 26px ve 28px (alt sayfa üst köşeleri) ve 999px (hap biçimi) korundu; `border-radius:50%` kullanan 16 yuvarlak öğenin tamamı değişmedi
+  - 51 değer güncellendi; ortalama sapma **1,3px**, en büyük sapma 2px
+- **Doğrulama**: eski/yeni CSS'te `border-radius` değerleri maskelenerek karşılaştırıldı — başka hiçbir fark yok. `app.js` ve `index.html` de bir önceki sürümle aynı
+- ❌ **Yazı boyutlarına bilinçli olarak dokunulmadı.** 42 farklı değerin 6'sı tek kullanımlık ama hepsi büyük başlık ölçüleri (29–52px), yani bilinçli. Ayrıca 0.0.6.0'da "her şey kocaman" şikayeti üzerine toptan küçültme yapılmıştı; boyutlara yeniden müdahale o sorunu geri getirebilirdi. Ölçüldü, kayda geçirildi, değiştirilmedi
+- Üç yerde sürüm güncellendi: `app.js`, `sw.js`, zip adı — hepsi `0.0.8.3`
+
+## 0.0.8.2 — ✏️ Başlık ve isimlendirme iyileştirmesi (22 isim)
+- Gerekçe: 0.0.5.4 ve 0.0.8.1'de kartlar katlanınca **başlıklar arayüzün kendisi oldu** — kapalı kartta kullanıcının gördüğü tek şey isim. İsimlendirme kalitesi bu noktada görsel tasarım kadar belirleyici
+- 🔍 **Çakışan/belirsiz başlıklar tespit edilip düzeltildi:**
+  - `🌙 Görünüm` + `🎨 Uygulama teması` — iki kart aynı şey sanılıyordu. İçerikleri incelendi: ilki karanlık mod + yazı boyutu, ikincisi renk seçimi → `🌙 Karanlık mod ve yazı boyutu` / `🎨 Renk teması`
+  - `🕌 Namaz Vakitleri` **iki ayrı araçta birebir aynı isimdeydi**. İçerikleri farklı (`vakit-il`/`vakit-liste` şehir bazlı liste; `btn-namaz`/`namaz-sonuc` sonraki vakit sayacı) → `🕌 Namaz vakitleri — şehrine göre` / `🕌 Sonraki vakte ne kadar var`
+- ✏️ **Ne yaptığı anlaşılmayanlar açıldı**: `Depolama` → `Uygulama takılırsa — önbelleği temizle`; `Tutar onarımı` → `Eski kayıtlarda tutar düzeltme`; `Duyuru kutusu` → `Geliştiriciden duyurular`; `Hata günlüğü` → `Hata kayıtları (destek için)`; `Bağlantı testi` → `İnternet ve sunucu testi`; `Yedek` → `Yedek al / geri yükle`; `Hesap` → `Hesabım ve çıkış`; `SGK / Emeklilik` → `SGK gün sayım ve emeklilik`; `Mesai ücreti kontrolü` → `Mesai ücretin doğru mu?`; `İnşaat hesaplayıcıları` → `İnşaat hesapları (beton, boya, tuğla)`; `Emek karnem` → `Emek karnem — toplam emeğin`
+- **Büyük/küçük harf tutarlılığı**: `Gürültü Ölçer`, `İş Güvenliği Köşesi`, `Su Terazisi`, `İş Kazası Defterim`, `Acil Durum Kartım`, `İşçi Kimlik Kartım`, `Tuğla Ustası` — Türkçede özel ad olmadıkları hâlde her kelime büyük harfle başlıyordu; cümle düzenine çevrildi
+- Yalnızca `index.html` metinleri; hiçbir `id`, sınıf veya kod değişmedi. HTML dengesi doğrulandı (div 571/571, h2 85/85)
+- Üç yerde sürüm güncellendi: `app.js`, `sw.js`, zip adı — hepsi `0.0.8.2`
+
+## 0.0.8.1 — ⚙️ Ayarlar ekranı akordeona çevrildi
+- Tasarım sırası devam: Puantaj → Para → Rapor → Sosyal/ekip → Araçlar-Ayarlar (bu sürüm)
+- ⚙️ **Ayarlar ekranı 18.052 karakter, 18 kart, hepsi açıktı.** Araçlar ekranındaki (0.0.5.4) sorunun aynısı: aranan ayarı bulmak için sayfayı baştan sona taramak gerekiyordu
+  - 14 kart `.ayar-kart.kapali` yapısına çevrildi; **Ücret ayarları açık bırakıldı** (en sık kullanılan ve tüm hesabı etkileyen bölüm)
+  - Akordeon: bir bölüm açılınca diğerleri kapanıyor, açılan karta `scrollIntoView`
+  - Klavye erişimi: `role="button"`, `tabindex="0"`, `Enter`/`Space`
+  - HTML dengesi doğrulandı (div 571/571, h2 85/85)
+- **Risk denetimi**:
+  - Kapalı kart içindeki öğelere JS erişimi kontrol edildi — `display:none` öğeler okunabildiği için `ayar-hafif`, `ayar-yevmiye`, `bildirim-durum` gibi alanların okunması/yazılması etkilenmiyor
+  - `scrollIntoView` / `focus()` / `getBoundingClientRect` çağrısı yapan ayar öğesi yok (bunlar kapalı öğede çalışmaz)
+  - Ayarlara yönlendiren iki derin bağlantı (`btn-rehber-yevmiye` ve mesai ücreti uyarısı) incelendi; ikisi de Ücret ayarlarını hedefliyor, o kart açık kaldığı için yönlendirme boşa düşmüyor
+- Üç yerde sürüm güncellendi: `app.js`, `sw.js`, zip adı — hepsi `0.0.8.1`
+
+## 0.0.8.0 — 👥 Sosyal, ekip ve liste ekranları: görsel tasarım (yalnızca CSS)
+- Tasarım sırası: Puantaj (0.0.7.5–7.7) → Para (0.0.7.8) → Rapor/analiz (0.0.7.9) → Sosyal/ekip (bu sürüm)
+- **Yalnızca `style.css`**; `app.js` ve `index.html` bir önceki sürümle `diff` alınarak doğrulandı — fark yok
+- **Tespit**: `#liste-isciler`, `#liste-ekip-ozet`, `#kisiler-liste`, `#liste-planlar`, `#isler-liste`, `#liste-maaslar`, `#kisi-gunler`, `#kisi-odemeler` — sekizinin de görsel tanımı yoktu, hepsi genel `.liste` stilindeydi. İşçi kaydı, plan bağlantısı ve maaş satırı aynı görünüyordu
+- 👥 Yapılanlar:
+  - Sekiz listenin tamamı kart ritmine alındı (`--girdi` zemin, 11px köşe, 7px aralık)
+  - **Ekip**: asıl bilgi işçi adı → `.baslik` 14.5px/700; `#liste-ekip-ozet .tutar` 16px/800
+  - **Kişiler**: `.rozet` yuvarlak (40px, `border-radius:50%`) — kişi listesi olduğu görsel olarak belli
+  - **Kişi detayı**: `#kisi-gunler` / `#kisi-odemeler` satırları `--kart` zemin + kenarlık ile ayrıştırıldı; başkasının verisine bakıldığı belli olsun, kendi kayıtlarıyla karıştırılmasın
+  - **İşlerim**: `.rozet` 40px/12px köşe, `.baslik` 14.5px/700
+  - **Maaşlar**: para listesi olduğu için 0.0.7.8'deki dille hizalandı (`.tutar` 17px/800)
+  - **Planlar**: uzun bağlantı metinleri `text-overflow:ellipsis` ile taşmıyor
+  - Boş liste kutuları beş ekranda tutarlı (kesik çizgili çerçeve)
+- Not: `#isler-liste` ilk taramada `is-liste` sanılmıştı; HTML'den gerçek id doğrulanarak düzeltildi — hedefsiz kural yazılmadı
+- Üç yerde sürüm güncellendi: `app.js`, `sw.js`, zip adı — hepsi `0.0.8.0`
+
+## 0.0.7.9 — 📊 Rapor ve analiz ekranları: görsel tasarım (yalnızca CSS)
+- Tasarım sırası devam: Puantaj (0.0.7.5–7.7) → Para (0.0.7.8) → Rapor/analiz (bu sürüm)
+- **Yalnızca `style.css` değişti**; `app.js` ve `index.html` bir önceki sürümle `diff` alınarak doğrulandı — fark yok
+- **Tespit**: `#liste-santiye-ozet`, `#hedef-icerik`, `#yil-icerik`, `#grafik-karsi`, `#gg-kart` için görsel tanım yoktu. Sorun rakamların yanlışlığı değil, hepsinin aynı görsel ağırlıkta olması — kullanıcı neye bakacağını seçemiyor
+- 📊 Yapılanlar:
+  - `#liste-santiye-ozet` satırları kart biçimine alındı (para ekranlarıyla aynı dil), tutar 16px/800
+  - `#grafik-karsi` (geçen aya göre karşılaştırma) kutuya alındı, sol renk şeridi eklendi
+  - `#gg-grafik` köşeleri yumuşatıldı, `#gg-kart` başlık boşluğu düzenlendi
+  - `.yil-tablo` satırlarına basma geri bildirimi
+  - `#hedef-icerik` rakamları Saira Condensed'e alındı
+  - **Yoğunluk**: Hesap özetinde 12, Yıl dökümünde 2 kart var; `#goruntu-ozet .kart` ve `#goruntu-yil .kart` alt boşluğu 11→9px, başlıklar 15.5→14.5px. Aynı bilgi, daha az kaydırma
+- İncelenip **değiştirilmeyenler**: `#sim-sonuc` ve `#gg-grafik` satır içi stille zaten tanımlıydı; gereksiz kural yazılmadı
+- Üç yerde sürüm güncellendi: `app.js`, `sw.js`, zip adı — hepsi `0.0.7.9`
+
+## 0.0.7.8 — 💰 Para ekranları: görsel tasarım (yalnızca CSS)
+- Kullanıcı uyarısı: "özelliklere dokunma, arayüz tasarımını yapacağız". Bu sürümde **yalnızca `style.css`** değişti; `app.js` ve `index.html` bir karakter bile değişmedi (bir önceki sürümle `diff` alınarak doğrulandı)
+- **Geri alma**: bu turda önce ödeme listesine "ait ay" rozeti eklenmişti (FIFO'nun hangi aya yazdığını göstermek için). Bu bir içerik/özellik değişikliğiydi, kullanıcının istediği kapsamın dışındaydı — JS ve CSS tarafından tamamen kaldırıldı
+- 💰 **`#liste-odemeler`, `#liste-masraflar`, `#liste-borclar`, `#liste-beklenen`** için hiç görsel tanım yoktu; dördü de genel `.liste` stilini kullanıyordu. Para listesi ile not listesi aynı görünüyordu
+  - Satırlar kart hâline getirildi (`--girdi` zemin, 12px köşe, 8px aralık); alt çizgi kaldırıldı
+  - Hiyerarşi: `.tutar` 17px/800 — bu ekranlarda asıl bilgi rakam; `.baslik` 13.5px/600 ikincil
+  - Tarih rozeti 42×42, 11px köşe; `small` etiketi 8.5px
+  - `#odeme-filtre` / `#masraf-filtre` yatay kaydırmaya alındı (dar ekranda alt satıra kırılıyordu)
+  - `#odeme-toplam` / `#masraf-toplam` Saira Condensed + sarı vurgu
+  - `.sil` düğmesi `opacity:.5` (kazara basmayı zorlaştırır), basılınca tam görünür
+  - Boş liste kutusu kesik çizgili çerçeveye alındı
+- Üç yerde sürüm güncellendi: `app.js`, `sw.js`, zip adı — hepsi `0.0.7.8`
+
+## 0.0.7.7 — 📊 Takvim altına ay özeti (puantaj yeniden tasarımı tamamlandı)
+- Maketteki son madde. Puantaj ekranında takvimden sonra doğrudan kayıt listesi geliyordu; ay toplamları yalnızca Hesap Özeti ekranındaydı
+- 📊 **Yeni `#takvim-ozet`**: çalışılan gün / hakediş / mesai, takvimin hemen altında. Renk şeritleri uygulamanın diliyle tutarlı (yeşil = gün, sarı = para, mavi = mesai). Rakamlar `paraKisa()` ile kısaltılmış — dar alanda tam rakam gerekmiyor, o Hesap Özeti'nde mevcut
+- **Yeni hesaplama yazılmadı**: mevcut `hesaplaAralik()` yeniden kullanılıyor. Böylece takvim altındaki rakam ile Hesap Özeti'ndeki rakamın ayrışması yapısal olarak imkânsız. İkinci bir hesap yazılsaydı ileride biri güncellenip diğeri kalabilirdi
+- `gizliMod` desteği: rakamlar gizliyken "••••" gösteriliyor
+- CSS ölçek bloğunun üstüne eklendi
+- **Puantaj yeniden tasarımı tamamlandı**: 7 maddeden 3'ü zaten uygulanmıştı (kazanç önizlemesi, mesai rozeti, ileri tarih taraması), 4'ü bu üç sürümde yapıldı — modal sadeleştirme (0.0.7.5), parasal etki (0.0.7.6), ay özeti (0.0.7.7)
+- Üç yerde sürüm güncellendi: `app.js`, `sw.js`, zip adı — hepsi `0.0.7.7`
+
+## 0.0.7.6 — 💸 İşlenmemiş gün uyarısına parasal etki eklendi
+- Puantaj yeniden tasarımının ikinci adımı. `eksikCiz()` zaten boş günleri çip olarak listeliyordu; eksik olan parasal karşılıktı
+- 💸 **Yeni `#eksik-para` kutusu**: "Bu günlerde çalıştıysan **5.833 ₺** hesabında görünmüyor demektir." Boş günlerin bir kısmı gerçekten gelinmeyen gün, bir kısmı işaretlemesi unutulan gün — aradaki fark doğrudan kullanıcının parası. Soyut bir gün sayısı bunu hissettirmiyor
+- **Tahmin yöntemi**: o ayki mevcut kayıtların kazanç ortalaması alınıyor (sabit yevmiye değil — ay içinde 2.500/3.750 gibi karışık günler varsa gerçek ortalama daha doğru). Kayıt yoksa `ayarlar.yevmiye`, o da 0 ise kutu hiç gösterilmiyor
+- **Dil tercihi**: "kaybettin" değil "çalıştıysan". Uygulama o günlerde çalışılıp çalışılmadığını bilemez; kesin kayıp iddia etmek yerine kullanıcıyı kontrole yönlendiriyor. Birden fazla gün varsa günlük ortalama da parantez içinde gösteriliyor
+- CSS ölçek bloğunun üstüne eklendi (0.0.6.0 sıralama kuralı)
+- Üç yerde sürüm güncellendi: `app.js`, `sw.js`, zip adı — hepsi `0.0.7.6`
+
+## 0.0.7.5 — 📅 Gün modalı sadeleştirildi: 10 alan → 6 + katlanır bölüm
+- Puantaj sistemi yeniden tasarımının ilk uygulama adımı
+- **Önce mevcut durum denetlendi**: maketteki 7 öneriden 3'ü zaten uygulanmıştı — kazanç önizlemesi (`modalKazancGuncelle`), takvimde mesai rozeti (`.mesai-rozet`), ileri tarih taraması (0.0.4.6). Bunlar tekrar yapılmadı
+- 📅 **Modal 10 alanla açılıyordu.** Kullanıcının 49 kaydında saat aralığı, gece mesaisi, konum ve parça başı hiç doldurulmamış; buna rağmen her gün işlemede karşıya çıkıyorlardı
+  - Bu dört alan yeni `#gun-detay-alanlar` bölümüne taşındı, `#btn-gun-detay` ile açılıyor. Üstte kalanlar: durum, kazanç önizlemesi, normal saat, mesai, gün içi artı, şantiye, not, fotoğraf
+  - Hiçbir alan silinmedi, hiçbir ID değişmedi
+- 🔢 **Gizlemenin riski iki koruma ile kapatıldı** — kullanıcının bir şey girdiğini unutması:
+  1. `#gun-detay-rozet`: içeride dolu alan varsa düğmede "N dolu" sayısı görünüyor. Alanlara `input` dinleyicisi bağlı, anlık güncelleniyor
+  2. `modalAc()` içinde: kaydedilmiş bir gün açılırken bu alanlardan biri doluysa (veya konum damgası varsa) bölüm **otomatik açılıyor**. Dolu içerik asla gizli kalmıyor
+- HTML denge korundu (div 569/569), tüm ID'ler tek
+- CSS bloğu, ölçek kurallarının ÜSTÜNE eklendi (0.0.6.0'daki sıralama kuralına uygun)
+- Üç yerde sürüm güncellendi: `app.js`, `sw.js`, zip adı — hepsi `0.0.7.5`
+
+## 0.0.7.4 — 💰 Para hesabı ve FIFO sınır testleri tanıya eklendi
+- Çalışma-anı test yaklaşımı sürüyor. Bu turda uygulamanın çekirdeği: kazanç hesabı ve ödeme-ay eşleştirmesi
+- 💰 **`girdiKazanc()` 6 senaryoyla test edildi** (tam, yarım, gelmedi, izin, artı yevmiye, mesai) — hepsi doğru. Testler geçici sahte kayıtlarla yapılıyor, gerçek veriye dokunulmuyor
+- ⚠️ **Bir yanlış alarm ve nedeni**: ilk test "ücreti mühürlenmemiş gün 0 TL etmeli" varsayımıyla yazılmıştı, kod ise güncel yevmiyeye düşüyordu. `oranBul()` içindeki yorumda gerekçe belgelenmiş: *"Güne mühürlenmiş ücret 0 ise ayarlardaki güncel ücrete geri düş — kimse 0 liraya çalışmaz."* Yani yevmiye girilmeden önce işlenen günler kaybolmuyor. Test yanlıştı, kod doğru
+  - Bu davranış artık bir kontrole bağlandı: mühürsüz gün güncel yevmiyeye düşmezse tanı uyarıyor. Sessizce değişirse eski günler 0 TL olur ve kullanıcı parasını kaybetmiş görünür
+- 🤝 **`odemeAyi()` 5 senaryoyla test edildi**: `aitAy` önceliği, `aitAy` yokken tarihten türetme, boş `aitAy`, her ikisinin de olmaması, yılbaşı sınırı (`2027-01-01` → `2027-01`). Hepsi doğru. Bu mantık bozulursa avanslar yanlış aya yazılır ve bakiye sessizce kayar
+- 🔁 Toplam 11 yeni kontrol; tanı kontrol sayısı 134 → 138. Testler her çalıştırmada yeniden koşuyor
+- Üç yerde sürüm güncellendi: `app.js`, `sw.js`, zip adı — hepsi `0.0.7.4`
+
 ## 0.0.7.3 — 📅 Tarih sınır durumları test edildi ve tanıya eklendi
 - 0.0.7.2'deki yöntem değişikliğinin devamı: statik taramanın bulamayacağı, yalnızca çalıştırınca ortaya çıkan hata sınıfları aranıyor. Bu turda tarih/saat hesapları
 - **Önce iOS'ta çalışmayan web özellikleri tarandı**: `SpeechRecognition`, `navigator.vibrate`, `wakeLock`, `geolocation`, `Notification.requestPermission`. Beşi de varlık kontrolüyle korunmuş, çökme riski yok — değişiklik gerekmedi

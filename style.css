@@ -34,7 +34,6 @@ body[data-tema="amoled"]{
 #tema-secim button{
   width:44px;height:44px;border-radius:50%;border:3px solid transparent;flex-shrink:0;
 }
-#tema-secim button.secili{border-color:#fff;transform:scale(1.1)}
 .cekmece .menu-grup{
   font-size:11.5px;letter-spacing:.08em;font-weight:800;color:var(--soluk);
   padding:14px 16px 10px;list-style:none;cursor:pointer;
@@ -50,13 +49,13 @@ body[data-tema="amoled"]{
 .tv-grup{font-size:11px;letter-spacing:1.5px;font-weight:800;color:var(--soluk);margin:16px 4px 8px}
 .tv-izgara{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
 .tv-kanal{
-  background:var(--kart);border:1.5px solid var(--cizgi);border-radius:14px;
+  background:var(--kart);border:1.5px solid var(--cizgi);border-radius:12px;
   padding:14px 6px 10px;display:flex;flex-direction:column;align-items:center;gap:8px;
   color:var(--metin);
 }
 .tv-kanal:active{transform:scale(.96)}
 .tv-logo{
-  width:52px;height:52px;border-radius:14px;display:flex;align-items:center;justify-content:center;
+  width:52px;height:52px;border-radius:12px;display:flex;align-items:center;justify-content:center;
   font-family:'Saira Condensed';font-weight:800;font-size:16px;color:#fff;letter-spacing:.5px;
 }
 .tv-kanal .tv-ad{font-size:12px;font-weight:700;text-align:center;line-height:1.3}
@@ -64,12 +63,12 @@ body[data-tema="amoled"]{
 
 /* ---------- ▶️ VİDEO ---------- */
 .vid-kart{display:flex;gap:10px;background:var(--kart);border:1.5px solid var(--cizgi);
-  border-radius:14px;padding:8px;margin-bottom:10px;width:100%;text-align:left;color:var(--metin)}
+  border-radius:12px;padding:8px;margin-bottom:10px;width:100%;text-align:left;color:var(--metin)}
 .vid-kart:active{transform:scale(.98)}
-.vid-kapak{width:126px;height:71px;border-radius:9px;object-fit:cover;flex-shrink:0;background:#000;position:relative}
+.vid-kapak{width:126px;height:71px;border-radius:10px;object-fit:cover;flex-shrink:0;background:#000;position:relative}
 .vid-kapak-kap{position:relative;flex-shrink:0}
 .vid-sure{position:absolute;right:4px;bottom:4px;background:rgba(0,0,0,.85);color:#fff;
-  font-size:10.5px;font-weight:700;padding:1px 5px;border-radius:5px}
+  font-size:10.5px;font-weight:700;padding:1px 5px;border-radius:6px}
 .vid-bilgi{min-width:0;display:flex;flex-direction:column;justify-content:center;gap:4px}
 .vid-baslik{font-size:13.5px;font-weight:700;line-height:1.35;display:-webkit-box;
   -webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
@@ -78,7 +77,7 @@ body[data-tema="amoled"]{
   border-radius:20px;padding:8px 13px;font-size:12.5px;color:var(--metin);font-weight:600}
 
 /* ---------- 📰 GAZETE ---------- */
-.gazete{background:#F4EFE3;color:#1B1B18;border-radius:14px;padding:16px 14px;border:1px solid #D8D0BC}
+.gazete{background:#F4EFE3;color:#1B1B18;border-radius:12px;padding:16px 14px;border:1px solid #D8D0BC}
 body[data-tema="amoled"] .gazete{background:#F4EFE3}
 .gazete .gz-ust{border-top:3px double #1B1B18;border-bottom:3px double #1B1B18;text-align:center;padding:8px 0;margin-bottom:4px}
 .gazete .gz-logo{font-family:Georgia,'Times New Roman',serif;font-size:26px;font-weight:800;letter-spacing:1px}
@@ -95,7 +94,6 @@ body[data-tema="amoled"] .gazete{background:#F4EFE3}
 .rz-bar{height:5px;background:var(--girdi);border-radius:3px;margin-top:7px;overflow:hidden}
 .rz-dolu{height:100%;background:var(--sari);border-radius:3px;transition:width .6s ease}
 .rz-sayi{font-size:10.5px;color:var(--soluk);margin-top:3px;font-weight:700}
-.yil-tablo tr[data-ay]{cursor:pointer}
 .yil-tablo tr.ay-detay td{background:var(--girdi);font-size:12.5px;color:var(--soluk);padding:10px 8px}
 .hareket-ay-baslik{display:flex;justify-content:space-between;align-items:center;list-style:none;
   font-size:11px;letter-spacing:1px;font-weight:800;color:var(--soluk);text-transform:uppercase;
@@ -109,7 +107,7 @@ body[data-tema="amoled"] .gazete{background:#F4EFE3}
   box-shadow:0 6px 18px rgba(0,0,0,.45);
   animation:asistanYuz 3.4s ease-in-out infinite;
 }
-@keyframes asistanYuz{0%,100%{transform:translateY(0)}50%{transform:translateY(-4px)}}
+@keyframes asistanYuz{50%{transform:translateY(-4px)}}
 #asistan .a-yuz{position:relative;width:34px;height:22px}
 #asistan .a-goz{
   position:absolute;top:0;width:9px;height:11px;border-radius:50%;background:#14151A;
@@ -121,7 +119,7 @@ body[data-tema="amoled"] .gazete{background:#F4EFE3}
   border-bottom:3px solid #14151A;border-radius:0 0 12px 12px}
 #asistan-balon{
   position:absolute;right:66px;bottom:8px;white-space:nowrap;background:var(--kart);
-  border:1.5px solid var(--cizgi);border-radius:14px 14px 4px 14px;padding:8px 12px;
+  border:1.5px solid var(--cizgi);border-radius:12px 14px 4px 14px;padding:8px 12px;
   font-size:13px;font-weight:700;color:var(--metin);box-shadow:0 4px 14px rgba(0,0,0,.4);
 }
 #asistan-panel{
@@ -141,9 +139,9 @@ body[data-tema="amoled"] .gazete{background:#F4EFE3}
 #asistan-cipler button{flex-shrink:0;background:var(--girdi);border:1.5px solid var(--cizgi);
   border-radius:20px;padding:7px 12px;font-size:12.5px;color:var(--metin);font-weight:600}
 #asistan-giris{display:flex;gap:8px;padding:8px 12px 12px}
-#asistan-giris input{flex:1;background:var(--girdi);border:1.5px solid var(--cizgi);border-radius:14px;
+#asistan-giris input{flex:1;background:var(--girdi);border:1.5px solid var(--cizgi);border-radius:12px;
   padding:11px 14px;color:var(--metin);font-size:14px}
-#asistan-giris button{background:var(--sari);border:none;border-radius:14px;width:48px;font-size:18px;flex-shrink:0}
+#asistan-giris button{background:var(--sari);border:none;border-radius:12px;width:48px;font-size:18px;flex-shrink:0}
 html[data-tema="acik"]{
   --beton:#F3F2EE;
   --kart:#FFFFFF;
@@ -209,9 +207,6 @@ header.topbar{
   background:var(--asfalt2);
 }
 .hamburger span{display:block;width:20px;height:2px;background:var(--sari);border-radius:2px;transition:.2s}
-.hamburger.acik span:nth-child(1){transform:translateY(7px) rotate(45deg)}
-.hamburger.acik span:nth-child(2){opacity:0}
-.hamburger.acik span:nth-child(3){transform:translateY(-7px) rotate(-45deg)}
 
 /* ---------- ÇEKMECE MENÜ ---------- */
 .perde{
@@ -227,9 +222,8 @@ nav.cekmece{
   display:flex;flex-direction:column;
 }
 nav.cekmece.acik{transform:translateX(0)}
-.cekmece-bas{padding:22px 18px 16px}
 .cekmece-bas .avatar{
-  width:56px;height:56px;border-radius:14px;background:var(--sari);color:var(--asfalt);
+  width:56px;height:56px;border-radius:12px;background:var(--sari);color:var(--asfalt);
   display:flex;align-items:center;justify-content:center;
   font-family:'Saira Condensed';font-size:26px;font-weight:800;
   background-size:cover;background-position:center;overflow:hidden;
@@ -249,7 +243,6 @@ nav.cekmece.acik{transform:translateX(0)}
 }
 .cekmece li button.aktif{background:var(--asfalt2);color:var(--sari)}
 .cekmece li button .ikon, .cekmece li a .ikon{font-size:20px;width:26px;text-align:center}
-.cekmece-alt{padding:14px}
 .cekmece-alt button{
   width:100%;padding:13px;border-radius:12px;background:#3A1D1D;color:#FF8A80;font-weight:600;
 }
@@ -277,13 +270,12 @@ main{padding:14px 14px 150px;max-width:560px;margin:0 auto}
 }
 @keyframes ripple-yayil{ to{ transform:scale(2.6); opacity:0; } }
 .btn-sari{background:var(--sari);color:var(--asfalt);box-shadow:0 3px 0 var(--sari-koyu)}
-.btn-sari:active{transform:translateY(2px);box-shadow:none}
 .btn-cizgili{background:var(--kart);border:1.5px solid var(--cizgi);color:var(--metin)}
 
 .alan{margin-bottom:14px}
 .alan label{display:block;font-size:12.5px;font-weight:600;color:var(--soluk);margin-bottom:6px;text-transform:uppercase;letter-spacing:.04em}
 .alan input,.alan select,.alan textarea{
-  width:100%;padding:13px;border-radius:11px;border:1.5px solid var(--cizgi);
+  width:100%;padding:13px;border-radius:10px;border:1.5px solid var(--cizgi);
   background:var(--girdi);outline:none;color:var(--metin);
 }
 .alan input:focus,.alan select:focus,.alan textarea:focus{border-color:var(--sari);background:var(--kart)}
@@ -305,8 +297,7 @@ main{padding:14px 14px 150px;max-width:560px;margin:0 auto}
   padding:26px 22px 40px;max-width:560px;width:100%;margin:0 auto;
 }
 .sekmeler{display:flex;background:var(--sekme);border-radius:12px;padding:4px;margin-bottom:20px}
-.sekmeler button{flex:1;padding:11px;border-radius:9px;font-weight:600;color:var(--soluk)}
-.sekmeler button.aktif{background:var(--kart);color:var(--metin);box-shadow:0 1px 3px rgba(0,0,0,.08)}
+.sekmeler button{flex:1;padding:11px;border-radius:10px;font-weight:600;color:var(--soluk)}
 .hata{background:#FDECEA;color:#B3261E;padding:11px 13px;border-radius:10px;font-size:13.5px;margin-bottom:14px;display:none}
 .hata.goster{display:block}
 
@@ -329,7 +320,6 @@ main{padding:14px 14px 150px;max-width:560px;margin:0 auto}
 .takvim .gun-adi, .takvim-baslik .gun-adi{text-align:center;font-size:11px;font-weight:700;color:var(--soluk);padding:4px 0;text-transform:uppercase}
 /* Not: takvim her gün kaydında da yeniden çizildiği için animasyon kısa/hafif tutuldu —
    sadece ay geçişinde değil, her kayıtta da tetiklenir ama göze batmaması için ince ayarlandı. */
-.hucre{ animation:hucre-gir .16s ease backwards }
 @keyframes hucre-gir{
   from{opacity:0}
   to{opacity:1}
@@ -340,7 +330,6 @@ main{padding:14px 14px 150px;max-width:560px;margin:0 auto}
   font-size:14px;font-weight:600;position:relative;
 }
 .hucre.bos{background:transparent;border:none}
-.hucre.bugun{border-color:var(--asfalt);border-width:2px}
 .hucre .nokta{font-size:9px;line-height:1}
 .hucre.d-tam{background:var(--tam);border-color:var(--tam);color:#fff}
 .hucre.d-yarim{background:var(--yarim);border-color:var(--yarim);color:#fff}
@@ -363,7 +352,7 @@ main{padding:14px 14px 150px;max-width:560px;margin:0 auto}
 /* ---------- GRAFİK ---------- */
 .grafik{display:flex;align-items:flex-end;gap:8px;height:150px;padding-top:18px}
 .grafik .sutun{flex:1;display:flex;flex-direction:column;align-items:center;gap:5px;height:100%;justify-content:flex-end}
-.grafik .cubuk{width:100%;max-width:44px;border-radius:7px 7px 3px 3px;background:linear-gradient(180deg,var(--sari),var(--sari-koyu));min-height:3px;position:relative}
+.grafik .cubuk{width:100%;max-width:44px;border-radius:6px 7px 3px 3px;background:linear-gradient(180deg,var(--sari),var(--sari-koyu));min-height:3px;position:relative}
 .grafik .cubuk.bu-ay{outline:2px solid var(--metin);outline-offset:2px}
 .grafik .deger-yazi{font-size:9.5px;font-weight:700;color:var(--soluk);white-space:nowrap}
 .grafik .ay-yazi{font-size:10.5px;font-weight:600;color:var(--soluk);text-transform:uppercase}
@@ -395,8 +384,8 @@ main{padding:14px 14px 150px;max-width:560px;margin:0 auto}
 }
 
 /* ---------- HEDEF ÇUBUĞU ---------- */
-.hedef-bar{height:22px;border-radius:11px;background:var(--girdi);border:1.5px solid var(--cizgi);overflow:hidden;margin-top:10px}
-.hedef-bar .dolu{height:100%;background:linear-gradient(90deg,var(--sari),var(--sari-koyu));border-radius:11px;transition:width .4s;min-width:0}
+.hedef-bar{height:22px;border-radius:10px;background:var(--girdi);border:1.5px solid var(--cizgi);overflow:hidden;margin-top:10px}
+.hedef-bar .dolu{height:100%;background:linear-gradient(90deg,var(--sari),var(--sari-koyu));border-radius:10px;transition:width .4s;min-width:0}
 .hedef-bar .dolu.tamamlandi{background:linear-gradient(90deg,var(--tam),#1B5E20)}
 
 /* ---------- TATİL NOKTASI ---------- */
@@ -414,7 +403,7 @@ main{padding:14px 14px 150px;max-width:560px;margin:0 auto}
 }
 #acilis.kapan{animation:acilisCik .5s ease both}
 #acilis .logo{
-  width:86px;height:86px;border-radius:22px;background:var(--sari);
+  width:86px;height:86px;border-radius:20px;background:var(--sari);
   display:flex;align-items:center;justify-content:center;font-size:46px;
   animation:logoZipla .9s cubic-bezier(.2,.8,.2,1) both;
   box-shadow:0 10px 40px rgba(255,196,0,.35);
@@ -434,7 +423,7 @@ main{padding:14px 14px 150px;max-width:560px;margin:0 auto}
 
 /* ---------- BANKA KARTLARI ---------- */
 .banka-kart{
-  border-radius:18px;padding:18px;margin-bottom:14px;color:#fff;position:relative;overflow:hidden;
+  border-radius:16px;padding:18px;margin-bottom:14px;color:#fff;position:relative;overflow:hidden;
   box-shadow:0 8px 22px rgba(0,0,0,.18);
 }
 .banka-kart::after{
@@ -450,7 +439,7 @@ main{padding:14px 14px 150px;max-width:560px;margin:0 auto}
 }
 /* Profesyonel para animasyonları */
 .bakiye,.ozet-kut .deger{font-variant-numeric:tabular-nums}
-@keyframes paraPop{0%{transform:scale(1)}40%{transform:scale(1.07)}100%{transform:scale(1)}}
+@keyframes paraPop{}
 .para-pop{display:inline-block;animation:paraPop .35s ease-out}
 @keyframes kartParla{from{transform:translateX(-160%) skewX(-20deg)}to{transform:translateX(320%) skewX(-20deg)}}
 .kart-parla::after{
@@ -474,7 +463,7 @@ main{padding:14px 14px 150px;max-width:560px;margin:0 auto}
 
 .lejant{display:flex;flex-wrap:wrap;gap:10px;margin-top:12px;font-size:12px;color:var(--soluk)}
 .lejant span{display:flex;align-items:center;gap:5px}
-.lejant i{width:12px;height:12px;border-radius:4px;display:inline-block}
+.lejant i{width:12px;height:12px;border-radius:3px;display:inline-block}
 
 /* ---------- ÖZET SAYILARI ---------- */
 .ozet-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
@@ -496,7 +485,7 @@ main{padding:14px 14px 150px;max-width:560px;margin:0 auto}
 }
 .liste li:last-child{border-bottom:none}
 .liste .rozet{
-  min-width:46px;height:46px;border-radius:11px;color:#fff;
+  min-width:46px;height:46px;border-radius:10px;color:#fff;
   display:flex;flex-direction:column;align-items:center;justify-content:center;
   font-family:'Saira Condensed';font-weight:800;font-size:17px;line-height:1;
 }
@@ -520,7 +509,7 @@ main{padding:14px 14px 150px;max-width:560px;margin:0 auto}
 .modal-perde.acik{display:block}
 .alt-sayfa{
   position:fixed;left:0;right:0;bottom:0;z-index:110;
-  background:var(--beton);border-radius:22px 22px 0 0;
+  background:var(--beton);border-radius:20px 22px 0 0;
   padding:10px 18px calc(20px + env(safe-area-inset-bottom));
   max-width:560px;margin:0 auto;max-height:88dvh;overflow-y:auto;
   transform:translateY(105%);transition:transform .28s cubic-bezier(.2,.8,.2,1);
@@ -592,7 +581,7 @@ html[data-tema="acik"] .alt-nav{background:rgba(255,255,255,.94)}
 .selam-blok .alt{font-size:13px;color:var(--soluk);margin-top:2px}
 .hafta-serit{display:grid;grid-template-columns:repeat(7,1fr);gap:6px}
 .hs-gun{
-  border-radius:14px;background:var(--girdi);border:2px solid transparent;
+  border-radius:12px;background:var(--girdi);border:2px solid transparent;
   padding:8px 0 9px;display:flex;flex-direction:column;align-items:center;gap:2px;
   color:var(--metin);
 }
@@ -607,7 +596,6 @@ html[data-tema="acik"] .alt-nav{background:rgba(255,255,255,.94)}
 .hs-gun.bugun .gn{color:var(--sari)}
 .hs-gun.bugun .ga{color:var(--sari);font-weight:800}
 .hs-gun.dolu.bugun .gn,.hs-gun.dolu.bugun .ga{color:#fff}
-.hs-gun.pzr{opacity:.45}
 
 /* ---------- BİLDİRİM ---------- */
 .toast{
@@ -631,7 +619,7 @@ html[data-tema="acik"] .alt-nav{background:rgba(255,255,255,.94)}
 .alt-nav button{position:relative}
 .rozet-nav{
   position:absolute;top:2px;right:calc(50% - 26px);
-  min-width:18px;height:18px;border-radius:9px;background:var(--gelmedi);color:#fff;
+  min-width:18px;height:18px;border-radius:10px;background:var(--gelmedi);color:#fff;
   font-size:11px;font-weight:700;display:none;align-items:center;justify-content:center;padding:0 4px;
 }
 .rozet-nav.goster{display:flex}
@@ -656,19 +644,15 @@ html[data-tema="acik"] .alt-nav{background:rgba(255,255,255,.94)}
   content:""; position:absolute; inset:0;
   background:linear-gradient(180deg, rgba(10,11,13,.55) 0%, rgba(10,11,13,.72) 45%, rgba(10,11,13,.94) 100%);
 }
-@keyframes pinFotoYakinlas{ 0%{transform:scale(1);} 100%{transform:scale(1.12);} }
+@keyframes pinFotoYakinlas{ }
 #pin-arka-canvas{ position:absolute; inset:0; z-index:0; mix-blend-mode:overlay; opacity:.6; }
 #pin-ekran > *:not(#pin-arka-foto):not(#pin-arka-canvas){ position:relative; z-index:1; }
 #pin-ekran.acik{display:flex; animation:pinEkranGir .45s cubic-bezier(.2,.8,.2,1);}
 #pin-ekran.kapaniyor{opacity:0; transform:scale(1.04);}
 @keyframes pinEkranGir{
-  0%{opacity:0; transform:scale(.97);}
-  100%{opacity:1; transform:scale(1);}
 }
 .pin-ust{display:flex;flex-direction:column;align-items:center;gap:10px; animation:pinAvatarGir .5s .1s cubic-bezier(.2,.8,.2,1) both;}
 @keyframes pinAvatarGir{
-  0%{opacity:0; transform:translateY(-14px) scale(.9);}
-  100%{opacity:1; transform:translateY(0) scale(1);}
 }
 .pin-avatar-sarmal{position:relative;width:100px;height:100px;}
 .pin-avatar{
@@ -684,7 +668,7 @@ html[data-tema="acik"] .alt-nav{background:rgba(255,255,255,.94)}
 .pin-selam{font-size:14px;color:var(--soluk);font-weight:600;margin-top:6px}
 .pin-ad{font-size:21px;font-weight:800;color:var(--metin);margin-top:-6px}
 .pin-alt-baslik{font-size:13px;color:var(--soluk);margin-top:26px;text-align:center;font-weight:500; animation:pinSolgunGir .5s .18s ease both;}
-@keyframes pinSolgunGir{ 0%{opacity:0;} 100%{opacity:1;} }
+@keyframes pinSolgunGir{ }
 .pin-noktalar{display:flex;gap:16px;margin-top:22px}
 .pin-noktalar span{
   width:16px;height:16px;border-radius:50%;border:2px solid var(--cizgi);background:transparent;
@@ -692,7 +676,6 @@ html[data-tema="acik"] .alt-nav{background:rgba(255,255,255,.94)}
 }
 .pin-noktalar span.dolu{background:var(--sari);border-color:var(--sari); animation:pinNoktaSek .32s cubic-bezier(.34,1.56,.64,1);}
 @keyframes pinNoktaSek{
-  0%{transform:scale(.4);} 60%{transform:scale(1.35);} 100%{transform:scale(1);}
 }
 .pin-noktalar.titre{animation:pinTitre .45s cubic-bezier(.36,.07,.19,.97);}
 .pin-noktalar.titre span.dolu{background:#FF5A4E; border-color:#FF5A4E;}
@@ -701,7 +684,7 @@ html[data-tema="acik"] .alt-nav{background:rgba(255,255,255,.94)}
   45%{transform:translateX(-7px)} 60%{transform:translateX(6px)} 75%{transform:translateX(-4px)} 90%{transform:translateX(2px)}
 }
 .pin-noktalar.basarili span{ background:var(--yesil,#3FB27F); border-color:var(--yesil,#3FB27F); animation:pinBasariDalga .5s cubic-bezier(.2,.8,.2,1);}
-@keyframes pinBasariDalga{ 0%{transform:scale(1);} 40%{transform:scale(1.5);} 100%{transform:scale(1);} }
+@keyframes pinBasariDalga{ 40%{transform:scale(1.5);} }
 .pin-hata{font-size:12.5px;color:#FF8A80;font-weight:700;margin-top:14px;min-height:16px; transition:opacity .2s;}
 .pin-biyometrik{
   background:var(--kart,#1F2329);color:var(--sari);border:1.5px solid var(--sari);
@@ -735,11 +718,9 @@ html[data-tema="acik"] .alt-nav{background:rgba(255,255,255,.94)}
 
 /* ---------- ROZETLER / SEVİYE ---------- */
 .rozet-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
-.rozet-kut{background:var(--girdi);border:1.5px solid var(--cizgi);border-radius:14px;padding:14px;text-align:center}
+.rozet-kut{background:var(--girdi);border:1.5px solid var(--cizgi);border-radius:12px;padding:14px;text-align:center}
 .rozet-kut .rikon{font-size:34px;display:block;margin-bottom:6px}
 .rozet-kut .rad{font-weight:700;font-size:13.5px}
-.rozet-kut.kilitli{opacity:.35;filter:grayscale(1)}
-.rozet-kut.acildi{border-color:var(--sari)}
 .seviye-satir{display:flex;align-items:center;gap:14px}
 .seviye-satir .buyuk-rozet{
   width:62px;height:62px;border-radius:16px;background:var(--sari);color:#111;
@@ -750,7 +731,7 @@ html[data-tema="acik"] .alt-nav{background:rgba(255,255,255,.94)}
 .isi-ay{display:flex;align-items:center;gap:6px;margin-bottom:3px}
 .isi-ay .ay-et{width:30px;font-size:10px;color:var(--soluk);font-weight:600;flex:0 0 30px}
 .isi-gunler{display:flex;gap:2px;flex:1}
-.isi-gunler i{flex:1;height:11px;border-radius:2.5px;background:var(--girdi)}
+.isi-gunler i{flex:1;height:11px;border-radius:2px;background:var(--girdi)}
 
 
 /* ---------- SABİTLEME: yatay kayma + çekmece kaydırma ---------- */
@@ -783,7 +764,7 @@ nav.cekmece{
   background:linear-gradient(90deg, var(--girdi) 25%, var(--cizgi) 50%, var(--girdi) 75%);
   background-size:200% 100%;
   animation:iskelet-nefes 1.4s ease-in-out infinite;
-  border-radius:8px;
+  border-radius:6px;
 }
 @keyframes iskelet-nefes{
   0%{background-position:200% 0}
@@ -793,7 +774,7 @@ nav.cekmece{
   display:flex;align-items:center;gap:12px;padding:11px 2px;
 }
 .iskelet-satir .iskelet{flex-shrink:0}
-.iskelet-rozet{width:46px;height:46px;border-radius:11px}
+.iskelet-rozet{width:46px;height:46px;border-radius:10px}
 .iskelet-metin{flex:1;display:flex;flex-direction:column;gap:7px}
 .iskelet-satir-1{height:13px;width:60%}
 .iskelet-satir-2{height:10px;width:40%}
@@ -829,7 +810,7 @@ button:focus-visible{ outline: 2px solid var(--sari); outline-offset: 2px }
 #toast{ box-shadow: 0 6px 20px rgba(0,0,0,.4) }
 *{ scrollbar-width: thin; scrollbar-color: var(--cizgi) transparent }
 ::-webkit-scrollbar{ width: 5px; height: 5px }
-::-webkit-scrollbar-thumb{ background: var(--cizgi); border-radius: 3px }
+::-webkit-scrollbar-thumb{ background: var(--cizgi); border-radius:3px }
 .topbar{ padding-top: max(10px, env(safe-area-inset-top)) }
 .takvim > div:active{ transform: scale(.94); transition: transform .08s ease }
 @media (prefers-reduced-motion: reduce){
@@ -948,7 +929,7 @@ button:focus-visible, a:focus-visible, input:focus-visible,
 select:focus-visible, textarea:focus-visible, .hucre:focus-visible{
   outline:3px solid var(--sari);
   outline-offset:2px;
-  border-radius:8px;
+  border-radius:6px;
 }
 
 /* ── 9. Hareket azaltma tercihi ────────────────────────────────────
@@ -988,7 +969,6 @@ select:focus-visible, textarea:focus-visible, .hucre:focus-visible{
    Rakamlar farklı uzunlukta (1.200 ₺ / 12.400 ₺) olduğu için kutular
    arasında optik kayma oluyordu; tabular rakam zaten açıktı, buraya
    satır yüksekliği sabitlemesi ve etiket-rakam arası nefes eklendi. */
-.ozet-kut{ padding:14px 13px }
 .ozet-kut .et{ letter-spacing:.07em; font-size:11px }
 .ozet-kut .deger{ font-size:29px; line-height:1.05; margin-top:5px; letter-spacing:-.01em }
 
@@ -1103,7 +1083,6 @@ html[data-hafif="1"] .kart-parla::after{ display:none }
    12px dolguyla sınırdaydı; parmakla ayırt etmek için biraz daha
    nefes ve daha net bir ayraç verildi. Başlık ağırlığı artırıldı
    (600 → 650 karşılığı 650 desteklenmediği için 700). */
-.liste li{ padding:14px 0; gap:13px }
 .liste .baslik{ font-weight:700; font-size:15px; line-height:1.35 }
 .liste .alt-yazi{ font-size:12.5px; line-height:1.45; margin-top:2px }
 /* Tutar: satırın asıl bilgisi — bir tık büyütüldü ve hizası sabitlendi */
@@ -1181,7 +1160,6 @@ html[data-hafif="1"] .alt-sayfa{ box-shadow:0 -2px 8px rgba(0,0,0,.28) }
    Erişilebilirlik tabanı 44×44px. Eldivenli/tozlu parmakla açılan bir
    uygulamada bu alt sınır değil, gerçek bir ihtiyaç. */
 .hamburger{ width:44px; height:44px }
-.hamburger span{ width:21px; height:2.5px }
 
 /* ── 3. Üst bar: sayfadan ayrılsın ─────────────────────────────────
    Yapışkan (sticky) bir başlık, altından içerik kayarken sınırını
@@ -1203,15 +1181,6 @@ header.topbar{
   position:relative;
   font-size:15.5px;
   padding:14px 12px 14px 14px;
-}
-.cekmece li button.aktif, .cekmece li a.aktif{
-  background:var(--asfalt2);
-  color:var(--sari);
-  font-weight:700;
-}
-.cekmece li button.aktif::before, .cekmece li a.aktif::before{
-  content:""; position:absolute; left:0; top:9px; bottom:9px;
-  width:3px; border-radius:0 3px 3px 0; background:var(--sari);
 }
 .cekmece-bas .ad{ font-size:16.5px; font-weight:700 }
 .cekmece-bas .eposta{ color:#A8AAB3 }
@@ -1235,7 +1204,6 @@ header.topbar{
    ikisi üst üste binince rozet neredeyse okunmaz hale geliyordu (ne
    olduğunu görüp hedef edinemiyorsun — oysa kilitli rozetin işlevi
    tam olarak BUDUR). Opaklık biraz yükseltildi, gri filtre korundu. */
-.rozet-kut.kilitli{ opacity:.5 }
 .rozet-kut.acildi{ border-width:2px; background:var(--vurgu-zemin) }
 
 /* ── 7. Hafif mod kapsaması ────────────────────────────────────────
@@ -1442,10 +1410,8 @@ img, svg, canvas, video, table, pre{ max-width:100% }
    Bir günü işleyince takvim hücresi hafifçe büyüyüp yerine oturuyor.
    Amaç süs değil: hangi hücrenin değiştiğini gözle takip etmek. */
 @keyframes gunOturdu{
-  0%  { transform:scale(1) }
   35% { transform:scale(1.18) }
   70% { transform:scale(.96) }
-  100%{ transform:scale(1) }
 }
 .hucre.yeni-islendi{ animation:gunOturdu .34s cubic-bezier(.34,1.56,.64,1) }
 
@@ -1553,7 +1519,7 @@ img, svg, canvas, video, table, pre{ max-width:100% }
   padding:11px 15px;
   font-size:13px;
   white-space:nowrap;
-  border-radius:11px;
+  border-radius:10px;
 }
 /* Çubuk kaydırılabiliyorsa sağda hafif bir soluma ile ipucu ver */
 .eylem-sarmal{ position:relative }
@@ -1611,7 +1577,7 @@ html[data-hafif="1"] .eylem-sarmal::after{ display:none }
 .is-ay-kart{
   background:var(--kart);
   border:1px solid var(--cizgi);
-  border-radius:14px;
+  border-radius:12px;
   margin-bottom:10px;
   overflow:hidden;
 }
@@ -1711,7 +1677,7 @@ html[data-hafif="1"] .is-gun-satir{ transition:none }
   background:linear-gradient(160deg, var(--asfalt2) 0%, var(--asfalt) 100%);
 }
 .cekmece-bas .avatar{
-  width:60px; height:60px; border-radius:17px;
+  width:60px; height:60px; border-radius:16px;
   box-shadow:0 3px 12px rgba(0,0,0,.35);
 }
 .cekmece-bas .ad{ font-size:17px; font-weight:700; margin-top:11px; letter-spacing:.1px }
@@ -1751,7 +1717,7 @@ html[data-hafif="1"] .is-gun-satir{ transition:none }
   gap:12px;
   width:100%;
   padding:11px 12px;
-  border-radius:11px;
+  border-radius:10px;
   font-size:14.5px;
   font-weight:500;
   color:#DDDFE4;
@@ -1786,11 +1752,10 @@ html[data-hafif="1"] .is-gun-satir{ transition:none }
 }
 
 /* Grup açılır/kapanır yüksekliği yeni satır boyuna göre */
-.cekmece li[data-grup]{ max-height:60px }
 
 /* ── Alt bölüm (çıkış) ─────────────────────────────────────────────*/
 .cekmece-alt{ padding:12px 14px max(14px, env(safe-area-inset-bottom)) }
-.cekmece-alt button{ border-radius:11px; padding:12px; font-size:14px }
+.cekmece-alt button{ border-radius:10px; padding:12px; font-size:14px }
 
 /* ── Sürüm satırı (gizli tanı girişi) ──────────────────────────────*/
 .surum{ font-size:11px; letter-spacing:.3px; opacity:.75 }
@@ -1928,13 +1893,8 @@ html[data-hafif="1"] .hamburger span{ transition:none }
    ═══════════════════════════════════════════════════════════════════ */
 
 .banka-kart .bakiye{ font-size:45px; letter-spacing:-.01em }
-.ozet-kut{ padding:12px 11px }
-.liste li{ padding:12px 0; gap:11px }
 .toast{ font-size:13.5px; padding:11px 17px }
-.kart{ padding:14px }
 .takvim .gun-adi, .takvim-baslik .gun-adi{ font-size:10.5px }
-.cekmece li[data-grup]{ max-height:54px }
-main{ padding:12px 12px 140px }
 
 
 /* ── Araçlar ekranı: 17 kart, hepsi kapalı başlar ──────────────────
@@ -2007,7 +1967,7 @@ html[data-hafif="1"] .arac-ok{ transition:none }
    ═══════════════════════════════════════════════════════════════════ */
 .giris-ust{ padding:44px 24px 28px; text-align:center }
 .giris-ust .logo{
-  width:68px; height:68px; border-radius:19px;
+  width:68px; height:68px; border-radius:20px;
   margin:0 auto 16px;
   box-shadow:0 6px 20px rgba(255,196,0,.22);
   font-size:36px;
@@ -2020,7 +1980,7 @@ html[data-hafif="1"] .arac-ok{ transition:none }
 .giris-kutu{ padding:24px 20px 36px }
 
 /* Sekmeler: hangisinde olduğun net olsun */
-.sekmeler{ padding:5px; border-radius:13px; margin-bottom:18px }
+.sekmeler{ padding:5px; border-radius:12px; margin-bottom:18px }
 .sekmeler button{
   padding:12px; border-radius:10px; font-size:14px;
   transition:background .16s ease, color .16s ease;
@@ -2114,7 +2074,7 @@ html[data-hafif="1"] .sekmeler button{ transition:none }
 /* ── Isı haritası ──────────────────────────────────────────────────*/
 #isi-harita{ margin-bottom:16px }
 .isi-ay{
-  padding:2px 4px; border-radius:7px; margin-bottom:2px;
+  padding:2px 4px; border-radius:6px; margin-bottom:2px;
   cursor:pointer;
 }
 .isi-ay:active{ background:var(--girdi) }
@@ -2268,7 +2228,7 @@ html[data-hafif="1"] #grafik .cubuk{ transition:none; box-shadow:none }
   color:var(--soluk); margin-bottom:8px;
 }
 .dagilim-serit{
-  display:flex; height:12px; border-radius:7px; overflow:hidden;
+  display:flex; height:12px; border-radius:6px; overflow:hidden;
   background:var(--girdi); gap:2px;
 }
 .dagilim-serit i{ display:block; min-width:5px }
@@ -2297,10 +2257,10 @@ html[data-hafif="1"] #grafik .cubuk{ transition:none; box-shadow:none }
 }
 .sk-bar{
   flex:1; height:9px; background:var(--girdi);
-  border-radius:5px; overflow:hidden;
+  border-radius:6px; overflow:hidden;
 }
 .sk-bar i{
-  display:block; height:100%; border-radius:5px;
+  display:block; height:100%; border-radius:6px;
   background:linear-gradient(90deg, var(--sari-koyu), var(--sari));
   transition:width .5s cubic-bezier(.22,1,.36,1);
 }
@@ -2324,7 +2284,6 @@ html[data-hafif="1"] .sk-bar i{ transition:none }
 /* Dar ekranda üç rakamlı kutular sıkışmasın diye ölçü sınırı */
 @media (max-width:340px){
   .ozet-grid, #genel-grid, #kisi-ozet, #ekip-ozet{ gap:8px }
-  .ozet-kut{ padding:11px 9px }
 }
 
 /* Kutulardaki renk şeridi: hangi rakamın ne olduğu bakışta anlaşılsın.
@@ -2370,7 +2329,7 @@ html[data-hafif="1"] .sk-bar i{ transition:none }
    Artık boyut/biçim burada; JS yalnızca seçili durumun rengini veriyor. */
 .yok-btn{
   width:44px; height:44px;
-  border-radius:11px;
+  border-radius:10px;
   font-weight:800; font-size:15px;
   border:2px solid var(--cizgi);
   background:var(--kart);
@@ -2385,7 +2344,7 @@ html[data-hafif="1"] .sk-bar i{ transition:none }
   width:60px;
   padding:11px 4px;
   text-align:center;
-  border-radius:11px;
+  border-radius:10px;
   border:1.5px solid var(--cizgi);
   background:var(--girdi);
   color:var(--metin);
@@ -2435,13 +2394,13 @@ html[data-hafif="1"] .yok-btn{ transition:none }
 .yok-satir{ padding:8px 0 }
 .yok-ad{ margin-bottom:0; font-size:13.5px }
 .yok-kontrol{ gap:8px }
-.yok-btn{ width:38px; height:38px; border-radius:9px; font-size:13.5px }
-.yok-mesai{ width:52px; padding:8px 3px; border-radius:9px }
+.yok-btn{ width:38px; height:38px; border-radius:10px; font-size:13.5px }
+.yok-mesai{ width:52px; padding:8px 3px; border-radius:10px }
 .yok-mesai-sar{ font-size:10px; gap:5px }
 
 /* Kartlar ve boşluklar daralıyor: ekrana daha çok satır sığsın */
 main{ padding:10px 10px 132px }
-.kart{ padding:12px; margin-bottom:11px; border-radius:14px }
+.kart{ padding:12px; margin-bottom:11px; border-radius:12px }
 .kart h2{ font-size:15.5px; margin-bottom:10px }
 
 /* Listeler */
@@ -2472,7 +2431,7 @@ main{ padding:10px 10px 132px }
 .cekmece li button .ikon, .cekmece li a .ikon{ width:29px; height:29px; font-size:14.5px }
 .cekmece li[data-grup]{ max-height:50px }
 .cekmece-bas{ padding:20px 15px 15px }
-.cekmece-bas .avatar{ width:52px; height:52px; border-radius:15px }
+.cekmece-bas .avatar{ width:52px; height:52px; border-radius:16px }
 .cekmece-bas .ad{ font-size:14.5px }
 
 /* Ay gezgini ve selamlama */
@@ -2481,7 +2440,7 @@ main{ padding:10px 10px 132px }
 .selam-blok .alt{ font-size:12px }
 
 /* Düğmeler */
-.btn{ padding:13px; font-size:15px; border-radius:11px }
+.btn{ padding:13px; font-size:15px; border-radius:10px }
 .ekle-bas{ font-size:14px !important; padding:11px 13px !important }
 .arac-bas{ font-size:14px !important; padding:12px 13px !important }
 
@@ -2499,6 +2458,361 @@ main{ padding:10px 10px 132px }
 .rozet-kut .rikon{ font-size:23px }
 .bos-mesaj{ padding:20px 12px; font-size:12.5px }
 .bos-mesaj .buyuk{ font-size:27px }
+
+
+/* ── Gün modalı: seyrek alanlar katlanır ──────────────────────────
+   Modal 10 alanla açılıyordu. Kullanım verisinde saat aralığı, gece
+   mesaisi, konum ve parça başı neredeyse hiç doldurulmuyor — ama her
+   akşam gün işlerken karşıya çıkıyorlardı.
+   Hiçbiri silinmedi, bir dokunuş arkasına alındı. Kritik nokta: içinde
+   dolu alan varsa düğme bunu SAYIYLA gösteriyor. Böylece gizlemenin en
+   büyük riski (bir şey girdiğini unutmak) ortadan kalkıyor. */
+.gun-detay-ac{
+  width:100%;
+  display:flex; align-items:center; gap:8px;
+  background:var(--girdi);
+  border:1px solid var(--cizgi);
+  border-radius:10px;
+  padding:12px 13px;
+  color:var(--soluk);
+  font-size:13px;
+  margin:2px 0 10px;
+  cursor:pointer;
+}
+.gun-detay-ac:active{ border-color:var(--sari) }
+.gun-detay-ac > span:first-child{ flex:1; text-align:left }
+.gun-detay-ok{ font-size:12px; transition:transform .18s ease }
+.gun-detay-ac.acik{ color:var(--sari); border-color:var(--sari) }
+.gun-detay-ac.acik .gun-detay-ok{ transform:rotate(180deg) }
+/* Dolu alan sayısı — kapalıyken bile görünür */
+.gun-detay-rozet{
+  background:var(--sari); color:#1F1700;
+  font-size:11px; font-weight:800;
+  padding:3px 8px; border-radius:20px;
+  flex-shrink:0;
+}
+html[data-hafif="1"] .gun-detay-ok{ transition:none }
+
+
+/* ── İşlenmemiş günlerin parasal etkisi ────────────────────────────
+   Uyarı "3 gün boş" diyordu; doğru ama soyut. Bu günlerin bir kısmı
+   gerçekten gelinmeyen gün, bir kısmı işaretlemesi unutulan gün olabilir
+   ve aradaki fark doğrudan kullanıcının cebinden çıkıyor. Rakam yazınca
+   uyarı gerçek bir uyarıya dönüşüyor. */
+.eksik-para-kutu{
+  display:flex; align-items:flex-start; gap:9px;
+  margin-top:11px; padding:10px 12px;
+  background:rgba(255,196,0,.1);
+  border:1px solid rgba(255,196,0,.28);
+  border-radius:10px;
+}
+.eksik-para-kutu .ik{ font-size:15px; flex-shrink:0; line-height:1.4 }
+.eksik-para-kutu .yz{ flex:1; font-size:12.5px; line-height:1.5; color:#C6C8CE }
+.eksik-para-kutu b{ color:var(--sari); font-family:'Saira Condensed'; font-size:14.5px }
+.eksik-para-kutu small{ color:var(--soluk2); font-size:11px }
+
+
+/* ── Takvim altı ay özeti ──────────────────────────────────────────
+   Çalışılan gün / hakediş / mesai. Bu rakamlar yalnızca Hesap Özeti
+   ekranındaydı; kullanıcı takvime bakarken "bu ay ne oldu" sorusu için
+   başka ekrana gitmek zorundaydı. Oysa soru tam da takvime bakarken
+   doğuyor. Rakamlar kısa biçimde (66,3B gibi) — takvimin altında yer
+   dar, tam rakam Hesap Özeti'nde zaten var. */
+.takvim-ozet{
+  display:grid;
+  grid-template-columns:1fr 1fr 1fr;
+  gap:7px;
+  margin-top:11px;
+}
+.takvim-ozet .to-kut{
+  background:var(--girdi);
+  border-radius:10px;
+  padding:9px 7px;
+  text-align:center;
+  border-left:3px solid var(--cizgi);
+}
+.takvim-ozet .to-kut.g{ border-left-color:var(--tam) }
+.takvim-ozet .to-kut.p{ border-left-color:var(--sari) }
+.takvim-ozet .to-kut.m{ border-left-color:var(--mesai) }
+.takvim-ozet .e{
+  display:block; font-size:9.5px; color:var(--soluk);
+  letter-spacing:.06em; font-weight:700;
+}
+.takvim-ozet b{
+  display:block; font-family:'Saira Condensed';
+  font-size:19px; font-weight:800; line-height:1.15; margin-top:2px;
+}
+.takvim-ozet .to-kut.p b{ color:var(--sari) }
+.takvim-ozet small{ font-size:9.5px; color:var(--soluk2) }
+
+
+/* ═══════════════════════════════════════════════════════════════════
+   PARA EKRANLARI — GÖRSEL TASARIM
+   ───────────────────────────────────────────────────────────────────
+   Aldığım paralar, Masraflar, Borç defteri, Beklenen ödemeler.
+   Dördü de genel `.liste` stilini kullanıyordu; para listesi ile not
+   listesi aynı görünüyordu. Oysa buradaki asıl bilgi TUTAR — göz önce
+   ona gitmeli, sonra neye ait olduğuna.
+
+   Sadece görünüm: renk, boşluk, hizalama, ağırlık. Hiçbir veri, metin
+   veya davranış değişmiyor.
+   ═══════════════════════════════════════════════════════════════════ */
+
+/* ── Para satırları: tutar öne çıksın ─────────────────────────────*/
+#liste-odemeler li, #liste-masraflar li,
+#liste-borclar li, #liste-beklenen li{
+  background:var(--girdi);
+  border-radius:12px;
+  border-bottom:none;
+  margin-bottom:8px;
+  padding:11px 12px;
+  align-items:center;
+}
+#liste-odemeler .tutar, #liste-masraflar .tutar,
+#liste-borclar .tutar, #liste-beklenen .tutar{
+  font-size:17px;
+  font-weight:800;
+  letter-spacing:-.01em;
+}
+/* Başlık ikincil: asıl olan rakam */
+#liste-odemeler .baslik, #liste-masraflar .baslik,
+#liste-borclar .baslik, #liste-beklenen .baslik{
+  font-size:13.5px;
+  font-weight:600;
+}
+#liste-odemeler .alt-yazi, #liste-masraflar .alt-yazi,
+#liste-borclar .alt-yazi, #liste-beklenen .alt-yazi{
+  font-size:11.5px;
+  margin-top:1px;
+}
+
+/* Tarih rozeti: kare değil, daha yumuşak ve okunur */
+#liste-odemeler .rozet, #liste-masraflar .rozet,
+#liste-borclar .rozet, #liste-beklenen .rozet{
+  width:42px; min-width:42px; height:42px;
+  border-radius:10px;
+  font-size:15px; font-weight:800;
+  line-height:1.05;
+}
+#liste-odemeler .rozet small, #liste-masraflar .rozet small,
+#liste-borclar .rozet small, #liste-beklenen .rozet small{
+  font-size:8.5px; font-weight:700; opacity:.85; letter-spacing:.04em;
+}
+
+/* ── Filtre çipleri: tek satırda kaysın, sıkışmasın ───────────────*/
+#odeme-filtre, #masraf-filtre{
+  display:flex; gap:6px;
+  overflow-x:auto;
+  padding-bottom:3px;
+  scrollbar-width:none;
+  -webkit-overflow-scrolling:touch;
+}
+#odeme-filtre::-webkit-scrollbar, #masraf-filtre::-webkit-scrollbar{ display:none }
+#odeme-filtre .eksik-cip, #masraf-filtre .eksik-cip{ flex:0 0 auto }
+
+/* ── Toplam satırı: listenin sonucu, vurgulu ──────────────────────*/
+#odeme-toplam, #masraf-toplam{
+  display:inline-block;
+  font-family:'Saira Condensed';
+  font-size:14px; font-weight:800;
+  color:var(--sari);
+  letter-spacing:.01em;
+}
+
+/* ── Silme düğmesi: yıkıcı eylem, ama bağırmasın ──────────────────*/
+#liste-odemeler .sil, #liste-masraflar .sil,
+#liste-borclar .sil, #liste-beklenen .sil{
+  opacity:.5;
+  font-size:15px;
+}
+#liste-odemeler .sil:active, #liste-masraflar .sil:active,
+#liste-borclar .sil:active, #liste-beklenen .sil:active{ opacity:1 }
+
+/* ── Boş liste: soğuk değil, yol gösterici dursun ─────────────────*/
+#liste-odemeler .bos-mesaj, #liste-masraflar .bos-mesaj,
+#liste-borclar .bos-mesaj, #liste-beklenen .bos-mesaj{
+  background:var(--girdi);
+  border-radius:12px;
+  border:1px dashed var(--cizgi2);
+}
+
+
+/* ═══════════════════════════════════════════════════════════════════
+   RAPOR VE ANALİZ EKRANLARI — GÖRSEL TASARIM
+   ───────────────────────────────────────────────────────────────────
+   Hesap özeti ve Yıl dökümü. Bu ekranlar rakam yoğun; sorun rakamların
+   yanlış olması değil, hepsinin AYNI AĞIRLIKTA görünmesi. Kullanıcı
+   neye bakacağını bilemiyor.
+
+   Yaklaşım: rakamlara hiyerarşi vermek — sonuç rakamı büyük ve sarı,
+   ara değerler sakin. Sadece görünüm; hiçbir hesap veya metin değişmiyor.
+   ═══════════════════════════════════════════════════════════════════ */
+
+/* ── Şantiye dökümü listesi ───────────────────────────────────────*/
+#liste-santiye-ozet li{
+  background:var(--girdi);
+  border-radius:10px;
+  border-bottom:none;
+  margin-bottom:7px;
+  padding:10px 12px;
+}
+#liste-santiye-ozet .tutar{ font-size:16px; font-weight:800 }
+#liste-santiye-ozet .baslik{ font-size:13.5px }
+
+/* ── Aylık hedef kartı: çubuk ve rakam dengesi ────────────────────*/
+#hedef-icerik > div:first-child{
+  align-items:baseline;
+}
+#hedef-icerik b{ font-family:'Saira Condensed'; font-size:16px }
+
+/* ── Yıl dökümü: satırlar arası nefes ─────────────────────────────*/
+#yil-icerik{ margin-top:2px }
+.yil-tablo tbody tr:active td{ background:var(--girdi) }
+
+/* ── Karşılaştırma kutuları (geçen aya göre) ──────────────────────*/
+#grafik-karsi{
+  margin-top:11px;
+  padding:10px 12px;
+  background:var(--girdi);
+  border-radius:10px;
+  font-size:12.5px;
+  line-height:1.6;
+  border-left:3px solid var(--cizgi);
+}
+
+/* ── 12 aylık grafik kartı ────────────────────────────────────────*/
+#gg-kart h2{ margin-bottom:8px }
+#gg-grafik{ border-radius:10px }
+
+/* ── Simülatör: sonuç satırı vurgusu ──────────────────────────────
+   "Tahmini kazanç" bu kartın çıktısı; girdilerden ayrışmalı. */
+#sim-sonuc{ letter-spacing:-.01em }
+
+/* ── Bölüm başlıkları: rapor ekranlarında sık, sakinleşsin ────────*/
+#goruntu-ozet .kart h2, #goruntu-yil .kart h2{
+  font-size:14.5px;
+  letter-spacing:.01em;
+}
+
+/* ── Uzun rapor ekranlarında kart aralığı biraz daralsın ──────────
+   Hesap özetinde 12 kart var; standart aralıkla ekran çok uzuyor. */
+#goruntu-ozet .kart{ margin-bottom:9px }
+#goruntu-yil .kart{ margin-bottom:9px }
+
+
+/* ═══════════════════════════════════════════════════════════════════
+   SOSYAL, EKİP VE LİSTE EKRANLARI — GÖRSEL TASARIM
+   ───────────────────────────────────────────────────────────────────
+   Ekibim, Herkes (kişiler), İşlerim, Planlarım, Maaşlar.
+   Beşinin de kendi görsel tanımı yoktu; hepsi genel `.liste` stilini
+   kullanıyordu. Sonuç: bir işçi kaydı, bir plan bağlantısı ve bir maaş
+   satırı ekranda aynı görünüyordu — oysa içerikleri ve okunma biçimleri
+   tamamen farklı.
+
+   Yaklaşım: her listeye kendi ritmini vermek. Para listelerinde tutar
+   öne çıkmıştı; burada asıl bilgi KİM veya NE olduğu, o yüzden ad öne
+   alınıyor. Sadece görünüm; hiçbir veri veya davranış değişmiyor.
+   ═══════════════════════════════════════════════════════════════════ */
+
+/* ── Ortak: liste satırları kart ritmine geçsin ───────────────────*/
+#liste-isciler li, #liste-ekip-ozet li,
+#kisiler-liste li, #liste-planlar li,
+#isler-liste li, #liste-maaslar li,
+#kisi-gunler li, #kisi-odemeler li{
+  background:var(--girdi);
+  border-radius:10px;
+  border-bottom:none;
+  margin-bottom:7px;
+  padding:10px 12px;
+}
+
+/* ── Ekip: asıl bilgi işçinin ADI ─────────────────────────────────*/
+#liste-isciler .baslik, #liste-ekip-ozet .baslik{
+  font-size:14.5px;
+  font-weight:700;
+}
+#liste-isciler .alt-yazi, #liste-ekip-ozet .alt-yazi{
+  font-size:11.5px;
+  margin-top:2px;
+}
+#liste-ekip-ozet .tutar{ font-size:16px; font-weight:800 }
+
+/* ── Kişiler (Herkes): avatar benzeri rozet ───────────────────────*/
+#kisiler-liste .rozet{
+  width:40px; min-width:40px; height:40px;
+  border-radius:50%;
+  font-size:16px; font-weight:800;
+}
+#kisiler-liste .baslik{ font-size:14.5px; font-weight:700 }
+
+/* ── Kişi detayı: kendi puantajından ayrışsın ─────────────────────
+   Başkasının verisine bakarken bunun kendi verin OLMADIĞI belli olsun. */
+#kisi-gunler li, #kisi-odemeler li{
+  background:var(--kart);
+  border:1px solid var(--cizgi);
+}
+
+/* ── İşlerim: aktif iş vurgulu ────────────────────────────────────*/
+#isler-liste li{ align-items:center }
+#isler-liste .baslik{ font-size:14.5px; font-weight:700 }
+#isler-liste .rozet{
+  width:40px; min-width:40px; height:40px;
+  border-radius:12px;
+}
+
+/* ── Maaşlar: rakam odaklı, para ekranlarıyla aynı dil ────────────*/
+#liste-maaslar .tutar{ font-size:17px; font-weight:800 }
+#liste-maaslar .baslik{ font-size:13.5px; font-weight:600 }
+
+/* ── Planlar: bağlantı listesi, sade ──────────────────────────────*/
+#liste-planlar .baslik{ font-size:14px; font-weight:600 }
+#liste-planlar .alt-yazi{
+  font-size:11.5px;
+  overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+}
+
+/* ── Yoklama satırı: ekip ekranının kalbi ─────────────────────────*/
+#ekip-yoklama{ margin-top:2px }
+#ekip-yoklama .yok-satir:first-child{ padding-top:4px }
+
+/* ── Boş liste kutuları: tutarlı görünüm ──────────────────────────*/
+#liste-isciler .bos-mesaj, #kisiler-liste .bos-mesaj,
+#liste-planlar .bos-mesaj, #isler-liste .bos-mesaj,
+#liste-maaslar .bos-mesaj{
+  background:var(--girdi);
+  border-radius:12px;
+  border:1px dashed var(--cizgi2);
+}
+
+
+/* ── Ayarlar ekranı: 18 kart, katlanır ────────────────────────────
+   Ayarlar ekranı 18 KB'lık tek bir kaydırma şeridiydi; 18 kart tam boy
+   açık diziliyordu. Bir ayarı bulmak için sayfayı baştan sona taramak
+   gerekiyordu — Araçlar ekranındaki (0.0.5.4) sorunun aynısı.
+
+   Ücret ayarları AÇIK bırakıldı: en sık girilen ve uygulamanın tüm
+   hesabını etkileyen bölüm o. Diğerleri kapalı, dokununca açılıyor.
+   Aynı anda tek kart açık kalıyor — iki uzun bölüm üst üste binmesin. */
+.ayar-kart{ padding:0; overflow:hidden; margin-bottom:9px }
+.ayar-bas{
+  margin:0 !important;
+  padding:14px 15px !important;
+  cursor:pointer;
+  display:flex; align-items:center; gap:9px;
+  font-size:15px !important;
+  border-left:none !important;
+  user-select:none; -webkit-user-select:none;
+}
+.ayar-bas::before{ display:none !important }
+.ayar-ok{ margin-left:auto; font-size:13px; color:var(--soluk); transition:transform .2s ease }
+.ayar-kart:not(.kapali) .ayar-ok{ transform:rotate(180deg); color:var(--sari) }
+.ayar-kart:not(.kapali) .ayar-bas{ color:var(--sari) }
+.ayar-kart:not(.kapali){ border-color:var(--sari) }
+.ayar-kart.kapali > *:not(.ayar-bas){ display:none }
+.ayar-kart:not(.kapali) > *:not(.ayar-bas){ padding-left:15px; padding-right:15px }
+.ayar-kart:not(.kapali) > *:last-child{ margin-bottom:15px }
+.ayar-kart.kapali:active{ border-color:var(--sari) }
+html[data-hafif="1"] .ayar-ok{ transition:none }
 
 /* ═══════════════════════════════════════════════════════════════════
    ⚠️ BU BLOK DOSYANIN EN SONUNDA KALMALI
@@ -2566,3 +2880,172 @@ html[data-olcek="buyuk"] .cekmece li button, html[data-olcek="buyuk"] .cekmece l
    Dokunma alanını görsel olarak da belli et. */
 .alan label{ cursor:pointer; display:inline-block; padding-bottom:2px }
 .alan label:active{ color:var(--sari) }
+
+/* ═══════════════════════════════════════════════════════════════════
+   0.0.8.4 — İKİNCİ KÜÇÜLTME TURU
+   ───────────────────────────────────────────────────────────────────
+   "Her şey kocaman" şikayeti İKİNCİ kez geldi. 0.0.6.0'da bir tur
+   küçültme yapılmış ve varsayılan ölçek "kucuk"a çekilmişti; yetmemiş.
+
+   Bu blok dosyanın EN SONUNDA — ölçek kurallarından da sonra — çünkü
+   varsayılan görünümü kesin olarak belirlemesi gerekiyor. Ölçek seçici
+   çalışmaya devam ediyor: "Büyük" seçildiğinde bu kurallar
+   `html[data-olcek="buyuk"]` ile geçersiz kılınıyor (aşağıda).
+
+   Yaklaşım: gövde yazısı 13.5→12.5px, başlıklar ve rakamlar orantılı.
+   Dokunma hedefleri (düğme yükseklikleri) KÜÇÜLTÜLMEDİ — sadece
+   içlerindeki yazı. Girdi alanları 16px kalıyor (iOS yakınlaştırma).
+   ═══════════════════════════════════════════════════════════════════ */
+html[data-olcek="kucuk"] body{ font-size:12.5px }
+
+html[data-olcek="kucuk"] .banka-kart .bakiye{ font-size:32px }
+html[data-olcek="kucuk"] .banka-kart{ padding:12px }
+html[data-olcek="kucuk"] .kart{ padding:11px; margin-bottom:9px }
+html[data-olcek="kucuk"] .kart h2{ font-size:14px; margin-bottom:8px }
+html[data-olcek="kucuk"] main{ padding:9px 9px 126px }
+
+html[data-olcek="kucuk"] .liste li{ padding:9px 0; gap:9px }
+html[data-olcek="kucuk"] .liste .baslik{ font-size:12.5px }
+html[data-olcek="kucuk"] .liste .alt-yazi{ font-size:11px }
+html[data-olcek="kucuk"] .liste .tutar{ font-size:14px }
+html[data-olcek="kucuk"] .liste .rozet{ width:36px; min-width:36px; height:36px; font-size:13px }
+
+html[data-olcek="kucuk"] .ozet-kut{ padding:9px 8px }
+html[data-olcek="kucuk"] .ozet-kut .deger{ font-size:19px }
+html[data-olcek="kucuk"] .ozet-kut .et{ font-size:9.5px }
+
+html[data-olcek="kucuk"] .hucre > span:first-child{ font-size:13.5px }
+html[data-olcek="kucuk"] .takvim{ gap:3px }
+
+html[data-olcek="kucuk"] .topbar h1{ font-size:16.5px }
+html[data-olcek="kucuk"] .ay-bar .ay-ad{ font-size:18px }
+html[data-olcek="kucuk"] .selam-blok .buyuk{ font-size:18px }
+html[data-olcek="kucuk"] .selam-blok .alt{ font-size:11.5px }
+
+/* Düğme YÜKSEKLİĞİ korunuyor, yalnızca yazı küçülüyor */
+html[data-olcek="kucuk"] .btn{ font-size:14px }
+html[data-olcek="kucuk"] .cekmece li button,
+html[data-olcek="kucuk"] .cekmece li a{ font-size:12.5px; padding:8px 10px }
+html[data-olcek="kucuk"] .cekmece li button .ikon,
+html[data-olcek="kucuk"] .cekmece li a .ikon{ width:27px; height:27px; font-size:13.5px }
+html[data-olcek="kucuk"] .cekmece li[data-grup]{ max-height:46px }
+
+html[data-olcek="kucuk"] .alt-sayfa h3{ font-size:17.5px }
+html[data-olcek="kucuk"] .sayac input{ font-size:23px }
+html[data-olcek="kucuk"] .durum-secim button{ font-size:12px }
+html[data-olcek="kucuk"] .ekle-bas,
+html[data-olcek="kucuk"] .arac-bas,
+html[data-olcek="kucuk"] .ayar-bas{ font-size:13px !important; padding:11px 12px !important }
+html[data-olcek="kucuk"] .is-ay-ad{ font-size:15px }
+html[data-olcek="kucuk"] #grafik{ height:100px }
+html[data-olcek="kucuk"] .bos-mesaj{ font-size:12px; padding:18px 10px }
+html[data-olcek="kucuk"] .rozet-kut .rikon{ font-size:21px }
+html[data-olcek="kucuk"] .toast{ font-size:12.5px }
+
+/* Girdi alanları HER ölçekte 16px — iOS odaklanınca sayfayı zorla
+   yakınlaştırıyor ve geri döndürmüyor. Bu kural en sonda olmalı. */
+@media (pointer: coarse){
+  html[data-olcek] input,
+  html[data-olcek] select,
+  html[data-olcek] textarea{ font-size:16px }
+}
+
+
+/* ── Devre dışı düğmeler ──────────────────────────────────────────
+   Kod 6 yerde düğmeyi geçici olarak devre dışı bırakıyor (kaydetme,
+   PDF üretimi, fiş okuma, tanı testi gibi işlemler sürerken). Ama
+   CSS'te `:disabled` için HİÇBİR kural yoktu — düğme devre dışıyken
+   normal görünüyordu. Kullanıcı basıyor, hiçbir şey olmuyor, tekrar
+   basıyor; işlemin sürdüğünü anlamıyor.
+   Artık soluk ve dokunulamaz görünüyor. */
+button:disabled,
+.btn:disabled,
+input:disabled,
+select:disabled{
+  opacity:.45;
+  cursor:not-allowed;
+  pointer-events:none;
+  box-shadow:none !important;
+}
+/* Sarı ana düğme devre dışıyken parlaklığını da kaybetsin */
+.btn-sari:disabled{ background:var(--cizgi); color:var(--soluk) }
+
+/* ── Klavye ile gezinme: odak halkası ─────────────────────────────
+   Uygulamada 10 `:focus-visible` kuralı vardı ama düğme ve girdilerin
+   çoğunu kapsamıyordu. Klavyeyle gezen biri (veya harici klavyeli
+   tablet) nerede olduğunu göremiyordu. Fareyle/parmakla kullanımı
+   etkilemez — `:focus-visible` yalnızca klavye odağında devreye girer. */
+button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible,
+[tabindex]:focus-visible{
+  outline:2px solid var(--sari);
+  outline-offset:2px;
+  border-radius:6px;
+}
+
+/* ⚠️ "BÜYÜK" ÖLÇEK — bu blok EN SONDA olmalı
+   ─────────────────────────────────────────────────────────────────
+   0.0.8.4'teki küçültme kuralları `html[data-olcek="kucuk"]` ile
+   yazıldı ve mevcut "buyuk" kurallarının ALTINA düştü. CSS'te aynı
+   özgüllükteki kurallardan sonraki kazandığı için, kullanıcı "Büyük"
+   seçse bile küçültülmüş değerler geçerli kalacaktı — ayar sessizce
+   bozulmuş olacaktı. (Aynı hata 0.0.6.0'da da yapılmış, orada da
+   fark edilip düzeltilmişti.)
+   Bu blok "buyuk" değerlerini en sonda yeniden tanımlıyor. */
+html[data-olcek="buyuk"] body{ font-size:16.5px }
+html[data-olcek="buyuk"] .banka-kart .bakiye{ font-size:50px }
+html[data-olcek="buyuk"] .banka-kart{ padding:16px }
+html[data-olcek="buyuk"] .kart{ padding:16px; margin-bottom:12px }
+html[data-olcek="buyuk"] .kart h2{ font-size:18.5px; margin-bottom:11px }
+html[data-olcek="buyuk"] main{ padding:13px 13px 145px }
+html[data-olcek="buyuk"] .liste li{ padding:13px 0; gap:12px }
+html[data-olcek="buyuk"] .liste .baslik{ font-size:15.5px }
+html[data-olcek="buyuk"] .liste .alt-yazi{ font-size:13px }
+html[data-olcek="buyuk"] .liste .tutar{ font-size:18.5px }
+html[data-olcek="buyuk"] .liste .rozet{ width:46px; min-width:46px; height:46px; font-size:16px }
+html[data-olcek="buyuk"] .ozet-kut{ padding:13px 11px }
+html[data-olcek="buyuk"] .ozet-kut .deger{ font-size:28px }
+html[data-olcek="buyuk"] .ozet-kut .et{ font-size:11px }
+html[data-olcek="buyuk"] .hucre > span:first-child{ font-size:18.5px }
+html[data-olcek="buyuk"] .takvim{ gap:5px }
+html[data-olcek="buyuk"] .topbar h1{ font-size:21px }
+html[data-olcek="buyuk"] .ay-bar .ay-ad{ font-size:24px }
+html[data-olcek="buyuk"] .selam-blok .buyuk{ font-size:24px }
+html[data-olcek="buyuk"] .selam-blok .alt{ font-size:14px }
+html[data-olcek="buyuk"] .btn{ font-size:16.5px }
+html[data-olcek="buyuk"] .cekmece li button,
+html[data-olcek="buyuk"] .cekmece li a{ font-size:15.5px; padding:11px 13px }
+html[data-olcek="buyuk"] .cekmece li button .ikon,
+html[data-olcek="buyuk"] .cekmece li a .ikon{ width:33px; height:33px; font-size:17px }
+html[data-olcek="buyuk"] .cekmece li[data-grup]{ max-height:58px }
+html[data-olcek="buyuk"] .alt-sayfa h3{ font-size:21px }
+html[data-olcek="buyuk"] .sayac input{ font-size:29px }
+html[data-olcek="buyuk"] .durum-secim button{ font-size:14.5px }
+html[data-olcek="buyuk"] .ekle-bas,
+html[data-olcek="buyuk"] .arac-bas,
+html[data-olcek="buyuk"] .ayar-bas{ font-size:16px !important; padding:15px 16px !important }
+html[data-olcek="buyuk"] .is-ay-ad{ font-size:19px }
+html[data-olcek="buyuk"] #grafik{ height:130px }
+html[data-olcek="buyuk"] .bos-mesaj{ font-size:14px; padding:24px 14px }
+html[data-olcek="buyuk"] .rozet-kut .rikon{ font-size:26px }
+html[data-olcek="buyuk"] .toast{ font-size:14.5px }
+
+/* "Normal" ölçek — kucuk ile buyuk arasında */
+html[data-olcek="normal"] body{ font-size:14px }
+html[data-olcek="normal"] .banka-kart .bakiye{ font-size:40px }
+html[data-olcek="normal"] .kart h2{ font-size:16px }
+html[data-olcek="normal"] .liste .baslik{ font-size:14px }
+html[data-olcek="normal"] .liste .tutar{ font-size:16px }
+html[data-olcek="normal"] .ozet-kut .deger{ font-size:23px }
+html[data-olcek="normal"] .hucre > span:first-child{ font-size:16px }
+html[data-olcek="normal"] .topbar h1{ font-size:18.5px }
+
+/* Girdi alanları her ölçekte 16px — iOS koruması, en son kural */
+@media (pointer: coarse){
+  html[data-olcek] input,
+  html[data-olcek] select,
+  html[data-olcek] textarea{ font-size:16px }
+}
