@@ -360,10 +360,11 @@
       <div class="kart gizli" id="yenilik-kart" style="border-color:var(--sari)">
         <h2>🎁 Neler yeni?</h2>
         <ul style="padding-left:18px;font-size:13.5px;line-height:1.9">
-          <li><b>🐞 GERÇEK HATA: Düğmeye basıyorsun, hiçbir şey olmuyor sanıyordun.</b> Uygulama 6 yerde düğmeyi geçici olarak kapatıyor — kaydederken, PDF çıkarırken, fiş okurken. Ama <b>kapalıyken bile normal görünüyordu</b>. Sen basıyorsun, tepki gelmiyor, tekrar basıyorsun, işlemin sürdüğünü anlamıyorsun. Artık kapalı düğmeler soluk görünüyor ve basılamıyor</li>
-          <li><b>🔊 22 düğmenin adı yoktu.</b> Sadece simge içeren düğmeler (✕ kapat, − + sayaçlar, 👁️ gizle, ⌫ sil, ➤ gönder) ekran okuyucu kullanan biri için <b>isimsizdi</b> — "düğme" diye okunuyorlardı. Hepsine anlaşılır isim verildi: "Mesai saatini artır", "Tutarları gizle veya göster" gibi</li>
-          <li><b>⌨️ Klavye ile gezenler için odak halkası eklendi.</b> Harici klavyeli tablet ya da bilgisayardan kullananlar nerede olduklarını göremiyordu. Parmakla kullanımı hiç etkilemiyor — sadece klavye kullanınca çıkıyor</li>
-          <li><b>🔍 Harf harf denetim yaptım, kod mantığında hata yok:</b> Atama/karşılaştırma karışıklığı yok, boş koşul bloğu yok, unutulmuş bekleme yok. Şüpheli görünen 8 eşitlik kontrolü tek tek incelendi — hepsi bilinçli ve doğru yazılmış</li>
+          <li><b>🔍 İyi yakaladın — işi yarım bırakmışım.</b> Geçen sürümlerde raporlardaki "X" işaretini "Tam" diye yazıya çevirmiştim. Ama <b>"GÜN İÇİ ARTI" sütununa dokunmamışım</b>. Sonuç: aynı tabloda iki farklı dil — durum sütunu kelimeyle, artı sütunu hâlâ simgeyle</li>
+          <li><b>Senin PDF'inden somut örnek:</b> 15 Ağustos satırı "Tam · XX · 7.500 TL" diyordu. Patron "XX"in neden 7.500 yaptığını anlayamaz. Artık <b>"Tam · +2 yevmiye · 7.500 TL"</b> yazıyor — hesap kendiliğinden anlaşılıyor: 2.500 + (2 × 2.500) = 7.500</li>
+          <li><b>Bir karışıklık daha vardı:</b> "0" hem "gelmedim" hem "ek yok" anlamında kullanılıyordu, iki ayrı sütunda. Artık ek yoksa "—" yazıyor</li>
+          <li><b>Sütun adı da değişti:</b> "GÜN İÇİ ARTI" → <b>"EK YEVMİYE"</b>. Ne olduğu başlıktan anlaşılıyor</li>
+          <li><b>Altı çıktının hepsinde düzeltildi:</b> WhatsApp metni, paylaşılan görsel, üç ayrı PDF ve asistan özeti. Geçen sefer bazılarını atlamıştım, bu sefer taradım</li>
         </ul>
         <button class="btn btn-cizgili" id="btn-yenilik-kapat">Süper, kapat</button>
       </div>

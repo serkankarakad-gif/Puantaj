@@ -5,6 +5,16 @@ kullanır: `0.0.0.X` — X, her güncellemede 1 artar. Uygulama içindeki sürü
 (alt bilgi + "Neler yeni" kartı) ve dağıtılan zip dosyasının adı her zaman
 birebir aynıdır.
 
+## 0.0.8.7 — 🔍 Raporlardaki "EK YEVMİYE" sütunu da yazıya çevrildi
+- Kullanıcı, kendi PDF'ini inceleyerek fark etti: 0.0.6.5–0.0.6.6'da `DURUM` sütunu simgeden yazıya çevrilmişti (`X` → `Tam`) ancak **`GÜN İÇİ ARTI` sütununa dokunulmamıştı**. Aynı tabloda iki farklı dil kalmıştı
+- **Somut sorun** (kullanıcının PDF'inden): `15/08 · Tam · XX · 7.500 TL`. `gunIsaret()` artı yevmiyeyi `"X".repeat(tam) + (yarım ? "/" : "")` biçiminde kodluyor — içeride anlamlı ama raporu okuyan işveren için anlamsız. "XX"in neden 7.500 TL ürettiği anlaşılmıyordu (2.500 + 2×2.500)
+- **İkinci karışıklık**: `"0"` hem `DURUM` sütununda "gelinmedi" hem `ARTI` sütununda "ek yok" anlamında kullanılıyordu
+- ✅ **Yeni `gunArtiAdi()`**: `"XX"` → `"+2 yevmiye"`, `"X/"` → `"+1,5 yevmiye"`, `"/"` → `"+0,5 yevmiye"`, `"0"` → `"—"`. Ondalık ayracı Türkçe virgül. 7 senaryo test edildi, 7/7 doğru
+- **Altı çıktıda birden uygulandı**: WhatsApp metni, PNG görseli, üç `autoTable` PDF'i ve HTML-tablo PDF'i. Kalan ham `.arti` kullanımı taranarak sıfırlandığı doğrulandı
+- **Sütun başlığı** 4 yerde `GÜN İÇİ ARTI` → `EK YEVMİYE`; PNG başlığı `ARTI` → `EK YEVMİYE`; WhatsApp sütun genişliği 6→13 karakter
+- WhatsApp lejantına ek açıklama: "+1 yevmiye = o gün fazladan bir yevmiye"
+- Üç yerde sürüm güncellendi: `app.js`, `sw.js`, zip adı — hepsi `0.0.8.7`
+
 ## 0.0.8.6 — 🐞 Devre dışı düğme göstergesi + 22 erişilebilirlik etiketi
 - Kullanıcı isteği: "harf harf incele, hata yoksa yeni özellik/tasarım ekle"
 - **Kod mantığı denetimi — hata bulunamadı**: `if` içinde atama yok, boş koşul bloğu yok, erişilemez kod yok. `==` kullanılan 8 yer tek tek incelendi; hepsi `==null` deseni (null + undefined birlikte yakalar), bilinçli. `await`siz görünen 6 async çağrı incelendi; hepsi "başlat ve bekleme" niteliğinde
