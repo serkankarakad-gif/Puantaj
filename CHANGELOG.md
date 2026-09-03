@@ -5,6 +5,12 @@ kullanır: `0.0.0.X` — X, her güncellemede 1 artar. Uygulama içindeki sürü
 (alt bilgi + "Neler yeni" kartı) ve dağıtılan zip dosyasının adı her zaman
 birebir aynıdır.
 
+## 0.0.9.0 — 📦 Yeniden paketleme (0.0.8.8 + 0.0.8.9 içeriği)
+- Kullanıcı 0.0.8.7'de kalmıştı; aynı dosya adıyla tekrar indirme sorunu nedeniyle yeni sürüm numarasıyla paketlendi
+- İçerik değişmedi; 0.0.8.8 (X/XX gösterimine dönüş) ve 0.0.8.9 (artı kırpılması + ondalık ayracı) düzeltmelerini taşıyor
+- Doğrulama: `gunDurumAdi`/`gunArtiAdi` kalıntısı 0, `EK YEVMİYE` başlığı 0, ham `i.yev` gösterimi yerinde, PDF başlıkları `YEVMİYE`/`GÜN İÇİ ARTI`
+- Üç yerde sürüm güncellendi: `app.js`, `sw.js`, zip adı — hepsi `0.0.9.0`
+
 ## 0.0.8.9 — 🐞 Artı yevmiye 3'ten sonra kırpılıyordu + mesaide ondalık ayracı
 - Kullanıcı isteği: "artı ve mesailerde de sıkıntı var mı bak"
 - ✅ **Hesap doğrulaması temiz**: `girdiKazanc()` kullanıcının gerçek PDF satırlarıyla test edildi — 0,5 artı → 3.750 ₺, 2 artı → 7.500 ₺, tam+mesai, yarım gün, gelmedi+mesai, tam+artı+mesai. **8/8 doğru**. Toplam satırı da tutuyor (22,5 gün · 5,5 artı)

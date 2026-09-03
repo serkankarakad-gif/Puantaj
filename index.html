@@ -360,10 +360,10 @@
       <div class="kart gizli" id="yenilik-kart" style="border-color:var(--sari)">
         <h2>🎁 Neler yeni?</h2>
         <ul style="padding-left:18px;font-size:13.5px;line-height:1.9">
-          <li><b>🐞 ARTI YEVMİYEDE GERÇEK HATA — 3'ten fazlası görünmüyordu.</b> Bir günde 4 ya da 5 artı yevmiye aldıysan raporda yine <b>"XXX"</b> yazıyordu. Kazanç doğru hesaplanıyordu ama artı sütunu yanlış gösteriyordu — patron 3 sayarken sen 5 bekliyordun. İmzalanan bir belgede bu doğrudan anlaşmazlık demek</li>
-          <li><b>Düzeltildi:</b> 3'e kadar alıştığın X gösterimi <b>aynen duruyor</b> (X, XX, XXX, X/, XX/). 4 ve üstü artık sayıyla yazılıyor: <b>"4X", "5X", "7X"</b>. Senin fotoğrafındaki değerlerin hiçbiri değişmedi</li>
-          <li><b>🐞 Mesaide İngilizce ondalık:</b> 2,5 saat mesai <b>"2.5s"</b> diye nokta ile yazılıyordu. Uygulamanın her yerinde virgül kullanılıyor, yalnızca burada nokta kalmış. Artık <b>"2,5s"</b></li>
-          <li><b>✅ Hesap tarafı temiz çıktı.</b> Senin PDF'indeki satırları tek tek doğruladım: 0,5 artı → 3.750 ₺, 2 artı → 7.500 ₺, mesaili günler, yarım gün, gelmediğin gün + mesai. <b>8 senaryonun 8'i doğru</b>. Toplam satırı da tutuyor: 22,5 gün · 5,5 artı</li>
+          <li><b>✅ Raporlarda X / XX gösterimi geri geldi.</b> Birkaç sürüm önce "Tam" ve "+0,5 yevmiye" diye yazıya çevirmiştim — yanlış bir karardı. <b>X, inşaat puantajının standart gösterimi</b>, patron da ustabaşı da böyle okuyor. Tamamen geri alındı: görsel, WhatsApp metni ve üç PDF'in hepsinde artık X · / · XX · 0 yazıyor</li>
+          <li><b>🐞 Artı yevmiyede gerçek hata düzeltildi.</b> Bir günde 4 veya 5 artı yevmiye aldıysan raporda yine "XXX" görünüyordu — kazanç doğru hesaplanıyor ama tabloda eksik gösteriliyordu. Patron 3 sayarken sen 5 bekliyordun. Artık 4 ve üstü sayıyla yazılıyor: "4X", "5X". 3'e kadar alıştığın gösterim aynen duruyor</li>
+          <li><b>🐞 Mesaide ondalık ayracı:</b> 2,5 saat mesai "2.5s" diye nokta ile yazılıyordu, artık "2,5s"</li>
+          <li><b>✅ Hesap tarafı denetlendi, temiz:</b> Senin PDF'indeki satırlar tek tek doğrulandı — 0,5 artı → 3.750 ₺, 2 artı → 7.500 ₺, mesaili günler, yarım gün. 8 senaryonun 8'i doğru. FIFO kuralı da çalışıyor: geçen aydan alacağın varsa avans oraya sayılıyor</li>
         </ul>
         <button class="btn btn-cizgili" id="btn-yenilik-kapat">Süper, kapat</button>
       </div>
