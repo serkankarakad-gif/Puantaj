@@ -360,11 +360,10 @@
       <div class="kart gizli" id="yenilik-kart" style="border-color:var(--sari)">
         <h2>🎁 Neler yeni?</h2>
         <ul style="padding-left:18px;font-size:13.5px;line-height:1.9">
-          <li><b>🔍 İyi yakaladın — işi yarım bırakmışım.</b> Geçen sürümlerde raporlardaki "X" işaretini "Tam" diye yazıya çevirmiştim. Ama <b>"GÜN İÇİ ARTI" sütununa dokunmamışım</b>. Sonuç: aynı tabloda iki farklı dil — durum sütunu kelimeyle, artı sütunu hâlâ simgeyle</li>
-          <li><b>Senin PDF'inden somut örnek:</b> 15 Ağustos satırı "Tam · XX · 7.500 TL" diyordu. Patron "XX"in neden 7.500 yaptığını anlayamaz. Artık <b>"Tam · +2 yevmiye · 7.500 TL"</b> yazıyor — hesap kendiliğinden anlaşılıyor: 2.500 + (2 × 2.500) = 7.500</li>
-          <li><b>Bir karışıklık daha vardı:</b> "0" hem "gelmedim" hem "ek yok" anlamında kullanılıyordu, iki ayrı sütunda. Artık ek yoksa "—" yazıyor</li>
-          <li><b>Sütun adı da değişti:</b> "GÜN İÇİ ARTI" → <b>"EK YEVMİYE"</b>. Ne olduğu başlıktan anlaşılıyor</li>
-          <li><b>Altı çıktının hepsinde düzeltildi:</b> WhatsApp metni, paylaşılan görsel, üç ayrı PDF ve asistan özeti. Geçen sefer bazılarını atlamıştım, bu sefer taradım</li>
+          <li><b>🐞 ARTI YEVMİYEDE GERÇEK HATA — 3'ten fazlası görünmüyordu.</b> Bir günde 4 ya da 5 artı yevmiye aldıysan raporda yine <b>"XXX"</b> yazıyordu. Kazanç doğru hesaplanıyordu ama artı sütunu yanlış gösteriyordu — patron 3 sayarken sen 5 bekliyordun. İmzalanan bir belgede bu doğrudan anlaşmazlık demek</li>
+          <li><b>Düzeltildi:</b> 3'e kadar alıştığın X gösterimi <b>aynen duruyor</b> (X, XX, XXX, X/, XX/). 4 ve üstü artık sayıyla yazılıyor: <b>"4X", "5X", "7X"</b>. Senin fotoğrafındaki değerlerin hiçbiri değişmedi</li>
+          <li><b>🐞 Mesaide İngilizce ondalık:</b> 2,5 saat mesai <b>"2.5s"</b> diye nokta ile yazılıyordu. Uygulamanın her yerinde virgül kullanılıyor, yalnızca burada nokta kalmış. Artık <b>"2,5s"</b></li>
+          <li><b>✅ Hesap tarafı temiz çıktı.</b> Senin PDF'indeki satırları tek tek doğruladım: 0,5 artı → 3.750 ₺, 2 artı → 7.500 ₺, mesaili günler, yarım gün, gelmediğin gün + mesai. <b>8 senaryonun 8'i doğru</b>. Toplam satırı da tutuyor: 22,5 gün · 5,5 artı</li>
         </ul>
         <button class="btn btn-cizgili" id="btn-yenilik-kapat">Süper, kapat</button>
       </div>

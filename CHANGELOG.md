@@ -5,6 +5,25 @@ kullanır: `0.0.0.X` — X, her güncellemede 1 artar. Uygulama içindeki sürü
 (alt bilgi + "Neler yeni" kartı) ve dağıtılan zip dosyasının adı her zaman
 birebir aynıdır.
 
+## 0.0.8.9 — 🐞 Artı yevmiye 3'ten sonra kırpılıyordu + mesaide ondalık ayracı
+- Kullanıcı isteği: "artı ve mesailerde de sıkıntı var mı bak"
+- ✅ **Hesap doğrulaması temiz**: `girdiKazanc()` kullanıcının gerçek PDF satırlarıyla test edildi — 0,5 artı → 3.750 ₺, 2 artı → 7.500 ₺, tam+mesai, yarım gün, gelmedi+mesai, tam+artı+mesai. **8/8 doğru**. Toplam satırı da tutuyor (22,5 gün · 5,5 artı)
+- 🐞 **BULUNAN HATA: `gunIsaret()` artıyı 3'te kırpıyordu.** `"X".repeat(Math.min(tamA,3))` — 4 artı da 5 artı da `"XXX"` olarak gösteriliyordu. Kazanç sütunu doğru hesaplanıyor ancak artı sütunu yanlış; imza alanı bulunan bir belgede işveren 3 sayarken işçi 5 bekliyor
+  - Düzeltme: 3'e kadar geleneksel X gösterimi korundu (`X`, `XX`, `XXX`, `X/`, `XX/`, `XXX/`), 4 ve üstü sayıyla — `4X`, `5X`, `7X`. Kullanıcının mevcut verisindeki hiçbir değer değişmiyor
+- 🐞 **Mesaide İngilizce ondalık ayracı**: `m+"s"` doğrudan JS sayısını yazdırdığı için 2,5 saat `"2.5s"` görünüyordu. Uygulamanın geri kalanı (`paraFmt`, `sayi`) virgül kullanıyor. `String(m).replace(".", ",")` ile Türkçe ayraca çevrildi → `"2,5s"`
+- Üç yerde sürüm güncellendi: `app.js`, `sw.js`, zip adı — hepsi `0.0.8.9`
+
+## 0.0.8.8 — ↩️ Rapor gösterimi geri alındı (X / XX sektör standardıymış)
+- Kullanıcı, eski paylaşım görselini göstererek "bu şekilde olması lazım" dedi
+- **Hatalı varsayım**: 0.0.6.5–0.0.6.6 ve 0.0.8.7'de rapor çıktılarındaki `X` / `/` / `XX` işaretleri "patron ters okur" gerekçesiyle `Tam` / `Yarım` / `+2 yevmiye` biçimine çevrilmişti. Ancak **X, Türkiye'de inşaat puantajının yerleşik gösterimi** — işveren ve ustabaşı bu notasyonu zaten biliyor. Sektörün kendi dili "anlaşılmaz" sayılıp değiştirilmiş
+- **İkinci hasar**: yazıya çevirme sütun genişliğini 6→13 karaktere çıkarmış, WhatsApp'taki tek aralıklı tablo düzeni bozulmuştu
+- ↩️ **Tam geri alma**: `gunDurumAdi()` ve `gunArtiAdi()` fonksiyonları tamamen kaldırıldı; 13 kullanım noktası ham gösterime döndürüldü
+  - PNG görseli (`isr.yev`, `isr.arti`, başlık `["TARİH","YEVMİYE","ARTI","MESAİ"]`)
+  - WhatsApp metni (`kolon(i.yev,9) + kolon(i.arti,6)`, başlık ve lejant)
+  - Üç `autoTable` PDF'i ve HTML-tablo PDF'i (`"TARİH","YEVMİYE","GÜN İÇİ ARTI"`)
+- **Doğrulama**: değişiklik öncesi sürümle (0.0.6.4) 9 ayrı nokta karşılaştırıldı — hepsi birebir aynı
+- Üç yerde sürüm güncellendi: `app.js`, `sw.js`, zip adı — hepsi `0.0.8.8`
+
 ## 0.0.8.7 — 🔍 Raporlardaki "EK YEVMİYE" sütunu da yazıya çevrildi
 - Kullanıcı, kendi PDF'ini inceleyerek fark etti: 0.0.6.5–0.0.6.6'da `DURUM` sütunu simgeden yazıya çevrilmişti (`X` → `Tam`) ancak **`GÜN İÇİ ARTI` sütununa dokunulmamıştı**. Aynı tabloda iki farklı dil kalmıştı
 - **Somut sorun** (kullanıcının PDF'inden): `15/08 · Tam · XX · 7.500 TL`. `gunIsaret()` artı yevmiyeyi `"X".repeat(tam) + (yarım ? "/" : "")` biçiminde kodluyor — içeride anlamlı ama raporu okuyan işveren için anlamsız. "XX"in neden 7.500 TL ürettiği anlaşılmıyordu (2.500 + 2×2.500)

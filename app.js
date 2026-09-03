@@ -2111,7 +2111,7 @@ function pngOzetBlobOlustur(gBas, gSon){
   c.fillStyle = "#555"; c.font = "bold 15px Arial";
   /* Sütun başlığı "YEVMİYE" idi ama altındaki hücrelerde artık "Tam/Yarım"
      yazıyor — başlıkla içerik uyumsuzdu. "DURUM" daha doğru. */
-  ["TARİH","DURUM","EK YEVMİYE","MESAİ"].forEach((k,i)=> c.fillText(k, kolX[i], ustH-8));
+  ["TARİH","YEVMİYE","ARTI","MESAİ"].forEach((k,i)=> c.fillText(k, kolX[i], ustH-8));
   c.strokeStyle = "#CCC";
   for(let g=t.gBas; g<=t.gSon; g++){
     const i = g - t.gBas;
@@ -2124,8 +2124,8 @@ function pngOzetBlobOlustur(gBas, gSon){
     c.font = "15px Arial";
     c.fillText(pad(g)+" / "+pad(aktifAy+1)+" — "+GUNLER[d.getDay()], kolX[0], y+23);
     c.font = "bold 17px Arial";
-    c.fillText(gunDurumAdi(isr.yev), kolX[1]+20, y+23);
-    c.fillText(gunArtiAdi(isr.arti), kolX[2]+8, y+23);
+    c.fillText(isr.yev, kolX[1]+20, y+23);
+    c.fillText(isr.arti, kolX[2]+8, y+23);
     c.fillText(isr.mesai, kolX[3]+8, y+23);
     c.beginPath(); c.moveTo(0,y+satirY); c.lineTo(W,y+satirY); c.stroke();
   }
@@ -5946,39 +5946,6 @@ function santiyeOzetMetni(bloklar, ay){
   return bloklar.map(b=> (b.ilk===b.son ? b.ilk : b.ilk+"–"+b.son)+" "+AYLAR[ay].slice(0,3)+": "+b.ad).join(" · ");
 }
 
-/* Rapor/görsel çıktılarda kullanılan kısa işaretleri, RAPORU OKUYAN kişinin
-   anlayacağı kelimelere çevirir.
-   Neden gerekli: içeride "X" çalışıldı, "0" gelinmedi demek. Ama raporu
-   patron/ustabaşı okuyor ve günlük dilde "X" tam tersini — "olmadı,
-   gelmedi" — çağrıştırıyor. Bir ödeme anlaşmazlığında bu belirsizlik
-   işçinin aleyhine yorumlanabilir. Tüm dış çıktılarda (WhatsApp metni,
-   PNG görseli, PDF tablosu) aynı açık dil kullanılıyor. */
-function gunDurumAdi(yev){
-  return yev==="X" ? "Tam"
-       : yev==="/" ? "Yarım"
-       : yev==="İ" ? "İzin"
-       : yev==="0" ? "—"
-       : yev;                 /* saatlik gösterim: "7s" gibi, zaten açık */
-}
-/* Gün içi artı yevmiyeyi RAPORU OKUYAN kişinin anlayacağı biçime çevirir.
-   İçeride "X" bir tam artı yevmiye, "/" yarım artı demek — kullanıcı bunu
-   bilir çünkü uygulamada yazıyor. Ama raporu patron/ustabaşı okuyor ve
-   onun için "XX" hiçbir şey ifade etmiyor.
-   Somut örnek (kullanıcının kendi PDF'inden):
-     15/08 · Tam · ARTI "XX" · 7.500 TL
-   Patron "XX"in neden 7.500 yaptığını anlayamıyor. Oysa "+2 yevmiye"
-   yazsa hesap kendiliğinden anlaşılıyor: 3 × 2.500 = 7.500.
-   Ayrıca "0" hem "gelinmedi" (durum sütunu) hem "ek yok" (artı sütunu)
-   anlamında kullanılıyordu; bu da ayrıştırıldı. */
-function gunArtiAdi(arti){
-  if(!arti || arti==="0") return "—";
-  const tam = (arti.match(/X/g)||[]).length;
-  const bucuk = arti.indexOf("/") >= 0 ? 0.5 : 0;
-  const toplam = tam + bucuk;
-  if(!toplam) return "—";
-  const yazi = Number.isInteger(toplam) ? String(toplam) : String(toplam).replace(".", ",");
-  return "+" + yazi + " yevmiye";
-}
 function gunIsaret(v){
   const calisti = v && (v.durum==="tam" || v.durum==="yarim" ||
     (v.durum==="saatlik" && (Number(v.saat)||0)>0));
@@ -5993,11 +5960,23 @@ function gunIsaret(v){
   let arti = "0";
   if(a>0){
     const tamA = Math.floor(a), bucuk = (a - tamA) >= 0.5;
-    arti = "X".repeat(Math.min(tamA,3)) + (bucuk ? "/" : "");
+    /* DÜZELTME: eskiden `Math.min(tamA,3)` ile 3'ten fazlası SESSİZCE
+       kırpılıyordu — 4 artı da 5 artı da raporda "XXX" görünüyordu.
+       Kazanç doğru hesaplanıyor ama artı sütunu yanlış gösteriyordu;
+       patron 3 sayarken işçi 5 bekliyordu. Bu, imzalanan bir belgede
+       anlaşmazlık çıkarır.
+       3'e kadar geleneksel X gösterimi korunuyor (sektörün alıştığı
+       biçim), fazlası sayıyla yazılıyor: "5X" gibi. */
+    arti = tamA <= 3
+      ? "X".repeat(tamA) + (bucuk ? "/" : "")
+      : tamA + "X" + (bucuk ? "/" : "");
     if(!arti) arti = "/";
   }
   const m = Number(v.mesai)||0;
-  const mesai = m>0 ? m+"s" : "0";
+  /* Ondalık ayracı Türkçe virgül olmalı: "2.5s" değil "2,5s".
+     Uygulamanın geri kalanı virgül kullanıyor, yalnızca burada
+     nokta kalmıştı. */
+  const mesai = m>0 ? String(m).replace(".", ",")+"s" : "0";
   return {yev, arti, mesai};
 }
 
@@ -6081,7 +6060,7 @@ async function raporPaylas(gBas, gSon){
      aleyhine yorumlanabilecek bir belirsizlikti.
      Yeni gösterim kendi kendini açıklıyor: "Tam", "Yarım", "—", "İzin". */
   let calisilanSatir = 0;
-  let satirlar = "TARİH      DURUM    EK YEVMİYE   MESAİ\n";
+  let satirlar = "TARİH     YEVMİYE  ARTI  MESAİ\n";
   for(let g=t.gBas; g<=t.gSon; g++){
     const id = aktifYil+"-"+pad(aktifAy+1)+"-"+pad(g);
     const d = new Date(aktifYil, aktifAy, g);
@@ -6091,16 +6070,16 @@ async function raporPaylas(gBas, gSon){
        rapor okunmaz hâle geliyor. Yalnızca kaydı olan günler listeleniyor. */
     if(!v) continue;
     calisilanSatir++;
-    const durumAd = gunDurumAdi(i.yev);
+
     satirlar += kolon(pad(g)+"."+pad(aktifAy+1)+" "+GUNLER[d.getDay()].slice(0,2), 11)
-              + kolon(durumAd,9) + kolon(gunArtiAdi(i.arti),13) + i.mesai + "\n";
+              + kolon(i.yev,9) + kolon(i.arti,6) + i.mesai + "\n";
   }
   if(!calisilanSatir) satirlar += "(bu aralıkta işlenmiş gün yok)\n";
   const metin =
     "📋 *PUANTAJ — " + AYLAR[aktifAy] + " " + aktifYil + t.etiket + "*\n" +
     (ad ? "👷 " + ad + "\n" : "") +
     "```\n" + satirlar + "```\n" +
-    "_Tam = tam yevmiye · Yarım = yarım gün · — = gelinmedi · +1 yevmiye = o gün fazladan bir yevmiye_\n" +
+    "_X = tam yevmiye · / = yarım · XX = 2 yevmiye · 0 = gelinmedi_\n" +
     "✅ Çalışılan: " + t.gunSayisi + " gün" +
     (t.saatToplam>0 ? " ("+t.saatToplam+" saat)" : "") + "\n" +
     (t.artiToplam>0 ? "➕ Gün içi artı: " + t.artiToplam + "\n" : "") +
@@ -6186,7 +6165,7 @@ function raporIcerikUret(gBas, gSon){
     const kazancVar = i.yev!=="0" || (v && Number(v.mesai)>0);
     const pazar = d.getDay()===0 ? " style='background:#F4F4F4;color:#999'" : "";
     satirlar += "<tr"+pazar+"><td>"+pad(g)+" / "+pad(aktifAy+1)+" / "+aktifYil+" — "+GUNLER[d.getDay()]+
-      "</td><td class='orta-h'>"+gunDurumAdi(i.yev)+"</td><td class='orta-h'>"+gunArtiAdi(i.arti)+"</td><td class='orta-h'>"+i.mesai+
+      "</td><td class='orta-h'>"+i.yev+"</td><td class='orta-h'>"+i.arti+"</td><td class='orta-h'>"+i.mesai+
       "</td><td>"+(kazancVar ? esc(gunSantiyeAdi(v)) : "")+
       "</td><td class='sag'>"+(kazancVar ? paraFmt(girdiKazanc(v)) : "")+"</td></tr>";
   }
@@ -6239,7 +6218,7 @@ function raporIcerikUret(gBas, gSon){
   const govde = '<div class="pdf-rapor">'+
     '<h1>PUANTAJ ÇİZELGESİ — '+AYLAR[aktifAy]+' '+aktifYil+t.etiket+'</h1>'+
     (ad ? '<p><b>İşçi:</b> '+esc(ad)+(santiyeOzeti?' &nbsp;·&nbsp; <b>Şantiye:</b> '+esc(santiyeOzeti):'')+'</p>' : '')+
-    '<table><tr><th>TARİH</th><th style="text-align:center">DURUM</th><th style="text-align:center">EK YEVMİYE</th><th style="text-align:center">MESAİ</th><th>ŞANTİYE</th><th class="sag">KAZANÇ</th></tr>'+
+    '<table><tr><th>TARİH</th><th style="text-align:center">YEVMİYE</th><th style="text-align:center">GÜN İÇİ ARTI</th><th style="text-align:center">MESAİ</th><th>ŞANTİYE</th><th class="sag">KAZANÇ</th></tr>'+
     satirlar+
     '<tr class="ozet"><td>TOPLAM: '+t.gunSayisi+' gün'+(t.artiToplam>0?' · '+t.artiToplam+' artı':'')+' · '+t.mesaiToplam+' saat mesai</td><td colspan="4">HAKEDİŞ</td><td class="sag">'+paraFmt(t.hakedis)+'</td></tr>'+
     '<tr class="ozet"><td></td><td colspan="4">ALINAN (avans/ödeme)</td><td class="sag">'+paraFmt(t.alinan)+'</td></tr>'+
@@ -6382,14 +6361,14 @@ function pdfBlobOlustur(gBas, gSon){
     const kazancVar = i.yev!=="0" || (v && Number(v.mesai)>0);
     gunSatir.push([
       pad(g)+" / "+pad(aktifAy+1)+" / "+aktifYil+" — "+GUNLER[d.getDay()],
-      gunDurumAdi(i.yev), gunArtiAdi(i.arti), i.mesai,
+      i.yev, i.arti, i.mesai,
       kazancVar ? gunSantiyeAdi(v) : "",
       kazancVar ? paraFmt(girdiKazanc(v)) : ""
     ]);
   }
   doc.autoTable({
     startY: y+8, margin:{left:solX, right: 595-sagX},
-    head: [["TARİH","DURUM","EK YEVMİYE","MESAİ","ŞANTİYE","KAZANÇ"]],
+    head: [["TARİH","YEVMİYE","GÜN İÇİ ARTI","MESAİ","ŞANTİYE","KAZANÇ"]],
     body: gunSatir,
     styles:{fontSize:8, cellPadding:4, lineColor:[200,200,200], lineWidth:0.5},
     headStyles:{fillColor:[242,242,242], textColor:20, fontStyle:"bold"},
@@ -6875,12 +6854,12 @@ function isPdfBlobOlustur(is, aySecim){
     const ayHakedis = gunlerBuAy.reduce((s,g)=> s+(g.v?girdiKazanc(g.v):0), 0);
     const gunSatir = gunlerBuAy.map(g=> [
       tarihFormatla(g.id)+" — "+GUNLER[g.d.getDay()],
-      gunDurumAdi(g.i.yev), gunArtiAdi(g.i.arti), g.i.mesai,
+      g.i.yev, g.i.arti, g.i.mesai,
       g.kazancVar ? paraFmt(girdiKazanc(g.v)) : ""
     ]);
     doc.autoTable({
       startY: y+4, margin:{left:solX, right: 595-sagX},
-      head: [["TARİH","DURUM","EK YEVMİYE","MESAİ","KAZANÇ"]],
+      head: [["TARİH","YEVMİYE","GÜN İÇİ ARTI","MESAİ","KAZANÇ"]],
       body: gunSatir,
       styles:{fontSize:8, cellPadding:4, lineColor:[200,200,200], lineWidth:0.5},
       headStyles:{fillColor:[242,242,242], textColor:20, fontStyle:"bold"},
@@ -7027,14 +7006,14 @@ function yilPdfBlobOlustur(){
       const kazancVar = i.yev!=="0" || (v && Number(v.mesai)>0);
       gunSatir.push([
         pad(g)+" / "+pad(ayIndex+1)+" — "+GUNLER[d.getDay()],
-        gunDurumAdi(i.yev), gunArtiAdi(i.arti), i.mesai,
+        i.yev, i.arti, i.mesai,
         kazancVar ? gunSantiyeAdi(v) : "",
         kazancVar ? paraFmt(girdiKazanc(v)) : ""
       ]);
     }
     doc.autoTable({
       startY: y2+4, margin:{left:solX, right: 595-sagX},
-      head: [["TARİH","DURUM","EK YEVMİYE","MESAİ","ŞANTİYE","KAZANÇ"]],
+      head: [["TARİH","YEVMİYE","GÜN İÇİ ARTI","MESAİ","ŞANTİYE","KAZANÇ"]],
       body: gunSatir,
       styles:{fontSize:7.5, cellPadding:3, lineColor:[200,200,200], lineWidth:0.4},
       headStyles:{fillColor:[242,242,242], textColor:20, fontStyle:"bold"},
@@ -8585,7 +8564,7 @@ document.addEventListener("DOMContentLoaded", ()=>{
   });
 
   /* Neler yeni kartı */
-  const YENILIK_SURUM = "0.0.8.7";
+  const YENILIK_SURUM = "0.0.8.9";
   window.__SURUM = YENILIK_SURUM;   /* tanı raporu bunu okur */
   try{ $("#cekmece-surum").textContent = "Puantaj Defterim " + YENILIK_SURUM; }catch(e){}
   /* Sürümü çekmece başlığında da göster. Sebep: "değişiklik gelmedi" durumunda
@@ -8735,7 +8714,7 @@ document.addEventListener("DOMContentLoaded", ()=>{
       const d = new Date(pzt); d.setDate(pzt.getDate()+i);
       const v = girdiler[tarihId(d)];
       const isr = gunIsaret(v);
-      satir += GUNLER_KISA[i]+" "+pad(d.getDate())+": "+gunDurumAdi(isr.yev||"0")+(isr.mesai&&isr.mesai!=="0"?" +"+isr.mesai+" mesai":"")+"\n";
+      satir += GUNLER_KISA[i]+" "+pad(d.getDate())+": "+(isr.yev||"0")+(isr.mesai&&isr.mesai!=="0"?" +"+isr.mesai+" mesai":"")+"\n";
       if(v){ gun += girdiGun(v); mesai += Number(v.mesai)||0; kazanc += girdiKazanc(v); }
     }
     const metin = "📆 *BU HAFTA* — "+((kullanici&&kullanici.displayName)||"")+"\n```\n"+satir+"```\n"+
