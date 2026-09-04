@@ -38,6 +38,15 @@
 <link href="https://fonts.googleapis.com/css2?family=Saira+Condensed:wght@600;700;800&family=Rubik:wght@400;500;600;700&display=swap" rel="stylesheet">
 
 <!-- ================= FIREBASE (compat CDN) ================= -->
+<!-- ⚡ AĞIR KÜTÜPHANELER AÇILIŞTAN ÇIKARILDI (0.0.9.2)
+     SheetJS, jsPDF, jsPDF-autotable, html2canvas ve Tesseract eskiden
+     burada açılışta yükleniyordu — sıkıştırılmış hâlde ~350 KB. Ama
+     hiçbiri uygulama açılırken gerekmiyor: sırasıyla Excel dışa aktarma,
+     PDF üretimi, görsel paylaşımı ve fiş okuma sırasında lazım oluyorlar.
+     Artık `kutuphaneYukle()` ile talep üzerine yükleniyorlar (app.js).
+     Bu, özellikle şantiyedeki zayıf bağlantıda ilk açılışı hızlandırıyor.
+     Service worker bunları önbelleğe aldığı için (0.0.7.0) ikinci
+     kullanımda anında geliyorlar. -->
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
@@ -46,11 +55,7 @@
 
 <script src="firebase-config.js"></script>
 <script src="sabitler.js"></script>
-<script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js"></script>
 <!-- Gerçek PDF dosyası üretmek için (WhatsApp'a metin yerine dosya olarak paylaşabilmek adına) -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <!-- Gerçek (metin tabanlı) PDF'te Türkçe karakterlerin (İ ı Ş ş Ğ ğ) doğru çıkması için
      gömülü font — jsPDF'in standart fontu bunları desteklemiyor.
 
@@ -64,7 +69,6 @@
 <!-- Fiş/fatura fotoğrafından tutar OKUMAYA çalışan (deneysel) OCR kütüphanesi.
      Yüklenemezse (internet yoksa vb.) OCR düğmesi sessizce devre dışı kalır,
      fotoğraf ekleme özelliği bundan etkilenmez. -->
-<script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
 
 <link rel="stylesheet" href="style.css">
 </head>
@@ -360,12 +364,11 @@
       <div class="kart gizli" id="yenilik-kart" style="border-color:var(--sari)">
         <h2>🎁 Neler yeni?</h2>
         <ul style="padding-left:18px;font-size:13.5px;line-height:1.9">
-          <li><b>🎨 Tasarım turunda atlanmış 8 ekran tamamlandı:</b> Kredi kartlarım, Başarımlar, Kayıt arama, Notlarım, Planlarım, Gündem, Canlı TV, Video. Ölçtüm: bu ekranlardaki 63 öğeden <b>sadece 1 tanesinin</b> görsel tanımı varmış, geri kalanı genel liste stiline düşüyordu</li>
-          <li><b>💳 Kredi kartları artık gerçek kart gibi görünüyor</b> — hafif degradeli yüzey, borç tutarı öne çıkmış. Bu ekranda asıl bilgi borç ve son ödeme günü</li>
-          <li><b>🏅 Başarımlar ızgaraya geçti</b> — rozetler alt alta değil, yan yana diziliyor. Seviye kartı da vurgulandı</li>
-          <li><b>📝 Notlar kırpılmıyor artık.</b> Uzun notlar tek satıra sıkışıp "..." ile kesiliyordu; şimdi alt satıra geçiyor. Aynısı haber ve video başlıkları için de yapıldı</li>
-          <li><b>🔍 Arama kutusu 16px oldu</b> — iPhone'da küçük yazılı kutuya dokununca ekran zorla yakınlaşıyordu</li>
-          <li><b>Yine sadece stil dosyası değişti</b> — uygulama kodu ve sayfa yapısı bir karakter bile değişmedi, karşılaştırarak doğruladım</li>
+          <li><b>⏱ MESAİ ARTIK SAATLE DEĞİL, X / SLASH İLE.</b> Gün içi artı yevmiyede olduğu gibi: <b>X = bir tam yevmiye, / = yarım yevmiye.</b> Saat hesabı kalktı. Mesai kutusuna 1 yazarsan X, 0.5 yazarsan / oluyor</li>
+          <li><b>Ne kadar para:</b> X mesai = tam yevmiyen kadar (2.500 ₺). Yani tam gün + X mesai = 5.000 ₺. Yarım mesai (/) = 1.250 ₺</li>
+          <li><b>🌙 Gece mesaisi de aynı sisteme geçti</b> — o da X ve / ile. İkisi ayrı sütun olarak kalıyor, karışmıyor</li>
+          <li><b>🔒 ESKİ KAYITLARINA HİÇ DOKUNULMADI.</b> Daha önce saatle girdiğin mesailer olduğu gibi duruyor, tutarları değişmedi, raporda "3s" diye görünmeye devam ediyor. Sadece bundan sonra girecekleirn yeni sisteme göre kaydediliyor</li>
+          <li><b>Uyarı mesajı da düzeltildi:</b> Eskiden mesai yazıp saat ücreti girmemişsen "mesai saat ücretini gir" diyordu. Mesai artık yevmiyeye bağlı olduğu için bu yanlış yönlendirme olurdu — artık "günlük yevmiyeni gir" diyor</li>
         </ul>
         <button class="btn btn-cizgili" id="btn-yenilik-kapat">Süper, kapat</button>
       </div>
@@ -1691,11 +1694,11 @@
   </div>
 
   <div class="alan">
-    <label for="mesai-saat">Mesai (saat)</label>
+    <label for="mesai-saat">Mesai — tam: 1 (X) · yarım: 0.5 (/)</label>
     <div class="sayac">
-      <button id="mesai-eksi" aria-label="Mesai saatini azalt">−</button>
+      <button id="mesai-eksi" aria-label="Mesaiyi azalt">−</button>
       <input type="text" id="mesai-saat" inputmode="decimal" min="0" step="0.5" value="0">
-      <button id="mesai-arti" aria-label="Mesai saatini artır">＋</button>
+      <button id="mesai-arti" aria-label="Mesaiyi artır">＋</button>
     </div>
   </div>
 
@@ -1731,7 +1734,7 @@
     </div>
   </div>
   <div class="alan">
-    <label for="gun-gece-mesai">🌙 Gece mesaisi (saat) — normal mesaiden ayrı</label>
+    <label for="gun-gece-mesai">🌙 Gece mesaisi — tam: 1 (X) · yarım: 0.5 (/)</label>
     <div class="sayac">
       <button id="gece-eksi" aria-label="Gece mesaisini azalt">−</button>
       <input type="text" id="gun-gece-mesai" inputmode="decimal" min="0" step="0.5" value="0">

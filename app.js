@@ -3552,9 +3552,12 @@ function aramaEslesme(q, metinler){
   q = q.toLocaleLowerCase("tr");   /* Türkçe İ→i, I→ı doğru insin */
   return metinler.some(m2=> String(m2||"").toLocaleLowerCase("tr").includes(q));
 }
+let aramaTazeSayac = 0;
 function aramaCalistir(){
   const kap = $("#arama-sonuclar"); if(!kap) return;
   const q = ($("#arama-kutu").value||"").trim();
+  /* Önbellek hazırsa sayacı sıfırla — sonraki aramalar tekrar deneyebilsin */
+  if(tumGirdilerQS || tumOdemelerQS) aramaTazeSayac = 0;
   if(q.length < 2){
     kap.innerHTML = '<div class="bos-mesaj"><span class="buyuk">🔍</span>En az 2 harf yaz usta.</div>';
     return;
@@ -3617,7 +3620,23 @@ function aramaCalistir(){
     }
   });
   if(!sonuc.length){
-    kap.innerHTML = '<div class="bos-mesaj"><span class="buyuk">🤷</span>"'+q.replace(/</g,"&lt;")+'" için kayıt bulunamadı.</div>';
+    /* "Bulunamadı" ile "henüz yüklenmedi" ayrımı (0.0.9.4).
+       Önbellek hazır değilken de sonuç boş dönüyordu ve kullanıcı
+       "kaydım yok" sanıyordu. Artık ikisi ayrı mesaj veriyor. */
+    const hazir = !!(tumGirdilerQS || tumOdemelerQS);
+    kap.innerHTML = hazir
+      ? '<div class="bos-mesaj"><span class="buyuk">🤷</span>"'+q.replace(/</g,"&lt;")+'" için kayıt bulunamadı.</div>'
+      : '<div class="bos-mesaj"><span class="buyuk">⏳</span>Kayıtların yükleniyor, birkaç saniye…</div>';
+    /* Yüklenme bitince aramayı kendiliğinden tazele.
+       En fazla 5 kez dener (~6 sn); önbellek hiç gelmezse sonsuz
+       döngüye girmesin. İnternet yoksa 5. denemeden sonra susuyor. */
+    if(!hazir && aramaTazeSayac < 5){
+      aramaTazeSayac++;
+      setTimeout(()=>{
+        const k = $("#arama-kutu");
+        if(k && k.value.trim() === q) aramaCalistir();
+      }, 1200);
+    }
     return;
   }
   kap.innerHTML = "";
@@ -4193,9 +4212,12 @@ async function anaYukle(){
       if(sonYediGun.indexOf(doc.id) > -1) islenenSon7.push(doc.id);
       if(doc.id === bugunId2){ bugunIsli = true; bugunVeri = v; bugunKazanc = k; }
       gunToplam += girdiGun(v);
-      mesaiToplam += Number(v.mesai)||0;
-      artiToplam += Number(v.arti)||0;
-      if(doc.id.slice(0,4)===buYilOnEk) buYilMesai += Number(v.mesai)||0;
+      /* Yeni kayıtlarda mesai yevmiye katı, eskilerde saat. İkisi ayrı
+         birim olduğu için yevmiye katları artı toplamına ekleniyor,
+         saatler ayrı sayılıyor. */
+      mesaiToplam += mesaiSaatMik(v);
+      artiToplam += (Number(v.arti)||0) + mesaiYevMik(v);
+      if(doc.id.slice(0,4)===buYilOnEk) buYilMesai += mesaiSaatMik(v);
       if(girdiGun(v)>0 && new Date(doc.id+"T12:00:00").getDay()===0) pazarToplam++;
       if(k>0 && doc.id.slice(0,7)===buAyOnEk) hareketler.push({tarih:doc.id, tutar:k, tip:"+", baslik:girisEtiket(v)+(v.santiye?" · "+v.santiye:"")});
     });
@@ -4402,10 +4424,24 @@ function oranBul(v){
   const gece = v.uGeceUcret!=null ? Number(v.uGeceUcret) : mes*(1+(ayarlar.geceZam||0)/100);
   return {yev, mes, ek, sa, gece};
 }
+/* Bir kaydın mesai miktarını döndürür. Yeni kayıtlar yevmiye katı
+   (`mesaiYev`), eski kayıtlar saat (`mesai`) tutuyor. Toplamlarda ikisi
+   AYNI birimde toplanamaz — bu yüzden ayrı ayrı döndürülüyor. */
+function mesaiYevMik(v){ return Number(v.mesaiYev)||0; }
+function mesaiSaatMik(v){ return (Number(v.mesaiYev)||0) > 0 ? 0 : (Number(v.mesai)||0); }
+
 function girdiKazanc(v){
   const o = oranBul(v);
-  const m = Number(v.mesai)||0;
-  let k = m*o.mes;
+  /* MESAİ HESABI (0.0.9.5)
+     Yeni sistem: mesai artık SAAT değil, yevmiye katı olarak tutuluyor.
+     `mesaiYev` alanı: 1 = X (bir tam yevmiye), 0.5 = / (yarım yevmiye).
+     Eski kayıtlarda `mesai` (saat) alanı var ve ONLARA DOKUNULMUYOR —
+     kullanıcı kararı: geçmiş tutarlar değişmesin. Eski kayıt saat ×
+     saat ücretinden, yeni kayıt yevmiye katından hesaplanıyor.
+     Bir kayıtta ikisi birden olmaz: yeni kayıtlar `mesai` yazmıyor. */
+  const mYev = Number(v.mesaiYev)||0;
+  const m    = Number(v.mesai)||0;
+  let k = mYev > 0 ? mYev*(o.yev + o.ek) : m*o.mes;
   if(v.durum==="tam") k += o.yev + o.ek;
   else if(v.durum==="yarim") k += (o.yev + o.ek)/2;
   else if(v.durum==="saatlik"){
@@ -4414,7 +4450,10 @@ function girdiKazanc(v){
   }
   k += (Number(v.arti)||0) * (o.yev + o.ek);
   k += (Number(v.parcaMiktar)||0) * (v.uParcaFiyat!=null ? Number(v.uParcaFiyat) : (ayarlar.parcaFiyat||0));
-  k += (Number(v.geceMesai)||0) * o.gece;
+  /* Gece mesaisi de aynı düzene geçti: `geceYev` yevmiye katı,
+     eski `geceMesai` (saat) alanı korunuyor. */
+  const gYev = Number(v.geceYev)||0;
+  k += gYev > 0 ? gYev*(o.yev + o.ek) : (Number(v.geceMesai)||0) * o.gece;
   return k;
 }
 /* Bir tarihe (id: "YYYY-AA-GG") pazar/tatil zammı uygulanır mı, uygulanırsa hangi oranda? */
@@ -4969,10 +5008,11 @@ function hesapla(){
       gunKazanc += s*o.sa + (s>0 ? o.ek : 0);
     }
     gunSayisi += girdiGun(v);
-    const m = Number(v.mesai)||0;
+    const m = mesaiSaatMik(v);
+    const mY = mesaiYevMik(v);
     mesaiToplam += m;
-    mesaiKazanc += m*o.mes;
-    gunKazanc += m*o.mes;
+    mesaiKazanc += m*o.mes + mY*(o.yev + o.ek);
+    gunKazanc += m*o.mes + mY*(o.yev + o.ek);
     const pMiktar = Number(v.parcaMiktar)||0;
     if(pMiktar>0){
       const pTutar = pMiktar * (v.uParcaFiyat!=null ? Number(v.uParcaFiyat) : (ayarlar.parcaFiyat||0));
@@ -5023,10 +5063,12 @@ function modalKazancGuncelle(){
     const secId = $("#gun-santiye-sec").value || "";
     const temp = {
       durum: saatlikMod ? "saatlik" : modalDurum,
-      mesai: sayi($("#mesai-saat").value, true)||0,
+      /* Önizleme de yeni alanı kullanmalı, yoksa "bu gün kazancın"
+         satırı kaydedilecek tutarı yanlış gösterir (0.0.9.5). */
+      mesaiYev: sayi($("#mesai-saat").value, true)||0,
       arti: sayi($("#gun-arti").value, true)||0,
       parcaMiktar: sayi($("#gun-parca-miktar").value, true)||0,
-      geceMesai: sayi($("#gun-gece-mesai").value, true)||0,
+      geceYev: sayi($("#gun-gece-mesai").value, true)||0,
       santiyeId: secId,
       ...guncelOranlar(secId, modalTarih)
     };
@@ -5564,6 +5606,7 @@ async function csvIndir(){
 
 /* ---------- Gerçek Excel (.xlsx) dışa aktarım (SheetJS) ---------- */
 async function excelIndir(){
+  await kutuphaneYukle("xlsx");
   if(typeof XLSX === "undefined"){
     toast("Excel kütüphanesi yüklenemedi — internetin var mı? 📡");
     return;
@@ -5950,8 +5993,21 @@ function gunIsaret(v){
   const calisti = v && (v.durum==="tam" || v.durum==="yarim" ||
     (v.durum==="saatlik" && (Number(v.saat)||0)>0));
   if(!calisti){
-    const m0 = v ? (Number(v.mesai)||0) : 0;
-    return {yev: (v&&v.durum==="izin") ? "İ" : "0", arti:"", mesai: m0>0 ? m0+"s" : ""};
+    /* Gelinmeyen günde de mesai olabilir (işçi sadece akşam gelmiş olabilir).
+       Yeni sistemde yevmiye katı, eskide saat — ikisi de gösterilmeli.
+       Bu dal `mesaiYev`'i bilmiyordu, yeni kayıtlarda mesai boş
+       görünüyordu (0.0.9.5'te bulundu). */
+    const mY0 = v ? (Number(v.mesaiYev)||0) : 0;
+    const m0  = v ? (Number(v.mesai)||0) : 0;
+    let mes0 = "";
+    if(mY0 > 0){
+      const t0 = Math.floor(mY0), b0 = (mY0 - t0) >= 0.5;
+      mes0 = (t0 <= 3 ? "X".repeat(t0) : t0+"X") + (b0 ? "/" : "");
+      if(!mes0) mes0 = "/";
+    }else if(m0 > 0){
+      mes0 = String(m0).replace(".", ",")+"s";
+    }
+    return {yev: (v&&v.durum==="izin") ? "İ" : "0", arti:"", mesai: mes0};
   }
   let yev = "X";
   if(v.durum==="yarim") yev = "/";
@@ -5972,11 +6028,23 @@ function gunIsaret(v){
       : tamA + "X" + (bucuk ? "/" : "");
     if(!arti) arti = "/";
   }
-  const m = Number(v.mesai)||0;
-  /* Ondalık ayracı Türkçe virgül olmalı: "2.5s" değil "2,5s".
-     Uygulamanın geri kalanı virgül kullanıyor, yalnızca burada
-     nokta kalmıştı. */
-  const mesai = m>0 ? String(m).replace(".", ",")+"s" : "0";
+  /* MESAİ GÖSTERİMİ (0.0.9.5)
+     Yeni kayıtlar `mesaiYev` (yevmiye katı) tutuyor ve gün içi artı ile
+     aynı dille gösteriliyor: X = bir tam yevmiye, / = yarım, XX = iki.
+     Eski saat bazlı kayıtlar dokunulmadan "2s" biçiminde kalıyor —
+     kullanıcı kararı: geçmiş tutarlar ve gösterim değişmesin. */
+  const mYev = Number(v.mesaiYev)||0;
+  const m    = Number(v.mesai)||0;
+  let mesai;
+  if(mYev > 0){
+    const tamM = Math.floor(mYev), bucukM = (mYev - tamM) >= 0.5;
+    mesai = tamM <= 3
+      ? "X".repeat(tamM) + (bucukM ? "/" : "")
+      : tamM + "X" + (bucukM ? "/" : "");
+    if(!mesai) mesai = "/";
+  }else{
+    mesai = m>0 ? String(m).replace(".", ",")+"s" : "0";
+  }
   return {yev, arti, mesai};
 }
 
@@ -6031,9 +6099,9 @@ function hesaplaAralik(gBas, gSon){
     const g = Number(id.slice(8,10));
     if(g<gBas || g>gSon) return;
     gunSayisi += girdiGun(v);
-    mesaiToplam += Number(v.mesai)||0;
+    mesaiToplam += mesaiSaatMik(v);
     if(v.durum==="saatlik") saatToplam += Number(v.saat)||0;
-    artiToplam += Number(v.arti)||0;
+    artiToplam += (Number(v.arti)||0) + mesaiYevMik(v);
     hakedis += girdiKazanc(v);
   });
   const bId = aktifYil+"-"+pad(aktifAy+1)+"-"+pad(gBas);
@@ -6264,6 +6332,53 @@ function pdfYazdir(gBas, gSon){
    (aynı oturumda ikinci PDF anında üretilir). Yükleme başarısız olursa kod zaten
    var olan "helvetica" yedeğine düşüyor — PDF yine üretilir, sadece Türkçe karakter
    desteği jsPDF'in gömülü fontuna kalır. */
+/* ⚡ TALEP ÜZERİNE KÜTÜPHANE YÜKLEME (0.0.9.2)
+   ─────────────────────────────────────────────────────────────────
+   SheetJS, jsPDF, autotable, html2canvas ve Tesseract eskiden
+   index.html'de açılışta yükleniyordu — sıkıştırılmış ~350 KB. Hiçbiri
+   uygulama açılırken gerekmiyor; yalnızca Excel/PDF/görsel/fiş okuma
+   işlemlerinde lazım oluyorlar.
+   Artık ilk ihtiyaç anında yükleniyorlar. Service worker bunları
+   önbelleğe aldığı için (0.0.7.0) ikinci kullanımda anında geliyor.
+
+   Aynı anda iki çağrı gelirse tek indirme yapılır (söz saklanıyor).
+   Yükleme başarısız olursa söz sıfırlanır ki tekrar denenebilsin. */
+const KUTUPHANE_ADRES = {
+  xlsx:        ["https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js"],
+  jspdf:       ["https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js",
+                "https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"],
+  html2canvas: ["https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"],
+  tesseract:   ["https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"]
+};
+const KUTUPHANE_HAZIR = {
+  xlsx:        ()=> typeof XLSX !== "undefined",
+  jspdf:       ()=> !!(window.jspdf && window.jspdf.jsPDF),
+  html2canvas: ()=> typeof html2canvas !== "undefined",
+  tesseract:   ()=> typeof Tesseract !== "undefined"
+};
+const kutuphaneSozleri = {};
+function kutuphaneYukle(ad){
+  if(KUTUPHANE_HAZIR[ad] && KUTUPHANE_HAZIR[ad]()) return Promise.resolve(true);
+  if(kutuphaneSozleri[ad]) return kutuphaneSozleri[ad];
+  const adresler = KUTUPHANE_ADRES[ad] || [];
+  /* Sırayla yükle: autotable jsPDF'e bağımlı, paralel yüklenirse bozulur. */
+  const sirayla = adresler.reduce((zincir, src)=>
+    zincir.then(()=> new Promise(tamam=>{
+      const sc = document.createElement("script");
+      sc.src = src;
+      sc.onload  = ()=> tamam(true);
+      sc.onerror = ()=> tamam(false);
+      document.head.appendChild(sc);
+    })), Promise.resolve());
+
+  kutuphaneSozleri[ad] = sirayla.then(()=>{
+    const oldu = KUTUPHANE_HAZIR[ad] ? KUTUPHANE_HAZIR[ad]() : true;
+    if(!oldu) kutuphaneSozleri[ad] = null;   /* tekrar denenebilsin */
+    return oldu;
+  });
+  return kutuphaneSozleri[ad];
+}
+
 let pdfFontSozu = null;
 function pdfFontlariYukle(){
   if(window.PDF_FONT_REGULAR_B64 && window.PDF_FONT_BOLD_B64) return Promise.resolve();
@@ -6476,6 +6591,7 @@ function pdfBlobOlustur(gBas, gSon){
    için Türkçe karakterler (İ, ı, ş, ğ, ₺ dahil) HER ZAMAN doğru ve net çıkıyor —
    yazdırıp kaydettiğin PDF'le birebir aynı görünür. */
 async function pdfResimBlobOlustur(gBas, gSon){
+  await Promise.all([kutuphaneYukle("html2canvas"), kutuphaneYukle("jspdf")]);
   if(!window.html2canvas || !window.jspdf || !window.jspdf.jsPDF) return null;
   const { jsPDF } = window.jspdf;
   const {css, govde} = raporIcerikUret(gBas, gSon);
@@ -6504,7 +6620,7 @@ async function pdfResimBlobOlustur(gBas, gSon){
 }
 
 async function pdfPaylas(gBas, gSon){
-  await pdfFontlariYukle();   /* ⚡ fontlar artık talep üzerine yükleniyor */
+  await Promise.all([kutuphaneYukle("jspdf"), pdfFontlariYukle()]);
   /* Kullanıcı isteği: "resim değil, gerçek PDF" — artık gerçek (metin tabanlı,
      seçilebilir/aranabilir yazılı) PDF önceliği. Gömülü Türkçe font sayesinde
      artık bozuk karakter riski yok. html2canvas'lı "resim" yöntemi sadece
@@ -6921,7 +7037,7 @@ function isPdfBlobOlustur(is, aySecim){
 }
 
 async function isPdfPaylas(is, aySecim){
-  await pdfFontlariYukle();           /* ⚡ fontlar artık talep üzerine yükleniyor */
+  await Promise.all([kutuphaneYukle("jspdf"), pdfFontlariYukle()]);
   await tumOdemeOnbellegiHazirla();   /* rapor ödemesiz çıkmasın */
   const blob = isPdfBlobOlustur(is, aySecim);
   if(!blob){ toast("PDF motoru yüklenemedi, internetini kontrol et"); return; }
@@ -7064,7 +7180,7 @@ function yilPdfBlobOlustur(){
 }
 
 async function yilPdfPaylas(){
-  await pdfFontlariYukle();           /* ⚡ fontlar artık talep üzerine yükleniyor */
+  await Promise.all([kutuphaneYukle("jspdf"), pdfFontlariYukle()]);
   await tumOdemeOnbellegiHazirla();   /* rapor ödemesiz çıkmasın */
   const blob = yilPdfBlobOlustur();
   if(!blob){ toast("Önce yıl verisi yüklensin"); return; }
@@ -7092,9 +7208,13 @@ function modalAc(id){
   if(saatlikMod){
     $("#gun-saat").value = girdiler[id] ? (Number(v.saat)||0) : (ayarlar.gunlukSaat||8);
   }
-  $("#mesai-saat").value = v.mesai || 0;
+  /* Yeni kayıtlarda `mesaiYev`, eski kayıtlarda `mesai` (saat) var.
+     Eski bir kayıt açıldığında saat değeri gösteriliyor; kullanıcı
+     kaydederse yevmiye katına dönüşür (bilinçli — düzenlenen kayıt
+     yeni sisteme geçer, dokunulmayan eski kayıt olduğu gibi kalır). */
+  $("#mesai-saat").value = (v.mesaiYev != null ? v.mesaiYev : (v.mesai || 0));
   $("#gun-arti").value = Number(v.arti)||0;
-  $("#gun-gece-mesai").value = Number(v.geceMesai)||0;
+  $("#gun-gece-mesai").value = (v.geceYev != null ? v.geceYev : (Number(v.geceMesai)||0));
   const parcaAcik = (ayarlar.parcaFiyat||0) > 0;
   $("#alan-parca").classList.toggle("gizli", !parcaAcik);
   if(parcaAcik){
@@ -7699,7 +7819,17 @@ document.addEventListener("DOMContentLoaded", ()=>{
       if(g!=="arac" && sesAkis) sesDurdur();
       if(g!=="arac" && oyun){ oyun.bitti = true; oyun = null; const oa=$("#oyun-alan"); if(oa) oa.classList.add("gizli"); }
       if(g!=="arac" && teraziAcik){ teraziAcik = false; window.removeEventListener("deviceorientation", teraziDinle); const ta=$("#terazi-alan"); if(ta) ta.classList.add("gizli"); }
-      if(g==="arama"){ setTimeout(()=>{ const k=$("#arama-kutu"); if(k) k.focus(); }, 150); }
+      if(g==="arama"){
+        /* ARAMA ÖNBELLEĞİ (0.0.9.4)
+           Arama, `tumGirdilerQS` ve `tumOdemelerQS` önbelleklerinden okuyor
+           ancak bu ekran onları HAZIRLAMIYORDU. Önbellek yalnızca ana ekran,
+           zam analizi ve hesap özeti açılınca doluyor.
+           Sonuç: uygulamayı açıp doğrudan aramaya giden kullanıcı boş sonuç
+           alıyor ve "kaydım yok" sanıyordu — sessiz bir hata.
+           Artık ekran açılırken dinleyici tetikleniyor. */
+        try{ tumVeriDinle(); }catch(e){}
+        setTimeout(()=>{ const k=$("#arama-kutu"); if(k) k.focus(); }, 150);
+      }
       if(g==="ayarlar"){
         const cs = $("#cihaz-sayi");
         if(cs && kullanici){
@@ -8048,7 +8178,7 @@ document.addEventListener("DOMContentLoaded", ()=>{
     b.addEventListener("click", ()=>{ modalDurum=b.dataset.durum; durumButonYenile(); });
   });
   $("#mesai-arti").addEventListener("click", ()=>{
-    $("#mesai-saat").value = Math.min(16, (sayi($("#mesai-saat").value, true)||0) + 0.5);
+    $("#mesai-saat").value = Math.min(SINIR.artiGun, (sayi($("#mesai-saat").value, true)||0) + 0.5);
   });
   $("#mesai-eksi").addEventListener("click", ()=>{
     $("#mesai-saat").value = Math.max(0, (sayi($("#mesai-saat").value, true)||0) - 0.5);
@@ -8066,7 +8196,7 @@ document.addEventListener("DOMContentLoaded", ()=>{
     $("#gun-arti").value = Math.max(0, (sayi($("#gun-arti").value, true)||0) - 0.5);
   });
   $("#gece-arti").addEventListener("click", ()=>{
-    $("#gun-gece-mesai").value = Math.min(16, (sayi($("#gun-gece-mesai").value, true)||0) + 0.5);
+    $("#gun-gece-mesai").value = Math.min(SINIR.artiGun, (sayi($("#gun-gece-mesai").value, true)||0) + 0.5);
   });
   $("#gece-eksi").addEventListener("click", ()=>{
     $("#gun-gece-mesai").value = Math.max(0, (sayi($("#gun-gece-mesai").value, true)||0) - 0.5);
@@ -8139,14 +8269,18 @@ document.addEventListener("DOMContentLoaded", ()=>{
        HİÇ mesai girmemiş, çünkü girmenin bir karşılığı yok.
        Artık mesai/gece mesaisi yazılıp ücret tanımsızsa, kaydetmeden önce
        uyarılıyor ve doğrudan ayarlara gidebiliyor. */
+    /* Mesai artık SAAT ÜCRETİNE değil YEVMİYEYE bağlı (0.0.9.5).
+       Eski uyarı "mesai saat ücretin girili değil" diyordu; artık yanlış
+       yönlendirme olurdu çünkü mesai yevmiyeden hesaplanıyor.
+       Yeni kontrol: yevmiye girili mi? */
     const yazilanMesai = (sayi($("#mesai-saat").value, true)||0) + (sayi($("#gun-gece-mesai").value, true)||0);
-    if(yazilanMesai > 0 && !(Number(ayarlar.mesaiUcret) > 0)){
+    if(yazilanMesai > 0 && !(Number(ayarlar.yevmiye) > 0)){
       const git = confirm(
-        yazilanMesai + " saat mesai yazdın ama MESAİ SAAT ÜCRETİN girili değil.\n\n" +
-        "Bu hâliyle kaydedersen mesain 0 ₺ sayılır — yani boşa yazmış olursun.\n\n" +
-        "Ayarlara gidip mesai ücretini şimdi girmek ister misin?\n" +
+        "Mesai yazdın ama GÜNLÜK YEVMİYEN girili değil.\n\n" +
+        "Mesai, yevmiye üzerinden hesaplanıyor — bu hâliyle kaydedersen 0 ₺ sayılır.\n\n" +
+        "Ayarlara gidip yevmiyeni şimdi girmek ister misin?\n" +
         "(İptal dersen mesai 0 ₺ olarak kaydedilir)");
-      if(git){ modalKapat(); gorunumSec("ayarlar"); toast("Ücret ayarlarından mesai saat ücretini gir 👇"); return; }
+      if(git){ modalKapat(); gorunumSec("ayarlar"); toast("Ücret ayarlarından günlük yevmiyeni gir 👇"); return; }
     }
     const onceki = girdiler[modalTarih] ? {...girdiler[modalTarih]} : null;
     const secId = $("#gun-santiye-sec").value || "";
@@ -8157,7 +8291,12 @@ document.addEventListener("DOMContentLoaded", ()=>{
       /* Sınırlama (0.0.6.9): eskiden buraya ne yazılsa o kaydediliyordu.
          "999" yazılırsa 999 saat mesai kaydolup hakediş milyonlara çıkıyordu;
          eksi değer de kabul edilip kazancı düşürüyordu. */
-      mesai: sinirla(sayi($("#mesai-saat").value, true), SINIR.mesaiSaat, "Mesai", "saat"),
+      /* Mesai artık yevmiye katı olarak kaydediliyor (0.0.9.5).
+         `mesai` (saat) alanı YAZILMIYOR — eski kayıtlarda kalmaya devam
+         ediyor ve onların hesabı bozulmuyor, ama yeni kayıtlar
+         `mesaiYev` kullanıyor. Sınır: gün içi artı ile aynı (5 yevmiye). */
+      mesaiYev: Math.round(sinirla(sayi($("#mesai-saat").value, true), SINIR.artiGun, "Mesai", "yevmiye")*2)/2,
+      mesai: 0,
       arti: Math.round(sinirla(sayi($("#gun-arti").value, true), SINIR.artiGun, "Gün içi artı", "yevmiye")*2)/2,
       santiyeId: secId,
       santiye: $("#gun-santiye").value.trim() || (s ? s.ad : (ayarlar.santiye||"")),
@@ -8167,7 +8306,8 @@ document.addEventListener("DOMContentLoaded", ()=>{
     };
     if(saatlikMod) veri.saat = sinirla(sayi($("#gun-saat").value, true), SINIR.calismaSaat, "Çalışma", "saat");
     if((ayarlar.parcaFiyat||0) > 0) veri.parcaMiktar = Math.max(0, sayi($("#gun-parca-miktar").value, true)||0);
-    veri.geceMesai = Math.round(sinirla(sayi($("#gun-gece-mesai").value, true), SINIR.mesaiSaat, "Gece mesaisi", "saat")*2)/2;
+    veri.geceYev = Math.round(sinirla(sayi($("#gun-gece-mesai").value, true), SINIR.artiGun, "Gece mesaisi", "yevmiye")*2)/2;
+    veri.geceMesai = 0;
     if(gunKonum) veri.konum = gunKonum;
     const bs = $("#gun-bas-saat").value, bts = $("#gun-bit-saat").value;
     if(bs) veri.basSaat = bs;
@@ -8564,7 +8704,7 @@ document.addEventListener("DOMContentLoaded", ()=>{
   });
 
   /* Neler yeni kartı */
-  const YENILIK_SURUM = "0.0.9.1";
+  const YENILIK_SURUM = "0.0.9.5";
   window.__SURUM = YENILIK_SURUM;   /* tanı raporu bunu okur */
   try{ $("#cekmece-surum").textContent = "Puantaj Defterim " + YENILIK_SURUM; }catch(e){}
   /* Sürümü çekmece başlığında da göster. Sebep: "değişiklik gelmedi" durumunda
@@ -9061,7 +9201,12 @@ document.addEventListener("DOMContentLoaded", ()=>{
       im.src = masrafFoto; im.classList.remove("gizli");
       toast("Fiş hazır, Kaydet'e bas 🧾");
       $("#masraf-ocr-oneriler").innerHTML = ""; $("#masraf-ocr-durum").textContent = "";
-      if(window.Tesseract) $("#btn-masraf-ocr").classList.remove("gizli");
+      /* Fiş okuma düğmesi artık HER ZAMAN gösteriliyor.
+         Eskiden `window.Tesseract` varsa gösteriliyordu; kütüphane açılışta
+         yükleniyordu ve hep hazırdı. Artık talep üzerine yüklendiği için
+         (0.0.9.2) bu kontrol düğmeyi kalıcı olarak gizlerdi.
+         Kütüphane, düğmeye basıldığında yükleniyor. */
+      $("#btn-masraf-ocr").classList.remove("gizli");
     }catch(err){ toast("Fotoğraf eklenemedi, başka dene"); }
   });
 
@@ -9070,6 +9215,14 @@ document.addEventListener("DOMContentLoaded", ()=>{
      dokunursa tutar alanına yazılır, yanlış okursa hiçbir şeye dokunmadan
      elle yazmaya devam edebilir. */
   $("#btn-masraf-ocr").addEventListener("click", async ()=>{
+    /* Fiş okuma kütüphanesi ilk kullanımda yükleniyor (~250 KB) */
+    if(typeof Tesseract === "undefined"){
+      toast("Fiş okuyucu hazırlanıyor... 📄");
+      await kutuphaneYukle("tesseract");
+      if(typeof Tesseract === "undefined"){
+        toast("Fiş okuyucu yüklenemedi — internetini kontrol et 📡"); return;
+      }
+    }
     if(!window.Tesseract || !masrafFoto) return;
     const durum = $("#masraf-ocr-durum"), oneriler = $("#masraf-ocr-oneriler");
     oneriler.innerHTML = "";
@@ -9649,7 +9802,7 @@ document.addEventListener("DOMContentLoaded", ()=>{
     const dun = girdiler[tarihId(d)];
     if(!dun){ toast("Dünün kaydı yok ki kopyalayayım 🤷"); return; }
     if(dun.durum!=="saatlik"){ modalDurum = dun.durum; durumButonYenile(); }
-    $("#mesai-saat").value = dun.mesai||0;
+    $("#mesai-saat").value = (dun.mesaiYev != null ? dun.mesaiYev : (dun.mesai||0));
     $("#gun-arti").value = Number(dun.arti)||0;
     $("#gun-saat").value = Number(dun.saat)||ayarlar.gunlukSaat||8;
     $("#gun-santiye").value = dun.santiye||"";
@@ -10712,11 +10865,53 @@ async function taniCalistir(){
     const bildirimVar = "Notification" in window;
     taniYaz(bildirimVar ? "ok" : "uyari", "Bildirim desteği",
       bildirimVar ? "izin durumu: "+Notification.permission : "bu tarayıcıda yok");
+    /* BİLDİRİM ZİNCİRİ — her halkayı ayrı test et.
+       Bildirimler hiç test edilmemişti. "İzin verildi" demek yetmiyor;
+       zincirde beş halka var ve herhangi biri koparsa bildirim gelmiyor
+       ama kullanıcı sebebini göremiyor. */
     try{
       const kayit = await navigator.serviceWorker.ready;
+
+      /* 1. Service worker kayıtlı mı */
+      taniYaz(kayit ? "ok" : "hata", "Service worker",
+        kayit ? "kayıtlı — " + (kayit.active ? "etkin" : "beklemede") : "kayıtlı değil");
+
+      /* 2. Push aboneliği gerçekten var mı (izin verilmiş olsa bile olmayabilir) */
+      try{
+        const abone = await kayit.pushManager.getSubscription();
+        taniYaz(abone ? "ok" : (Notification.permission==="granted" ? "hata" : "bilgi"),
+          "Push aboneliği",
+          abone ? "aktif — sunucu bu cihaza bildirim gönderebilir"
+                : Notification.permission==="granted"
+                  ? "İZİN VAR AMA ABONELİK YOK — bildirim gelmez. Ayarlar'dan bildirimleri kapatıp tekrar aç"
+                  : "yok (bildirimler kapalı)");
+      }catch(e){ taniYaz("uyari","Push aboneliği", e.message); }
+
+      /* 3. Jeton Firestore'a kaydedilmiş mi */
+      try{
+        if(kullanici){
+          const cs = await kokRef().collection("cihazlar").limit(5).get();
+          taniYaz(cs.size>0 ? "ok" : (Notification.permission==="granted" ? "uyari" : "bilgi"),
+            "Kayıtlı cihaz",
+            cs.size>0 ? cs.size+" cihaz kayıtlı" : "hiç cihaz kaydı yok — duyuru ulaşmaz");
+        }
+      }catch(e){ taniYaz("uyari","Kayıtlı cihaz", e.message); }
+
+      /* 4. Uygulama kapalıyken hatırlatma */
       taniYaz(kayit.periodicSync ? "ok" : "bilgi", "Kapalıyken hatırlatma",
         kayit.periodicSync ? "destekleniyor" : "desteklenmiyor (iOS'ta yok) — hatırlatma yalnızca uygulama açılınca");
-    }catch(e){}
+
+      /* 5. Periyodik iş gerçekten kayıtlı mı */
+      try{
+        if(kayit.periodicSync){
+          const etiketler = await kayit.periodicSync.getTags();
+          const var_ = etiketler.includes("aksam-hatirlatma");
+          taniYaz(var_ ? "ok" : "uyari", "Akşam hatırlatması",
+            var_ ? "kayıtlı — tarayıcı uygun gördüğünde tetikler"
+                 : "kayıtlı değil. Bildirimleri açıp uygulamayı birkaç kez kullanınca kaydolur");
+        }
+      }catch(e){}
+    }catch(e){ taniYaz("hata","Bildirim zinciri", e.message); }
 
     /* Çevrimdışı yazma */
     taniYaz("bilgi","Çevrimdışı kayıt","Firestore yerel önbelleği aktif — internet yokken de gün işlenebiliyor");

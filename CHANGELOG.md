@@ -5,6 +5,52 @@ kullanır: `0.0.0.X` — X, her güncellemede 1 artar. Uygulama içindeki sürü
 (alt bilgi + "Neler yeni" kartı) ve dağıtılan zip dosyasının adı her zaman
 birebir aynıdır.
 
+## 0.0.9.5 — ⏱ Mesai saat hesabından X/slash düzenine geçti
+- Kullanıcı kararı (üç soruyla netleştirildi): mesai artık saat değil, **yevmiye katı**. `X` = bir tam yevmiye, `/` = yarım. Gün içi artı ile aynı dil, ancak **ayrı sütun** olarak kalıyor
+- **Eski kayıtlara dokunulmadı** (kullanıcı tercihi). Dönüştürme senaryosu hesaplandı ve gösterildi: en yakına yuvarlama 1-2 saatlik mesaileri sıfırlıyor, işçi para kaybediyordu. Bu nedenle geçmiş kayıtlar olduğu gibi bırakıldı
+- **Veri modeli**: yeni `mesaiYev` ve `geceYev` alanları eklendi; eski `mesai` / `geceMesai` (saat) alanları korunuyor. `girdiKazanc()` önce yevmiye katına bakıyor, yoksa saat hesabına düşüyor — bir kayıtta ikisi birden olmuyor
+- **Gösterim**: `gunIsaret()` yeni kayıtları `X` / `/` / `XX` / `4X` biçiminde, eskileri `3s` biçiminde döndürüyor
+- **Toplamlar ayrıştırıldı**: iki farklı birim (saat ve yevmiye katı) aynı toplamda birleştirilemez. `mesaiSaatMik()` ve `mesaiYevMik()` yardımcıları eklendi; yevmiye katları artı toplamına, saatler mesai toplamına gidiyor
+- Güncellenen noktalar: kaydetme, modal açılışı, "dünü kopyala", kazanç önizlemesi, +/− sayaç sınırları (16 saat → 5 yevmiye), ana ekran/rapor/özet toplamları, HTML etiketleri ve `aria-label`'lar
+- 🐞 **Yakalanan hata**: `gunIsaret()` içindeki "çalışılmadı" dalı yalnızca eski `mesai` alanını okuyordu; gelinmeyen bir güne yeni sistemle mesai girilirse gösterimde **boş** görünüyordu. Düzeltildi
+- **Uyarı metni düzeltildi**: mesai artık saat ücretine bağlı olmadığı için "mesai saat ücretini gir" uyarısı yanlış yönlendirme olurdu; "günlük yevmiyeni gir" olarak değiştirildi
+- **Test**: 9 senaryo (sade tam gün, yarım/tam/iki mesai, artı+mesai, sadece akşam gelme, yarım gün + yarım mesai, gece mesaisi, eski saat kaydı) — hepsi doğru
+- Üç yerde sürüm güncellendi: `app.js`, `sw.js`, zip adı — hepsi `0.0.9.5`
+
+## 0.0.9.4 — 🐞 Kayıt arama sessizce boş sonuç veriyordu
+- 0.0.9.1'de arama ekranının görseli düzenlenmişti; bu turda **işlevi** incelendi
+- 🐞 **BULUNAN HATA**: `aramaCalistir()` `tumGirdilerQS` ve `tumOdemelerQS` önbelleklerinden okuyor, ancak arama ekranı bu önbellekleri **hazırlamıyordu**. `tumVeriDinle()` yalnızca `anaYukle()`, `zamAnalizYap()` ve `ozetDetayYukle()` içinden çağrılıyor
+  - Sonuç: uygulama açılıp doğrudan aramaya gidilirse (menü → Kayıt ara) hiçbir sonuç dönmüyor, kullanıcı "kaydım yok" sanıyordu. `if(tumGirdilerQS)` deseni hatayı sessiz kılıyordu
+  - Düzeltme: `gorunumSec("arama")` içinde `tumVeriDinle()` tetikleniyor
+- ⏳ **"Bulunamadı" / "henüz yüklenmedi" ayrımı**: önbellek hazır değilken de "kayıt bulunamadı" gösteriliyordu. Artık önbellek durumu kontrol ediliyor; hazır değilse "Kayıtların yükleniyor…" mesajı çıkıyor ve arama 1,2 sn sonra kendiliğinden tazeleniyor (kutudaki metin değişmediyse)
+- **Kendi eklenen kodda risk kapatıldı**: otomatik tazeleme, önbellek hiç gelmezse (internet yok) sonsuz döngüye girecekti. `aramaTazeSayac` ile en fazla 5 deneme (~6 sn); önbellek geldiğinde sayaç sıfırlanıyor
+- Üç yerde sürüm güncellendi: `app.js`, `sw.js`, zip adı — hepsi `0.0.9.4`
+
+## 0.0.9.3 — 🔔 Bildirim zinciri tanıya bağlandı (5 halka ayrı ayrı test ediliyor)
+- Bildirimler bugüne kadar hiç test edilmemişti. **Altyapı denetlendi ve sağlam çıktı**: `VAPID_ANAHTAR` tanımlı, `getToken` kendi service worker'ını veriyor (`serviceWorkerRegistration: kayit` — bu yüzden ayrı bir `firebase-messaging-sw.js` gerekmiyor), `sw.js` içinde `push` ve `notificationclick` işleyicileri var, `periodicsync` akşam hatırlatması kayıtlı, `#btn-bildirim-dene` deneme düğmesi mevcut
+- **Eksik olan sistem değil, görünürlüktü**: zincirde beş halka var ve herhangi biri koparsa bildirim gelmiyor, ancak kullanıcı sebebini göremiyordu. Tanı yalnızca `Notification.permission` değerini gösteriyordu
+- 🔔 **Tanıya beş ayrı kontrol eklendi**:
+  1. Service worker kayıtlı/etkin mi
+  2. `pushManager.getSubscription()` — **izin verilmiş olsa bile abonelik olmayabilir**; bu durumda "İzin var ama abonelik yok, bildirimleri kapatıp tekrar aç" yönlendirmesi veriliyor
+  3. `cihazlar` koleksiyonunda kayıtlı cihaz var mı (yoksa duyuru ulaşmaz)
+  4. `periodicSync` desteği (iOS'ta yok)
+  5. `periodicSync.getTags()` ile `aksam-hatirlatma` gerçekten kayıtlı mı
+- Pratik faydası: "bildirim gelmiyor" diyen kullanıcıya tanı raporu istenebiliyor; rapor zincirin nerede koptuğunu ve ne yapılması gerektiğini yazıyor
+- Kontrol sayısı 138 → 147
+- Yalnızca `app.js` (tanı bölümü) değişti; `style.css` bir önceki sürümle aynı
+- Üç yerde sürüm güncellendi: `app.js`, `sw.js`, zip adı — hepsi `0.0.9.3`
+
+## 0.0.9.2 — ⚡ Ağır kütüphaneler talep üzerine yüklemeye alındı
+- İlk performans ölçümü yapıldı: gzip'li ilk yük **246,6 KB** (app.js 164 + style.css 38,8 + index.html 40,1 + sabitler 3,4). Açılışta **10 dış betik** yükleniyordu, hiçbiri `defer`/`async` değildi
+- **Tespit**: 10 betiğin 5'i açılışta gereksiz — SheetJS (Excel), jsPDF + autotable (PDF), html2canvas (görsel), Tesseract (fiş okuma). Ham ~1,2 MB / sıkıştırılmış ~350 KB. Yalnızca ilgili işlem yapılırken gerekiyorlar
+- ⚡ **Yeni `kutuphaneYukle(ad)`**: `KUTUPHANE_ADRES` ve `KUTUPHANE_HAZIR` haritalarıyla çalışıyor. Aynı anda gelen çağrılar tek indirme yapıyor (söz saklanıyor); başarısızlıkta söz sıfırlanıp tekrar denenebiliyor. jsPDF ve autotable **sırayla** yükleniyor (autotable jsPDF'e bağımlı, paralel yükleme bozardı)
+- Bağlanan noktalar: `excelIndir` (xlsx), üç PDF yolu (`jspdf` + font yüklemesiyle paralel), `pdfResimBlobOlustur` (html2canvas + jspdf), fiş okuma düğmesi (tesseract)
+- 🐞 **Yakalanan regresyon**: `btn-masraf-ocr` görünürlüğü `if(window.Tesseract)` koşuluna bağlıydı. Kütüphane artık açılışta yüklenmediği için düğme **kalıcı olarak gizli kalacaktı**. Koşul kaldırıldı; düğme her zaman görünüyor, tıklamada "Fiş okuyucu hazırlanıyor…" bildirimiyle kütüphane yükleniyor, yüklenemezse anlaşılır hata veriliyor
+- Mevcut varlık kontrolleri (`typeof XLSX === "undefined"`, `!window.jspdf`) korundu — kütüphane gelmezse uygulama çökmüyor. PDF için `pdfYazdir()` yedeği zaten mevcut
+- Service worker bu adresleri önbelleğe aldığı için (0.0.7.0) ikinci kullanımda ağ beklemesi yok
+- Açılışta kalan betik: 5 Firebase modülü (auth/firestore için şart)
+- Üç yerde sürüm güncellendi: `app.js`, `sw.js`, zip adı — hepsi `0.0.9.2`
+
 ## 0.0.9.1 — 🎨 Tasarım turunda atlanan 8 ekran tamamlandı (yalnızca CSS)
 - **Önce mevcut durum kontrol edildi**: "yeni kullanıcı karşılaması" önerilecekti ancak `#rehber-kart` zaten mevcut ve çalışıyor (3 adımlı, `rehberKapandi` ile kalıcı kapatma, yevmiye girilince 1. adım ✅ oluyor). Öneri iptal edildi — var olanı tekrar önerme hatası tekrarlanmadı
 - **Ölçüm**: tasarım turundan geçmemiş 8 ekran bulundu — Kredi kartları (23 öğe), Başarımlar (8), Gündem (8), Notlarım (7), Planlarım (7), Video (5), Kayıt arama (3), Canlı TV (2). Toplam 63 öğeden yalnızca 1'inin CSS tanımı vardı
