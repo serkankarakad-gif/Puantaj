@@ -2829,9 +2829,24 @@ async function haberYukle(zorla){
 
 /* ---------- 📊 Gelir-Gider grafiği (kütüphanesiz, tema uyumlu) ---------- */
 function paraKisa(n){
-  if(n>=1000000) return (n/1000000).toLocaleString("tr-TR",{maximumFractionDigits:1})+"M";
-  if(n>=1000) return Math.round(n/1000)+"k";
-  return String(Math.round(n));
+  /* PARA KISALTMA (0.0.9.9)
+     Eski hâli binleri TAM SAYIYA yuvarlıyordu: 2.500 ₺ → "3k", 3.750 ₺ → "4k".
+     Yani bir günlük yevmiye özet kutusunda 500 ₺ fazla görünüyordu.
+     Kullanıcı bunu yakaladı: üstte "3.750 ₺", altta "4k" yazıyordu —
+     aynı gün, iki farklı rakam. Para uygulamasında kabul edilemez.
+
+     Ayrıca takvim hücresi ayrı bir yerde "3.8K" üretiyordu; aynı tutar
+     üç farklı biçimde görünüyordu. Artık tek kaynak burası.
+
+     Yeni kural: binlerde bir ondalık basamak ve Türkçe kısaltma ("B").
+     10.000'in üstünde ondalık gereksiz — orada tam sayı yeterli. */
+  const t = Number(n)||0;
+  const isaret = t < 0 ? "-" : "";
+  const m = Math.abs(t);
+  if(m >= 1000000) return isaret + (m/1000000).toLocaleString("tr-TR",{maximumFractionDigits:1}) + "M";
+  if(m >= 10000)   return isaret + Math.round(m/1000) + "B";
+  if(m >= 1000)    return isaret + (m/1000).toLocaleString("tr-TR",{maximumFractionDigits:1}) + "B";
+  return isaret + String(Math.round(m));
 }
 function ggAylar(simdi){
   const d12 = [];
@@ -4833,7 +4848,8 @@ function takvimCiz(){
         '<div class="to-kut p"><span class="e">HAKEDİŞ</span>'+
           '<b>'+(gizliMod ? "••••" : paraKisa(t.hakedis))+'</b><small>₺</small></div>'+
         '<div class="to-kut m"><span class="e">MESAİ</span>'+
-          '<b>'+t.mesaiToplam+'</b><small>saat</small></div>';
+          '<b>'+(t.artiToplam>0 ? t.artiToplam : t.mesaiToplam)+'</b>'+
+          '<small>'+(t.artiToplam>0 ? "yevmiye" : "saat")+'</small></div>';
     }
   }catch(e){}
 
@@ -5554,7 +5570,10 @@ async function ozetDetayYukle(){
     $("#grafik").innerHTML = aylarDizi.map(x=>{
       const deger = ayHak[x.key]||0;
       const yuzde = Math.round(deger/maks*100);
-      const binler = deger>=1000 ? Math.round(deger/1000)+"K" : (deger||"0");
+      /* Grafik sütun etiketi de artık ortak `paraKisa()` kullanıyor —
+         eskiden burada ayrı bir yuvarlama vardı ve aynı tutar farklı
+         görünüyordu (özet "4k" derken grafik "3.8K" diyordu). */
+      const binler = deger>0 ? paraKisa(deger) : "0";
       return '<div class="sutun"><span class="deger-yazi">'+binler+'</span>'+
              '<div class="cubuk'+(x.buAy?' bu-ay':'')+'" style="height:'+Math.max(3,yuzde)+'%"></div>'+
              '<span class="ay-yazi">'+x.ad+'</span></div>';
@@ -5635,7 +5654,7 @@ async function excelIndir(){
       kokRef().collection("masraflar")
         .where("tarih", ">=", bas).where("tarih", "<=", son).get()
     ]);
-    const puantajSatir = [["Tarih","Gün","Durum","Mesai (saat)","Şantiye","Not","Kazanç (TL)"]];
+    const puantajSatir = [["Tarih","Gün","Durum","Mesai","Şantiye","Not","Kazanç (TL)"]];
     const gunler = [];
     gSnap.forEach(doc=> gunler.push({id:doc.id, ...doc.data()}));
     gunler.sort((a,b)=> a.id<b.id?-1:1);
@@ -7372,6 +7391,20 @@ if("serviceWorker" in navigator){
 async function guncellemeBandiGoster(){
   const ekran = $("#guncelleme-ekrani");
   if(!ekran || !ekran.classList.contains("gizli")) return;   /* zaten gösteriliyor ya da HTML yok */
+
+  /* AÇIK PENCERELERİ KAPAT (0.0.9.9)
+     Kullanıcı bildirimi: güncelleme penceresi açılırken arkada "Neler
+     değişti" listesi görünüyordu. Pencere "yenileyince neler değiştiğini
+     göreceksin" derken arkada zaten liste duruyor — çelişki.
+     Ayrıca yarı saydam zemin yüzünden arkadaki her ekran okunabiliyordu.
+     Kullanıcı nasıl olsa sayfayı yenileyecek; açık pencereleri kapatmak
+     hem mantıklı hem de dikkat dağınıklığını önlüyor. */
+  try{
+    ["#yenilik-tam","#kur-modal","#gun-modal","#modal-perde","#cekmece","#perde"].forEach(sec=>{
+      const el = document.querySelector(sec);
+      if(el){ el.classList.remove("acik"); el.classList.add("gizli"); }
+    });
+  }catch(e){}
   /* 0.0.3.8 — SADELEŞTİRİLDİ.
      Bu pencere eskiden tüm değişiklik listesini çekip burada gösteriyordu.
      Gereksizdi: kullanıcı "Şimdi Yenile"ye bastıktan sonra zaten uygulama
@@ -8718,7 +8751,7 @@ document.addEventListener("DOMContentLoaded", ()=>{
   });
 
   /* Neler yeni kartı */
-  const YENILIK_SURUM = "0.0.9.6";
+  const YENILIK_SURUM = "0.1.0.0";
   window.__SURUM = YENILIK_SURUM;   /* tanı raporu bunu okur */
   try{ $("#cekmece-surum").textContent = "Puantaj Defterim " + YENILIK_SURUM; }catch(e){}
   /* Sürümü çekmece başlığında da göster. Sebep: "değişiklik gelmedi" durumunda

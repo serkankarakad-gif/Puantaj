@@ -364,10 +364,10 @@
       <div class="kart gizli" id="yenilik-kart" style="border-color:var(--sari)">
         <h2>🎁 Neler yeni?</h2>
         <ul style="padding-left:18px;font-size:13.5px;line-height:1.9">
-          <li><b>🗑️ "Mesai saat ücreti" ayarı kaldırıldı.</b> Artık sormuyoruz. Mesaiye kaldığın gün <b>X</b> (tam yevmiye) ya da <b>/</b> (yarım yevmiye) işaretliyorsun — tutar günlük yevmiyenden hesaplanıyor. 10 dakika da dursan yarım yevmiye</li>
-          <li><b>Yerine kısa bir açıklama koydum</b> — ayarlarda "Mesai nasıl hesaplanıyor?" diye. Kullanıcı ayarı arayıp bulamayınca kafası karışmasın</li>
-          <li><b>👁️ "Saat ücreti" ve "Standart gün" alanları artık yalnızca saatlik çalışanlara görünüyor.</b> Sen yevmiyeli çalıştığın için bu alanlar sana hiç görünmeyecek. Çalışma şeklini değiştirirsen anında açılıp kapanıyor</li>
-          <li><b>🔒 Eski kayıtların güvende.</b> Daha önce saatle girilmiş mesailer kendi kayıtlı ücretlerinden hesaplanıyor — ayarı kaldırmak onları etkilemiyor. Test ettim: mesai ücreti ayarı sıfır olsa bile eski ve yeni kayıtlar doğru hesaplanıyor</li>
+          <li><b>🐞 ÖZET KUTUSU PARAYI FAZLA GÖSTERİYORDU.</b> Sen yakaladın: üstte "3.750 ₺", altta "4k". Kısaltma binleri yukarı yuvarlıyordu — <b>2.500 ₺ yevmiyen "3k" görünüyordu, 500 ₺ fazla.</b> Patronla konuşurken yanlış rakam söyleyebilirdin</li>
+          <li><b>✅ Artık doğru:</b> 2.500 → <b>2,5B</b> · 3.750 → <b>3,8B</b> · 68.750 → <b>69B</b>. Aynı rakam eskiden üç yerde farklı görünüyordu (kartta 3.750, grafikte 3.8K, özette 4k) — artık hepsi tek kaynaktan</li>
+          <li><b>🖥️ Güncelleme penceresinin arkası kapatıldı.</b> "Yeni sürüm hazır" penceresi açılırken arkada "Neler değişti" listesi görünüyordu — pencere "yenileyince göreceksin" derken liste zaten oradaydı. Saçmaydı, haklıydın. Artık arka plan tamamen kapalı ve açık pencereler kapatılıyor</li>
+          <li><b>⏱ "Mesai: 0 saat" etiketi düzeltildi</b> — mesai artık yevmiyeyle hesaplanıyor, özet de öyle diyor</li>
         </ul>
         <button class="btn btn-cizgili" id="btn-yenilik-kapat">Süper, kapat</button>
       </div>
@@ -425,7 +425,7 @@
           <span><i style="background:var(--tam)"></i> Tam yevmiye</span>
           <span><i style="background:var(--yarim)"></i> Yarım</span>
           <span><i style="background:var(--gelmedi)"></i> Gelmedim</span>
-          <span><i style="background:var(--mesai)"></i> Mesai (saat)</span>
+          <span><i style="background:var(--mesai)"></i> Mesai</span>
           <span><i style="background:transparent;border:2px solid var(--gelmedi);border-radius:50%;width:9px;height:9px"></i> Resmi tatil</span>
         </div>
       </div>
@@ -454,7 +454,7 @@
 
     <!-- ===== TAM EKRAN HAVA DURUMU ===== -->
     <!-- ===== GÜNCELLEME EKRANI (ortalanmış, animasyonlu) ===== -->
-    <div class="gizli" id="guncelleme-ekrani" style="position:fixed;inset:0;z-index:99999;background:rgba(0,0,0,.72);display:flex;align-items:center;justify-content:center;padding:20px">
+    <div class="gizli" id="guncelleme-ekrani" style="position:fixed;inset:0;z-index:99999;background:var(--beton);display:flex;align-items:center;justify-content:center;padding:20px">
       <div style="background:var(--kart);border-radius:20px;padding:28px 22px 22px;max-width:340px;width:100%;text-align:center;box-shadow:0 14px 44px rgba(0,0,0,.5)">
         <div style="font-size:46px">🔄</div>
         <h2 style="margin-top:10px;font-size:19px">Yeni sürüm hazır!</h2>

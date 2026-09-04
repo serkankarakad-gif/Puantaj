@@ -5,6 +5,25 @@ kullanır: `0.0.0.X` — X, her güncellemede 1 artar. Uygulama içindeki sürü
 (alt bilgi + "Neler yeni" kartı) ve dağıtılan zip dosyasının adı her zaman
 birebir aynıdır.
 
+## 0.1.0.0 — 🖥️ Güncelleme penceresi arkasında içerik görünüyordu
+- Kullanıcı bildirimi: "güncelleme yaşarken arkada özellikler gösteriyor, ne kadar saçma"
+- **İki ayrı sebep**:
+  1. `#guncelleme-ekrani` zemini `rgba(0,0,0,.72)` — yarı saydam, arkadaki ekran okunabiliyordu
+  2. Güncelleme bildirimi geldiğinde açık olan pencereler (özellikle tam ekran "Neler değişti") kapatılmıyordu. Pencere "yenileyince neler değiştiğini göreceksin" derken liste zaten arkada duruyordu — mantık çelişkisi
+- ✅ Zemin `var(--beton)` ile tamamen opak yapıldı; `guncellemeBandiGoster()` içinde açık pencereler (`#yenilik-tam`, `#kur-modal`, `#gun-modal`, `#modal-perde`, `#cekmece`, `#perde`) kapatılıyor. Kullanıcı zaten sayfayı yenileyeceği için açık pencereleri korumanın anlamı yok
+- Altı seçicinin de HTML'de var olduğu doğrulandı
+- Bu sürüm 0.0.9.9'daki `paraKisa()` düzeltmesini de içeriyor (kullanıcı o sürümü yüklemedi)
+- Üç yerde sürüm güncellendi: `app.js`, `sw.js`, zip adı — hepsi `0.1.0.0`
+
+## 0.0.9.9 — 🐞 `paraKisa()` tutarları yukarı yuvarlıyordu (kullanıcı yakaladı)
+- Kullanıcı bildirimi: "yukarıda kazanç 3.750 yazıyor, altta hakediş 4.000 yazıyor — 1 gün çalışmışım, ne kadar mantıksız"
+- 🐞 **Kök sebep**: `paraKisa()` binleri `Math.round(n/1000)+"k"` ile tam sayıya yuvarlıyordu. Sonuç: **2.500 ₺ → "3k" (+500 ₺), 3.750 ₺ → "4k" (+250 ₺), 7.500 ₺ → "8k" (+500 ₺)**. Bir para uygulamasında yarım yevmiyeye varan sapma
+- **İkinci sorun**: takvim grafiği ayrı bir yuvarlama kullanıyordu (`Math.round(deger/1000)+"K"`), böylece aynı tutar üç farklı biçimde görünüyordu — "3.750 ₺" / "3.8K" / "4k"
+- ✅ **Düzeltme**: `paraKisa()` yeniden yazıldı — 1.000–9.999 arası bir ondalık basamakla ve Türkçe "B" (bin) kısaltmasıyla (2.500 → `2,5B`), 10.000 üstü tam sayı (`69B`), milyon üstü `1,5M`. Negatif değerler de doğru işleniyor
+- Grafik sütun etiketi ortak `paraKisa()`'ya bağlandı; ayrı yuvarlama kaldırıldı — tek kaynak
+- ⏱ **"saat" etiketleri düzeltildi**: 0.0.9.5'te mesai yevmiye katına geçmişti ama takvim altı özeti ve CSV başlığı hâlâ "saat" diyordu. Özet artık `artiToplam > 0` ise "yevmiye", değilse (eski saat bazlı kayıtlar için) "saat" gösteriyor. Takvim lejantında "Mesai (saat)" → "Mesai"
+- Üç yerde sürüm güncellendi: `app.js`, `sw.js`, zip adı — hepsi `0.0.9.9`
+
 ## 0.0.9.6 — 🗑️ Mesai saat ücreti ayarı kaldırıldı
 - 0.0.9.5'in devamı: mesai artık yevmiye katıyla hesaplandığı için saatlik mesai ücreti sormanın anlamı kalmadı
 - 🗑️ **`ayar-mesai` (Mesai saat ücreti) alanı arayüzden kaldırıldı.** Girdi `type="hidden"` olarak bırakıldı — `app.js` iki noktada (`ayarYukle`, `ayarKaydet`) bu id'yi okuyor; tamamen silinseydi hata verirdi. Değeri 0 kalıyor
