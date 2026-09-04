@@ -2951,6 +2951,103 @@ html[data-olcek="kucuk"] .toast{ font-size:12.5px }
 }
 
 
+
+/* ═══════════════════════════════════════════════════════════════════
+   KALAN EKRANLAR — GÖRSEL TASARIM (0.0.9.1)
+   ───────────────────────────────────────────────────────────────────
+   Tasarım turunda sekiz ekran atlanmış: Kredi kartları, Başarımlar,
+   Kayıt arama, Gündem, Canlı TV, Video, Planlarım, Notlarım.
+   Ölçüm: 63 ekran öğesinden yalnızca 1'inin CSS tanımı vardı.
+   Hepsi genel `.liste` stiline düşüyordu.
+
+   Yalnızca görünüm; hiçbir veri, metin veya davranış değişmiyor.
+   ═══════════════════════════════════════════════════════════════════ */
+
+/* ── Kredi kartları: gerçek kart hissi ────────────────────────────
+   Bu ekranda asıl bilgi BORÇ ve SON ÖDEME GÜNÜ. Liste satırı yerine
+   kart benzeri bir yüzey, konuyla uyumlu ve tarama kolaylaştırıyor. */
+#liste-kartlar li{
+  background:linear-gradient(145deg, var(--kart2), var(--girdi));
+  border:1px solid var(--cizgi2);
+  border-radius:12px;
+  border-bottom:1px solid var(--cizgi2);
+  margin-bottom:8px;
+  padding:12px;
+}
+#liste-kartlar .baslik{ font-size:14px; font-weight:700; letter-spacing:.01em }
+#liste-kartlar .alt-yazi{ font-size:11.5px; margin-top:2px }
+#liste-kartlar .tutar{ font-size:17px; font-weight:800 }
+#kart-toplam{
+  font-family:'Saira Condensed';
+  font-size:15px; font-weight:800; color:var(--sari);
+}
+
+/* ── Başarımlar: rozet ızgarası ───────────────────────────────────*/
+#rozet-grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fill, minmax(84px, 1fr));
+  gap:8px;
+}
+#seviye-kart-rozet{ border-color:var(--sari) }
+#seviye-ikon{ font-size:30px; line-height:1 }
+#seviye-ad{
+  font-family:'Saira Condensed';
+  font-size:17px; font-weight:800; color:var(--sari);
+}
+#seviye-alt{ font-size:11.5px; color:var(--soluk); margin-top:2px }
+#rozet-sayac{ font-size:11.5px; color:var(--soluk) }
+
+/* ── Kayıt arama: sonuçlar okunur olsun ───────────────────────────*/
+#arama-kutu{ font-size:16px }   /* iOS yakınlaştırma koruması */
+#arama-sonuclar li{
+  background:var(--girdi);
+  border-radius:11px;
+  border-bottom:none;
+  margin-bottom:6px;
+  padding:10px 11px;
+}
+#arama-sonuclar .baslik{ font-size:13px; font-weight:600 }
+#arama-sonuclar .alt-yazi{ font-size:11px }
+#arama-sonuclar .tutar{ font-size:15px; font-weight:800 }
+/* Arama sonucu yoksa yol gösterici dursun */
+#arama-sonuclar .bos-mesaj{
+  background:var(--girdi);
+  border:1px dashed var(--cizgi2);
+  border-radius:12px;
+}
+
+/* ── Notlarım: renk etiketi görünür olsun ─────────────────────────*/
+#liste-notlar li{
+  background:var(--girdi);
+  border-radius:11px;
+  border-bottom:none;
+  margin-bottom:7px;
+  padding:11px 12px;
+  border-left:3px solid var(--cizgi);
+}
+#liste-notlar .baslik{
+  font-size:13.5px; font-weight:600;
+  white-space:normal;              /* not metni kırpılmasın */
+  line-height:1.5;
+}
+#liste-notlar .alt-yazi{ font-size:11px; margin-top:3px }
+#not-renk-secim{ display:flex; gap:7px; flex-wrap:wrap }
+#not-ara{ font-size:16px }
+
+/* ── Gündem / Video: içerik kartları ──────────────────────────────*/
+#haber-liste li, #video-sonuclar li{
+  background:var(--girdi);
+  border-radius:11px;
+  border-bottom:none;
+  margin-bottom:7px;
+  padding:11px 12px;
+}
+#haber-liste .baslik, #video-sonuclar .baslik{
+  font-size:13.5px; font-weight:600;
+  white-space:normal; line-height:1.45;
+}
+#haber-liste .alt-yazi, #video-sonuclar .alt-yazi{ font-size:10.5px; margin-top:3px }
+
 /* ── Devre dışı düğmeler ──────────────────────────────────────────
    Kod 6 yerde düğmeyi geçici olarak devre dışı bırakıyor (kaydetme,
    PDF üretimi, fiş okuma, tanı testi gibi işlemler sürerken). Ama

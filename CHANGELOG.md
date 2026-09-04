@@ -5,6 +5,19 @@ kullanır: `0.0.0.X` — X, her güncellemede 1 artar. Uygulama içindeki sürü
 (alt bilgi + "Neler yeni" kartı) ve dağıtılan zip dosyasının adı her zaman
 birebir aynıdır.
 
+## 0.0.9.1 — 🎨 Tasarım turunda atlanan 8 ekran tamamlandı (yalnızca CSS)
+- **Önce mevcut durum kontrol edildi**: "yeni kullanıcı karşılaması" önerilecekti ancak `#rehber-kart` zaten mevcut ve çalışıyor (3 adımlı, `rehberKapandi` ile kalıcı kapatma, yevmiye girilince 1. adım ✅ oluyor). Öneri iptal edildi — var olanı tekrar önerme hatası tekrarlanmadı
+- **Ölçüm**: tasarım turundan geçmemiş 8 ekran bulundu — Kredi kartları (23 öğe), Başarımlar (8), Gündem (8), Notlarım (7), Planlarım (7), Video (5), Kayıt arama (3), Canlı TV (2). Toplam 63 öğeden yalnızca 1'inin CSS tanımı vardı
+- 🎨 Yapılanlar:
+  - `#liste-kartlar`: hafif degradeli kart yüzeyi, `.tutar` 17px/800, `#kart-toplam` sarı vurgulu
+  - `#rozet-grid`: `repeat(auto-fill, minmax(84px,1fr))` ızgara; seviye kartı ve ikonu vurgulandı
+  - `#arama-sonuclar`: kart ritmi + kesik çizgili boş durum; `#arama-kutu` 16px (iOS yakınlaştırma koruması)
+  - `#liste-notlar`: sol renk şeridi, `white-space:normal` — uzun notlar artık kırpılmıyor
+  - `#haber-liste`, `#video-sonuclar`: içerik kartları, başlıklar çok satırlı
+- **Yakalanan hata**: `#video-liste` diye kural yazılmıştı ancak HTML'deki gerçek id `#video-sonuclar`. Hedef doğrulaması sırasında bulundu ve düzeltildi — hedefsiz kural bırakılmadı
+- Yalnızca `style.css`; `app.js` ve `index.html` bir önceki sürümle `diff` alınarak doğrulandı, fark yok
+- Üç yerde sürüm güncellendi: `app.js`, `sw.js`, zip adı — hepsi `0.0.9.1`
+
 ## 0.0.9.0 — 📦 Yeniden paketleme (0.0.8.8 + 0.0.8.9 içeriği)
 - Kullanıcı 0.0.8.7'de kalmıştı; aynı dosya adıyla tekrar indirme sorunu nedeniyle yeni sürüm numarasıyla paketlendi
 - İçerik değişmedi; 0.0.8.8 (X/XX gösterimine dönüş) ve 0.0.8.9 (artı kırpılması + ondalık ayracı) düzeltmelerini taşıyor
