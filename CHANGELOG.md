@@ -5,6 +5,15 @@ kullanır: `0.0.0.X` — X, her güncellemede 1 artar. Uygulama içindeki sürü
 (alt bilgi + "Neler yeni" kartı) ve dağıtılan zip dosyasının adı her zaman
 birebir aynıdır.
 
+## 0.0.9.6 — 🗑️ Mesai saat ücreti ayarı kaldırıldı
+- 0.0.9.5'in devamı: mesai artık yevmiye katıyla hesaplandığı için saatlik mesai ücreti sormanın anlamı kalmadı
+- 🗑️ **`ayar-mesai` (Mesai saat ücreti) alanı arayüzden kaldırıldı.** Girdi `type="hidden"` olarak bırakıldı — `app.js` iki noktada (`ayarYukle`, `ayarKaydet`) bu id'yi okuyor; tamamen silinseydi hata verirdi. Değeri 0 kalıyor
+- Yerine kısa bir açıklama kutusu kondu ("Mesai nasıl hesaplanıyor?"), kullanıcı kaldırılan ayarı arayıp kafası karışmasın
+- 👁️ **`ayar-saat` ve `ayar-gunsaat` yalnızca saatlik modda görünüyor.** Bu iki alan yalnızca `calismaTipi === "saatlik"` için anlamlıydı ama herkese gösteriliyordu. Mevcut `flex` sarmalayıcıya `#alan-saatlik-grup` kimliği verildi; `ayarYukle()` içinde ve `#ayar-tip` `change` olayında `.gizli` sınıfıyla açılıp kapanıyor (`.gizli` `!important` taşıdığı için satır içi `display:flex`'i eziyor)
+- **Saatlik çalışma modu korundu** — 18 kod noktasında kullanılıyor, başka kullanıcılar için geçerli bir çalışma şekli. Yalnızca görünürlüğü moda bağlandı
+- 🔒 **Eski kayıtlar etkilenmiyor**: her gün kaydında `uMesai` (o günkü mesai ücreti) mühürlü tutuluyor, hesap ayardan değil kayıttan okunuyor. Test: `mesaiUcret = 0` iken 5 senaryo doğru hesaplandı
+- Üç yerde sürüm güncellendi: `app.js`, `sw.js`, zip adı — hepsi `0.0.9.6`
+
 ## 0.0.9.5 — ⏱ Mesai saat hesabından X/slash düzenine geçti
 - Kullanıcı kararı (üç soruyla netleştirildi): mesai artık saat değil, **yevmiye katı**. `X` = bir tam yevmiye, `/` = yarım. Gün içi artı ile aynı dil, ancak **ayrı sütun** olarak kalıyor
 - **Eski kayıtlara dokunulmadı** (kullanıcı tercihi). Dönüştürme senaryosu hesaplandı ve gösterildi: en yakına yuvarlama 1-2 saatlik mesaileri sıfırlıyor, işçi para kaybediyordu. Bu nedenle geçmiş kayıtlar olduğu gibi bırakıldı

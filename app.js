@@ -415,6 +415,20 @@ function ayarlariDinle(){
     $("#ayar-saat").value    = ayarlar.saatUcret||"";
     $("#ayar-gunsaat").value = ayarlar.gunlukSaat||"";
     $("#ayar-tip").value     = ayarlar.calismaTipi;
+    /* Saat ücreti ve standart gün alanları yalnızca SAATLİK modda anlamlı.
+       Yevmiyeli çalışan (kullanıcıların çoğu) bunları görüp kafası
+       karışıyordu — özellikle mesai artık yevmiyeden hesaplandığı için.
+       Mod değiştikçe grup açılıp kapanıyor. */
+    try{
+      const saatlikGrup = document.getElementById("alan-saatlik-grup");
+      if(saatlikGrup) saatlikGrup.classList.toggle("gizli", ayarlar.calismaTipi !== "saatlik");
+    }catch(e){}
+    /* Saat ücreti ve standart gün alanları yalnızca SAATLİK modda anlamlı.
+       Yevmiyeli çalışan (kullanıcıların çoğu) bunları görüp kafası
+       karışıyordu — özellikle mesai artık yevmiyeden hesaplandığı için.
+       Mod değiştikçe grup açılıp kapanıyor. */
+    const saatlikGrup = $("#alan-saatlik-grup");
+    if(saatlikGrup) saatlikGrup.classList.toggle("gizli", ayarlar.calismaTipi !== "saatlik");
     $("#ayar-hedef").value   = ayarlar.hedef||"";
     $("#ayar-santiye").value = ayarlar.santiye;
     $("#ayar-giris").value   = ayarlar.iseGiris||"";
@@ -8704,7 +8718,7 @@ document.addEventListener("DOMContentLoaded", ()=>{
   });
 
   /* Neler yeni kartı */
-  const YENILIK_SURUM = "0.0.9.5";
+  const YENILIK_SURUM = "0.0.9.6";
   window.__SURUM = YENILIK_SURUM;   /* tanı raporu bunu okur */
   try{ $("#cekmece-surum").textContent = "Puantaj Defterim " + YENILIK_SURUM; }catch(e){}
   /* Sürümü çekmece başlığında da göster. Sebep: "değişiklik gelmedi" durumunda
@@ -10036,6 +10050,13 @@ document.addEventListener("DOMContentLoaded", ()=>{
 
 
   /* Ayarlar */
+  /* Çalışma şekli değişince saatlik alanları anında göster/gizle */
+  const tipEl = $("#ayar-tip");
+  if(tipEl) tipEl.addEventListener("change", ()=>{
+    const g = $("#alan-saatlik-grup");
+    if(g) g.classList.toggle("gizli", tipEl.value !== "saatlik");
+  });
+
   $("#btn-ayar-kaydet").addEventListener("click", async ()=>{
     try{
       await kokRef().set({

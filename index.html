@@ -364,11 +364,10 @@
       <div class="kart gizli" id="yenilik-kart" style="border-color:var(--sari)">
         <h2>🎁 Neler yeni?</h2>
         <ul style="padding-left:18px;font-size:13.5px;line-height:1.9">
-          <li><b>⏱ MESAİ ARTIK SAATLE DEĞİL, X / SLASH İLE.</b> Gün içi artı yevmiyede olduğu gibi: <b>X = bir tam yevmiye, / = yarım yevmiye.</b> Saat hesabı kalktı. Mesai kutusuna 1 yazarsan X, 0.5 yazarsan / oluyor</li>
-          <li><b>Ne kadar para:</b> X mesai = tam yevmiyen kadar (2.500 ₺). Yani tam gün + X mesai = 5.000 ₺. Yarım mesai (/) = 1.250 ₺</li>
-          <li><b>🌙 Gece mesaisi de aynı sisteme geçti</b> — o da X ve / ile. İkisi ayrı sütun olarak kalıyor, karışmıyor</li>
-          <li><b>🔒 ESKİ KAYITLARINA HİÇ DOKUNULMADI.</b> Daha önce saatle girdiğin mesailer olduğu gibi duruyor, tutarları değişmedi, raporda "3s" diye görünmeye devam ediyor. Sadece bundan sonra girecekleirn yeni sisteme göre kaydediliyor</li>
-          <li><b>Uyarı mesajı da düzeltildi:</b> Eskiden mesai yazıp saat ücreti girmemişsen "mesai saat ücretini gir" diyordu. Mesai artık yevmiyeye bağlı olduğu için bu yanlış yönlendirme olurdu — artık "günlük yevmiyeni gir" diyor</li>
+          <li><b>🗑️ "Mesai saat ücreti" ayarı kaldırıldı.</b> Artık sormuyoruz. Mesaiye kaldığın gün <b>X</b> (tam yevmiye) ya da <b>/</b> (yarım yevmiye) işaretliyorsun — tutar günlük yevmiyenden hesaplanıyor. 10 dakika da dursan yarım yevmiye</li>
+          <li><b>Yerine kısa bir açıklama koydum</b> — ayarlarda "Mesai nasıl hesaplanıyor?" diye. Kullanıcı ayarı arayıp bulamayınca kafası karışmasın</li>
+          <li><b>👁️ "Saat ücreti" ve "Standart gün" alanları artık yalnızca saatlik çalışanlara görünüyor.</b> Sen yevmiyeli çalıştığın için bu alanlar sana hiç görünmeyecek. Çalışma şeklini değiştirirsen anında açılıp kapanıyor</li>
+          <li><b>🔒 Eski kayıtların güvende.</b> Daha önce saatle girilmiş mesailer kendi kayıtlı ücretlerinden hesaplanıyor — ayarı kaldırmak onları etkilemiyor. Test ettim: mesai ücreti ayarı sıfır olsa bile eski ve yeni kayıtlar doğru hesaplanıyor</li>
         </ul>
         <button class="btn btn-cizgili" id="btn-yenilik-kapat">Süper, kapat</button>
       </div>
@@ -1376,9 +1375,12 @@
           <label for="ayar-yevmiye">Günlük yevmiye (TL)</label>
           <input type="text" id="ayar-yevmiye" inputmode="decimal" placeholder="Örn: 1500">
         </div>
-        <div style="display:flex;gap:10px">
+        <!-- Saatlik moda özel alanlar: yevmiyeli çalışanda gizleniyor (0.0.9.6).
+             Yevmiyeli çalışan bunları görüp kafası karışıyordu, özellikle
+             mesai artık yevmiyeden hesaplandığı için. -->
+        <div id="alan-saatlik-grup" style="display:flex;gap:10px">
           <div class="alan" style="flex:1">
-            <label for="ayar-saat">Saat ücreti (TL) — saatlik mod</label>
+            <label for="ayar-saat">Saat ücreti (TL)</label>
             <input type="text" id="ayar-saat" inputmode="decimal" placeholder="Örn: 200">
           </div>
           <div class="alan" style="flex:1">
@@ -1386,9 +1388,23 @@
             <input type="text" id="ayar-gunsaat" inputmode="decimal" placeholder="8">
           </div>
         </div>
-        <div class="alan">
-          <label for="ayar-mesai">Mesai saat ücreti (TL/saat)</label>
-          <input type="text" id="ayar-mesai" inputmode="decimal" placeholder="Örn: 200">
+        <!-- MESAİ SAAT ÜCRETİ KALDIRILDI (0.0.9.6)
+             Mesai artık saatle değil, yevmiye katıyla hesaplanıyor:
+             X = tam yevmiye, / = yarım yevmiye. Ayrı bir saat ücreti
+             sormaya gerek kalmadı — mesaiye çıkan işçi 10 dakika da
+             dursa yarım yevmiye alıyor.
+             Girdi gizli tutuluyor (silinmedi) çünkü kod birçok yerde
+             `#ayar-mesai` okuyor; kaldırılsaydı hata verirdi. Eski
+             kayıtlar kendi mühürlü ücretlerinden hesaplandığı için
+             onların tutarı da değişmiyor. -->
+        <input type="hidden" id="ayar-mesai" value="0">
+        <div class="alan" style="background:var(--girdi);border-radius:11px;padding:10px 12px">
+          <div style="font-size:12px;color:var(--soluk);line-height:1.55">
+            ⏱ <b style="color:var(--sari)">Mesai nasıl hesaplanıyor?</b><br>
+            Mesai saat ücreti sormuyoruz. Mesaiye kaldığın gün
+            <b>X</b> (tam yevmiye) ya da <b>/</b> (yarım yevmiye) işaretliyorsun —
+            tutar günlük yevmiyenden hesaplanıyor.
+          </div>
         </div>
         <div class="alan">
           <label for="ayar-ek">Günlük yol + yemek parası (TL, yoksa 0)</label>
