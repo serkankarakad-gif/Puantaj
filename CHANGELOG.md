@@ -5,6 +5,45 @@ kullanır: `0.0.0.X` — X, her güncellemede 1 artar. Uygulama içindeki sürü
 (alt bilgi + "Neler yeni" kartı) ve dağıtılan zip dosyasının adı her zaman
 birebir aynıdır.
 
+## 0.1.0.4 — 🐞 Başka aydaki gün boş açılıyordu (üç yerde)
+- 0.1.0.3'te Maaşlar paylaşımı eklenirken fark edilen tuzak (`ayiYukle()` dinleyici kuruyor, veri sonradan geliyor) aynı desenin başka örnekleri için tarandı — **üç yerde daha bulundu**
+- 🐞 **Sorun**: ay değiştirilip hemen `modalAc()` çağrılıyordu. `girdiler` önbelleği henüz boş olduğu için gün modalı **kayıt yokmuş gibi** açılıyordu; kullanıcı mevcut kaydını göremiyor ve üzerine yazabiliyordu
+  - `aramaCalistir()` → gün sonucuna tıklama (satır ~3606)
+  - `aramaCalistir()` → ödeme sonucuna tıklama (satır ~3622)
+  - Hafta şeridi → ay sınırını aşan güne tıklama (satır ~4615). Hafta şeridi komşu aya taşabiliyor (1 Eylül Pazartesi ise 30 Ağustos da görünür)
+- ✅ **Yeni `ayaGecVeBekle(yil, ay)`**: önce tek seferlik `get()` sorgusuyla o ayın girdilerini çekip `girdiler`e koyuyor, sonra `ayiYukle()` ile canlı dinleyiciyi kuruyor. Üç çağrı noktası `await` ile bu yardımcıyı kullanıyor
+- Sorgu başarısız olsa bile dinleyici yine kuruluyor — veri biraz gecikmeli de olsa geliyor
+- Üç yerde sürüm güncellendi: `app.js`, `sw.js`, zip adı — hepsi `0.1.0.4`
+
+## 0.1.0.3 — 📲 Maaşlar: ay detayına PDF + WhatsApp paylaşımı
+- Kullanıcı "Maaşlar kısmında PDF/WhatsApp paylaşımı kaldırmışsın" dedi. **Doğrulandı: kaldırılmamış** — kullanıcının ilk yüklediği orijinal `index.html`'de ve 0.0.6.4'te de `goruntu-maaslar` içinde paylaşım düğmesi yok. Özellik hiç var olmamış. Yine de mantıklı olduğu için eklendi
+- Kullanıcı tercihi (soruldu): PDF + WhatsApp, paylaşılan şey **bir aya dokununca o ayın detayı**
+- 📲 `#ay-detay-modal` içine iki düğme eklendi (`btn-ay-detay-wp`, `btn-ay-detay-pdf`)
+- **Mevcut üreticiler yeniden kullanıldı** (`raporPaylas`, `pdfPaylas`) — ikinci bir rapor yazılmadı. Gerekçe: bu projede daha önce aynı düzeltmenin bazı çıktılarda atlanması sorunu yaşandı; tek kaynak bunu yapısal olarak engelliyor
+- ⚠️ **Kapatılan tuzak**: her iki üretici de `aktifAy`/`aktifYil` genel değişkenlerine ve `girdiler` önbelleğine bakıyor. Başka bir ay paylaşılırken:
+  - `ayiYukle()` KULLANILMADI — o `onSnapshot` dinleyicisi kuruyor, veri sonradan geliyor; beklemeden rapor üretilse **boş çıkardı**
+  - Yerine tek seferlik `get()` sorgusu yapılıp sonuç bekleniyor
+  - `finally` bloğunda ay, yıl ve `girdiler` her durumda geri konuyor; hata olsa bile kullanıcının baktığı ekran bozulmuyor
+- Üç yerde sürüm güncellendi: `app.js`, `sw.js`, zip adı — hepsi `0.1.0.3`
+
+## 0.1.0.2 — 💰 Takvim altı HAKEDİŞ kutusunda kısaltma kaldırıldı
+- Kullanıcı bildirimi: "hakediş kısmı parayı yanlış hesaplıyor". Hesap aslında doğruydu (2.500 tam gün + 1.250 yarım mesai = 3.750) ancak kutu `paraKisa()` ile "3,8B" gösteriyordu; hemen üstündeki kazanç kartında "3.750 ₺" yazdığı için yanlış hesap izlenimi doğuyordu
+- ✅ Kutu artık tam rakam gösteriyor: `toLocaleString("tr-TR")`. Ölçüm: Saira Condensed 19px ile kutuya 7 karakter ("125.000") rahat sığıyor, milyonun altında kısaltmaya gerek yok. 1.000.000 ve üstünde `paraKisa()` devrede kalıyor
+- Diğer `paraKisa()` kullanımları korundu — grafik ekseni ve dar alanlarda kısaltma doğru davranış
+- Bu sürüm 0.1.0.1'deki mesai gösterim düzeltmelerini de içeriyor
+- Üç yerde sürüm güncellendi: `app.js`, `sw.js`, zip adı — hepsi `0.1.0.2`
+
+## 0.1.0.1 — 🐞 Mesai üç ayrı yerde çelişkili gösteriliyordu
+- Kullanıcı ekran görüntüsüyle bildirdi: aynı ekranda ay başlığı "0 saat mesai", hafta kutusu "0s", alt özet "0,5 yevmiye" diyordu
+- **Kök sebep**: 0.0.9.5'te mesai yevmiye katına geçirilirken yalnızca takvim altı özeti güncellenmişti. `ayBarCiz()` ve `haftaCiz()` hâlâ yalnızca eski `v.mesai` (saat) alanını okuyordu; yeni kayıtlarda bu alan 0 olduğu için "0" gösteriyorlardı
+- ✅ Düzeltmeler:
+  - Yeni `mesaiOzetMetni(saat, yevmiye)` yardımcısı — iki birimi tek cümlede doğru yazıyor
+  - `ayBarCiz()`: "1 gün · 0,5 yevmiye mesai"
+  - `haftaCiz()`: `mesaiSaatMik()` ve `mesaiYevMik()` ile iki birim ayrı toplanıyor; dolu olan gösteriliyor (ikisi de varsa yevmiye önde)
+  - Takvim altı özetinde ondalık ayracı Türkçe virgüle çevrildi ("0.5" → "0,5")
+- Eski saat bazlı kayıtlar "3s" biçiminde gösterilmeye devam ediyor; iki birim karışmıyor
+- Üç yerde sürüm güncellendi: `app.js`, `sw.js`, zip adı — hepsi `0.1.0.1`
+
 ## 0.1.0.0 — 🖥️ Güncelleme penceresi arkasında içerik görünüyordu
 - Kullanıcı bildirimi: "güncelleme yaşarken arkada özellikler gösteriyor, ne kadar saçma"
 - **İki ayrı sebep**:

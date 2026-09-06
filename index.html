@@ -364,10 +364,10 @@
       <div class="kart gizli" id="yenilik-kart" style="border-color:var(--sari)">
         <h2>🎁 Neler yeni?</h2>
         <ul style="padding-left:18px;font-size:13.5px;line-height:1.9">
-          <li><b>🐞 ÖZET KUTUSU PARAYI FAZLA GÖSTERİYORDU.</b> Sen yakaladın: üstte "3.750 ₺", altta "4k". Kısaltma binleri yukarı yuvarlıyordu — <b>2.500 ₺ yevmiyen "3k" görünüyordu, 500 ₺ fazla.</b> Patronla konuşurken yanlış rakam söyleyebilirdin</li>
-          <li><b>✅ Artık doğru:</b> 2.500 → <b>2,5B</b> · 3.750 → <b>3,8B</b> · 68.750 → <b>69B</b>. Aynı rakam eskiden üç yerde farklı görünüyordu (kartta 3.750, grafikte 3.8K, özette 4k) — artık hepsi tek kaynaktan</li>
-          <li><b>🖥️ Güncelleme penceresinin arkası kapatıldı.</b> "Yeni sürüm hazır" penceresi açılırken arkada "Neler değişti" listesi görünüyordu — pencere "yenileyince göreceksin" derken liste zaten oradaydı. Saçmaydı, haklıydın. Artık arka plan tamamen kapalı ve açık pencereler kapatılıyor</li>
-          <li><b>⏱ "Mesai: 0 saat" etiketi düzeltildi</b> — mesai artık yevmiyeyle hesaplanıyor, özet de öyle diyor</li>
+          <li><b>🐞 BAŞKA AYDAKİ GÜN BOŞ AÇILIYORDU.</b> Aramadan bir güne tıkladığında ya da hafta şeridinden önceki aya taşan bir güne bastığında, <b>gün penceresi boş açılıyordu</b> — kaydın olduğu hâlde. Daha kötüsü: boş sanıp üstüne yazabilirdin</li>
+          <li><b>Sebebi:</b> Ay değiştirilince veri arka planda geliyor ama pencere <b>beklemeden</b> açılıyordu. O anda kayıtlar henüz gelmemiş oluyordu</li>
+          <li><b>✅ Artık veri gelene kadar bekliyor.</b> Üç yerde düzeltildi: arama sonucundan güne gitme, arama sonucundan ödemeye gitme, hafta şeridinden başka aya tıklama</li>
+          <li><b>🔍 Bunu nasıl buldum:</b> Geçen sürümde Maaşlar paylaşımını eklerken aynı tuzağa düşmüştüm — başka bir ayın raporunu üretirken veri beklemek gerekiyordu. Aynı desen başka nerede var diye taradım, <b>üç yerde daha buldum</b></li>
         </ul>
         <button class="btn btn-cizgili" id="btn-yenilik-kapat">Süper, kapat</button>
       </div>
@@ -518,6 +518,15 @@
       </div>
 
       <button class="btn btn-sari" id="btn-ay-detay-odeme-ekle" style="margin-top:6px">➕ Bu aya ödeme ekle</button>
+
+      <!-- Ay detayı paylaşımı (0.1.0.3)
+           Maaşlar ekranında hiç paylaşım yoktu — oysa ay ay hakediş dökümü
+           tam da işverene gösterilecek şey. Puantaj ekranındaki mevcut
+           üreticiler yeniden kullanılıyor; ikinci bir rapor yazılmadı. -->
+      <div style="display:flex;gap:8px;margin-top:8px">
+        <button class="btn btn-cizgili" id="btn-ay-detay-wp" style="flex:1">📲 WhatsApp</button>
+        <button class="btn btn-cizgili" id="btn-ay-detay-pdf" style="flex:1">🖨️ PDF</button>
+      </div>
     </div>
 
     <!-- ===== GÖRÜNÜM: TANI / TEST (yalnızca yetkili hesap) ===== -->

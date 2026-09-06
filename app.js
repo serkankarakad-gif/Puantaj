@@ -3603,7 +3603,12 @@ function aramaCalistir(){
           ikon:"📅", renk:"var(--mesai)",
           b: t.getDate()+" "+AYLAR[t.getMonth()]+" "+t.getFullYear(),
           a: (v.santiye ? "📍 "+v.santiye+" · " : "") + (v.not ? String(v.not).slice(0,50) : durumEtiket(v.durum)),
-          git: ()=>{ aktifYil = t.getFullYear(); aktifAy = t.getMonth(); ayiYukle(); gorunumSec("puantaj"); modalAc(doc.id); }
+          git: async ()=>{
+            /* Önce veriyi getir, SONRA modalı aç — yoksa boş açılıyordu */
+            await ayaGecVeBekle(t.getFullYear(), t.getMonth());
+            gorunumSec("puantaj");
+            modalAc(doc.id);
+          }
         });
       }
     });
@@ -3619,7 +3624,10 @@ function aramaCalistir(){
           ikon:"💵", renk:"var(--tam)",
           b: paraFmt(o.tutar)+" — "+odemeTurEtiket(o.tur),
           a: t.getDate()+" "+AYLAR[t.getMonth()]+" "+t.getFullYear()+(o.not ? " · "+String(o.not).slice(0,40) : ""),
-          git: ()=>{ aktifYil = t.getFullYear(); aktifAy = t.getMonth(); ayiYukle(); gorunumSec("odemeler"); }
+          git: async ()=>{
+            await ayaGecVeBekle(t.getFullYear(), t.getMonth());
+            gorunumSec("odemeler");
+          }
         });
       }
     });
@@ -4214,7 +4222,7 @@ async function anaYukle(){
     /* Haftalık özet: bu haftanın Pazartesi'sinden bugüne */
     const pzt = new Date(simdi); pzt.setDate(simdi.getDate() - ((simdi.getDay()+6)%7));
     const pztId = tarihId(pzt), bugunId2 = tarihId(simdi);
-    let haftaGun = 0, haftaHak = 0, haftaMesai = 0;
+    let haftaGun = 0, haftaHak = 0, haftaMesai = 0, haftaMesaiYev = 0;
     /* Dün hatırlatıcısı için son 7 günün kimlikleri */
     const sonYediGun = [];
     for(let i2=1; i2<=7; i2++){
@@ -4236,7 +4244,11 @@ async function anaYukle(){
       if(doc.id >= pztId && doc.id <= bugunId2){
         haftaGun += girdiGun(v);
         haftaHak += k;
-        haftaMesai += Number(v.mesai)||0;
+        /* Hafta kutusu da yeni mesai alanını okumalı; eskiden yalnızca
+           saat alanına bakıyordu ve yeni kayıtlarda "0s" gösteriyordu
+           (alt özet 0,5 yevmiye derken). */
+        haftaMesai += mesaiSaatMik(v);
+        haftaMesaiYev += mesaiYevMik(v);
       }
       if(sonYediGun.indexOf(doc.id) > -1) islenenSon7.push(doc.id);
       if(doc.id === bugunId2){ bugunIsli = true; bugunVeri = v; bugunKazanc = k; }
@@ -4456,6 +4468,16 @@ function oranBul(v){
 /* Bir kaydın mesai miktarını döndürür. Yeni kayıtlar yevmiye katı
    (`mesaiYev`), eski kayıtlar saat (`mesai`) tutuyor. Toplamlarda ikisi
    AYNI birimde toplanamaz — bu yüzden ayrı ayrı döndürülüyor. */
+/* Mesai özetini metne çevirir. Yeni kayıtlar yevmiye katı, eski kayıtlar
+   saat tutuyor; ikisi aynı cümlede farklı birimle yazılmalı. Kullanıcı
+   ekranın üç ayrı yerinde çelişkili değer görüyordu (üstte "0 saat",
+   altta "0,5 yevmiye") çünkü bazı yerler yalnızca eski alanı okuyordu. */
+function mesaiOzetMetni(saatToplam, yevToplam){
+  const p = [];
+  if(yevToplam > 0)  p.push(String(yevToplam).replace(".", ",") + " yevmiye mesai");
+  if(saatToplam > 0) p.push(String(saatToplam).replace(".", ",") + " saat mesai");
+  return p.length ? p.join(" · ") : "0 mesai";
+}
 function mesaiYevMik(v){ return Number(v.mesaiYev)||0; }
 function mesaiSaatMik(v){ return (Number(v.mesaiYev)||0) > 0 ? 0 : (Number(v.mesai)||0); }
 
@@ -4588,9 +4610,12 @@ function anaHaftaCiz(){
       else if(v.durum==="gelmedi"){ el.classList.add("yok"); isaret = "✕"; }
     }
     el.innerHTML = '<span class="ga">'+GUNLER_KISA[i]+'</span><span class="gn">'+d.getDate()+'</span><span class="isaret">'+isaret+'</span>';
-    el.addEventListener("click", ()=>{
+    el.addEventListener("click", async ()=>{
+      /* Hafta şeridi ay sınırını aşabiliyor (örn. 1 Eylül Pazartesi ise
+         şeritte 30 Ağustos da görünür). Başka aya tıklanınca veri
+         gelmeden modal açılıyordu ve kayıt BOŞ görünüyordu (0.1.0.4). */
       if(d.getFullYear()!==aktifYil || d.getMonth()!==aktifAy){
-        aktifYil=d.getFullYear(); aktifAy=d.getMonth(); ayiYukle();
+        await ayaGecVeBekle(d.getFullYear(), d.getMonth());
       }
       modalAc(id);
     });
@@ -4718,19 +4743,28 @@ function haftaCiz(){
   }
   const pzt = new Date(bugun);
   pzt.setDate(bugun.getDate() - ((bugun.getDay()+6)%7));
-  let gun=0, mesai=0, kazanc=0;
+  /* Mesai iki birimde olabilir: yeni kayıtlar yevmiye katı (`mesaiYev`),
+     eski kayıtlar saat (`mesai`). Bu kutu yalnızca saat alanını okuyordu
+     ve yeni kayıtlarda "0s" gösteriyordu — alt özet "0,5 yevmiye" derken.
+     Kullanıcı bu çelişkiyi ekranda gördü (0.1.0.1). */
+  let gun=0, mesai=0, mesaiYev=0, kazanc=0;
   for(let i=0;i<7;i++){
     const d = new Date(pzt); d.setDate(pzt.getDate()+i);
     const v = girdiler[tarihId(d)];
     if(!v) continue;
     gun += girdiGun(v);
-    mesai += Number(v.mesai)||0;
+    mesai += mesaiSaatMik(v);
+    mesaiYev += mesaiYevMik(v);
     kazanc += girdiKazanc(v);
   }
+  /* Hangi birim doluysa o gösteriliyor; ikisi de varsa yevmiye önde */
+  const mesaiYazi = mesaiYev > 0 ? String(mesaiYev).replace(".", ",")
+                  : mesai > 0   ? String(mesai).replace(".", ",")+"s"
+                  : "0";
   kart.classList.remove("gizli");
   $("#hafta-icerik").innerHTML =
     '<div class="ozet-kut"><div class="et">Gün</div><div class="deger">'+gun+'</div></div>'+
-    '<div class="ozet-kut mesai-r"><div class="et">Mesai</div><div class="deger">'+mesai+'s</div></div>'+
+    '<div class="ozet-kut mesai-r"><div class="et">Mesai</div><div class="deger">'+mesaiYazi+'</div></div>'+
     '<div class="ozet-kut vurgu"><div class="et">Kazanç</div><div class="deger">'+paraFmt(kazanc)+'</div></div>';
 }
 
@@ -4738,7 +4772,10 @@ function ayBarCiz(){
   $("#ay-ad").firstChild.textContent = AYLAR[aktifAy] + " " + aktifYil;
   const t = hesapla();
   const kilit = ayarlar.kapali.includes(aktifAyAnahtar()) ? " · 🔒" : "";
-  $("#ay-alt").textContent = t.gunSayisi + " gün · " + t.mesaiToplam + " saat mesai" + kilit;
+  /* Mesai artık iki birimde olabilir; ortak metin üreticisi kullanılıyor.
+     `hesapla()` yevmiye katlarını artiToplam'a topluyor (0.0.9.5). */
+  $("#ay-alt").textContent = t.gunSayisi + " gün · " +
+    mesaiOzetMetni(t.mesaiToplam || 0, t.artiToplam || 0) + kilit;
 }
 
 function takvimCiz(){
@@ -4846,9 +4883,18 @@ function takvimCiz(){
         '<div class="to-kut g"><span class="e">ÇALIŞILAN</span>'+
           '<b>'+t.gunSayisi+'</b><small>gün</small></div>'+
         '<div class="to-kut p"><span class="e">HAKEDİŞ</span>'+
-          '<b>'+(gizliMod ? "••••" : paraKisa(t.hakedis))+'</b><small>₺</small></div>'+
+          /* TAM RAKAM (0.1.0.2) — kısaltma kaldırıldı.
+             Kutuda "3,8B" yazıyordu ama hemen üstündeki kazanç kartında
+             "3.750 ₺" görünüyordu; aynı tutarın yuvarlanmış hâli yanlış
+             hesap izlenimi veriyordu. Kutuya 7 karakter rahat sığıyor
+             ("125.000"), yani milyonun altında kısaltmaya gerek yok.
+             Milyon üstünde yer darlığı için paraKisa devrede kalıyor. */
+          '<b>'+(gizliMod ? "••••"
+                : (t.hakedis >= 1000000 ? paraKisa(t.hakedis)
+                                        : Math.round(t.hakedis).toLocaleString("tr-TR")))+'</b><small>₺</small></div>'+
         '<div class="to-kut m"><span class="e">MESAİ</span>'+
-          '<b>'+(t.artiToplam>0 ? t.artiToplam : t.mesaiToplam)+'</b>'+
+          /* Ondalık ayracı Türkçe virgül: "0.5" değil "0,5" */
+          '<b>'+String(t.artiToplam>0 ? t.artiToplam : t.mesaiToplam).replace(".", ",")+'</b>'+
           '<small>'+(t.artiToplam>0 ? "yevmiye" : "saat")+'</small></div>';
     }
   }catch(e){}
@@ -5425,6 +5471,78 @@ function ayDetayAc(ay){
   $("#modal-perde").classList.add("acik");
   $("#ay-detay-modal").classList.add("acik");
 }
+/* AY DETAYI PAYLAŞIMI (0.1.0.3)
+   Maaşlar ekranında hiç paylaşım yoktu. Puantaj ekranındaki `raporPaylas()`
+   ve `pdfPaylas()` üreticileri hazır ama ikisi de `aktifAy` / `aktifYil`
+   genel değişkenlerine bakıyor — yani "şu an görüntülenen ay"ı raporluyor.
+   Maaşlar listesinden başka bir ay paylaşılacağı için bu değerler geçici
+   olarak değiştirilip işlem bitince GERİ KONUYOR.
+
+   Neden ikinci bir rapor yazılmadı: tek kaynak kalsın. İki ayrı üretici
+   olsaydı biri güncellenip diğeri unutulabilirdi (bu projede daha önce
+   yaşandı — aynı düzeltmenin bazı çıktılarda atlanması).
+
+   `girdiler` de o aya ait olmalı; ay değişince yeniden yükleniyor. */
+/* Bir aya geç ve VERİSİ GELENE KADAR BEKLE (0.1.0.4)
+   `ayiYukle()` bir dinleyici kuruyor; veri sonradan geliyor. Ay
+   değiştirip hemen bir gün açmaya çalışan kod, henüz boş olan
+   `girdiler` önbelleğini okuyup kaydı YOK sanıyordu.
+   Somut sonuç: aramadan başka bir aydaki güne tıklayınca gün modalı
+   boş açılıyordu; kullanıcı kaydını göremiyor, üstüne yazabiliyordu.
+   Bu yardımcı önce tek seferlik sorguyla veriyi getirip önbelleğe
+   koyuyor, sonra dinleyiciyi kuruyor. */
+async function ayaGecVeBekle(yil, ay){
+  aktifYil = yil; aktifAy = ay;
+  try{
+    const bas = yil + "-" + pad(ay+1) + "-01";
+    const son = yil + "-" + pad(ay+1) + "-31";
+    const qs = await kokRef().collection("girdiler")
+      .where(firebase.firestore.FieldPath.documentId(), ">=", bas)
+      .where(firebase.firestore.FieldPath.documentId(), "<=", son)
+      .get();
+    const gecici = {};
+    qs.forEach(doc=> gecici[doc.id] = doc.data());
+    girdiler = gecici;
+  }catch(e){ /* sorgu başarısızsa dinleyici yine de kurulacak */ }
+  ayiYukle();   /* canlı dinleyiciyi de kur */
+}
+
+async function ayDetayPaylas(tur){
+  if(!aktifAyDetay){ toast("Önce bir ay seç"); return; }
+  const [yy, aa] = aktifAyDetay.split("-").map(Number);
+  const eskiYil = aktifYil, eskiAy = aktifAy, eskiGirdiler = girdiler;
+  const ayDegisti = (yy !== aktifYil || (aa-1) !== aktifAy);
+  try{
+    if(ayDegisti){
+      /* `ayiYukle()` KULLANILMIYOR: o bir dinleyici kuruyor ve veri
+         sonradan geliyor — beklemeden rapor üretilirse BOŞ çıkardı.
+         Burada tek seferlik doğrudan sorgu yapılıp sonuç bekleniyor. */
+      toast("Hazırlanıyor...");
+      const bas = yy + "-" + pad(aa) + "-01";
+      const son = yy + "-" + pad(aa) + "-31";
+      const qs = await kokRef().collection("girdiler")
+        .where(firebase.firestore.FieldPath.documentId(), ">=", bas)
+        .where(firebase.firestore.FieldPath.documentId(), "<=", son)
+        .get();
+      const gecici = {};
+      qs.forEach(doc=> gecici[doc.id] = doc.data());
+      aktifYil = yy; aktifAy = aa-1; girdiler = gecici;
+    }
+    const aySonu = new Date(aktifYil, aktifAy+1, 0).getDate();
+    if(tur === "pdf") await pdfPaylas(1, aySonu);
+    else              await raporPaylas(1, aySonu);
+  }catch(e){
+    hataGoster(e, "ayDetayPaylas");
+  }finally{
+    /* Kullanıcının baktığı ay ve verisi her durumda geri konuyor —
+       hata çıksa bile ekran bozulmasın. */
+    if(ayDegisti){
+      aktifYil = eskiYil; aktifAy = eskiAy; girdiler = eskiGirdiler;
+      try{ hepsiniCiz(); }catch(e){}
+    }
+  }
+}
+
 function ayDetayKapat(){
   $("#modal-perde").classList.remove("acik");
   $("#ay-detay-modal").classList.remove("acik");
@@ -8751,7 +8869,7 @@ document.addEventListener("DOMContentLoaded", ()=>{
   });
 
   /* Neler yeni kartı */
-  const YENILIK_SURUM = "0.1.0.0";
+  const YENILIK_SURUM = "0.1.0.4";
   window.__SURUM = YENILIK_SURUM;   /* tanı raporu bunu okur */
   try{ $("#cekmece-surum").textContent = "Puantaj Defterim " + YENILIK_SURUM; }catch(e){}
   /* Sürümü çekmece başlığında da göster. Sebep: "değişiklik gelmedi" durumunda
@@ -10297,6 +10415,12 @@ document.addEventListener("DOMContentLoaded", ()=>{
       }
     });
   }
+  /* Ay detayı paylaşım düğmeleri */
+  const btnAyWp = document.getElementById("btn-ay-detay-wp");
+  if(btnAyWp) btnAyWp.addEventListener("click", ()=> ayDetayPaylas("wp"));
+  const btnAyPdf = document.getElementById("btn-ay-detay-pdf");
+  if(btnAyPdf) btnAyPdf.addEventListener("click", ()=> ayDetayPaylas("pdf"));
+
   const btnKurTamam = document.getElementById("btn-kur-tamam");
   if(btnKurTamam){
     btnKurTamam.addEventListener("click", ()=>{
