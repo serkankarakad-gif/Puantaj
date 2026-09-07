@@ -477,7 +477,12 @@ function borclariDinle(){
     qs.forEach(doc=> kartlar.push({id:doc.id, ...doc.data()}));
     kartlar.sort((a,b)=> kartGunKalan(a.gun) - kartGunKalan(b.gun));
     kartCiz();
-  }, ()=>{});
+  }, ()=>{
+    /* Aynı kritik hata (0.1.0.6): boş hata callback'i. Bağlantı koptuğunda
+       kredi kartları ekranı sessizce donuyor, borç ve son ödeme günü
+       güncellenmiyordu — kullanıcı ödeme gününü kaçırabilirdi. */
+    dinleyiciKart = null;
+  });;
   dinleyiciBorc = kokRef().collection("borclar").onSnapshot(qs=>{
     borclar = [];
     qs.forEach(doc=> borclar.push({id:doc.id, ...doc.data()}));
@@ -500,7 +505,16 @@ function planlariDinle(){
     qs.forEach(doc=> planlar.push({id:doc.id, ...doc.data()}));
     planlar.sort((a,b)=> (b.eklenme||0) - (a.eklenme||0));
     planListCiz();
-  }, ()=>{});
+  }, ()=>{
+    /* KRİTİK: hata callback'i eskiden BOŞTU (0.1.0.6'da bulundu).
+       Firestore bir dinleyici hata alınca onu KALICI olarak koparıyor —
+       kendi kendine yeniden bağlanmıyor. Tutamaç (`dinleyiciPlan`) dolu
+       kaldığı için kod "zaten dinliyorum" sanıp yeniden kurmuyordu.
+       Sonuç: bağlantı bir kez koptuktan sonra planlar ekranı SESSİZCE
+       donuyor, yeni eklenen plan hiç görünmüyordu.
+       Tutamaç sıfırlanınca bir sonraki çağrı dinleyiciyi yeniden kuruyor. */
+    dinleyiciPlan = null;
+  });;
 }
 function planListCiz(){
   const ul = $("#liste-planlar"); if(!ul) return;
@@ -1617,7 +1631,11 @@ function beklenenDinle(){
     qs.forEach(doc=> beklenenler.push({id:doc.id, ...doc.data()}));
     beklenenler.sort((a,b)=> (a.tarih||"") < (b.tarih||"") ? -1 : 1);
     beklenenCiz();
-  }, ()=>{});
+  }, ()=>{
+    /* Aynı kritik hata: boş hata callback'i. Bağlantı koptuğunda
+       beklenen ödemeler ekranı sessizce donuyor, yeni kayıt görünmüyordu. */
+    dinleyiciBeklenen = null;
+  });;
 }
 function beklenenCiz(){
   const ul = $("#liste-beklenen");
@@ -7188,14 +7206,23 @@ function isPdfBlobOlustur(is, aySecim){
 }
 
 async function isPdfPaylas(is, aySecim){
-  await Promise.all([kutuphaneYukle("jspdf"), pdfFontlariYukle()]);
-  await tumOdemeOnbellegiHazirla();   /* rapor ödemesiz çıkmasın */
-  const blob = isPdfBlobOlustur(is, aySecim);
-  if(!blob){ toast("PDF motoru yüklenemedi, internetini kontrol et"); return; }
-  const ayEki = aySecim ? "-"+AYLAR[aySecim.ay]+"-"+aySecim.yil : "";
-  const dosyaAdi = "Is-Raporu-"+String(is.patronAdi).replace(/[^a-zA-Z0-9ğüşıöçĞÜŞİÖÇ]+/g,"-")+ayEki+".pdf";
-  await pdfDosyaPaylas(blob, dosyaAdi, "İş Raporu — "+is.patronAdi+(aySecim ? " ("+AYLAR[aySecim.ay]+" "+aySecim.yil+")" : ""));
-
+  /* Korumasızdı: kütüphane veya font yüklenemezse (internet yok) fonksiyon
+     yakalanmayan bir hatayla ölüyor, kullanıcı düğmeye basıyor ama hiçbir
+     şey olmuyor ve sebebini göremiyordu (0.1.0.5). */
+  try{
+    await Promise.all([kutuphaneYukle("jspdf"), pdfFontlariYukle()]);
+    await tumOdemeOnbellegiHazirla();   /* rapor ödemesiz çıkmasın */
+    const blob = isPdfBlobOlustur(is, aySecim);
+    if(!blob){ toast("PDF motoru yüklenemedi, internetini kontrol et"); return; }
+    const ayEki = aySecim ? "-"+AYLAR[aySecim.ay]+"-"+aySecim.yil : "";
+    const dosyaAdi = "Is-Raporu-"+String(is.patronAdi).replace(/[^a-zA-Z0-9ğüşıöçĞÜŞİÖÇ]+/g,"-")+ayEki+".pdf";
+    await pdfDosyaPaylas(blob, dosyaAdi, "İş Raporu — "+is.patronAdi+(aySecim ? " ("+AYLAR[aySecim.ay]+" "+aySecim.yil+")" : ""));
+  
+  
+  }catch(e){
+    toast("Iş raporu hazırlanamadı — internetini kontrol edip tekrar dene 📡");
+    try{ hataKaydet("isPdfPaylas", e); }catch(_){}
+  }
 }
 
 function yilPdfBlobOlustur(){
@@ -7331,15 +7358,24 @@ function yilPdfBlobOlustur(){
 }
 
 async function yilPdfPaylas(){
-  await Promise.all([kutuphaneYukle("jspdf"), pdfFontlariYukle()]);
-  await tumOdemeOnbellegiHazirla();   /* rapor ödemesiz çıkmasın */
-  const blob = yilPdfBlobOlustur();
-  if(!blob){ toast("Önce yıl verisi yüklensin"); return; }
-  const dosyaAdi = "Yil-Raporu-"+yilSon.yil+".pdf";
-  /* Diğer PDF paylaşımlarıyla aynı desen: önce kalıcı dosya olarak indir,
-     sonra paylaşım penceresini dene — WhatsApp'ta takılıp kalma sorununu önler. */
-  await pdfDosyaPaylas(blob, dosyaAdi, "Yıl Raporu — "+yilSon.yil);
-
+  /* Korumasızdı: kütüphane veya font yüklenemezse (internet yok) fonksiyon
+     yakalanmayan bir hatayla ölüyor, kullanıcı düğmeye basıyor ama hiçbir
+     şey olmuyor ve sebebini göremiyordu (0.1.0.5). */
+  try{
+    await Promise.all([kutuphaneYukle("jspdf"), pdfFontlariYukle()]);
+    await tumOdemeOnbellegiHazirla();   /* rapor ödemesiz çıkmasın */
+    const blob = yilPdfBlobOlustur();
+    if(!blob){ toast("Önce yıl verisi yüklensin"); return; }
+    const dosyaAdi = "Yil-Raporu-"+yilSon.yil+".pdf";
+    /* Diğer PDF paylaşımlarıyla aynı desen: önce kalıcı dosya olarak indir,
+       sonra paylaşım penceresini dene — WhatsApp'ta takılıp kalma sorununu önler. */
+    await pdfDosyaPaylas(blob, dosyaAdi, "Yıl Raporu — "+yilSon.yil);
+  
+  
+  }catch(e){
+    toast("Yıl raporu hazırlanamadı — internetini kontrol edip tekrar dene 📡");
+    try{ hataKaydet("yilPdfPaylas", e); }catch(_){}
+  }
 }
 
 /* ---------- Gün modalı ---------- */
@@ -8869,7 +8905,7 @@ document.addEventListener("DOMContentLoaded", ()=>{
   });
 
   /* Neler yeni kartı */
-  const YENILIK_SURUM = "0.1.0.4";
+  const YENILIK_SURUM = "0.1.0.6";
   window.__SURUM = YENILIK_SURUM;   /* tanı raporu bunu okur */
   try{ $("#cekmece-surum").textContent = "Puantaj Defterim " + YENILIK_SURUM; }catch(e){}
   /* Sürümü çekmece başlığında da göster. Sebep: "değişiklik gelmedi" durumunda

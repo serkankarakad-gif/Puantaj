@@ -364,10 +364,11 @@
       <div class="kart gizli" id="yenilik-kart" style="border-color:var(--sari)">
         <h2>🎁 Neler yeni?</h2>
         <ul style="padding-left:18px;font-size:13.5px;line-height:1.9">
-          <li><b>🐞 BAŞKA AYDAKİ GÜN BOŞ AÇILIYORDU.</b> Aramadan bir güne tıkladığında ya da hafta şeridinden önceki aya taşan bir güne bastığında, <b>gün penceresi boş açılıyordu</b> — kaydın olduğu hâlde. Daha kötüsü: boş sanıp üstüne yazabilirdin</li>
-          <li><b>Sebebi:</b> Ay değiştirilince veri arka planda geliyor ama pencere <b>beklemeden</b> açılıyordu. O anda kayıtlar henüz gelmemiş oluyordu</li>
-          <li><b>✅ Artık veri gelene kadar bekliyor.</b> Üç yerde düzeltildi: arama sonucundan güne gitme, arama sonucundan ödemeye gitme, hafta şeridinden başka aya tıklama</li>
-          <li><b>🔍 Bunu nasıl buldum:</b> Geçen sürümde Maaşlar paylaşımını eklerken aynı tuzağa düşmüştüm — başka bir ayın raporunu üretirken veri beklemek gerekiyordu. Aynı desen başka nerede var diye taradım, <b>üç yerde daha buldum</b></li>
+          <li><b>🚨 ÜÇ EKRAN SESSİZCE DONUYORDU.</b> Menüdeki 21 ekran tek tek denetlendi. Üç ekranın veri bağlantısında <b>hata koruması yoktu</b>: Kredi kartlarım, Planlarım, Beklenen ödemeler</li>
+          <li><b>Ne oluyordu:</b> İnternet bir kez koptuğunda o ekranın bağlantısı <b>kalıcı olarak ölüyordu</b>. Uygulama "zaten bağlıyım" sanıp yeniden kurmuyordu. Sonuç: yeni eklediğin kart, plan veya beklenen ödeme <b>hiç görünmüyordu</b> — hata mesajı da yoktu</li>
+          <li><b>En riskli olanı kredi kartlarıydı:</b> Son ödeme günü güncellenmediği için ödeme gününü kaçırabilirdin</li>
+          <li><b>✅ Üçü de düzeltildi.</b> Bağlantı koptuğunda artık işaret sıfırlanıyor, bir sonraki açılışta kendiliğinden yeniden bağlanıyor. Aynı hata daha önce ana veri bağlantısında bulunup düzeltilmişti; bu üçü atlanmış</li>
+          <li><b>✅ Temiz çıkanlar:</b> 21 ekranın tamamında HTML yapısı sağlam · 118 düğmenin hepsi bağlı · ölü düğme yok · boş durum mesajları var · veri çeken 34 fonksiyondan 31'i zaten korumalıydı</li>
         </ul>
         <button class="btn btn-cizgili" id="btn-yenilik-kapat">Süper, kapat</button>
       </div>
@@ -378,7 +379,7 @@
       <div style="text-align:center;padding:18px 10px 6px;color:var(--soluk);font-size:12px;line-height:1.9">
         <b style="color:var(--sari)">SERKAN KARAKAŞ</b> tarafından geliştirilmiştir 👷<br>
         Bir sorun mu var? <a href="tel:05051252339" style="color:var(--sari);font-weight:700">0505 125 23 39</a>'u ara ya da
-        <a href="https://wa.me/905051252339" target="_blank" style="color:var(--sari);font-weight:700">WhatsApp</a> yaz
+        <a href="https://wa.me/905051252339" target="_blank" rel="noopener noreferrer" style="color:var(--sari);font-weight:700">WhatsApp</a> yaz
       </div>
     </section>
 
@@ -1627,7 +1628,7 @@
       <div class="kart ayar-kart kapali">
         <h2 class="ayar-bas" role="button" tabindex="0">🐞 Sorun bildir<span class="ayar-ok">▾</span></h2>
         <p style="font-size:13px;color:var(--soluk);margin-bottom:12px">Hata mı gördün, fikrin mi var? Direkt geliştiriciye ulaş:</p>
-        <a class="btn btn-cizgili" style="display:block;text-align:center;text-decoration:none;margin-bottom:10px" href="https://wa.me/905051252339?text=Puantaj%20Defterim%20hakkında:" target="_blank">💬 WhatsApp'tan yaz</a>
+        <a class="btn btn-cizgili" style="display:block;text-align:center;text-decoration:none;margin-bottom:10px" href="https://wa.me/905051252339?text=Puantaj%20Defterim%20hakkında:" target="_blank" rel="noopener noreferrer">💬 WhatsApp'tan yaz</a>
         <a class="btn btn-cizgili" style="display:block;text-align:center;text-decoration:none" href="tel:05051252339">📞 0505 125 23 39</a>
         <p style="font-size:11px;color:var(--soluk);margin-top:12px;text-align:center">Sürüm: 0.0.1.6 · Serkan Karakaş</p>
       </div>

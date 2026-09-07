@@ -5,6 +5,35 @@ kullanır: `0.0.0.X` — X, her güncellemede 1 artar. Uygulama içindeki sürü
 (alt bilgi + "Neler yeni" kartı) ve dağıtılan zip dosyasının adı her zaman
 birebir aynıdır.
 
+## 0.1.0.6 — 🚨 Üç ekranın veri dinleyicisinde boş hata callback'i
+- Talep: hamburger menüdeki tüm ekranlarda derinlemesine kritik hata taraması
+- **Denetim kapsamı**: 21 ekran × (HTML yapısı · çizim fonksiyonu · düğme bağlantısı · ölü düğme · boş durum mesajı) + veri çeken 34 fonksiyonun hata koruması + 10 `onSnapshot` dinleyicisinin hata callback'i
+- 🚨 **BULUNAN KRİTİK HATA — 3 dinleyicide hata callback'i boştu (`}, ()=>{})`):**
+  - `kartlar` (Kredi kartlarım) — en riskli: son ödeme günü güncellenmediği için ödeme kaçırılabilir
+  - `planlar` (Planlarım)
+  - `beklenenler` (Beklenen ödemeler)
+  - **Mekanizma**: Firestore bir dinleyici hata alınca onu KALICI olarak koparıyor, kendi kendine yeniden bağlanmıyor. Tutamaç değişkeni (`dinleyiciKart` vb.) dolu kaldığı için kod "zaten dinliyorum" sanıp yeniden kurmuyordu. Bağlantı bir kez koptuktan sonra ekran sessizce donuyor, yeni kayıtlar hiç görünmüyordu — hata mesajı da yoktu
+  - **Düzeltme**: `tumVeriDinle`'de daha önce uygulanan `dusursen()` deseninin aynısı — hata callback'inde tutamaç `null`'a çekiliyor, bir sonraki çağrı dinleyiciyi yeniden kuruyor
+  - Doğrulama: `}, ()=>{});` deseni kod genelinde **0**
+- **Temiz çıkanlar**: 21 ekranın HTML bölümü mevcut ve dengeli · 118 düğmenin tamamı `app.js`'te bağlı · ölü düğme yok · boş durum mesajları mevcut · veri çeken 34 fonksiyondan 31'i zaten `try/catch` veya `hataGoster` ile korumalı
+- Üç yerde sürüm güncellendi: `app.js`, `sw.js`, zip adı — hepsi `0.1.0.6`
+
+## 0.1.0.5 — 🔍 Tam kritik hata taraması (8 başlık)
+- Talep: tüm dosyalarda kritik hata taraması
+- **Bulunan ve düzeltilen 2 hata:**
+  1. 🐞 **`isPdfPaylas()` ve `yilPdfPaylas()` korumasızdı.** `await kutuphaneYukle("jspdf")` / `pdfFontlariYukle()` / `tumOdemeOnbellegiHazirla()` çağrıları try/catch dışındaydı; internet yoksa fonksiyon yakalanmayan hatayla sonlanıyor, kullanıcı düğmeye basıyor ama hiçbir tepki almıyordu. Gövdeler try/catch'e alındı, anlaşılır uyarı ve `hataKaydet()` eklendi
+  2. 🔒 **2 `target="_blank"` bağlantısında `rel="noopener"` yoktu** (WhatsApp bağlantıları). Açılan sayfa `window.opener` üzerinden uygulamaya erişebilirdi. `rel="noopener noreferrer"` eklendi — 4/4 tamamlandı
+- **Temiz çıkan başlıklar:**
+  - Söz dizimi: 5 JS dosyası, manifest JSON, 18 HTML etiket türü dengeli, CSS parantez/yorum dengeli
+  - Para hesabı: 14 senaryo doğru (tam/yarım/gelmedi/izin/artı/yeni mesai/gece/eski saat kaydı/mühürsüz ücret/negatif değer + 3 FIFO senaryosu)
+  - Çapraz bağlantı: 597 id çakışmasız, 269 fonksiyon tekrarsız, 139 düğmenin tamamı bağlı. JS'in aradığı 3 id ve 1 düğme incelendi — ikisi yorum satırında, biri `createElement` ile üretiliyor, biri `data-goruntu` ile çalışıyor
+  - Güvenlik: sabit sır yok, `eval`/`new Function` yok, `innerHTML`'e kaçışsız kullanıcı verisi yok
+  - Silme işlemleri: 18 `delete()` çağrısının tamamı ya `confirm()` soruyor ya `toastGeriAlVeri()` ile geri alma sunuyor
+  - Ölçek kural sıralaması doğru (kucuk < buyuk < normal < girdi koruması)
+  - Yedekleme: 12 koleksiyon; dışarıdaki 4'ü bilinçli (3 fotoğraf koleksiyonu + `cihazlar`)
+- Not: 169 boş `catch` bloğu mevcut, çoğu bilinçli (localStorage, titreşim gibi kritik olmayan işlemler)
+- Üç yerde sürüm güncellendi: `app.js`, `sw.js`, zip adı — hepsi `0.1.0.5`
+
 ## 0.1.0.4 — 🐞 Başka aydaki gün boş açılıyordu (üç yerde)
 - 0.1.0.3'te Maaşlar paylaşımı eklenirken fark edilen tuzak (`ayiYukle()` dinleyici kuruyor, veri sonradan geliyor) aynı desenin başka örnekleri için tarandı — **üç yerde daha bulundu**
 - 🐞 **Sorun**: ay değiştirilip hemen `modalAc()` çağrılıyordu. `girdiler` önbelleği henüz boş olduğu için gün modalı **kayıt yokmuş gibi** açılıyordu; kullanıcı mevcut kaydını göremiyor ve üzerine yazabiliyordu
