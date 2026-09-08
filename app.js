@@ -111,6 +111,7 @@ const esc = v => String(v==null ? "" : v).replace(/&/g,"&amp;").replace(/</g,"&l
    kayıtlarda bu alan yoksa, geriye dönük uyumluluk için tarih'in ayına
    düşer (eskiden zaten öyle davranıyordu). */
 function odemeAyi(v){
+  if(!v) return "";
   return v.aitAy || String(v.tarih||"").slice(0,7);
 }
 /* Ana ekrandaki tekil uyarı satırlarını (tatil/dün/eşik/kapanış/maaş/kart/borç/belge)
@@ -2388,6 +2389,7 @@ async function kisiSec(uid, ad){
 }
 
 function kisiKazanc(v){
+  if(!v) return 0;
   const ka = kisiAyarlar||{};
   let yev = Number(ka.yevmiye)||0, mes = Number(ka.mesaiUcret)||0,
       ek = Number(ka.ekGunluk)||0, sa = Number(ka.saatUcret)||0;
@@ -5001,6 +5003,7 @@ async function anaYukle(){
    Her gün kaydına, kaydedildiği andaki ücretler işlenir (uYevmiye, uMesai, uEk).
    Böylece zam alınca eski aylar eski ücretten hesaplanmaya devam eder. */
 function oranBul(v){
+  if(!v) v = {};   /* bozuk kayıtta çökme (0.1.1.9) */
   let yev = ayarlar.yevmiye, mes = ayarlar.mesaiUcret, ek = ayarlar.ekGunluk||0, sa = ayarlar.saatUcret||0;
   if(v.santiyeId){
     const s = (ayarlar.santiyeler||[]).find(x=>x.id===v.santiyeId);
@@ -5032,6 +5035,10 @@ function mesaiYevMik(v){ return Number(v.mesaiYev)||0; }
 function mesaiSaatMik(v){ return (Number(v.mesaiYev)||0) > 0 ? 0 : (Number(v.mesai)||0); }
 
 function girdiKazanc(v){
+  /* Bozuk/eksik kayıt gelirse çökme (0.1.1.9). Bu fonksiyon her gün
+     kartında, her raporda ve her toplamda çağrılıyor — tek bir null
+     kayıt tüm ekranı durdururdu. */
+  if(!v) return 0;
   const o = oranBul(v);
   /* MESAİ HESABI (0.0.9.5)
      Yeni sistem: mesai artık SAAT değil, yevmiye katı olarak tutuluyor.
@@ -5083,6 +5090,7 @@ function guncelOranlar(santiyeId, id){
 }
 /* Bir girdinin "gün" karşılığı (saatlik günler 1 gün sayılır) */
 function girdiGun(v){
+  if(!v) return 0;
   let g = 0;
   if(v.durum==="tam") g = 1;
   else if(v.durum==="yarim") g = 0.5;
@@ -5459,6 +5467,7 @@ function durumEtiket(d){
   return d==="tam" ? "Tam yevmiye" : d==="yarim" ? "Yarım yevmiye" : d==="gelmedi" ? "Gelmedim" : d==="saatlik" ? "Saatlik çalışma" : d==="izin" ? "İzinli / Raporlu" : "";
 }
 function girisEtiket(v){
+  if(!v) return "";
   if(v.durum==="saatlik") return (Number(v.saat)||0) + " saat çalışma";
   return durumEtiket(v.durum);
 }
@@ -8748,27 +8757,39 @@ document.addEventListener("DOMContentLoaded", ()=>{
     }catch(err){ toast("Fotoğraf eklenemedi, başka dene"); }
   });
   $("#btn-kaza-kaydet").addEventListener("click", async ()=>{
-    const tarih = $("#kaza-tarih").value;
-    const aciklama = $("#kaza-aciklama").value.trim();
-    if(!tarih){ toast("Kaza tarihini seç kanka"); return; }
-    if(!aciklama){ toast("Ne olduğunu kısaca yaz — ileride en önemli satır bu"); return; }
+    /* ÇİFT TIKLAMA KORUMASI (0.1.2.0)
+       Bu düğme `.add()` ile YENİ kayıt oluşturuyor; hızlı iki dokunuşta
+       aynı kaza kaydı iki kez kaydediliyordu. Ödeme, masraf, borç ve
+       beklenen düğmelerinde bu koruma zaten vardı, bu üçü atlanmış. */
+    const _dg = document.getElementById("btn-kaza-kaydet");
+    if(_dg && _dg.disabled) return;
+    if(_dg) _dg.disabled = true;
     try{
-      const veri = {
-        tarih, aciklama,
-        tanik: $("#kaza-tanik").value.trim(),
-        rapor: $("#kaza-rapor").value.trim(),
-        sgk: $("#kaza-sgk").value,
-        kayitZamani: Date.now(),
-        olusturma: firebase.firestore.FieldValue.serverTimestamp()
-      };
-      if(kazaFoto) veri.foto = kazaFoto;
-      await kokRef().collection("kazalar").add(veri);
-      kazaFoto = null;
-      $("#kaza-foto-onizle").classList.add("gizli");
-      $("#kaza-aciklama").value=""; $("#kaza-tanik").value=""; $("#kaza-rapor").value="";
-      toast("Kayıt tutuldu 🚑 Geçmiş olsun — 📄 ile tutanak paylaşabilirsin");
-      kazaListeYukle();
-    }catch(e){ hataGoster(e); }
+      const tarih = $("#kaza-tarih").value;
+      const aciklama = $("#kaza-aciklama").value.trim();
+      if(!tarih){ toast("Kaza tarihini seç kanka"); return; }
+      if(!aciklama){ toast("Ne olduğunu kısaca yaz — ileride en önemli satır bu"); return; }
+      try{
+        const veri = {
+          tarih, aciklama,
+          tanik: $("#kaza-tanik").value.trim(),
+          rapor: $("#kaza-rapor").value.trim(),
+          sgk: $("#kaza-sgk").value,
+          kayitZamani: Date.now(),
+          olusturma: firebase.firestore.FieldValue.serverTimestamp()
+        };
+        if(kazaFoto) veri.foto = kazaFoto;
+        await kokRef().collection("kazalar").add(veri);
+        kazaFoto = null;
+        $("#kaza-foto-onizle").classList.add("gizli");
+        $("#kaza-aciklama").value=""; $("#kaza-tanik").value=""; $("#kaza-rapor").value="";
+        toast("Kayıt tutuldu 🚑 Geçmiş olsun — 📄 ile tutanak paylaşabilirsin");
+        kazaListeYukle();
+      }catch(e){ hataGoster(e); }
+    
+    }finally{
+      if(_dg) _dg.disabled = false;
+    }
   });
   $("#btn-acil-kaydet").addEventListener("click", async ()=>{
     try{
@@ -8846,27 +8867,39 @@ document.addEventListener("DOMContentLoaded", ()=>{
   $("#beklenen-uyari").addEventListener("click", ()=> gorunumSec("odemeler"));
   $("#kart-uyari").addEventListener("click", ()=> gorunumSec("kartlar"));
   $("#btn-kart-ekle").addEventListener("click", async ()=>{
-    const banka = $("#kart-banka").value.trim();
-    const ad = $("#kart-ad").value.trim();
-    const gun = Number(sayi($("#kart-gun").value));
-    const borc = sayi($("#kart-borc").value);
-    if(!ad){ toast("Kartın adını yaz kanka (Bonus, Axess...)"); return; }
-    if(!(gun >= 1 && gun <= 31)){ toast("Son ödeme günü 1-31 arası olmalı"); return; }
-    if(/\d{6,}/.test(ad)){ toast("Dur kanka! Kart NUMARASI yazma — sadece takma ad 🔒"); return; }
+    /* ÇİFT TIKLAMA KORUMASI (0.1.2.0)
+       Bu düğme `.add()` ile YENİ kayıt oluşturuyor; hızlı iki dokunuşta
+       aynı kart iki kez kaydediliyordu. Ödeme, masraf, borç ve
+       beklenen düğmelerinde bu koruma zaten vardı, bu üçü atlanmış. */
+    const _dg = document.getElementById("btn-kart-ekle");
+    if(_dg && _dg.disabled) return;
+    if(_dg) _dg.disabled = true;
     try{
-      if(duzenlenenKart){
-        await kokRef().collection("kartlar").doc(duzenlenenKart.id).update({ad, banka, gun, borc: borc||0});
-        toast("Kart güncellendi ✏️");
-      }else{
-        await kokRef().collection("kartlar").add({ad, banka, gun, borc: borc||0, odemeler: [],
-          olusturma: firebase.firestore.FieldValue.serverTimestamp()});
-        toast("Kart eklendi 💳 Son ödeme yaklaşınca haber veririm");
-      }
-      duzenlenenKart = null;
-      $("#kart-banka").value=""; $("#kart-ad").value=""; $("#kart-gun").value=""; $("#kart-borc").value="";
-      $("#btn-kart-ekle").textContent = "Kaydet";
-      $("#btn-kart-vazgec").classList.add("gizli");
-    }catch(e){ hataGoster(e); }
+      const banka = $("#kart-banka").value.trim();
+      const ad = $("#kart-ad").value.trim();
+      const gun = Number(sayi($("#kart-gun").value));
+      const borc = sayi($("#kart-borc").value);
+      if(!ad){ toast("Kartın adını yaz kanka (Bonus, Axess...)"); return; }
+      if(!(gun >= 1 && gun <= 31)){ toast("Son ödeme günü 1-31 arası olmalı"); return; }
+      if(/\d{6,}/.test(ad)){ toast("Dur kanka! Kart NUMARASI yazma — sadece takma ad 🔒"); return; }
+      try{
+        if(duzenlenenKart){
+          await kokRef().collection("kartlar").doc(duzenlenenKart.id).update({ad, banka, gun, borc: borc||0});
+          toast("Kart güncellendi ✏️");
+        }else{
+          await kokRef().collection("kartlar").add({ad, banka, gun, borc: borc||0, odemeler: [],
+            olusturma: firebase.firestore.FieldValue.serverTimestamp()});
+          toast("Kart eklendi 💳 Son ödeme yaklaşınca haber veririm");
+        }
+        duzenlenenKart = null;
+        $("#kart-banka").value=""; $("#kart-ad").value=""; $("#kart-gun").value=""; $("#kart-borc").value="";
+        $("#btn-kart-ekle").textContent = "Kaydet";
+        $("#btn-kart-vazgec").classList.add("gizli");
+      }catch(e){ hataGoster(e); }
+    
+    }finally{
+      if(_dg) _dg.disabled = false;
+    }
   });
   $("#btn-terazi-basla").addEventListener("click", teraziBaslat);
   $("#btn-oyun-basla").addEventListener("click", oyunBaslat);
@@ -9497,7 +9530,7 @@ document.addEventListener("DOMContentLoaded", ()=>{
   });
 
   /* Neler yeni kartı */
-  const YENILIK_SURUM = "0.1.1.8";
+  const YENILIK_SURUM = "0.1.2.0";
   window.__SURUM = YENILIK_SURUM;   /* tanı raporu bunu okur */
   try{ $("#cekmece-surum").textContent = "Puantaj Defterim " + YENILIK_SURUM; }catch(e){}
   /* Sürümü çekmece başlığında da göster. Sebep: "değişiklik gelmedi" durumunda
@@ -10951,18 +10984,30 @@ document.addEventListener("DOMContentLoaded", ()=>{
 
   /* Plan/proje linki ekle (WhatsApp/Drive'dan gelen PDF ve fotoğraflar) */
   $("#btn-plan-ekle").addEventListener("click", async ()=>{
-    const ad = $("#plan-ad").value.trim();
-    const link = $("#plan-link").value.trim();
-    if(!ad || !link){ toast("Plan adı ve linki gir kanka"); return; }
-    if(!linkGuvenliMi(link)){ toast("Geçerli bir http(s) linki yapıştır"); return; }
+    /* ÇİFT TIKLAMA KORUMASI (0.1.2.0)
+       Bu düğme `.add()` ile YENİ kayıt oluşturuyor; hızlı iki dokunuşta
+       aynı plan iki kez kaydediliyordu. Ödeme, masraf, borç ve
+       beklenen düğmelerinde bu koruma zaten vardı, bu üçü atlanmış. */
+    const _dg = document.getElementById("btn-plan-ekle");
+    if(_dg && _dg.disabled) return;
+    if(_dg) _dg.disabled = true;
     try{
-      const santiyeId = $("#plan-santiye-sec").value || "";
-      await kokRef().collection("planlar").add({
-        ad, link, santiyeId, eklenme: Date.now()
-      });
-      toast("Plan eklendi 📐");
-      $("#plan-ad").value=""; $("#plan-link").value="";
-    }catch(e){ hataGoster(e); }
+      const ad = $("#plan-ad").value.trim();
+      const link = $("#plan-link").value.trim();
+      if(!ad || !link){ toast("Plan adı ve linki gir kanka"); return; }
+      if(!linkGuvenliMi(link)){ toast("Geçerli bir http(s) linki yapıştır"); return; }
+      try{
+        const santiyeId = $("#plan-santiye-sec").value || "";
+        await kokRef().collection("planlar").add({
+          ad, link, santiyeId, eklenme: Date.now()
+        });
+        toast("Plan eklendi 📐");
+        $("#plan-ad").value=""; $("#plan-link").value="";
+      }catch(e){ hataGoster(e); }
+    
+    }finally{
+      if(_dg) _dg.disabled = false;
+    }
   });
 
   /* Not: Eskiden burada JS ile (#manifest-link üzerinden) ikinci, ayrı bir
@@ -11418,7 +11463,14 @@ async function taniCalistir(){
       /* DÜZELTME: "__" ile başlayan doküman kimlikleri Firestore'da REZERVE.
          Bu yüzden test, kural denemesine hiç ulaşamadan biçim hatası veriyordu. */
       await taniSureli(db.collection("kullanicilar").doc("tanitest0000000000").get(), 8);
-      taniYaz("uyari","Güvenlik kuralları","Başka kullanıcı belgesi okunabildi — kuralları gözden geçir");
+      /* Bu BEKLENEN davranış (0.1.2.0'da düzeltildi).
+         "Herkes" ekranı başkalarının adını ve ücret ayarlarını okuyabilmeli,
+         bu yüzden `kullanicilar/{id}` okuması giriş yapmış herkese açık.
+         Kritik olan YAZMA — o yalnızca belgenin sahibinde.
+         Eskiden bu satır "kuralları gözden geçir" diye uyarı veriyordu ve
+         tanı raporunu okuyan kişi olmayan bir açık sanıyordu. */
+      taniYaz("bilgi","Güvenlik kuralları",
+        "Profil okuma açık (Herkes ekranı için gerekli) · yazma yalnızca sahibinde");
     }catch(e){
       taniYaz(String(e.code||"").includes("permission")?"ok":"bilgi","Güvenlik kuralları",
         String(e.code||"").includes("permission")?"başkasının verisi korunuyor ✓":"kontrol edilemedi: "+e.message);
@@ -11755,9 +11807,15 @@ async function taniCalistir(){
 
   /* ═══════ 12. RAPORLAR VE PAYLAŞIM ═══════ */
   await bolum("12. RAPORLAR VE PAYLAŞIM", async ()=>{
+    /* Bu kütüphaneler 0.0.9.2'den beri TALEP ÜZERİNE yükleniyor —
+       açılışta yüklenmemeleri NORMAL, hatta istenen davranış (uygulama
+       daha hızlı açılıyor). Eskiden "YÜKLENMEMİŞ — internet gerekiyor"
+       diye UYARI veriyordu ve raporu okuyan kişi bozukluk sanıyordu.
+       Artık bilgi olarak gösteriliyor. */
     const k={ "PDF motoru":window.jspdf, "PDF tablo eklentisi":window.jspdf&&window.jspdf.jsPDF&&true,
               "Excel motoru":window.XLSX, "Görsel motoru":window.html2canvas, "Fiş okuma (OCR)":window.Tesseract };
-    Object.entries(k).forEach(([ad,v])=> taniYaz(v?"ok":"uyari", ad, v?"yüklü":"YÜKLENMEMİŞ — internet gerekiyor"));
+    Object.entries(k).forEach(([ad,v])=> taniYaz(v?"ok":"bilgi", ad,
+      v ? "yüklü" : "henüz yüklenmedi — ilk kullanımda iner (normal)"));
     taniYaz(window.PDF_FONT_REGULAR_B64?"ok":"bilgi","PDF Türkçe fontu", window.PDF_FONT_REGULAR_B64?"yüklü":"henüz yüklenmedi (ilk PDF'te yüklenir, normal)");
     taniYaz(navigator.share?"ok":"uyari","Paylaşım desteği", navigator.share?"cihaz paylaşımı çalışıyor":"yok — kopyalama kullanılacak");
     taniYaz(navigator.clipboard?"ok":"uyari","Panoya kopyalama", navigator.clipboard?"çalışıyor":"yok");

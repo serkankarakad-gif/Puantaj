@@ -5,6 +5,26 @@ kullanır: `0.0.0.X` — X, her güncellemede 1 artar. Uygulama içindeki sürü
 (alt bilgi + "Neler yeni" kartı) ve dağıtılan zip dosyasının adı her zaman
 birebir aynıdır.
 
+## 0.1.2.0 — 🩺 Tanı yanlış alarmları + çift tıklama koruması
+- Kullanıcının gönderdiği tanı raporu (0.1.1.8) incelendi. Üç uyarı **yanlış alarm** çıktı; rapor okuyan kişiyi olmayan sorunlara yönlendiriyorlardı
+- 🩺 **"Güvenlik kuralları — Başka kullanıcı belgesi okunabildi"**: bu bilinçli tasarım. `kullanicilar/{id}` okuması "Herkes" ekranı için giriş yapmış herkese açık, **yazma yalnızca sahibinde**. Uyarı → bilgi
+- 🩺 **"PDF/Excel/Görsel/OCR motoru YÜKLENMEMİŞ"**: 0.0.9.2'den beri bu kütüphaneler talep üzerine yükleniyor; açılışta yüklü olmamaları istenen davranış. Uyarı → bilgi ("ilk kullanımda iner")
+- 🩺 **"Mesai saat ücreti girilmemiş"**: 0.0.9.5'te mesai yevmiye katına geçti, 0.0.9.6'da ayar kaldırıldı. Kontrol `ayarlar.yevmiye` üzerinden yeniden yazıldı
+- 🛡️ **Çift tıklama koruması**: `.add()` ile yeni kayıt oluşturan üç düğme korumasızdı — `btn-kart-ekle`, `btn-kaza-kaydet`, `btn-plan-ekle`. Hızlı iki dokunuşta aynı kayıt iki kez oluşuyordu. `disabled` bayrağı + `finally` ile serbest bırakma eklendi. Ödeme, masraf, borç ve beklenen düğmelerinde koruma zaten mevcuttu
+- **Raporda doğrulanan sağlıklı sonuçlar**: para köprüsü (ekran 16.250 ₺ = hesaplanan 16.250 ₺), 6 kazanç senaryosu, 5 FIFO senaryosu, 5 tarih sınır durumu, artık yıl, ay sorgu sınırı, 22 ekran, 27 fonksiyon
+- Üç yerde sürüm güncellendi: `app.js`, `sw.js`, zip adı — hepsi `0.1.2.0`
+
+## 0.1.1.9 — 🛡️ Bozuk kayıt çökme koruması (6 çekirdek fonksiyon)
+- 0.1.1.8'de kurulan çalışma-anı test altyapısı kullanılarak fonksiyonlar **sınır ve bozuk değerlerle gerçekten çağrıldı**
+- 🛡️ **BULGU: 6 çekirdek fonksiyon `null`/eksik kayıtta `TypeError` fırlatıyordu**
+  - `girdiKazanc(null)`, `kisiKazanc(null)`, `girdiGun(null)`, `odemeAyi(null)`, `girisEtiket(null)`, `oranBul(null)`
+  - Bu fonksiyonlar her gün kartında, her raporda, her toplamda çağrılıyor. Firestore'da yarım yazılmış tek bir kayıt (ağ kesintisi sırasında) ilgili ekranın tüm çizimini durdururdu — 0.1.1.7'deki ana ekran çökmesiyle aynı mekanizma
+  - Düzeltme: her birine giriş koruması (`if(!v) return 0/""` , `oranBul` için `v = {}`)
+- **Test**: 10 senaryo — `null`, `undefined`, boş nesne, `{durum:null}`, `{mesai:'abc'}`, geçersiz durum değeri. Hepsi güvenli değer döndürüyor, çökme yok
+- 🔍 **Yanlış alarm giderildi**: `trBuyuk` tanımsız göründü; `sabitler.js` içinde tanımlı olduğu tespit edildi. Test ortamı `sabitler.js`'i de yükleyecek şekilde düzeltildi — aksi hâlde var olmayan bir hata "düzeltilecekti"
+- 277 fonksiyon + 201 olay dinleyicisi derlemesi yine temiz
+- Üç yerde sürüm güncellendi: `app.js`, `sw.js`, zip adı — hepsi `0.1.1.9`
+
 ## 0.1.1.8 — 🛡️ Kapsamlı tarama + otomatik kontrol sistemi
 - 0.1.1.7'deki `mesaiYaziB is not defined` hatasının aynısı başka yerde var mı diye tarandı
 - **Tarama sonucu — temiz**:

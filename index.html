@@ -400,10 +400,11 @@
       <div class="kart gizli" id="yenilik-kart" style="border-color:var(--sari)">
         <h2>🎁 Neler yeni?</h2>
         <ul style="padding-left:18px;font-size:13.5px;line-height:1.9">
-          <li><b>🔍 Ana ekranı bozan hatanın aynısı başka yerde var mı diye taradım — YOK.</b> 277 fonksiyonun ve 201 düğme davranışının <b>tamamı</b> tek tek derlendi. Bir tanesi şüpheli göründü, açıp baktım: yanlış alarmdı</li>
-          <li><b>Kod baştan sona çalıştırıldı</b> — tanımsız değişken hatası kalmadı. Test ettiğim örnekler doğru sonuç veriyor: mesai gösterimi, para kısaltma, mutabakat anahtarı</li>
-          <li><b>🛡️ Asıl önemlisi: bir daha olmaması için kontrol sistemi kurdum.</b> Bundan sonra her sürüm paketlenmeden önce otomatik olarak şunlar kontrol ediliyor: kodun söz dizimi · <b>gerçekten çalışıp çalışmadığı</b> · sayfa yapısının dengesi · stil dosyası · güvenlik kuralları · sürüm numaralarının uyumu</li>
-          <li><b>Neden gerekliydi:</b> Ana ekranı bozan hata söz dizimi açısından doğruydu — sadece çalışırken patlıyordu. Eski kontrolüm bunu göremiyordu. Yeni kontrol kodu <b>gerçekten çalıştırıyor</b>, o yüzden yakalıyor</li>
+          <li><b>🩺 Tanı raporundaki yanlış alarmlar temizlendi.</b> Gönderdiğin raporda üç uyarı vardı ki hiçbiri gerçek sorun değildi — rapor okunduğunda boşuna korkutuyordu</li>
+          <li><b>"Başka kullanıcı belgesi okunabildi"</b> — bu bilerek böyle. "Herkes" ekranı çalışsın diye profil okuması açık, ama <b>yazma sadece sahibinde</b>. Artık uyarı değil, bilgi olarak yazıyor</li>
+          <li><b>"PDF/Excel motoru YÜKLENMEMİŞ"</b> — bunlar artık uygulama açılırken inmiyor, ilk kullanımda iniyor (0.0.9.2'de böyle yaptık, açılış hızlansın diye). Yani <b>normal davranış</b>. Uyarı değil bilgi oldu</li>
+          <li><b>"Mesai saat ücreti girilmemiş"</b> — o ayarı zaten kaldırdık, mesai artık yevmiyeden hesaplanıyor. Kontrol yevmiyeye çevrildi</li>
+          <li><b>🛡️ Ayrıca üç düğmeye çift tıklama koruması eklendi</b> — kredi kartı, iş kazası ve plan ekleme. Hızlı iki dokunuşta aynı kayıt iki kez oluşabiliyordu. Para düğmelerinde bu koruma zaten vardı</li>
         </ul>
         <button class="btn btn-cizgili" id="btn-yenilik-kapat">Süper, kapat</button>
       </div>
