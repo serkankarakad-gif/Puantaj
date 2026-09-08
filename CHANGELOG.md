@@ -5,6 +5,32 @@ kullanır: `0.0.0.X` — X, her güncellemede 1 artar. Uygulama içindeki sürü
 (alt bilgi + "Neler yeni" kartı) ve dağıtılan zip dosyasının adı her zaman
 birebir aynıdır.
 
+## 0.1.1.8 — 🛡️ Kapsamlı tarama + otomatik kontrol sistemi
+- 0.1.1.7'deki `mesaiYaziB is not defined` hatasının aynısı başka yerde var mı diye tarandı
+- **Tarama sonucu — temiz**:
+  - 277 `function` bildirimi tek tek derlendi (async olanlar `async` sarmalayıcıyla). Yalnızca `ytSonuclariAyikla` şüpheli göründü; incelendi — içindeki `};</script>` metni ayrıştırıcıyı yanılttı, kod doğru
+  - `addEventListener` içindeki 201 ok fonksiyonu derlendi — **0 hata**
+  - IIFE gövdesi sahte tarayıcı ortamında baştan sona çalıştırıldı — çalışma anı hatası yok. Örnek çağrılar doğru sonuç verdi (`gunIsaret` → `{yev:"X",arti:"/",mesai:"X"}`, `paraKisa(3750)` → `3,8B`, `mesaiOzetMetni(0,1.5)` → `1,5 yevmiye mesai`)
+- 🛡️ **Kalıcı kontrol sistemi kuruldu** (`kontrol.sh` + `calisma-testi.js`): her paketleme öncesi otomatik çalışıyor
+  1. `node --check` — söz dizimi (app.js, sw.js)
+  2. **Sahte tarayıcı ortamında gerçek çalıştırma** — tanımsız değişken, kapsam hatası
+  3. HTML etiket dengesi (10 etiket türü)
+  4. CSS parantez dengesi
+  5. `firestore.rules` parantez dengesi
+  6. `manifest.webmanifest` JSON geçerliliği
+  7. Sürüm tutarlılığı (`app.js` ↔ `sw.js`)
+- **Gerekçe**: 0.1.1.7'deki hata söz dizimi açısından geçerliydi, yalnızca çalışma anında patlıyordu. Yalnız `node --check` bunu yakalayamıyor; 2. adım tam bu boşluğu kapatıyor
+- Üç yerde sürüm güncellendi: `app.js`, `sw.js`, zip adı — hepsi `0.1.1.8`
+
+## 0.1.1.7 — 🚨 ANA EKRAN ÇÖKÜYORDU: tanımsız değişken (0.1.1.1 regresyonu)
+- Kullanıcı ekran görüntüsüyle bildirdi: şirket hesap kartında bakiye boş, "Bugün" kartı boş, hafta kazancı yok, ekranda "Bir sorun oldu" uyarısı
+- 🚨 **KÖK SEBEP**: 0.1.1.1'de `bugunKazancCiz()` içinde mesai gösterimi güncellenirken `mesaiYaziB` değişkeni **kullanıma sokuldu ancak tanımı eklenmedi**. Uygulanan iki `replace` işleminden yalnızca kullanım tarafı tuttu, tanım tarafı hedefi bulamadı ve sessizce atlandı
+  - `bugunKazancCiz()` `anaYukle()` içinde **erken** çağrılıyor (bakiye yazımından önce). `ReferenceError` fırlatınca sonraki tüm çizim adımları çalışmadı: bakiye, avans hareketleri, ay sonu tahmini, hafta kartı
+- ✅ **Düzeltme**: eksik tanım eklendi — `mesai` (eski saat), `mYevB` (yeni yevmiye katı) ve `mesaiYaziB` (gösterim metni)
+- **Yöntem düzeltmesi**: `node --check` yalnızca söz dizimi hatalarını yakalıyor, tanımsız değişkeni yakalamıyor. Bu sürümden itibaren `new Function(kaynak)` ile **derleme kontrolü** de yapılıyor; hata bu yöntemle bulundu
+- Doğrulama: kod baştan sona derlendi, tanımsız değişken hatası yok. Ana ekran çizim zincirindeki 6 fonksiyon (`anaYukle`, `bugunKazancCiz`, `haftaCiz`, `ayBarCiz`, `takvimCiz`, `hepsiniCiz`) mevcut
+- Üç yerde sürüm güncellendi: `app.js`, `sw.js`, zip adı — hepsi `0.1.1.7`
+
 ## 0.1.1.6 — 🚨 Mutabakat güvenlik denetimi: iki açık kapatıldı
 - 0.1.1.4-5'te eklenen mutabakat sistemi güvenlik gözüyle denetlendi
 - 🚨 **KRİTİK AÇIK 1 — koleksiyon listeleme**: kural `allow read: if true` yazılmıştı. Firestore'da `read` hem `get` (tek belge) hem `list` (koleksiyon sorgusu) kapsar. Bu hâliyle herhangi biri `db.collection("mutabakat").get()` çağırarak **tüm kullanıcıların** mutabakat kayıtlarını (ad, şantiye, hakediş, alacak) dökebilirdi — anahtar bilmesine gerek kalmadan

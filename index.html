@@ -400,11 +400,10 @@
       <div class="kart gizli" id="yenilik-kart" style="border-color:var(--sari)">
         <h2>🎁 Neler yeni?</h2>
         <ul style="padding-left:18px;font-size:13.5px;line-height:1.9">
-          <li><b>🚨 GÜVENLİK AÇIĞI BULDUM VE KAPATTIM.</b> Onay sistemini kendi yazdığım hâliyle denetleyince ciddi bir açık çıktı: sunucu kuralı yanlış yazılmıştı ve <b>herhangi biri tüm kullanıcıların mutabakat kayıtlarını listeleyebilirdi</b> — isimler, şantiyeler, hakedişler, alacaklar. Bağlantıyı bilmesine bile gerek yoktu</li>
-          <li><b>Sebebi teknik ama önemli:</b> Firebase'de "okuma izni" hem tek belgeyi hem de <b>tüm listeyi</b> kapsıyor. İkisini ayırdım: bağlantıyı bilen tek belgeyi görebiliyor, <b>liste tamamen kapalı</b></li>
-          <li><b>🔒 İkinci koruma: onay artık değiştirilemez.</b> Patron onayladıktan sonra o onay <b>iptal edilemiyor</b>, onaylayan adı değiştirilemiyor. Anlaşmazlıkta kullanacağın bir belgede onayın sonradan oynanabilir olması kabul edilemezdi</li>
-          <li><b>✅ Diğer kontroller temiz:</b> Onay sayfası senin başka hiçbir verine erişmiyor (sadece o ayın özeti) · patron adı ekrana güvenli basılıyor · belge bulunamazsa anlaşılır mesaj çıkıyor · hata yönetimi tam</li>
-          <li><b>⚠️ firestore.rules dosyasını Firebase'e yüklemen şart</b> — bu düzeltmeler orada. Yüklemezsen açık devam eder</li>
+          <li><b>🔍 Ana ekranı bozan hatanın aynısı başka yerde var mı diye taradım — YOK.</b> 277 fonksiyonun ve 201 düğme davranışının <b>tamamı</b> tek tek derlendi. Bir tanesi şüpheli göründü, açıp baktım: yanlış alarmdı</li>
+          <li><b>Kod baştan sona çalıştırıldı</b> — tanımsız değişken hatası kalmadı. Test ettiğim örnekler doğru sonuç veriyor: mesai gösterimi, para kısaltma, mutabakat anahtarı</li>
+          <li><b>🛡️ Asıl önemlisi: bir daha olmaması için kontrol sistemi kurdum.</b> Bundan sonra her sürüm paketlenmeden önce otomatik olarak şunlar kontrol ediliyor: kodun söz dizimi · <b>gerçekten çalışıp çalışmadığı</b> · sayfa yapısının dengesi · stil dosyası · güvenlik kuralları · sürüm numaralarının uyumu</li>
+          <li><b>Neden gerekliydi:</b> Ana ekranı bozan hata söz dizimi açısından doğruydu — sadece çalışırken patlıyordu. Eski kontrolüm bunu göremiyordu. Yeni kontrol kodu <b>gerçekten çalıştırıyor</b>, o yüzden yakalıyor</li>
         </ul>
         <button class="btn btn-cizgili" id="btn-yenilik-kapat">Süper, kapat</button>
       </div>

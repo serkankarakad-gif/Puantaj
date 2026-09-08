@@ -5844,7 +5844,19 @@ function bugunKazancCiz(v, kazanc){
     icerik.innerHTML = '<div style="color:var(--soluk);font-size:13.5px">Bugün henüz işlemedin — "Bugünü işle"ye dokun 👆</div>';
     return;
   }
-  const mesai = Number(v.mesai)||0;
+  /* Ana ekrandaki "bugün" satırı yeni mesai sistemini de göstermeli.
+     0.1.1.1'de bu değişken kullanıma sokulmuş ama TANIMI eklenmemişti;
+     `mesaiYaziB is not defined` hatası ana ekran çizimini komple
+     durduruyordu — bakiye, bugün kartı ve altındaki her şey boş
+     kalıyordu (0.1.1.7'de bulundu). */
+  const mesai = mesaiSaatMik(v);
+  const mYevB = mesaiYevMik(v);
+  const mesaiYaziB = mYevB > 0
+    ? (function(){
+        const t = Math.floor(mYevB), b = (mYevB - t) >= 0.5;
+        return " · +" + ((t <= 3 ? "X".repeat(t) : t + "X") + (b ? "/" : "") || "/") + " mesai";
+      })()
+    : (mesai > 0 ? " · " + String(mesai).replace(".", ",") + " saat mesai" : "");
   /* DÜZELTME: bu satır iki yan yana öğeli bir flex'ti ve hiçbirinde esneme
      koruması yoktu. `.kart` içinde `overflow-x:hidden` olduğu için, sol metin
      uzayınca (örn. "Yarım gün · 3,5 saat mesai") sağdaki TUTAR kırpılıyordu —
@@ -9485,7 +9497,7 @@ document.addEventListener("DOMContentLoaded", ()=>{
   });
 
   /* Neler yeni kartı */
-  const YENILIK_SURUM = "0.1.1.6";
+  const YENILIK_SURUM = "0.1.1.8";
   window.__SURUM = YENILIK_SURUM;   /* tanı raporu bunu okur */
   try{ $("#cekmece-surum").textContent = "Puantaj Defterim " + YENILIK_SURUM; }catch(e){}
   /* Sürümü çekmece başlığında da göster. Sebep: "değişiklik gelmedi" durumunda
