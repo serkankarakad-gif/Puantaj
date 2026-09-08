@@ -5,6 +5,123 @@ kullanır: `0.0.0.X` — X, her güncellemede 1 artar. Uygulama içindeki sürü
 (alt bilgi + "Neler yeni" kartı) ve dağıtılan zip dosyasının adı her zaman
 birebir aynıdır.
 
+## 0.1.1.6 — 🚨 Mutabakat güvenlik denetimi: iki açık kapatıldı
+- 0.1.1.4-5'te eklenen mutabakat sistemi güvenlik gözüyle denetlendi
+- 🚨 **KRİTİK AÇIK 1 — koleksiyon listeleme**: kural `allow read: if true` yazılmıştı. Firestore'da `read` hem `get` (tek belge) hem `list` (koleksiyon sorgusu) kapsar. Bu hâliyle herhangi biri `db.collection("mutabakat").get()` çağırarak **tüm kullanıcıların** mutabakat kayıtlarını (ad, şantiye, hakediş, alacak) dökebilirdi — anahtar bilmesine gerek kalmadan
+  - Düzeltme: `allow get: if true` + `allow list: if false`
+- 🔒 **KRİTİK AÇIK 2 — onay değiştirilebiliyordu**: `update` kuralı onay verildikten sonra da onay alanlarının yazılmasına izin veriyordu. Bağlantıyı bilen biri onayı iptal edebilir veya onaylayan adını değiştirebilirdi. İmza yerine geçen bir belgede kabul edilemez
+  - Düzeltme: `sadeceOnayAlanlari() && resource.data.onay == false` — onay **bir kez** verilebiliyor, sonrasında değiştirilemiyor. Sahip (işçi) kendi belgesini güncellemeye devam edebiliyor
+- **Temiz çıkan kontroller**:
+  - `mutabakatGoster()` içinde `kokRef()` kullanımı **0** — onay sayfası işçinin kişisel koleksiyonlarına hiç erişmiyor, yalnızca `mutabakat` belgesini okuyor
+  - Ekrana basılan tüm kullanıcı verisi (`isciAd`, `santiye`, `onaylayanAd`, `onaylayanNot`) `esc()` ile kaçırılıyor — XSS yok
+  - Belgeye yazılan 14 alan incelendi; not, konum, fotoğraf, telefon gibi hassas alan yok
+  - Belge bulunamadığında ve ağ hatasında anlaşılır mesaj gösteriliyor
+- ⚠️ `firestore.rules` Firebase konsoluna yüklenmeden bu düzeltmeler etkin olmaz
+- Üç yerde sürüm güncellendi: `app.js`, `sw.js`, zip adı — hepsi `0.1.1.6`
+
+## 0.1.1.5 — ✅ Mutabakat: onay durumu görünürlüğü ve tekrar gönderme
+- 0.1.1.4'teki mutabakat sistemi denetlendi, **üç eksik** bulundu ve giderildi
+- ✅ **Onay durumu görünmüyordu**: işçi bağlantıyı gönderiyor ama patronun onaylayıp onaylamadığını bilmiyordu. `#mutabakat-durum` kartı eklendi — "⏳ Onay bekleniyor" veya "✅ Patron onayladı" (onaylayan adı, sunucu zaman damgası, not). `ayBarCiz()` içinde ve gönderim sonrasında tazeleniyor
+- 🔁 **Tekrar gönderme**: aynı dönem yeniden gönderildiğinde yeni anahtar üretmek yerine **mevcut anahtar korunuyor**, rakamlar güncelleniyor. Aksi hâlde işverende birden fazla bağlantı oluşur ve hangisinin geçerli olduğu belirsizleşir
+- ⚠️ **Onaylanmış ay koruması**: zaten onaylanmış bir dönem yeniden gönderilmek istenirse `confirm()` ile uyarı veriliyor (onaylayan ve tarih gösterilerek), çünkü `set()` işlemi `onay:false` yazarak mevcut onayı siliyor
+- 🔧 **Bileşik indeks gereksinimi kaldırıldı**: ilk tasarım `where("sahipId") + where("donem")` kullanıyordu; Firestore bunun için bileşik indeks ister ve kullanıcının Firebase konsolunda ek kurulum yapması gerekirdi. Bunun yerine dönem→anahtar eşlemesi `localStorage`'da saklanıyor, sorgu tek belge okumasına indi. Okunan belgede `sahipId === kullanici.uid` doğrulaması yapılıyor. Yerel kayıt silinirse durum gösterimi gizleniyor, çökme olmuyor
+- Üç yerde sürüm güncellendi: `app.js`, `sw.js`, zip adı — hepsi `0.1.1.5`
+
+## 0.1.1.4 — 🤝 MUTABAKAT: işveren onay sistemi
+- Uygulamanın en büyük eksiği gideriliyor: kayıtlar bugüne kadar **tek taraflıydı**. Bir ödeme anlaşmazlığında "kendi uygulamama yazdım" zayıf bir dayanak. Bu sistem kaydı karşılıklı belgeye dönüştürüyor
+- **Akış**: işçi ay sonunda bağlantı üretir → WhatsApp'tan işverene gönderir → işveren **hesap açmadan** açar, özeti görür → "Onaylıyorum" der → sunucu zaman damgasıyla kaydedilir
+- 🔒 **Güvenlik tasarımı (üç katman)**:
+  1. **Tahmin edilemez anahtar**: 24 karakter, `crypto.getRandomValues` (yedek: `Math.random`), 32 harflik alfabe ≈ 10³⁶ olasılık. 5000 üretimde çakışma yok. Listeleme yok — yalnızca bağlantıyı bilen erişebiliyor
+  2. **Asgari veri**: `mutabakat` belgesinde yalnızca o ayın özeti (dönem, şantiye, gün, mesai, artı, yevmiye, hakediş, alınan, kalan). İşçinin diğer koleksiyonlarına erişim yok
+  3. **Yazma kısıtı**: `firestore.rules` içinde `diff().affectedKeys().hasOnly([...])` ile işveren yalnızca `onay`, `onayTarih`, `onaylayanAd`, `onaylayanNot` alanlarını yazabiliyor — **tutarları değiştirmesi kural düzeyinde engelli**. Oluşturma yalnızca `sahipId == request.auth.uid` ile, silme yalnızca sahibinde
+- **İzole mod**: `?mutabakat=ANAHTAR` parametresi varsa `basla()` içinde erken `return` — giriş akışı hiç başlamıyor, dinleyici kurulmuyor, kişisel veri okunmuyor. Yalnızca tek belge okunuyor
+- Onaylanmış mutabakat tekrar açıldığında onaylayan adı, tarihi ve notu gösteriliyor
+- ⚠️ **Kurulum notu**: `firestore.rules` dosyası Firebase konsoluna da yüklenmeli; yalnızca uygulama güncellemesi yeterli değil
+- Üç yerde sürüm güncellendi: `app.js`, `sw.js`, zip adı — hepsi `0.1.1.4`
+
+## 0.1.1.3 — 🧾 Masraf raporu PDF (fiş fotoğraflarıyla)
+- Yeni özellik. Masraflar kaydediliyordu ancak toplu bir belge üretilemiyordu; ay sonunda patrona/muhasebeye tek dosya vermek gerekiyor
+- 🧾 **`masrafPdfPaylas(fotolarDahil)`**: mevcut PDF altyapısını kullanıyor (jsPDF + autoTable + Türkçe font), böylece görünüm diğer raporlarla aynı ve tek kaynak korunuyor
+  - Tablo: tarih · kategori · açıklama · fiş var mı · ödendi/bekliyor · tutar
+  - Alt toplam satırları: masraf adedi + genel toplam, ayrıca **bekleyen tutar**
+  - **Kategori dağılımı** bölümü (birden fazla kategori varsa), tutara göre sıralı
+  - **Fişlerle birlikte** seçeneğinde her fiş fotoğrafı ayrı sayfada; üstünde tarih, kategori ve tutar
+  - Tüm sayfalara "Sayfa N / Toplam" ve alt bilgi
+- **Dayanıklılık**: okunamayan fiş atlanıyor (rapor yine üretiliyor), bozuk görsel `addImage` hatası yakalanıyor, kütüphane yüklenemezse anlaşılır uyarı veriliyor, tüm gövde try/catch içinde
+- `#masraf-rapor-satir` yalnızca masraf varken görünüyor
+- Bağımlılıklar doğrulandı: `pdfTurkceFontKur`, `pdfDosyaPaylas`, `kutuphaneYukle`, `pdfFontlariYukle`, `tarihFormatla`, `hataKaydet` — hepsi mevcut. Masraf kayıtlarında `id` alanı var (fiş çekimi için gerekli)
+- Üç yerde sürüm güncellendi: `app.js`, `sw.js`, zip adı — hepsi `0.1.1.3`
+
+## 0.1.1.2 — 👷 Ekip: toplu yoklama işaretleme
+- Yeni özellik. Ustabaşı her gün ekipteki 8-10 kişiyi tek tek işaretliyordu; çoğu gün herkes tam çalıştığı için tek dokunuşla işaretleyip yalnızca eksikleri düzeltmek çok daha hızlı
+- 👷 **`#yoklama-toplu`**: üç düğme — "Hepsi tam", "Hepsi yarım", "Temizle". Yalnızca ekipte işçi varken görünüyor
+- **`yoklamaTopluIsaretle(durum)`**: `ekipListe` üzerinde dönüp `yoklama[id].durum` değerini set ediyor
+  - 🔒 **Mesai değerleri korunuyor**: `mesai: Number(mevcut.mesai)||0` — bir işçiye girilmiş mesai toplu işaretlemede silinmiyor. Test edildi
+  - Kaydı olmayan işçiler de listeye ekleniyor
+  - **Kaydetmiyor**: yalnızca ekrandaki seçimi dolduruyor; kullanıcı düzeltmelerini yapıp "Yoklamayı kaydet"e basana kadar Firestore'a hiçbir şey yazılmıyor. Yanlışlıkla basılması veri kaybına yol açmıyor
+  - "Temizle" `confirm()` soruyor ve kaydedilmiş yoklamayı silmiyor — yalnızca ekrandaki seçimi sıfırlıyor
+- Üç yerde sürüm güncellendi: `app.js`, `sw.js`, zip adı — hepsi `0.1.1.2`
+
+## 0.1.1.1 — 🚨 Mesai sistemine geçişte atlanan 8 nokta daha
+- 0.1.1.0'daki `kisiKazanc` hatasının ardından **tüm hesap/gösterim fonksiyonları tarandı**: eski `v.mesai` (saat) okuyup yeni `mesaiYev` alanını bilmeyen fonksiyonlar listelendi
+- 🚨 **`kazancVar` kontrolü 4 raporda eksikti**: `i.yev!=="0" || Number(v.mesai)>0` — yalnızca mesaiye kalınan gün (durum "gelmedi", mesai dolu) yeni sistemde `v.mesai=0` olduğu için **kazançsız sayılıyor ve rapordan düşüyordu**. Etkilenen: `pdfBlobOlustur`, `raporIcerikUret`, `santiyeBloklariCiz`, `isVerileriHesapla`. Kazanç hesaba giriyor ancak satır belgede görünmüyordu
+- 📄 **CSV ve Excel mesai sütunu**: `v.mesai||0` yazıyordu; yeni kayıtlarda 0 çıkıyordu. `gunIsaret(v).mesai` ile X / `/` / XX biçimine bağlandı
+- 📅 **`bugunKazancCiz`**: ana ekrandaki "bugün" satırında yeni mesai görünmüyordu
+- 📋 **`gunListesiCiz`**: kayıt listesinde yeni mesai görünmüyordu
+- **`isVerileriHesapla`**: `mesaiYevToplam` eklendi ve dönüş nesnesine dahil edildi
+- Toplama noktalarında `mesaiSaatMik()` / `mesaiYevMik()` kullanımı yaygınlaştırıldı — iki birim asla aynı toplamda birleşmiyor
+- **Test**: 5 senaryo (yarım/tam/iki mesai, sadece mesai, eski saat kaydı) `girdiKazanc` ve `kisiKazanc` üzerinde karşılaştırıldı — ikisi de birebir aynı sonuç veriyor
+- Üç yerde sürüm güncellendi: `app.js`, `sw.js`, zip adı — hepsi `0.1.1.1`
+
+## 0.1.1.0 — 🚨 Başkasının puantajında mesai parası hiç sayılmıyordu
+- Kullanıcı bildirimi: "mesai kısmına / koyuyoruz, herkesin puantajına bakınca onu göstermiyor, saymıyor — bu çok kritik"
+- 🚨 **KÖK SEBEP**: 0.0.9.5'te mesai saat→yevmiye katına geçirilirken `girdiKazanc()` güncellendi ancak **`kisiKazanc()` atlandı**. Bu fonksiyon Kişiler/Herkes ekranında başkasının puantajını hesaplıyor ve yalnızca eski `v.mesai` (saat) alanını okuyordu. Yeni kayıtlarda o alan 0 olduğu için **mesai parası tamamen kayboluyordu**
+  - Ölçüm: "X mesai" gününde **−2.500 ₺**, "XX mesai" gününde **−5.000 ₺**, "/ mesai" gününde **−1.250 ₺**
+  - Ustabaşı ekibinin hakedişini sistematik olarak düşük görüyordu
+- ✅ **Düzeltilen dört nokta**:
+  1. `kisiKazanc()` — `mesaiYev` ve `geceYev` alanları eklendi; eski saat hesabı korundu (bir kayıtta ikisi birden olmuyor)
+  2. `kisiVeriYukle()` gün listesi — mesai artık X / `/` / XX biçiminde gösteriliyor; eskiden yeni kayıtlarda hiç görünmüyordu
+  3. Kişi özet kutusu — `mesaiYevT` toplamı ayrı tutuluyor, dolu olan birim gösteriliyor
+  4. `santiyeOzetCiz()` — şantiye dökümünde iki birim ayrı toplanıyor, ortak `mesaiOzetMetni()` ile yazılıyor
+- **Ekip yoklaması incelendi, değiştirilmedi**: `ekipGun` kayıtları saat tabanlı (`yok-mesai` girişi saat alıyor) ve kendi içinde tutarlı. Yine de yeni alan gelirse okunacak şekilde savunma eklendi
+- Test: 8 senaryo `kisiKazanc` üzerinde (yeni mesai ×3, gece, eski saat, yarım gün, gelmedi+mesai, sade) — 8/8 doğru
+- Üç yerde sürüm güncellendi: `app.js`, `sw.js`, zip adı — hepsi `0.1.1.0`
+
+## 0.1.0.9 — 🐞 Ay sonu tahmininde güvenilirlik korumaları
+- Son üç sürümde eklenenler (ay tahmini, fotoğraf korumaları, dinleyici düzeltmeleri) kritik gözle denetlendi
+- 🐞 **BULUNAN ZAYIFLIK — tahmin az veriyle uçuyordu**: `buAyHak / buAyGun` ortalaması tek güne dayanabiliyordu. Ayın başında 1 gün çalışılıp o gün 5 artı yevmiye alınmışsa ortalama 15.000 ₺ çıkıyor, 22 günle çarpılınca **330.000 ₺** gibi gerçek dışı tahmin üretiliyordu. Ayrıca 1-2 günlük veriyle tahmin her yeni günde binlerce lira zıplıyordu
+  - **Koruma 1**: en az 3 işlenmiş gün şartı
+  - **Koruma 2**: günlük ortalama tavanı = `ayarlar.yevmiye × 3`. Olağandışı bir gün (çok artı yevmiye) tüm ayın tahminini şişiremiyor
+  - **Sessiz kalmıyor**: 1-2 gün varken "Ay sonuna N iş günü kaldı · Tahmin için birkaç gün daha işlemen gerekiyor" gösteriliyor
+  - Test: 5 senaryo (1 gün anormal, 2 gün normal, 3 gün, 10 gün normal, 10 gün çok artılı) — hepsi makul
+- ✅ **0.1.0.7 fotoğraf korumaları doğrulandı**: `fisOkunamadi` / `dekontOkunamadi` / `fotoOkunamadi` erken çıkışları silme işleminden ÖNCE gerçekleşiyor; `silinenGunFoto` doğru kapsamda tanımlanıp kullanılıyor; `islem.foto` null olduğunda geri alma fotoğrafa dokunmuyor
+- ✅ **0.1.0.6 dinleyici düzeltmeleri doğrulandı**: `kartlar`, `planlar`, `beklenenler` — üçünde de hata callback'i tutamacı `null`'a çekiyor, tek kurulum noktası var, yeniden bağlanma yolu açık
+- Genel bütünlük: JS söz dizimi, HTML etiket dengesi, CSS parantez dengesi — hepsi temiz
+- Üç yerde sürüm güncellendi: `app.js`, `sw.js`, zip adı — hepsi `0.1.0.9`
+
+## 0.1.0.8 — 📈 Ay sonu kazanç tahmini
+- **Önce mevcut durum denetlendi**: kullanıcıya önerilen 10 özellikten **6'sı zaten mevcut** çıktı — yıllık izin takibi (`yillikIzinCiz`, kıdem + hak + kullanılan + kalan hesaplıyor), söz takibi (`beklenen-uyari`, vadesi geçmiş uyarısı), konum damgası (`gunKonum`), sesli kayıt (`SesTanima`), ay kapanış hatırlatması (`kapanis-uyari`). Öneriler kontrol edilmeden yapılmıştı; gerçekten eksik olan 4'ten en yüksek değerlisi seçildi
+- 📈 **Yeni `#ay-tahmin`**: para kartının altında, kalan iş günü ve tahmini ay sonu tutarı
+  - Hesap: `buAyHak / buAyGun` ile **bu ayın gerçek ortalaması** alınıyor, kalan iş günüyle çarpılıyor. Sabit yevmiye kullanılmıyor — artı yevmiye, mesai ve yarım günler ortalamaya dahil
+  - Pazar günleri kalan iş gününe sayılmıyor (uygulamanın geri kalanıyla tutarlı)
+  - **Gizlenme koşulları**: kalan iş günü 0 (ay bitmiş), ortalama 0 (hiç kayıt yok) veya gizli mod açık. Veri yokken tahmin üretilmiyor
+  - Altında "Bu ayki ortalamana göre tahmin — kesin değil" notu
+- Test: 4 senaryo (ay ortası, ay sonu, son gün, kayıt yok) — hepsi doğru davranıyor
+- Üç yerde sürüm güncellendi: `app.js`, `sw.js`, zip adı — hepsi `0.1.0.8`
+
+## 0.1.0.7 — 🚨 Fotoğraf yedeklemesi başarısız olsa bile silme yapılıyordu
+- Tarama: 169 boş `catch` bloğu risk sınıfına ayrıldı — 140'ı zararsız (localStorage, titreşim, odak, JSON.parse), **29'u veri işlemi içeriyor**. 29'u tek tek incelendi
+- 🚨 **BULUNAN KRİTİK HATA — üç yerde aynı desen:**
+  - `masrafCiz()`: fiş yedeklenirken `try{...}catch(e){}` — hata yutuluyor, `fisYedek` null kalıyor, ancak bir sonraki satır fişi **yine de siliyor**. "GERİ AL" masrafı geri getiriyor ama fiş fotoğrafı **kalıcı kayıp**
+  - `odemeListesiCiz()`: dekontlarda birebir aynı sorun
+  - `#btn-gun-sil`: gün fotoğrafında birebir aynı sorun
+  - **Düzeltme**: yedek okuma başarısız olursa silme işlemi iptal ediliyor, kullanıcıya anlaşılır uyarı veriliyor, hata `hataKaydet()` ile günlüğe yazılıyor
+- 🚨 **İkinci hata — gün kaydetme akışında fotoğraf geri alınamıyordu:**
+  - Kullanıcı gün penceresinden fotoğrafı kaldırıp kaydettiğinde `fotolar` kaydı siliniyordu, ancak `toastGeriAl(...)` çağrısına `foto` alanı verilmiyordu. Geri alma mekanizması fotoğrafı restore edebiliyor (`islem.foto`) ama veri hiç gelmiyordu
+  - **Düzeltme**: silmeden önce yedekleniyor ve `toastGeriAl`'a `foto: silinenGunFoto` olarak veriliyor
+- Doğrulama: `fisOkunamadi`, `dekontOkunamadi`, `fotoOkunamadi`, `silinenGunFoto` — dördü de tanımlı ve kullanımda
+- Üç yerde sürüm güncellendi: `app.js`, `sw.js`, zip adı — hepsi `0.1.0.7`
+
 ## 0.1.0.6 — 🚨 Üç ekranın veri dinleyicisinde boş hata callback'i
 - Talep: hamburger menüdeki tüm ekranlarda derinlemesine kritik hata taraması
 - **Denetim kapsamı**: 21 ekran × (HTML yapısı · çizim fonksiyonu · düğme bağlantısı · ölü düğme · boş durum mesajı) + veri çeken 34 fonksiyonun hata koruması + 10 `onSnapshot` dinleyicisinin hata callback'i

@@ -73,6 +73,37 @@
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
+<!-- ══════════ MUTABAKAT ONAY EKRANI (0.1.1.4) ══════════
+     İşveren bu ekranı HESAP AÇMADAN görüyor. Bağlantıdaki anahtarla
+     yalnızca o ayın özeti okunuyor; işçinin başka verisine erişim yok.
+     Onay verildiğinde tarih/saat ile kaydediliyor. -->
+<div id="mutabakat-ekran" class="gizli" style="position:fixed;inset:0;z-index:9800;background:var(--beton);overflow-y:auto;padding:20px 16px 40px">
+  <div style="max-width:520px;margin:0 auto">
+    <div style="text-align:center;padding:10px 0 18px">
+      <div style="font-family:'Saira Condensed';font-size:26px;font-weight:800;color:var(--sari)">PUANTAJ MUTABAKATI</div>
+      <div id="mut-donem" style="font-size:14px;color:var(--soluk);margin-top:3px">—</div>
+    </div>
+    <div id="mut-govde"></div>
+    <div id="mut-onay-alan" class="gizli" style="margin-top:16px">
+      <div class="alan">
+        <label for="mut-ad">Adınız Soyadınız</label>
+        <input type="text" id="mut-ad" placeholder="Onaylayan kişi" autocomplete="name">
+      </div>
+      <div class="alan">
+        <label for="mut-not">Not (isteğe bağlı)</label>
+        <input type="text" id="mut-not" placeholder="Varsa açıklama">
+      </div>
+      <button class="btn btn-sari" id="btn-mut-onayla" style="margin-top:6px">✅ Onaylıyorum</button>
+      <div style="font-size:11.5px;color:var(--soluk2);text-align:center;margin-top:10px;line-height:1.5">
+        Onayınız tarih ve saatle kaydedilir.<br>Rakamları değiştiremezsiniz — yalnızca onay verirsiniz.
+      </div>
+    </div>
+    <div style="text-align:center;margin-top:22px;font-size:11px;color:var(--soluk2)">
+      Puantaj Defterim ile hazırlandı
+    </div>
+  </div>
+</div>
+
 <div id="cevrim-bant" style="display:none;position:fixed;top:0;left:0;right:0;z-index:8000;background:var(--gelmedi);color:#fff;text-align:center;font-size:12.5px;font-weight:700;padding:6px">📴 Çevrimdışısın — kayıtların telefonda, internet gelince eşitlenecek</div>
 
 <!-- ============ AÇILIŞ EKRANI ============ -->
@@ -310,6 +341,11 @@
         <div class="bakiye" id="sirket-bakiye">—</div>
         <div class="kart-alt" id="sirket-alt">Çalıştıkça artar, avans aldıkça azalır</div>
         <div class="kart-alt" id="kur-satir" style="margin-top:6px;font-weight:700"></div>
+        <!-- AY SONU TAHMİNİ (0.1.0.8)
+             Bakiye "bugüne kadar ne haketti"yi gösteriyor ama ay ortasında
+             asıl merak edilen "bu ay eline ne geçecek". Kalan iş günü ve
+             bu ayki gerçek çalışma ortalaması üzerinden tahmin ediliyor. -->
+        <div class="kart-alt gizli" id="ay-tahmin" style="margin-top:8px;padding-top:8px;border-top:1px solid rgba(255,255,255,.14)"></div>
         <button id="btn-sirket-hareket-ac" style="margin-top:14px;width:100%;display:flex;align-items:center;justify-content:space-between;background:rgba(255,255,255,.08);border-radius:12px;padding:11px 13px;color:#fff;font-weight:700;font-size:13.5px">
           <span>📋 Avans hareketleri</span><span id="sirket-hareket-ok" style="transition:transform .2s">›</span>
         </button>
@@ -364,11 +400,11 @@
       <div class="kart gizli" id="yenilik-kart" style="border-color:var(--sari)">
         <h2>🎁 Neler yeni?</h2>
         <ul style="padding-left:18px;font-size:13.5px;line-height:1.9">
-          <li><b>🚨 ÜÇ EKRAN SESSİZCE DONUYORDU.</b> Menüdeki 21 ekran tek tek denetlendi. Üç ekranın veri bağlantısında <b>hata koruması yoktu</b>: Kredi kartlarım, Planlarım, Beklenen ödemeler</li>
-          <li><b>Ne oluyordu:</b> İnternet bir kez koptuğunda o ekranın bağlantısı <b>kalıcı olarak ölüyordu</b>. Uygulama "zaten bağlıyım" sanıp yeniden kurmuyordu. Sonuç: yeni eklediğin kart, plan veya beklenen ödeme <b>hiç görünmüyordu</b> — hata mesajı da yoktu</li>
-          <li><b>En riskli olanı kredi kartlarıydı:</b> Son ödeme günü güncellenmediği için ödeme gününü kaçırabilirdin</li>
-          <li><b>✅ Üçü de düzeltildi.</b> Bağlantı koptuğunda artık işaret sıfırlanıyor, bir sonraki açılışta kendiliğinden yeniden bağlanıyor. Aynı hata daha önce ana veri bağlantısında bulunup düzeltilmişti; bu üçü atlanmış</li>
-          <li><b>✅ Temiz çıkanlar:</b> 21 ekranın tamamında HTML yapısı sağlam · 118 düğmenin hepsi bağlı · ölü düğme yok · boş durum mesajları var · veri çeken 34 fonksiyondan 31'i zaten korumalıydı</li>
+          <li><b>🚨 GÜVENLİK AÇIĞI BULDUM VE KAPATTIM.</b> Onay sistemini kendi yazdığım hâliyle denetleyince ciddi bir açık çıktı: sunucu kuralı yanlış yazılmıştı ve <b>herhangi biri tüm kullanıcıların mutabakat kayıtlarını listeleyebilirdi</b> — isimler, şantiyeler, hakedişler, alacaklar. Bağlantıyı bilmesine bile gerek yoktu</li>
+          <li><b>Sebebi teknik ama önemli:</b> Firebase'de "okuma izni" hem tek belgeyi hem de <b>tüm listeyi</b> kapsıyor. İkisini ayırdım: bağlantıyı bilen tek belgeyi görebiliyor, <b>liste tamamen kapalı</b></li>
+          <li><b>🔒 İkinci koruma: onay artık değiştirilemez.</b> Patron onayladıktan sonra o onay <b>iptal edilemiyor</b>, onaylayan adı değiştirilemiyor. Anlaşmazlıkta kullanacağın bir belgede onayın sonradan oynanabilir olması kabul edilemezdi</li>
+          <li><b>✅ Diğer kontroller temiz:</b> Onay sayfası senin başka hiçbir verine erişmiyor (sadece o ayın özeti) · patron adı ekrana güvenli basılıyor · belge bulunamazsa anlaşılır mesaj çıkıyor · hata yönetimi tam</li>
+          <li><b>⚠️ firestore.rules dosyasını Firebase'e yüklemen şart</b> — bu düzeltmeler orada. Yüklemezsen açık devam eder</li>
         </ul>
         <button class="btn btn-cizgili" id="btn-yenilik-kapat">Süper, kapat</button>
       </div>
@@ -403,6 +439,15 @@
              soyut kalmaması için — "3 gün boş" yerine "7.500 ₺ görünmüyor". -->
         <div id="eksik-para" class="gizli"></div>
       </div>
+      <!-- İşveren onayı (0.1.1.4): ay sonunda patrona gönderilecek bağlantı.
+           Uygulama bugüne kadar tek taraflı kayıt tutuyordu; bu, kaydı
+           karşılıklı belgeye dönüştürüyor. -->
+      <button class="btn btn-cizgili" id="btn-mutabakat" style="margin-bottom:9px;border-color:var(--tam);color:var(--tam-ac)">
+        🤝 Patrona onaya gönder
+      </button>
+      <!-- Onay durumu (0.1.1.5): işçi patronun onaylayıp onaylamadığını
+           göremiyordu. Bağlantıyı gönderip sonucunu bilmemek eksikti. -->
+      <div id="mutabakat-durum" class="gizli" style="margin-bottom:9px"></div>
       <div class="kart gizli" id="hafta-kart">
         <h2>📆 Bu hafta <button id="btn-hafta-paylas" style="margin-left:auto;color:var(--sari);font-size:14px;font-family:Rubik;text-transform:none;font-weight:600">📤 Paylaş</button></h2>
         <div class="hafta-satir" id="hafta-icerik"></div>
@@ -887,6 +932,13 @@
         <h2>🧾 Bu ayın masrafları <span id="masraf-toplam" style="margin-left:auto;font-size:14px;color:var(--soluk);font-family:Rubik;text-transform:none"></span></h2>
         <div id="masraf-kategori-ozet" style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px"></div>
         <div class="cip-satir" id="masraf-filtre" style="margin-bottom:12px"></div>
+        <!-- MASRAF RAPORU (0.1.1.3)
+             Masraflar kaydediliyordu ama toplu belge çıkarılamıyordu.
+             Ay sonunda patrona/muhasebeye tek dosya vermek gerekiyor. -->
+        <div id="masraf-rapor-satir" class="gizli" style="display:flex;gap:8px;margin-bottom:12px">
+          <button class="btn btn-cizgili" id="btn-masraf-pdf" style="flex:1">🖨️ Rapor (PDF)</button>
+          <button class="btn btn-cizgili" id="btn-masraf-pdf-fis" style="flex:1">🧾 Fişlerle birlikte</button>
+        </div>
         <ul class="liste" id="liste-masraflar"></ul>
       </div>
     </section>
@@ -898,6 +950,15 @@
         <div class="alan">
           <label for="ekip-tarih">Tarih</label>
           <input type="date" id="ekip-tarih">
+        </div>
+        <!-- TOPLU İŞARETLEME (0.1.1.2)
+             Ustabaşı her gün 8-10 kişiyi tek tek işaretliyordu. Çoğu gün
+             herkes tam çalışıyor; tek dokunuşla hepsini işaretleyip
+             yalnızca eksikleri düzeltmek çok daha hızlı. -->
+        <div id="yoklama-toplu" class="gizli" style="display:flex;gap:6px;margin-bottom:10px;flex-wrap:wrap">
+          <button class="eksik-cip" id="btn-yok-hepsi-tam" style="flex:1;border-color:var(--tam);color:var(--tam-ac)">✅ Hepsi tam</button>
+          <button class="eksik-cip" id="btn-yok-hepsi-yarim" style="flex:1;border-color:var(--yarim);color:var(--yarim)">🌗 Hepsi yarım</button>
+          <button class="eksik-cip" id="btn-yok-temizle" style="flex:0 0 auto">↺ Temizle</button>
         </div>
         <div id="ekip-yoklama"></div>
         <button class="btn btn-sari gizli" id="btn-yoklama-kaydet" style="margin-top:6px">Yoklamayı kaydet</button>

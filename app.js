@@ -224,6 +224,16 @@ function basla(){
   }catch(e){ console.warn("App Check başlatılamadı:", e); }
   auth = firebase.auth();
   db = firebase.firestore();
+
+  /* MUTABAKAT MODU (0.1.1.4)
+     Bağlantıda ?mutabakat=ANAHTAR varsa işveren geldi demektir.
+     Bu kişi hesap açmıyor — giriş akışı hiç başlatılmıyor, yalnızca
+     onay ekranı gösteriliyor. Uygulamanın geri kalanı yüklenmiyor,
+     dinleyici kurulmuyor, kişisel veri okunmuyor. */
+  try{
+    const mutAnahtar = new URLSearchParams(location.search).get("mutabakat");
+    if(mutAnahtar){ mutabakatGoster(mutAnahtar); return; }
+  }catch(e){}
   db.enablePersistence({synchronizeTabs:true}).catch(()=>{ /* çevrimdışı desteklenmiyorsa sorun değil */ });
 
   const bugun = new Date();
@@ -1550,12 +1560,409 @@ function masrafFiltreCiz(){
     });
   });
 }
+/* ═══════════════════════════════════════════════════════════════════
+   🧾 MASRAF RAPORU PDF (0.1.1.3)
+   ───────────────────────────────────────────────────────────────────
+   Masraflar kaydediliyordu ama toplu bir belge çıkarılamıyordu. Ay
+   sonunda patrona veya muhasebeye "şu ay şunları harcadım" diye tek
+   dosya vermek gerekiyor; tek tek fotoğraf göndermek pratik değil.
+
+   Rapor mevcut PDF altyapısını kullanıyor (jsPDF + autoTable + Türkçe
+   font), böylece görünüm diğer raporlarla aynı ve tek kaynak korunuyor.
+   Fiş fotoğrafları da isteğe bağlı olarak eklenebiliyor.
+   ═══════════════════════════════════════════════════════════════════ */
+async function masrafPdfPaylas(fotolarDahil){
+  try{
+    if(!masraflar.length){ toast("Bu ayda masraf kaydı yok"); return; }
+    toast("Rapor hazırlanıyor...");
+    await Promise.all([kutuphaneYukle("jspdf"), pdfFontlariYukle()]);
+    if(!window.jspdf || !window.jspdf.jsPDF){
+      toast("PDF motoru yüklenemedi, internetini kontrol et 📡"); return;
+    }
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF({unit:"pt", format:"a4"});
+    const yaziTipi = pdfTurkceFontKur(doc);
+    const solX = 40, sagX = 555;
+    let y = 52;
+
+    doc.setFont(yaziTipi,"bold"); doc.setFontSize(16);
+    doc.text("MASRAF RAPORU — "+AYLAR[aktifAy]+" "+aktifYil, solX, y);
+    doc.setDrawColor(217,166,0); doc.setLineWidth(2);
+    doc.line(solX, y+6, sagX, y+6);
+    y += 24;
+
+    doc.setFont(yaziTipi,"normal"); doc.setFontSize(9.5); doc.setTextColor(60);
+    const ad = (kullanici && kullanici.displayName) || "";
+    if(ad){ doc.text("İşçi: "+ad, solX, y); y += 12; }
+    doc.text("Belge düzenlenme tarihi: "+new Date().toLocaleDateString("tr-TR"), solX, y);
+    doc.setTextColor(0); y += 10;
+
+    /* Kategoriye göre topla — muhasebe genelde böyle istiyor */
+    const katToplam = {};
+    masraflar.forEach(m=>{
+      const k = m.kategori || "Diğer";
+      katToplam[k] = (katToplam[k]||0) + (Number(m.tutar)||0);
+    });
+
+    const satirlar = masraflar
+      .slice().sort((a,b)=> String(a.tarih)<String(b.tarih)?-1:1)
+      .map(m=>[
+        tarihFormatla(m.tarih),
+        m.kategori || "Diğer",
+        (m.aciklama || "—"),
+        m.fisli ? "Var" : "—",
+        m.odendi ? "Ödendi" : "Bekliyor",
+        paraFmt(Number(m.tutar)||0)
+      ]);
+
+    const toplam = masraflar.reduce((t,m)=> t+(Number(m.tutar)||0), 0);
+    const bekleyen = masraflar.filter(m=>!m.odendi).reduce((t,m)=> t+(Number(m.tutar)||0), 0);
+
+    doc.autoTable({
+      startY: y+8, margin:{left:solX, right: 595-sagX},
+      head: [["TARİH","KATEGORİ","AÇIKLAMA","FİŞ","DURUM","TUTAR"]],
+      body: satirlar,
+      foot: [["TOPLAM: "+masraflar.length+" masraf","","","","",paraFmt(toplam)],
+             ["","","","","BEKLEYEN",paraFmt(bekleyen)]],
+      styles:{font:yaziTipi, fontSize:8.5, cellPadding:4},
+      headStyles:{fillColor:[35,35,40], textColor:255, fontStyle:"bold"},
+      footStyles:{fillColor:[255,247,220], textColor:20, fontStyle:"bold"},
+      columnStyles:{5:{halign:"right"}, 3:{halign:"center"}, 4:{halign:"center"}}
+    });
+    let y2 = doc.lastAutoTable.finalY + 20;
+
+    /* Kategori özeti */
+    const katlar = Object.keys(katToplam).sort((a,b)=> katToplam[b]-katToplam[a]);
+    if(katlar.length > 1){
+      doc.setFont(yaziTipi,"bold"); doc.setFontSize(10);
+      doc.text("KATEGORİ DAĞILIMI", solX, y2); y2 += 14;
+      doc.setFont(yaziTipi,"normal"); doc.setFontSize(9);
+      katlar.forEach(k=>{
+        if(y2 > 760){ doc.addPage(); y2 = 60; }
+        doc.text(k, solX+6, y2);
+        doc.text(paraFmt(katToplam[k]), sagX-6, y2, {align:"right"});
+        y2 += 13;
+      });
+    }
+
+    /* Fiş fotoğrafları — her biri yeni sayfada */
+    if(fotolarDahil){
+      const fisliler = masraflar.filter(m=>m.fisli);
+      if(fisliler.length){
+        toast("Fişler ekleniyor ("+fisliler.length+" adet)...");
+        for(const m of fisliler){
+          let veri = null;
+          try{
+            const fd = await kokRef().collection("fisler").doc(m.id).get();
+            if(fd.exists) veri = fd.data().veri;
+          }catch(e){ /* okunamayan fiş atlanıyor, rapor yine çıkıyor */ }
+          if(!veri) continue;
+          doc.addPage();
+          doc.setFont(yaziTipi,"bold"); doc.setFontSize(11);
+          doc.text(tarihFormatla(m.tarih)+" · "+(m.kategori||"Diğer")+" · "+paraFmt(Number(m.tutar)||0), solX, 45);
+          if(m.aciklama){
+            doc.setFont(yaziTipi,"normal"); doc.setFontSize(9); doc.setTextColor(80);
+            doc.text(String(m.aciklama).slice(0,90), solX, 60);
+            doc.setTextColor(0);
+          }
+          try{
+            /* Oran korunarak sayfaya sığdır */
+            doc.addImage(veri, "JPEG", solX, 72, sagX-solX, 0);
+          }catch(e){ /* bozuk görsel — sayfa boş kalır, rapor bozulmaz */ }
+        }
+      }
+    }
+
+    /* Sayfa numaraları */
+    const toplamSayfa = doc.internal.getNumberOfPages();
+    for(let sf=1; sf<=toplamSayfa; sf++){
+      doc.setPage(sf);
+      doc.setFont(yaziTipi,"normal"); doc.setFontSize(8); doc.setTextColor(120);
+      doc.text("Sayfa "+sf+" / "+toplamSayfa, sagX-60, 820);
+      doc.text("Puantaj Defterim", solX, 820);
+      doc.setTextColor(0);
+    }
+
+    const dosyaAdi = "Masraf-"+AYLAR[aktifAy]+"-"+aktifYil+".pdf";
+    await pdfDosyaPaylas(doc.output("blob"), dosyaAdi,
+      "Masraf Raporu — "+AYLAR[aktifAy]+" "+aktifYil);
+  }catch(e){
+    toast("Masraf raporu hazırlanamadı — internetini kontrol edip tekrar dene 📡");
+    try{ hataKaydet("masrafPdfPaylas", e); }catch(_){}
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   🤝 MUTABAKAT — İŞVEREN ONAYI (0.1.1.4)
+   ───────────────────────────────────────────────────────────────────
+   Uygulama bugüne kadar TEK TARAFLI kayıt tutuyordu. Bir anlaşmazlıkta
+   "ben uygulamama yazmıştım" zayıf bir dayanak. Bu sistem kaydı
+   karşılıklı belgeye dönüştürüyor:
+
+     1. İşçi ay sonunda bağlantı üretir
+     2. İşverene WhatsApp'tan gönderir
+     3. İşveren HESAP AÇMADAN açar, özeti görür
+     4. "Onaylıyorum" der → tarih ve saatle kaydedilir
+
+   Güvenlik (firestore.rules ile birlikte):
+     • Belge kimliği tahmin edilemez (rastgele 24 karakter)
+     • Belgede yalnızca o ayın ÖZETİ var — başka veriye erişim yok
+     • İşveren yalnızca onay alanlarını yazabilir; rakamlara
+       kural düzeyinde dokunamaz
+   ═══════════════════════════════════════════════════════════════════ */
+/* İşverenin gördüğü ekran. Giriş yok, dinleyici yok — tek belge okunuyor. */
+async function mutabakatGoster(anahtar){
+  const ekran = document.getElementById("mutabakat-ekran");
+  const govde = document.getElementById("mut-govde");
+  try{
+    document.getElementById("ekran-yukleniyor").classList.add("gizli");
+  }catch(e){}
+  if(!ekran || !govde) return;
+  ekran.classList.remove("gizli");
+  govde.innerHTML = '<div class="bos-mesaj">⏳ Yükleniyor...</div>';
+
+  try{
+    const d = await db.collection("mutabakat").doc(anahtar).get();
+    if(!d.exists){
+      govde.innerHTML = '<div class="bos-mesaj"><span class="buyuk">🔍</span>' +
+        'Bu bağlantı bulunamadı.<br>Bağlantının tamamını kopyaladığınızdan emin olun.</div>';
+      return;
+    }
+    const m = d.data();
+    document.getElementById("mut-donem").textContent =
+      (m.donemAd || "") + (m.santiye ? " · " + m.santiye : "");
+
+    const satir = (et, dg, vurgu) =>
+      '<div style="display:flex;justify-content:space-between;align-items:baseline;padding:11px 0;border-bottom:1px solid var(--cizgi)">' +
+        '<span style="font-size:13px;color:var(--soluk)">' + et + '</span>' +
+        '<span style="font-family:\'Saira Condensed\';font-size:' + (vurgu?'22px':'17px') +
+        ';font-weight:800' + (vurgu?';color:var(--sari)':'') + '">' + dg + '</span></div>';
+
+    govde.innerHTML =
+      '<div class="kart">' +
+        (m.isciAd ? '<div style="font-size:15px;font-weight:700;margin-bottom:10px">👷 ' + esc(m.isciAd) + '</div>' : '') +
+        satir("Çalışılan gün", (m.gunSayisi||0) + " gün") +
+        (m.artiToplam > 0 ? satir("Ek yevmiye", m.artiToplam) : "") +
+        (m.mesaiToplam > 0 ? satir("Mesai", m.mesaiToplam + " saat") : "") +
+        (m.yevmiye > 0 ? satir("Günlük yevmiye", paraFmt(m.yevmiye)) : "") +
+        satir("Hakediş", paraFmt(m.hakedis||0)) +
+        satir("Alınan (avans/ödeme)", paraFmt(m.alinan||0)) +
+        satir("KALAN ALACAK", paraFmt(m.kalan||0), true) +
+      '</div>';
+
+    if(m.onay){
+      const t = m.onayTarih && m.onayTarih.toDate ? m.onayTarih.toDate() : null;
+      govde.innerHTML +=
+        '<div class="kart" style="border-color:var(--tam);background:rgba(31,168,124,.1)">' +
+          '<div style="font-size:16px;font-weight:700;color:var(--tam-ac)">✅ Onaylandı</div>' +
+          '<div style="font-size:13px;color:var(--soluk);margin-top:6px;line-height:1.6">' +
+            (m.onaylayanAd ? esc(m.onaylayanAd) + "<br>" : "") +
+            (t ? t.toLocaleDateString("tr-TR") + " " + t.toLocaleTimeString("tr-TR",{hour:"2-digit",minute:"2-digit"}) : "") +
+            (m.onaylayanNot ? "<br><i>" + esc(m.onaylayanNot) + "</i>" : "") +
+          '</div></div>';
+    }else{
+      document.getElementById("mut-onay-alan").classList.remove("gizli");
+      const btn = document.getElementById("btn-mut-onayla");
+      if(btn) btn.addEventListener("click", ()=> mutabakatOnayla(anahtar));
+    }
+  }catch(e){
+    govde.innerHTML = '<div class="bos-mesaj"><span class="buyuk">📡</span>' +
+      'Bilgiler yüklenemedi. İnternet bağlantınızı kontrol edip sayfayı yenileyin.</div>';
+  }
+}
+
+async function mutabakatOnayla(anahtar){
+  const btn = document.getElementById("btn-mut-onayla");
+  const ad = (document.getElementById("mut-ad").value || "").trim();
+  if(!ad){ alert("Lütfen adınızı yazın."); return; }
+  if(!confirm("Bu puantajı onaylıyor musunuz?\n\nOnayınız tarih ve saatle kaydedilecek.")) return;
+  if(btn) btn.disabled = true;
+  try{
+    /* Kurallar gereği YALNIZCA bu dört alan yazılabiliyor —
+       rakamlara dokunmak kural düzeyinde engelli. */
+    await db.collection("mutabakat").doc(anahtar).update({
+      onay: true,
+      onayTarih: firebase.firestore.FieldValue.serverTimestamp(),
+      onaylayanAd: ad.slice(0, 60),
+      onaylayanNot: (document.getElementById("mut-not").value || "").trim().slice(0, 200)
+    });
+    document.getElementById("mut-onay-alan").classList.add("gizli");
+    mutabakatGoster(anahtar);
+  }catch(e){
+    if(btn) btn.disabled = false;
+    alert("Onay kaydedilemedi. İnternet bağlantınızı kontrol edip tekrar deneyin.");
+  }
+}
+
+function mutabakatAnahtarUret(){
+  /* crypto varsa onu kullan; yoksa Math.random yedeği.
+     24 karakter × 36 olasılık ≈ tahmin edilemez. */
+  const harfler = "abcdefghijkmnpqrstuvwxyz23456789";
+  let a = "";
+  try{
+    const d = new Uint8Array(24);
+    crypto.getRandomValues(d);
+    for(let i=0;i<24;i++) a += harfler[d[i] % harfler.length];
+  }catch(e){
+    for(let i=0;i<24;i++) a += harfler[Math.floor(Math.random()*harfler.length)];
+  }
+  return a;
+}
+
+/* Bu ay için daha önce gönderilmiş mutabakatı bulur.
+   Aynı ay tekrar gönderilirse yeni kayıt üretmek yerine mevcut
+   bağlantı yenileniyor — yoksa patronun elinde birden fazla
+   bağlantı olur ve hangisinin geçerli olduğu karışır. */
+/* Ay değişince onay durumunu göster — işçi patronun onaylayıp
+   onaylamadığını görebilsin (0.1.1.5). Bağlantıyı gönderip sonucunu
+   bilmemek büyük eksikti. */
+async function mutabakatDurumCiz(){
+  const el = document.getElementById("mutabakat-durum");
+  if(!el || !kullanici){ if(el) el.classList.add("gizli"); return; }
+  try{
+    const donem = aktifYil + "-" + pad(aktifAy+1);
+    const m = await mutabakatBul(donem);
+    if(!m){ el.classList.add("gizli"); return; }
+
+    if(m.onay){
+      const t = m.onayTarih && m.onayTarih.toDate ? m.onayTarih.toDate() : null;
+      el.innerHTML =
+        '<div class="kart" style="border-color:var(--tam);background:rgba(31,168,124,.09);margin-bottom:0">' +
+          '<div style="display:flex;align-items:center;gap:9px">' +
+            '<span style="font-size:20px">✅</span>' +
+            '<div style="flex:1;min-width:0">' +
+              '<div style="font-size:14px;font-weight:700;color:var(--tam-ac)">Patron onayladı</div>' +
+              '<div style="font-size:11.5px;color:var(--soluk);margin-top:2px">' +
+                (m.onaylayanAd ? esc(m.onaylayanAd) : "") +
+                (t ? " · " + t.toLocaleDateString("tr-TR") + " " + t.toLocaleTimeString("tr-TR",{hour:"2-digit",minute:"2-digit"}) : "") +
+              '</div>' +
+              (m.onaylayanNot ? '<div style="font-size:11.5px;color:var(--soluk);margin-top:3px;font-style:italic">' + esc(m.onaylayanNot) + '</div>' : '') +
+            '</div>' +
+          '</div>' +
+        '</div>';
+    }else{
+      el.innerHTML =
+        '<div class="kart" style="border-color:var(--yarim);background:rgba(201,138,46,.08);margin-bottom:0">' +
+          '<div style="display:flex;align-items:center;gap:9px">' +
+            '<span style="font-size:20px">⏳</span>' +
+            '<div style="flex:1">' +
+              '<div style="font-size:14px;font-weight:700;color:var(--yarim)">Onay bekleniyor</div>' +
+              '<div style="font-size:11.5px;color:var(--soluk);margin-top:2px">Bağlantı gönderildi, patron henüz onaylamadı</div>' +
+            '</div>' +
+          '</div>' +
+        '</div>';
+    }
+    el.classList.remove("gizli");
+  }catch(e){ el.classList.add("gizli"); }
+}
+
+async function mutabakatBul(donem){
+  /* İKİ ALANLI SORGU KULLANILMIYOR (0.1.1.5)
+     `where(sahipId) + where(donem)` Firestore'da bileşik indeks
+     gerektiriyor. Kullanıcıya Firebase konsolunda ek kurulum
+     yaptırmamak için bağlantı anahtarı yerel olarak saklanıyor:
+     her dönem için üretilen anahtar localStorage'da tutuluyor,
+     sorgu tek belge okumasına iniyor (indeks gerekmez).
+     Yerel kayıt silinirse (uygulama verisi temizlenirse) yeni
+     bağlantı üretiliyor — eskisi çalışmaya devam eder, sadece
+     durum gösterimi o dönem için sıfırlanır. */
+  try{
+    let anahtar = null;
+    try{ anahtar = localStorage.getItem("mutabakat:" + donem); }catch(e){}
+    if(!anahtar) return null;
+    const d = await db.collection("mutabakat").doc(anahtar).get();
+    if(!d.exists) return null;
+    const veri = d.data();
+    /* Başkasının belgesi olmadığını doğrula */
+    if(veri.sahipId !== kullanici.uid) return null;
+    return {id: d.id, ...veri};
+  }catch(e){ return null; }
+}
+
+async function mutabakatOlustur(){
+  try{
+    if(!kullanici){ toast("Önce giriş yap"); return; }
+    const t = hesapla();
+    if(!t || t.gunSayisi <= 0){ toast("Bu ayda kayıt yok — önce günlerini işle"); return; }
+
+    const donem = aktifYil + "-" + pad(aktifAy+1);
+    const mevcut = await mutabakatBul(donem);
+
+    /* Zaten onaylanmışsa yeni bağlantı üretme — onay kaybolmasın */
+    if(mevcut && mevcut.onay){
+      const t2 = mevcut.onayTarih && mevcut.onayTarih.toDate ? mevcut.onayTarih.toDate() : null;
+      const devam = confirm(
+        "Bu ay ZATEN ONAYLANMIŞ.\n\n" +
+        (mevcut.onaylayanAd ? "Onaylayan: " + mevcut.onaylayanAd + "\n" : "") +
+        (t2 ? "Tarih: " + t2.toLocaleDateString("tr-TR") + " " + t2.toLocaleTimeString("tr-TR",{hour:"2-digit",minute:"2-digit"}) + "\n" : "") +
+        "\nYeniden gönderirsen mevcut onay SİLİNİR ve patronun tekrar onaylaması gerekir.\n\nDevam edilsin mi?");
+      if(!devam) return;
+    }
+
+    toast("Onay bağlantısı hazırlanıyor...");
+    /* Mevcut kayıt varsa aynı anahtarı koru — patronun elindeki
+       bağlantı çalışmaya devam etsin, rakamlar güncellensin. */
+    const anahtar = mevcut ? mevcut.id : mutabakatAnahtarUret();
+    const ayAd = AYLAR[aktifAy] + " " + aktifYil;
+
+    /* Belgede YALNIZCA özet — kişisel veri veya gün gün döküm yok */
+    await db.collection("mutabakat").doc(anahtar).set({
+      sahipId: kullanici.uid,
+      isciAd: (kullanici.displayName || "").slice(0, 60),
+      donem: aktifYil + "-" + pad(aktifAy+1),
+      donemAd: ayAd,
+      santiye: String(ayarlar.santiye || "").slice(0, 80),
+      gunSayisi: t.gunSayisi,
+      mesaiToplam: t.mesaiToplam || 0,
+      artiToplam: t.artiToplam || 0,
+      yevmiye: Number(ayarlar.yevmiye) || 0,
+      hakedis: Math.round(t.hakedis),
+      alinan: Math.round(t.alinan),
+      kalan: Math.round(t.kalan),
+      olusturma: firebase.firestore.FieldValue.serverTimestamp(),
+      onay: false
+    });
+
+    /* Anahtarı yerel olarak sakla — durum gösterimi indekssiz çalışsın */
+    try{ localStorage.setItem("mutabakat:" + donem, anahtar); }catch(e){}
+    /* Gönderim sonrası durumu tazele — "onay bekleniyor" görünsün */
+    try{ mutabakatDurumCiz(); }catch(e){}
+
+    const url = location.origin + location.pathname + "?mutabakat=" + anahtar;
+    const metin =
+      "📋 *PUANTAJ MUTABAKATI — " + ayAd + "*\n" +
+      (kullanici.displayName ? "👷 " + kullanici.displayName + "\n" : "") +
+      "\n✅ Çalışılan: " + t.gunSayisi + " gün" +
+      "\n💰 Hakediş: " + paraFmt(t.hakedis) +
+      "\n💵 Alınan: " + paraFmt(t.alinan) +
+      "\n🔸 Kalan: " + paraFmt(t.kalan) +
+      "\n\nAşağıdaki bağlantıdan inceleyip onaylayabilirsiniz:\n" + url;
+
+    try{
+      if(navigator.share){
+        await navigator.share({title: "Puantaj Mutabakatı — " + ayAd, text: metin});
+      }else{
+        window.open("https://wa.me/?text=" + encodeURIComponent(metin), "_blank", "noopener");
+      }
+    }catch(e){
+      if(e && e.name === "AbortError") return;   /* kullanıcı iptal etti */
+      window.open("https://wa.me/?text=" + encodeURIComponent(metin), "_blank", "noopener");
+    }
+  }catch(e){
+    toast("Onay bağlantısı oluşturulamadı — internetini kontrol et 📡");
+    try{ hataKaydet("mutabakatOlustur", e); }catch(_){}
+  }
+}
+
 function masrafCiz(){
   const ul = $("#liste-masraflar");
   if(!ul) return;
   const bekleyen = masraflar.filter(m=>!m.odendi).reduce((s,m)=> s+(Number(m.tutar)||0), 0);
   const tEl = $("#masraf-toplam");
   if(tEl) tEl.textContent = masraflar.length ? "Bekleyen: "+paraFmt(bekleyen) : "";
+  /* Rapor düğmeleri yalnızca masraf varken anlamlı */
+  const rapSatir = $("#masraf-rapor-satir");
+  if(rapSatir) rapSatir.classList.toggle("gizli", !masraflar.length);
   masrafKategoriOzetiCiz();
   masrafFiltreCiz();
   if(!masraflar.length){
@@ -1607,11 +2014,24 @@ function masrafCiz(){
       const kopya = {...m}; delete kopya.id;
       /* Fişi silmeden ÖNCE belleğe al ki "GERİ AL" onu da geri getirebilsin */
       let fisYedek = null;
+      let fisOkunamadi = false;
       if(m.fisli){
         try{
           const fd = await kokRef().collection("fisler").doc(m.id).get();
           if(fd.exists) fisYedek = fd.data();
-        }catch(e){}
+        }catch(e){
+          /* KRİTİK (0.1.0.7): eskiden bu hata sessizce yutuluyor, fiş YİNE DE
+             siliniyordu. Yedek alınamadığı için "GERİ AL" fişi geri getiremiyor,
+             fotoğraf KALICI olarak kayboluyordu — kullanıcı bunu fark etmiyordu
+             çünkü masraf kaydı geri geliyordu.
+             Artık yedek alınamazsa fiş SİLİNMİYOR. */
+          fisOkunamadi = true;
+          try{ hataKaydet("fisYedek", e); }catch(_){}
+        }
+        if(fisOkunamadi){
+          toast("⚠️ Fiş fotoğrafı okunamadı — masraf silinmedi. İnternetini kontrol et.");
+          return;
+        }
         kokRef().collection("fisler").doc(m.id).delete().catch(()=>{});
       }
       try{
@@ -1749,15 +2169,39 @@ function isciListeCiz(){
   });
 }
 
+/* TOPLU YOKLAMA İŞARETLEME (0.1.1.2)
+   Ustabaşı her gün 8-10 kişiyi tek tek işaretliyordu. Çoğu gün herkes
+   tam çalışıyor — tek dokunuşla hepsini işaretleyip yalnızca eksikleri
+   düzeltmek çok daha hızlı.
+   Kaydetmiyor, sadece ekrandaki seçimi dolduruyor: kullanıcı düzeltme
+   yapıp "Yoklamayı kaydet"e basana kadar hiçbir şey yazılmıyor. */
+function yoklamaTopluIsaretle(durum){
+  if(!ekipListe.length) return;
+  ekipListe.forEach(i=>{
+    const mevcut = yoklama[i.id] || {};
+    yoklama[i.id] = { durum: durum, mesai: Number(mevcut.mesai)||0 };
+  });
+  ekipYoklamaCiz();
+  titret(12);
+  toast(durum==="yok" ? "Yoklama temizlendi ↺"
+      : durum==="tam" ? "Hepsi tam işaretlendi ✅ — eksikleri düzelt, sonra kaydet"
+      : "Hepsi yarım işaretlendi 🌗 — eksikleri düzelt, sonra kaydet");
+}
+
 function ekipYoklamaCiz(){
   const kap = $("#ekip-yoklama");
   if(!kap) return;
   if(!ekipListe.length){
     kap.innerHTML = '<div class="bos-mesaj">Önce aşağıdan işçi ekle 👇</div>';
     $("#btn-yoklama-kaydet").classList.add("gizli");
+    const tk = $("#yoklama-toplu");
+    if(tk) tk.classList.add("gizli");
     return;
   }
   $("#btn-yoklama-kaydet").classList.remove("gizli");
+  /* Toplu işaretleme yalnızca işçi varken anlamlı */
+  const topluKap = $("#yoklama-toplu");
+  if(topluKap) topluKap.classList.remove("gizli");
   kap.innerHTML = "";
   ekipListe.forEach(i=>{
     const y = yoklama[i.id] || {durum:"yok", mesai:0};
@@ -1837,9 +2281,17 @@ async function ekipOzetYukle(){
       const yev = Number(v.uYevmiye)||0, mesU = Number(v.uMesai)||0;
       if(v.durum==="tam"){ g.gun+=1; g.hak+=yev; }
       else if(v.durum==="yarim"){ g.gun+=0.5; g.hak+=yev/2; }
-      const m = Number(v.mesai)||0;
-      g.mesai += m; g.hak += m*mesU;
-      if(v.durum!=="yok" || m>0) g.gunler.push(Number(v.tarih.slice(8,10)));
+      /* Ekip yoklamasında mesai (0.1.1.0): yoklama kaydı hâlâ SAAT
+         tutuyor (`yok-mesai` alanı saat girişi). Bu ekran kendi içinde
+         tutarlı — ustabaşı ekip için saat giriyor, kendi puantajı için
+         yevmiye katı. İkisi ayrı akış olduğu için karışmıyor.
+         Yine de yeni alan gelirse diye ikisi de okunuyor. */
+      const mYev = Number(v.mesaiYev)||0;
+      const m = mYev > 0 ? 0 : (Number(v.mesai)||0);
+      g.mesai += m;
+      g.mesaiYev = (g.mesaiYev||0) + mYev;
+      g.hak += mYev > 0 ? mYev*yev : m*mesU;
+      if(v.durum!=="yok" || m>0 || mYev>0) g.gunler.push(Number(v.tarih.slice(8,10)));
     });
     const idler = Object.keys(grup);
     ekipOzetSon = {grup, idler};
@@ -1871,7 +2323,7 @@ async function ekipOzetYukle(){
       li.innerHTML =
         '<div class="rozet" style="background:var(--asfalt2)">'+esc(trBuyuk(String(isc.ad||"?").charAt(0)))+'</div>'+
         '<div class="orta"><div class="baslik">'+esc(isc.ad)+'</div>'+
-        '<div class="alt-yazi">'+g.gun+' gün · '+g.mesai+' saat mesai</div></div>'+
+        '<div class="alt-yazi">'+g.gun+' gün · '+mesaiOzetMetni(g.mesai||0, g.mesaiYev||0)+'</div></div>'+
         '<div class="tutar">'+paraFmt(g.hak)+'</div>'+
         '<button class="sil" aria-label="Paylaş" style="color:var(--mesai)">📤</button>';
       li.querySelector(".sil").addEventListener("click", async ()=>{
@@ -1947,15 +2399,26 @@ function kisiKazanc(v){
   if(v.uMesai!=null)   mes = Number(v.uMesai)||mes;
   if(v.uEk!=null)      ek  = Number(v.uEk)||0;
   if(v.uSaatU!=null)   sa  = Number(v.uSaatU)||sa;
-  const m = Number(v.mesai)||0;
-  let k = m*mes;
+  /* KRİTİK DÜZELTME (0.1.1.0)
+     Bu fonksiyon BAŞKASININ puantajına bakarken kullanılıyor (Kişiler /
+     Herkes ekranı, ekip özeti). 0.0.9.5'te mesai saatten yevmiye katına
+     geçirildi ancak burası güncellenmemişti — yalnızca eski `mesai`
+     (saat) alanını okuyordu.
+     Sonuç: yeni sistemle girilen mesai HİÇ SAYILMIYORDU. Bir "XX mesai"
+     gününde 5.000 ₺ eksik görünüyordu. Ustabaşı ekibinin puantajına
+     bakarken herkesin parasını eksik görüyordu. */
+  const mYev = Number(v.mesaiYev)||0;
+  const m    = mYev > 0 ? 0 : (Number(v.mesai)||0);
+  let k = mYev > 0 ? mYev*(yev + ek) : m*mes;
   if(v.durum==="tam") k += yev + ek;
   else if(v.durum==="yarim") k += (yev + ek)/2;
   else if(v.durum==="saatlik"){ const st = Number(v.saat)||0; k += st*sa + (st>0?ek:0); }
   k += (Number(v.arti)||0) * (yev + ek);
   k += (Number(v.parcaMiktar)||0) * (v.uParcaFiyat!=null ? Number(v.uParcaFiyat) : (Number(ka.parcaFiyat)||0));
+  /* Gece mesaisi de yevmiye katına geçti (0.0.9.5) */
+  const gYev = Number(v.geceYev)||0;
   const geceOran = v.uGeceUcret!=null ? Number(v.uGeceUcret) : mes*(1+(Number(ka.geceZam)||0)/100);
-  k += (Number(v.geceMesai)||0) * geceOran;
+  k += gYev > 0 ? gYev*(yev + ek) : (Number(v.geceMesai)||0) * geceOran;
   return k;
 }
 
@@ -1984,21 +2447,35 @@ async function kisiVeriYukle(){
         .where(firebase.firestore.FieldPath.documentId(), "<=", son).get();
     let oSnap = null;
     try{ oSnap = await ref.collection("odemeler").get(); }catch(e){ oSnap = null; }
-    let gun=0, mesai=0, hak=0;
+    let gun=0, mesai=0, mesaiYevT=0, hak=0;
     const gunUl = $("#kisi-gunler"); gunUl.innerHTML = "";
     const kayitlar = [];
     gSnap.forEach(doc=> kayitlar.push({id:doc.id, ...doc.data()}));
     kayitlar.sort((a,b)=> a.id<b.id?1:-1);
     kayitlar.forEach(v=>{
       gun += girdiGun(v);
-      mesai += Number(v.mesai)||0;
+      /* İki birim ayrı toplanmalı (0.1.1.0): yeni kayıtlar yevmiye katı,
+         eskiler saat. Aynı toplamda birleştirilirse anlamsız çıkar. */
+      mesai += mesaiSaatMik(v);
+      mesaiYevT += mesaiYevMik(v);
       hak += kisiKazanc(v);
       const t = new Date(v.id+"T12:00:00");
       const li = document.createElement("li");
       li.innerHTML =
         '<div class="rozet" style="background:'+durumRenk(v.durum)+'">'+t.getDate()+'<small>'+AYLAR[t.getMonth()].slice(0,3)+'</small></div>'+
         '<div class="orta"><div class="baslik">'+GUNLER[t.getDay()]+' · '+girisEtiket(v)+
-        (Number(v.mesai)>0 ? " · +"+v.mesai+" saat mesai" : "")+'</div>'+
+        /* Mesai gösterimi (0.1.1.0): yeni kayıt yevmiye katı (X, /, XX),
+           eski kayıt saat. Eskiden yalnızca saat okunuyordu ve yeni
+           sistemle girilen mesai HİÇ GÖRÜNMÜYORDU. */
+        (function(){
+          const mY = Number(v.mesaiYev)||0;
+          if(mY > 0){
+            const tam = Math.floor(mY), buc = (mY-tam) >= 0.5;
+            const isr = (tam <= 3 ? "X".repeat(tam) : tam+"X") + (buc ? "/" : "");
+            return " · +"+(isr || "/")+" mesai";
+          }
+          return Number(v.mesai)>0 ? " · +"+String(v.mesai).replace(".",",")+" saat mesai" : "";
+        })()+'</div>'+
         '<div class="alt-yazi">'+esc([v.santiye, v.not].filter(Boolean).join(" — ")||"—")+'</div></div>'+
         '<div class="tutar">'+paraFmt(kisiKazanc(v))+'</div>';
       gunUl.appendChild(li);
@@ -2034,7 +2511,8 @@ async function kisiVeriYukle(){
     if(!odListe.length) odUl.innerHTML = '<div class="bos-mesaj">Bu ay para girişi yok.</div>';
     $("#kisi-ozet").innerHTML =
       '<div class="ozet-kut tam-r"><div class="et">Gün</div><div class="deger">'+gun+'</div></div>'+
-      '<div class="ozet-kut mesai-r"><div class="et">Mesai</div><div class="deger">'+mesai+' saat</div></div>'+
+      '<div class="ozet-kut mesai-r"><div class="et">Mesai</div><div class="deger">'+
+        (mesaiYevT > 0 ? String(mesaiYevT).replace(".",",")+" yev" : mesai+" saat")+'</div></div>'+
       '<div class="ozet-kut vurgu"><div class="et">Hakediş</div><div class="deger">'+paraFmt(hak)+'</div></div>'+
       '<div class="ozet-kut"><div class="et">Alınan</div><div class="deger">'+paraFmt(alinan)+'</div></div>'+
       '<div class="ozet-kut '+(hak-alinan>=0?'vurgu':'eksi')+'" style="grid-column:1/-1"><div class="et">Kalan</div><div class="deger">'+paraFmt(hak-alinan)+'</div></div>';
@@ -4413,6 +4891,60 @@ async function anaYukle(){
         + ' <span style="opacity:.75">('+AYLAR[simdi.getMonth()]+" "+simdi.getFullYear()+')</span>'
         + ' <span style="text-decoration:underline">Maaşlar (tüm aylar) ›</span>';
     }
+    /* ── AY SONU TAHMİNİ (0.1.0.8) ────────────────────────────────
+       Bakiye "bugüne kadar ne hakettin"i gösteriyor. Ay ortasında asıl
+       merak edilen ise "bu ay eline ne geçecek". Tahmin, uydurma bir
+       varsayımla değil BU AYIN GERÇEK ortalamasıyla yapılıyor:
+         işlenmiş günlerin ortalama kazancı × kalan iş günü
+       Pazar günleri kalan iş gününe sayılmıyor (uygulamanın geri kalanı
+       da pazarı iş günü saymıyor).
+       Ay bitmişse ya da hiç kayıt yoksa kutu gizleniyor — anlamsız bir
+       tahminle kullanıcıyı yanıltmamak için. */
+    try{
+      const tEl = $("#ay-tahmin");
+      if(tEl){
+        const aySonu = new Date(simdi.getFullYear(), simdi.getMonth()+1, 0).getDate();
+        const bugunG = simdi.getDate();
+        let kalanIsGunu = 0;
+        for(let g=bugunG+1; g<=aySonu; g++){
+          if(new Date(simdi.getFullYear(), simdi.getMonth(), g).getDay() !== 0) kalanIsGunu++;
+        }
+        /* Bu ayki gerçek ortalama — yalnızca kazanç getiren günlerden */
+        let ortalama = (buAyGun > 0 && buAyHak > 0) ? (buAyHak / buAyGun) : 0;
+
+        /* GÜVENİLİRLİK KORUMALARI (0.1.0.9)
+           1) EN AZ 3 GÜN: tek günün ortalaması güvenilir değil. Ayın
+              başında 1 gün çalışıp o gün 5 artı yevmiye alındıysa
+              ortalama 15.000 ₺ çıkıyor ve tahmin 330.000 ₺ gibi
+              gerçek dışı bir rakama fırlıyordu. Ayrıca 1-2 günlük
+              veriyle tahmin her yeni günde binlerce lira zıplıyor.
+           2) TAVAN: ortalama, günlük yevmiyenin 3 katını aşamaz.
+              Aşıyorsa o ay olağandışı (çok artı yevmiye) demektir;
+              tahmini ona göre şişirmek yanıltıcı olur. */
+        const enAzGun = 3;
+        const gunlukTavan = (Number(ayarlar.yevmiye) || 0) * 3;
+        if(gunlukTavan > 0 && ortalama > gunlukTavan) ortalama = gunlukTavan;
+
+        if(kalanIsGunu > 0 && ortalama > 0 && buAyGun >= enAzGun && !gizliMod){
+          const tahmin = Math.round(ortalama * kalanIsGunu);
+          tEl.innerHTML =
+            '📈 Ay sonuna <b>'+kalanIsGunu+' iş günü</b> kaldı · ' +
+            'aynı tempoyla <b style="color:var(--sari)">≈'+paraFmt(buAyHak + tahmin)+'</b> olur' +
+            '<div style="font-size:10.5px;opacity:.7;margin-top:3px">Bu ayki ortalamana göre tahmin — kesin değil</div>';
+          tEl.classList.remove("gizli");
+        }else if(kalanIsGunu > 0 && buAyGun > 0 && buAyGun < enAzGun && !gizliMod){
+          /* Veri az: tahmin verme ama sessiz de kalma — kullanıcı neden
+             görmediğini bilsin. */
+          tEl.innerHTML =
+            '📈 Ay sonuna <b>'+kalanIsGunu+' iş günü</b> kaldı' +
+            '<div style="font-size:10.5px;opacity:.7;margin-top:3px">Tahmin için birkaç gün daha işlemen gerekiyor</div>';
+          tEl.classList.remove("gizli");
+        }else{
+          tEl.classList.add("gizli");
+        }
+      }
+    }catch(e){}
+
     hareketler.sort((a,b)=> a.tarih < b.tarih ? 1 : -1);
     const ul = $("#liste-sirket-hareket");
     if(!hareketler.length){
@@ -4731,7 +5263,10 @@ function santiyeOzetCiz(){
     const ad = (v.santiye||"").trim() || "Belirtilmemiş";
     if(!gruplar[ad]) gruplar[ad] = {gun:0, mesai:0, kazanc:0};
     gruplar[ad].gun += girdiGun(v);
-    gruplar[ad].mesai += Number(v.mesai)||0;
+    /* Yeni kayıtlarda mesai yevmiye katı; eski saat alanı boş kalıyor.
+       Sadece saati toplamak yeni kayıtları görünmez kılıyordu (0.1.1.0). */
+    gruplar[ad].mesai += mesaiSaatMik(v);
+    gruplar[ad].mesaiYev = (gruplar[ad].mesaiYev||0) + mesaiYevMik(v);
     gruplar[ad].kazanc += girdiKazanc(v);
   });
   const adlar = Object.keys(gruplar);
@@ -4746,7 +5281,7 @@ function santiyeOzetCiz(){
     li.innerHTML =
       '<div class="rozet" style="background:var(--asfalt)">🏗️</div>'+
       '<div class="orta"><div class="baslik">'+esc(ad)+'</div>'+
-      '<div class="alt-yazi">'+g.gun+' gün · '+g.mesai+' saat mesai</div></div>'+
+      '<div class="alt-yazi">'+g.gun+' gün · '+mesaiOzetMetni(g.mesai||0, g.mesaiYev||0)+'</div></div>'+
       '<div class="tutar">'+paraFmt(g.kazanc)+'</div>';
     ul.appendChild(li);
   });
@@ -4792,6 +5327,7 @@ function ayBarCiz(){
   const kilit = ayarlar.kapali.includes(aktifAyAnahtar()) ? " · 🔒" : "";
   /* Mesai artık iki birimde olabilir; ortak metin üreticisi kullanılıyor.
      `hesapla()` yevmiye katlarını artiToplam'a topluyor (0.0.9.5). */
+  try{ mutabakatDurumCiz(); }catch(e){}
   $("#ay-alt").textContent = t.gunSayisi + " gün · " +
     mesaiOzetMetni(t.mesaiToplam || 0, t.artiToplam || 0) + kilit;
 }
@@ -4952,7 +5488,15 @@ function gunListesiCiz(){
     const v = girdiler[id];
     const t = new Date(id+"T12:00:00");
     const li = document.createElement("li");
-    const mesaiYazi = (Number(v.mesai)>0 ? " · +"+v.mesai+" saat mesai" : "") + (Number(v.arti)>0 ? " · "+v.arti+" artı" : "");
+    /* Yeni kayıtlarda mesai yevmiye katı; eskiden yalnızca saat okunduğu
+       için listede hiç görünmüyordu (0.1.1.1). */
+    const mYevL = Number(v.mesaiYev)||0;
+    const mesaiIsaret = mYevL>0
+      ? (function(){ const t=Math.floor(mYevL), b=(mYevL-t)>=0.5;
+          return (t<=3 ? "X".repeat(t) : t+"X") + (b?"/":"") || "/"; })()
+      : "";
+    const mesaiYazi = (mYevL>0 ? " · +"+mesaiIsaret+" mesai"
+                     : Number(v.mesai)>0 ? " · +"+String(v.mesai).replace(".",",")+" saat mesai" : "") + (Number(v.arti)>0 ? " · "+v.arti+" artı" : "");
     const notYazi = [(v.basSaat&&v.bitSaat ? "🕐 "+v.basSaat+"–"+v.bitSaat : ""), v.santiye, (Number(v.parcaMiktar)>0 ? "📦 "+v.parcaMiktar+" "+(ayarlar.parcaBirim||"adet") : ""), v.not, (v.konum&&v.konum.adres ? "📍 "+v.konum.adres : "")].filter(Boolean).join(" — ");
     li.innerHTML =
       '<div class="rozet" style="background:'+durumRenk(v.durum)+'">'+t.getDate()+'<small>'+AYLAR[t.getMonth()].slice(0,3)+'</small></div>'+
@@ -5035,11 +5579,21 @@ function odemeListesiCiz(){
       const kopya = {...o}; delete kopya.id;
       /* Dekontu silmeden ÖNCE belleğe al ki "GERİ AL" onu da geri getirebilsin */
       let dekontYedek = null;
+      let dekontOkunamadi = false;
       if(o.dekontlu){
         try{
           const dd = await kokRef().collection("dekontlar").doc(o.id).get();
           if(dd.exists) dekontYedek = dd.data();
-        }catch(e){}
+        }catch(e){
+          /* Fiş ile aynı kritik hata: yedek alınamazsa dekont silinmemeli,
+             yoksa "GERİ AL" onu geri getiremiyor ve dekont kalıcı kayboluyor. */
+          dekontOkunamadi = true;
+          try{ hataKaydet("dekontYedek", e); }catch(_){}
+        }
+        if(dekontOkunamadi){
+          toast("⚠️ Dekont okunamadı — ödeme silinmedi. İnternetini kontrol et.");
+          return;
+        }
         kokRef().collection("dekontlar").doc(o.id).delete().catch(()=>{});
       }
       try{
@@ -5299,7 +5853,7 @@ function bugunKazancCiz(v, kazanc){
        • tutar asla daralmıyor (flex-shrink:0) — para her zaman tam görünür */
   icerik.innerHTML =
     '<div style="display:flex;align-items:baseline;justify-content:space-between;gap:10px">'+
-    '<span style="font-size:13.5px;color:var(--soluk);min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+girisEtiket(v)+(mesai>0?" · "+mesai+" saat mesai":"")+'</span>'+
+    '<span style="font-size:13.5px;color:var(--soluk);min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+girisEtiket(v)+mesaiYaziB+'</span>'+
     '<span style="font-family:\'Saira Condensed\';font-size:26px;font-weight:800;color:var(--sari);flex-shrink:0;white-space:nowrap">'+gizliPara(kazanc)+'</span>'+
     '</div>';
 }
@@ -5606,7 +6160,7 @@ async function ozetDetayYukle(){
     gSnap.forEach(doc=>{
       const v = doc.data(), ayKey = doc.id.slice(0,7);
       gun += girdiGun(v);
-      mesai += Number(v.mesai)||0;
+      mesai += mesaiSaatMik(v);
       const h = girdiKazanc(v);
       hakedis += h;
       const uy = Number(v.uYevmiye)||0;
@@ -5755,7 +6309,7 @@ async function csvIndir(){
     const satirlar = [];
     gSnap.forEach(doc=>{
       const v = doc.data();
-      satirlar.push([doc.id, "Puantaj", girisEtiket(v), v.mesai||0, girdiKazanc(v), v.santiye||"", v.not||""]);
+      satirlar.push([doc.id, "Puantaj", girisEtiket(v), (Number(v.mesaiYev)||0) > 0 ? gunIsaret(v).mesai : (v.mesai||0), girdiKazanc(v), v.santiye||"", v.not||""]);
     });
     oListe.forEach(v=>{
       satirlar.push([v.tarih, "Odeme", odemeTurEtiket(v.tur), "", -Number(v.tutar||0), "", v.not||""]);
@@ -5796,7 +6350,7 @@ async function excelIndir(){
     gunler.sort((a,b)=> a.id<b.id?-1:1);
     gunler.forEach(v=>{
       const t = new Date(v.id+"T12:00:00");
-      puantajSatir.push([v.id, GUNLER[t.getDay()], girisEtiket(v), Number(v.mesai)||0, v.santiye||"", v.not||"", girdiKazanc(v)]);
+      puantajSatir.push([v.id, GUNLER[t.getDay()], girisEtiket(v), ((Number(v.mesaiYev)||0)>0 ? gunIsaret(v).mesai : (Number(v.mesai)||0)), v.santiye||"", v.not||"", girdiKazanc(v)]);
     });
     /* DÜZELTME: aynı csvIndir()'daki gibi — ham tarih yerine odemeAyi()/FIFO
        kullanılıyor, yıl sınırını aşan ödemeler artık doğru yılda çıkıyor. */
@@ -6141,7 +6695,8 @@ function santiyeBloklariCiz(yil, ay, gBas, gSon, girdilerHarita){
     const id = yil+"-"+pad(ay+1)+"-"+pad(g);
     const v = girdilerHarita[id];
     const i = gunIsaret(v);
-    const kazancVar = i.yev!=="0" || (v && Number(v.mesai)>0);
+    const kazancVar = i.yev!=="0" ||
+      (v && (Number(v.mesai)>0 || Number(v.mesaiYev)>0 || Number(v.geceYev)>0));
     if(!kazancVar) continue;
     const ad = gunSantiyeAdi(v) || "Belirtilmemiş";
     const son = bloklar[bloklar.length-1];
@@ -6399,7 +6954,8 @@ function raporIcerikUret(gBas, gSon){
     const d = new Date(aktifYil, aktifAy, g);
     const v = girdiler[id];
     const i = gunIsaret(v);
-    const kazancVar = i.yev!=="0" || (v && Number(v.mesai)>0);
+    const kazancVar = i.yev!=="0" ||
+      (v && (Number(v.mesai)>0 || Number(v.mesaiYev)>0 || Number(v.geceYev)>0));
     const pazar = d.getDay()===0 ? " style='background:#F4F4F4;color:#999'" : "";
     satirlar += "<tr"+pazar+"><td>"+pad(g)+" / "+pad(aktifAy+1)+" / "+aktifYil+" — "+GUNLER[d.getDay()]+
       "</td><td class='orta-h'>"+i.yev+"</td><td class='orta-h'>"+i.arti+"</td><td class='orta-h'>"+i.mesai+
@@ -6642,7 +7198,8 @@ function pdfBlobOlustur(gBas, gSon){
     const d = new Date(aktifYil, aktifAy, g);
     const v = girdiler[id];
     const i = gunIsaret(v);
-    const kazancVar = i.yev!=="0" || (v && Number(v.mesai)>0);
+    const kazancVar = i.yev!=="0" ||
+      (v && (Number(v.mesai)>0 || Number(v.mesaiYev)>0 || Number(v.geceYev)>0));
     gunSatir.push([
       pad(g)+" / "+pad(aktifAy+1)+" / "+aktifYil+" — "+GUNLER[d.getDay()],
       i.yev, i.arti, i.mesai,
@@ -6908,17 +7465,21 @@ function isVerileriHesapla(is, aySecim){
   const girdilerHarita = {};
   if(tumGirdilerQS) tumGirdilerQS.forEach(d=>{ girdilerHarita[d.id] = d.data(); });
   const gunler = [];
-  let gunSayisi=0, mesaiToplam=0, hakedis=0;
+  let gunSayisi=0, mesaiToplam=0, mesaiYevToplam=0, hakedis=0;
   const d = new Date(bas+"T12:00:00");
   const dSon = new Date(son+"T12:00:00");
   while(d <= dSon){
     const id = tarihId(d);
     const v = girdilerHarita[id];
     const i = gunIsaret(v);
-    const kazancVar = i.yev!=="0" || (v && Number(v.mesai)>0);
+    /* Yeni mesai alanı da "kazanç var" saymalı (0.1.1.1) — yoksa yalnızca
+       mesaiye kalınan gün iş raporunda boş görünüyordu. */
+    const kazancVar = i.yev!=="0" ||
+      (v && (Number(v.mesai)>0 || Number(v.mesaiYev)>0 || Number(v.geceYev)>0));
     if(kazancVar){
       gunSayisi += girdiGun(v);
-      mesaiToplam += Number(v.mesai)||0;
+      mesaiToplam += mesaiSaatMik(v);
+      mesaiYevToplam += mesaiYevMik(v);
       hakedis += girdiKazanc(v);
     }
     gunler.push({id, d:new Date(d), v, i, kazancVar});
@@ -6937,7 +7498,7 @@ function isVerileriHesapla(is, aySecim){
     return ay>=basAy && ay<=sonAy;
   }).sort((a,b)=> a.tarih<b.tarih?-1:1);
   const alinan = odemelerBu.reduce((s,o)=> s+(Number(o.tutar)||0),0);
-  return {gunler, gunSayisi, mesaiToplam, hakedis, alinan, kalan:hakedis-alinan, odemeler:odemelerBu};
+  return {gunler, gunSayisi, mesaiToplam, mesaiYevToplam, hakedis, alinan, kalan:hakedis-alinan, odemeler:odemelerBu};
 }
 
 /* Bir işin kapsadığı, en az bir gün çalışılmış ayları listeler — "belirli bir
@@ -7297,7 +7858,8 @@ function yilPdfBlobOlustur(){
       const d = new Date(yilSon.yil, ayIndex, g);
       const v = girdilerHarita[id];
       const i = gunIsaret(v);
-      const kazancVar = i.yev!=="0" || (v && Number(v.mesai)>0);
+      const kazancVar = i.yev!=="0" ||
+      (v && (Number(v.mesai)>0 || Number(v.mesaiYev)>0 || Number(v.geceYev)>0));
       gunSatir.push([
         pad(g)+" / "+pad(ayIndex+1)+" — "+GUNLER[d.getDay()],
         i.yev, i.arti, i.mesai,
@@ -8484,6 +9046,7 @@ document.addEventListener("DOMContentLoaded", ()=>{
       if(git){ modalKapat(); gorunumSec("ayarlar"); toast("Ücret ayarlarından günlük yevmiyeni gir 👇"); return; }
     }
     const onceki = girdiler[modalTarih] ? {...girdiler[modalTarih]} : null;
+    let silinenGunFoto = null;   /* fotoğraf kaldırıldıysa geri alma için */
     const secId = $("#gun-santiye-sec").value || "";
     const s = (ayarlar.santiyeler||[]).find(x=>x.id===secId);
     const saatlikMod = ayarlar.calismaTipi==="saatlik";
@@ -8523,11 +9086,18 @@ document.addEventListener("DOMContentLoaded", ()=>{
         try{ await kokRef().collection("fotolar").doc(modalTarih).set({veri: modalFoto, guncelleme: firebase.firestore.FieldValue.serverTimestamp()}); }
         catch(fe){ toast("Gün kaydedildi ama fotoğraf kaydedilemedi 😕"); }
       }else if(modalFoto === ""){
+        /* Kullanıcı fotoğrafı kaldırdı. Silmeden ÖNCE yedekle ki "GERİ AL"
+           onu da geri getirebilsin — eskiden yedeklenmiyordu ve geri alma
+           fotoğrafı kurtaramıyordu (0.1.0.7). */
+        try{
+          const fd = await kokRef().collection("fotolar").doc(modalTarih).get();
+          if(fd.exists) silinenGunFoto = fd.data();
+        }catch(e){ try{ hataKaydet("gunFotoKaydetYedek", e); }catch(_){} }
         kokRef().collection("fotolar").doc(modalTarih).delete().catch(()=>{});
       }
       try{ localStorage.setItem("sonSantiye", secId); }catch(e){}
       tik();
-      modalKapat(); toastGeriAl("Gün kaydedildi ✅", {id:modalTarih, onceki});
+      modalKapat(); toastGeriAl("Gün kaydedildi ✅", {id:modalTarih, onceki, foto:silinenGunFoto});
       /* ✨ Görsel onay: ortada kısa bir tik damgası + takvimde o hücreyi vurgula.
          Vurgulama takvim yeniden çizildikten sonra çalışmalı, bu yüzden
          gunHucreVurgula içinde requestAnimationFrame ile bir kare bekleniyor. */
@@ -8543,11 +9113,21 @@ document.addEventListener("DOMContentLoaded", ()=>{
     const onceki = girdiler[modalTarih] ? {...girdiler[modalTarih]} : null;
     /* Fotoğrafı silmeden ÖNCE belleğe al ki "GERİ AL" onu da geri getirebilsin */
     let fotoYedek = null;
+    let fotoOkunamadi = false;
     if(onceki && onceki.foto){
       try{
         const fd = await kokRef().collection("fotolar").doc(modalTarih).get();
         if(fd.exists) fotoYedek = fd.data();
-      }catch(e){}
+      }catch(e){
+        /* KRİTİK (0.1.0.7): yedek alınamazsa gün YİNE DE siliniyordu ve
+           fotoğraf "GERİ AL" ile kurtarılamıyordu — kalıcı kayıp. */
+        fotoOkunamadi = true;
+        try{ hataKaydet("gunFotoYedek", e); }catch(_){}
+      }
+    }
+    if(fotoOkunamadi){
+      toast("⚠️ Gün fotoğrafı okunamadı — kayıt silinmedi. İnternetini kontrol et.");
+      return;
     }
     try{
       await kokRef().collection("girdiler").doc(modalTarih).delete();
@@ -8905,7 +9485,7 @@ document.addEventListener("DOMContentLoaded", ()=>{
   });
 
   /* Neler yeni kartı */
-  const YENILIK_SURUM = "0.1.0.6";
+  const YENILIK_SURUM = "0.1.1.6";
   window.__SURUM = YENILIK_SURUM;   /* tanı raporu bunu okur */
   try{ $("#cekmece-surum").textContent = "Puantaj Defterim " + YENILIK_SURUM; }catch(e){}
   /* Sürümü çekmece başlığında da göster. Sebep: "değişiklik gelmedi" durumunda
@@ -10456,6 +11036,27 @@ document.addEventListener("DOMContentLoaded", ()=>{
   if(btnAyWp) btnAyWp.addEventListener("click", ()=> ayDetayPaylas("wp"));
   const btnAyPdf = document.getElementById("btn-ay-detay-pdf");
   if(btnAyPdf) btnAyPdf.addEventListener("click", ()=> ayDetayPaylas("pdf"));
+
+  /* Toplu yoklama düğmeleri */
+  const btnYokTam = document.getElementById("btn-yok-hepsi-tam");
+  if(btnYokTam) btnYokTam.addEventListener("click", ()=> yoklamaTopluIsaretle("tam"));
+  const btnYokYarim = document.getElementById("btn-yok-hepsi-yarim");
+  if(btnYokYarim) btnYokYarim.addEventListener("click", ()=> yoklamaTopluIsaretle("yarim"));
+  const btnYokTemiz = document.getElementById("btn-yok-temizle");
+  if(btnYokTemiz) btnYokTemiz.addEventListener("click", ()=>{
+    if(!confirm("Bu günün yoklama seçimlerini temizlemek istiyor musun?\n(Kaydedilmiş yoklama silinmez — sadece ekrandaki seçim sıfırlanır)")) return;
+    yoklamaTopluIsaretle("yok");
+  });
+
+  /* Masraf raporu düğmeleri */
+  const btnMasrafPdf = document.getElementById("btn-masraf-pdf");
+  if(btnMasrafPdf) btnMasrafPdf.addEventListener("click", ()=> masrafPdfPaylas(false));
+  const btnMasrafPdfFis = document.getElementById("btn-masraf-pdf-fis");
+  if(btnMasrafPdfFis) btnMasrafPdfFis.addEventListener("click", ()=> masrafPdfPaylas(true));
+
+  /* İşveren onayı bağlantısı */
+  const btnMut = document.getElementById("btn-mutabakat");
+  if(btnMut) btnMut.addEventListener("click", mutabakatOlustur);
 
   const btnKurTamam = document.getElementById("btn-kur-tamam");
   if(btnKurTamam){
