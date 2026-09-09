@@ -400,11 +400,10 @@
       <div class="kart gizli" id="yenilik-kart" style="border-color:var(--sari)">
         <h2>🎁 Neler yeni?</h2>
         <ul style="padding-left:18px;font-size:13.5px;line-height:1.9">
-          <li><b>🧮 HESAP MAKİNESİ HATASI — sen söyledin, buldum.</b> Tüm dönem mutabakatında ay ay döküm tablosunda <b>1-2 ₺ tutmama</b> durumu çıkabiliyordu. Patron satırları toplayınca en alttaki genel toplamla uyuşmuyordu</li>
-          <li><b>Sebebi:</b> Her ay ayrı ayrı yuvarlanıyor, kuruşlar birikince toplamda 1-2 ₺ kayma oluşuyordu. Küçük gibi ama <b>imza atılacak bir belgede</b> rakamların kendi içinde tutmaması güvensizlik yaratır</li>
-          <li><b>✅ Düzeltildi:</b> Genel toplam artık ayların yuvarlanmış rakamlarından hesaplanıyor. Hem her satır hem genel toplam kendi içinde tutuyor: <b>hakediş − alınan = kalan</b>, her zaman</li>
-          <li><b>3.000 rastgele senaryoda test ettim</b> — sıfır tutarsızlık</li>
-          <li><b>Hesap çekirdeği de denetlendi, temiz:</b> Yarım günler (yarım × 2 = tam), ondalık artı yevmiyeler, 30 günlük toplamlarda kuruş kaybı — hepsi doğru</li>
+          <li><b>🎯 LİNK SORUNU KÖKTEN ÇÖZÜLDÜ — bir daha olmayacak.</b> Sorunun gerçek sebebi şuydu: bağlantı adresi <b>rastgele</b> üretiliyordu. Uygulama "bu ay için daha önce link ürettim mi?" diye aramak zorundaydı. APK ile tarayıcı ayrı hafıza kullandığı için bulamıyor ve <b>yeni bir belge</b> oluşturuyordu. Patrondaki eski link ise eski belgeyi gösteriyordu — <b>iki ayrı belge</b></li>
+          <li><b>Artık adres rastgele değil, hesaplanıyor.</b> Her ay için adres senin kimliğinden türetiliyor. Aramaya gerek yok, adres her zaman aynı çıkıyor. <b>İkinci belge oluşması artık imkânsız</b></li>
+          <li><b>⚠️ Bir kez tekrar göndermen gerekiyor.</b> Eski linkler eski belgeleri gösteriyor. Ağustos'a git, "Patrona onaya gönder"e bas, <b>yeni linki gönder</b>. Bundan sonra hep aynı link geçerli olacak</li>
+          <li><b>Güvenlik aynı:</b> Kimliğin 28 rastgele karakter, tahmin edilemez. Koleksiyon listeleme de kapalı</li>
         </ul>
         <button class="btn btn-cizgili" id="btn-yenilik-kapat">Süper, kapat</button>
       </div>

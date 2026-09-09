@@ -1909,21 +1909,6 @@ function mutabakatGunListesi(){
   return liste;
 }
 
-function mutabakatAnahtarUret(){
-  /* crypto varsa onu kullan; yoksa Math.random yedeği.
-     24 karakter × 36 olasılık ≈ tahmin edilemez. */
-  const harfler = "abcdefghijkmnpqrstuvwxyz23456789";
-  let a = "";
-  try{
-    const d = new Uint8Array(24);
-    crypto.getRandomValues(d);
-    for(let i=0;i<24;i++) a += harfler[d[i] % harfler.length];
-  }catch(e){
-    for(let i=0;i<24;i++) a += harfler[Math.floor(Math.random()*harfler.length)];
-  }
-  return a;
-}
-
 /* Bu ay için daha önce gönderilmiş mutabakatı bulur.
    Aynı ay tekrar gönderilirse yeni kayıt üretmek yerine mevcut
    bağlantı yenileniyor — yoksa patronun elinde birden fazla
@@ -2043,28 +2028,32 @@ async function mutabakatDurumCiz(){
   }catch(e){ el.classList.add("gizli"); }
 }
 
+/* MUTABAKAT ADRESİ — DETERMİNİSTİK (0.1.3.1)
+   ─────────────────────────────────────────────────────────────────
+   Adres eskiden RASTGELE üretiliyordu; uygulama "bu dönem için daha
+   önce bağlantı ürettim mi?" diye aramak zorundaydı (önce telefon
+   hafızası, sonra bulut). Bulamazsa YENİ belge oluşturuyordu —
+   işverenin elindeki eski bağlantı eski belgeyi göstermeye devam
+   ediyordu. Kullanıcı uygulamada 71.250 ₺ görürken linkte 50.000 ₺
+   görmesinin sebebi buydu: İKİ AYRI BELGE.
+
+   Artık adres hesaplanıyor: {kullanıcı kimliği}_{dönem}
+     • Aramaya gerek yok, adres her zaman aynı
+     • APK'dan da tarayıcıdan da aynı belge bulunuyor
+     • İkinci belge oluşması yapısal olarak imkânsız
+     • Güvenlik: kullanıcı kimliği 28 rastgele karakter; kurallarda
+       koleksiyon listeleme zaten kapalı
+   ───────────────────────────────────────────────────────────────── */
+function mutabakatAdresi(donem){
+  return kullanici.uid + "_" + donem;
+}
+
 async function mutabakatBul(donem){
-  /* ANAHTAR ARTIK BULUTTA (0.1.2.7 — kritik düzeltme)
-     ─────────────────────────────────────────────────────────────────
-     Eskiden dönem→anahtar eşlemesi yalnızca `localStorage`'daydı.
-     Sorun: APK içindeki tarayıcı ile normal tarayıcı AYRI yerel hafıza
-     kullanıyor. Uygulama mevcut mutabakatı bulamayınca YENİ anahtar
-     üretiyordu — patronun elindeki ESKİ bağlantı ise eski rakamlarla
-     kalıyordu. Kullanıcı uygulamada 71.250 ₺ görürken patrona giden
-     linkte 50.000 ₺ görünmesinin sebebi buydu.
-     Artık eşleme kullanıcının kendi Firestore verisinde tutuluyor —
-     hangi cihazdan girilirse girilsin aynı anahtar bulunuyor. */
   try{
-    const d = await kokRef().collection("mutabakatKey").doc(donem).get();
-    if(d.exists && d.data().anahtar){
-      const mb = await db.collection("mutabakat").doc(d.data().anahtar).get();
-      if(mb.exists && mb.data().sahipId === kullanici.uid){
-        try{ localStorage.setItem("mutabakat:" + donem, d.data().anahtar); }catch(e){}
-        return {id: mb.id, ...mb.data()};
-      }
-    }
-  }catch(e){ /* buluttan okunamazsa yerel yedeğe düşülüyor */ }
-  return mutabakatBulYerel(donem);
+    const d = await db.collection("mutabakat").doc(mutabakatAdresi(donem)).get();
+    if(d.exists && d.data().sahipId === kullanici.uid) return {id: d.id, ...d.data()};
+  }catch(e){}
+  return null;
 }
 
 async function mutabakatBulYerel(donem){
@@ -2139,7 +2128,9 @@ async function mutabakatOlustur(){
     toast("Onay bağlantısı hazırlanıyor...");
     /* Mevcut kayıt varsa aynı anahtarı koru — patronun elindeki
        bağlantı çalışmaya devam etsin, rakamlar güncellensin. */
-    const anahtar = mevcut ? mevcut.id : mutabakatAnahtarUret();
+    /* Adres hesaplanıyor, rastgele üretilmiyor (0.1.3.1) —
+       aynı dönem için her zaman AYNI belge kullanılıyor. */
+    const anahtar = mutabakatAdresi(donem);
     const ayAd = AYLAR[aktifAy] + " " + aktifYil;
 
     /* GÖNDERİM ONAYI (0.1.2.7 · 0.1.2.9'da öne alındı)
@@ -2211,13 +2202,6 @@ async function mutabakatOlustur(){
     /* Anahtarı HEM buluta HEM yerele yaz.
        Bulut: hangi cihazdan girilirse girilsin aynı bağlantı bulunur.
        Yerel: bulut okunamazsa (çevrimdışı) yedek olarak kullanılır. */
-    try{
-      await kokRef().collection("mutabakatKey").doc(donem).set({
-        anahtar: anahtar,
-        guncelleme: firebase.firestore.FieldValue.serverTimestamp()
-      });
-    }catch(e){ /* buluta yazılamazsa yerel yine de tutuluyor */ }
-    try{ localStorage.setItem("mutabakat:" + donem, anahtar); }catch(e){}
     /* Gönderim sonrası durumu tazele — "onay bekleniyor" görünsün */
     try{ mutabakatDurumCiz(); }catch(e){}
 
@@ -9842,7 +9826,7 @@ document.addEventListener("DOMContentLoaded", ()=>{
   });
 
   /* Neler yeni kartı */
-  const YENILIK_SURUM = "0.1.3.0";
+  const YENILIK_SURUM = "0.1.3.1";
   window.__SURUM = YENILIK_SURUM;   /* tanı raporu bunu okur */
   try{ $("#cekmece-surum").textContent = "Puantaj Defterim " + YENILIK_SURUM; }catch(e){}
   /* Sürümü çekmece başlığında da göster. Sebep: "değişiklik gelmedi" durumunda

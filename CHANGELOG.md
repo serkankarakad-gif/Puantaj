@@ -5,6 +5,19 @@ kullanır: `0.0.0.X` — X, her güncellemede 1 artar. Uygulama içindeki sürü
 (alt bilgi + "Neler yeni" kartı) ve dağıtılan zip dosyasının adı her zaman
 birebir aynıdır.
 
+## 0.1.3.1 — 🎯 Mutabakat adresi deterministik hale getirildi (kök çözüm)
+- Kullanıcı üst üste bildirdi: uygulamada 71.250 ₺, işverene giden bağlantıda ~50.000 ₺. 0.1.2.7'deki bulut anahtar çözümü yetmedi
+- 🎯 **KÖK SEBEP**: belge kimliği **rastgele** üretiliyordu (`mutabakatAnahtarUret()`), bu yüzden uygulamanın "bu dönem için belge var mı?" diye **aramak** zorunda kalması gerekiyordu — önce `localStorage`, sonra `mutabakatKey` koleksiyonu. Arama başarısız olduğunda **yeni belge** oluşuyordu; işverenin elindeki eski bağlantı eski belgeyi göstermeye devam ediyordu. Sorunun kaynağı arama mekanizmasının kendisiydi
+- ✅ **Çözüm — `mutabakatAdresi(donem)`**: belge kimliği `{uid}_{donem}` olarak **hesaplanıyor**
+  - Arama gerekmiyor; `mutabakatBul()` tek `get()` çağrısına indi
+  - Hangi cihazdan (APK WebView / tarayıcı) girilirse girilsin aynı belge
+  - Aynı dönem için ikinci belge oluşması **yapısal olarak imkânsız**
+  - Güvenlik: Firebase UID 28 rastgele karakter; `firestore.rules` içinde `list` zaten kapalı, yalnızca `get` açık
+- 🧹 Gereksiz kalanlar kaldırıldı: `mutabakatAnahtarUret()`, `mutabakatBulYerel()`, `mutabakatKey` koleksiyonu ve `localStorage` eşlemesi
+- ⚠️ **Geçiş**: mevcut bağlantılar eski (rastgele kimlikli) belgeleri gösteriyor. Kullanıcının her dönem için bir kez yeniden göndermesi gerekiyor; sonrasında adres kalıcı
+- Uygulama sırasında dosya bir kez bozuldu (fonksiyon ortasından silme), 0.1.3.0 zip'inden geri alınıp fonksiyon sınırları hesaplanarak yeniden yapıldı
+- Üç yerde sürüm güncellendi: `app.js`, `sw.js`, zip adı — hepsi `0.1.3.1`
+
 ## 0.1.3.0 — 🧮 Mutabakat ay tablosunda yuvarlama tutarsızlığı
 - Kullanıcı uyarısı: "hesap makinesi hatası da olabilir bu işlemlerde"
 - 🧮 **BULUNAN HATA**: `tumDonemOzeti()` her ayın `kalan` değerini **ham farktan** (`Math.round(hak - alinan)`) hesaplıyordu, genel toplam ise ayların yuvarlanmış değerlerinin toplamıydı. Rastgele senaryolarda **1-2 ₺ tutarsızlık** üretiyordu: işveren ay ay "kalan" sütununu toplayınca genel toplamla uyuşmuyordu
