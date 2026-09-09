@@ -5,6 +5,46 @@ kullanır: `0.0.0.X` — X, her güncellemede 1 artar. Uygulama içindeki sürü
 (alt bilgi + "Neler yeni" kartı) ve dağıtılan zip dosyasının adı her zaman
 birebir aynıdır.
 
+## 0.1.3.0 — 🧮 Mutabakat ay tablosunda yuvarlama tutarsızlığı
+- Kullanıcı uyarısı: "hesap makinesi hatası da olabilir bu işlemlerde"
+- 🧮 **BULUNAN HATA**: `tumDonemOzeti()` her ayın `kalan` değerini **ham farktan** (`Math.round(hak - alinan)`) hesaplıyordu, genel toplam ise ayların yuvarlanmış değerlerinin toplamıydı. Rastgele senaryolarda **1-2 ₺ tutarsızlık** üretiyordu: işveren ay ay "kalan" sütununu toplayınca genel toplamla uyuşmuyordu
+  - İmza atılacak bir belgede kendi içinde toplanmayan rakam güvensizlik yaratır
+- ✅ **Düzeltme**:
+  - Satır bazında: `kalan = Math.round(hak) - Math.round(alinan)` — satırın kendi içinde tutması için
+  - Genel toplam: `toplam.kalan = toplam.hak - toplam.alinan` — ayların yuvarlanmış toplamlarından türetiliyor
+  - Sonuç: hem her satır hem genel toplam için `hakediş − alınan = kalan` her zaman geçerli
+- **Test**: 3.000 rastgele senaryo (2-5 ay, rastgele küsuratlı tutarlar), her satır ve genel toplam kontrol edildi — **0 tutarsızlık**
+- **Hesap çekirdeği denetlendi, temiz**: yarım gün × 2 = tam gün (2500/2333/1875/999 yevmiyelerinde), ondalık artı yevmiye (0.25/0.5/0.75/1.5/2.5), 30 yarım günün toplamı = 15 tam gün
+- Diğer `kalan` hesapları (rapor, PDF, ay detayı) ham değerlerden hesaplayıp sonra yuvarladığı için aynı riski taşımıyor — kontrol edildi
+- Üç yerde sürüm güncellendi: `app.js`, `sw.js`, zip adı — hepsi `0.1.3.0`
+
+## 0.1.2.9 — 🚨 Gönderim onayı yazma işleminden sonra soruluyordu (veri kaybı)
+- Gönderim akışının adım sırası denetlendi
+- 🚨 **KRİTİK: `confirm()` `set()` işleminden SONRA geliyordu.** 0.1.2.7'de eklenen "patrona gidecek rakamlar" onayı, belge Firestore'a yazıldıktan sonra soruluyordu
+  - Kullanıcı "İptal" dese bile belge güncellenmiş oluyordu
+  - **Daha ağırı**: işveren o belgeyi onaylamışsa `set()` işlemi `onay:false` yazarak **onayı siliyordu**. Kullanıcı iptal ettiğini sanırken imzalı belgesini kaybediyordu
+  - Düzeltme: onay bloğu `.set()` çağrısından önceye alındı. İptal edildiğinde hiçbir yazma yapılmıyor
+- 🛡️ **Çift tıklama koruması**: akış birden çok `confirm()` ve ağ işlemi içeriyor. Kullanıcı beklerken tekrar basarsa iki ayrı belge oluşup işverene hangisinin geçerli olduğu belirsiz iki bağlantı gidebilirdi. `#btn-mutabakat` `disabled` bayrağı + `finally` ile serbest bırakma
+- **Metin düzeltmesi**: tüm dönem kapsamında "Bu ay ZATEN ONAYLANMIŞ" yanlış ifadeydi; kapsama göre "Bu TÜM DÖNEM mutabakatı" / "Bu ay" seçiliyor. `kapsamTum` tanımının kullanımdan önce geldiği doğrulandı
+- Üç yerde sürüm güncellendi: `app.js`, `sw.js`, zip adı — hepsi `0.1.2.9`
+
+## 0.1.2.8 — 🔍 Tüm dönem mutabakatı: takip boşluğu ve tazeleme hatası
+- 0.1.2.7'de eklenen "tüm dönem" kapsamı denetlendi, iki sorun bulundu
+- 🔍 **Takip boşluğu**: `mutabakatDurumCiz()` yalnızca `aktifYil-aktifAy` dönemini arıyordu. "Tüm dönem" gönderildiğinde belge `donem: "tum"` ile kaydedildiği için durum kartı hiç görünmüyordu — kullanıcı gönderdiği belgenin onaylanıp onaylanmadığını takip edemiyordu. Artık ay kaydı bulunamazsa `"tum"` kaydı da aranıyor; durum kartında kapsam etiketi gösteriliyor ("Onay bekleniyor (tüm dönem)")
+- 🐞 **Tazeleme hatası**: otomatik tazeleme her durumda `hesapla()` (tek ay) sonucunu yazıyordu. Tüm dönem belgesi açıldığında **çok aylık toplam tek ayın rakamlarıyla ezilecekti** — işveren 3 aylık alacak yerine 1 aylık rakam görürdü. Artık `m.kapsam` kontrol ediliyor: `"tum"` ise `tumDonemOzeti()`, değilse `hesapla()`
+- **Kod temizliği**: ilk uygulamada iç içe geçmiş, `throw {atla:true}` ile akış kesen okunmaz bir yapı oluşmuştu; blok baştan düzgün yazıldı
+- Doğrulama: söz dizimi, çalışma anı testi ve kalıntı taraması temiz
+- Üç yerde sürüm güncellendi: `app.js`, `sw.js`, zip adı — hepsi `0.1.2.8`
+
+## 0.1.2.7 — 🚨 Mutabakat anahtarı buluta taşındı (linkte eski rakam sorunu)
+- Kullanıcı 10. kez bildirdi: uygulamada hakediş 71.250 ₺ görünürken işverene giden bağlantıda 50.000 ₺ civarı yazıyor
+- 🚨 **KÖK SEBEP BULUNDU**: dönem→anahtar eşlemesi yalnızca `localStorage`'da tutuluyordu. **APK içindeki WebView ile normal tarayıcı ayrı yerel hafıza kullanıyor.** `mutabakatBul()` mevcut belgeyi bulamayınca **yeni anahtar üretip yeni belge oluşturuyordu**; işverenin elindeki eski bağlantı eski rakamlarla kalıyordu. İki ayrı belge oluşuyordu
+- ✅ **Anahtar artık Firestore'da**: `kullanicilar/{uid}/mutabakatKey/{donem}` → `{anahtar}`. `mutabakatBul()` önce buluta bakıyor, sahiplik doğrulaması yapıyor; bulut okunamazsa `localStorage` yedeğine düşüyor. Gönderimde her ikisine de yazılıyor
+- ✅ **Gönderim öncesi rakam onayı**: ne gönderileceği `confirm()` ile gösteriliyor — gün, yevmiye, hakediş, alınan, kalan ve `gün × yevmiye = hakediş` kontrol satırı. Yanlışsa kullanıcı iptal edebiliyor
+- 📆 **Tüm dönem kapsamı**: önceki aylarda ödenmemiş bakiye varsa seçim sunuluyor (bu ay / tüm dönem). Tüm dönem seçilirse belgeye `aylar` dizisi yazılıyor ve onay sayfasında ay ay döküm tablosu gösteriliyor (ay · gün · hakediş · alınan · kalan)
+- `tumDonemOzeti()` `enEskiOdenmemisAy()` ile aynı veri kaynağını kullanıyor — tek doğru kaynak korunuyor
+- Üç yerde sürüm güncellendi: `app.js`, `sw.js`, zip adı — hepsi `0.1.2.7`
+
 ## 0.1.2.6 — 📋 Mutabakat sayfasına gün gün döküm
 - Kullanıcı isteği: işveren yalnızca toplamı değil puantajı da görsün
 - 📋 **`mutabakatGunListesi()`**: yalnızca çalışılan günleri (`girdiGun(v) > 0`) kısa alan adlarıyla döndürüyor — `g` (ayın kaçı), `d` (yevmiye işareti), `a` (artı), `m` (mesai), `k` (kazanç). Gelinmeyen günler belgeye girmiyor

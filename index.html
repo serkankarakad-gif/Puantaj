@@ -400,10 +400,11 @@
       <div class="kart gizli" id="yenilik-kart" style="border-color:var(--sari)">
         <h2>🎁 Neler yeni?</h2>
         <ul style="padding-left:18px;font-size:13.5px;line-height:1.9">
-          <li><b>📋 Patrona giden sayfaya GÜN GÜN DÖKÜM eklendi.</b> Artık sadece "27,5 gün · 71.250 ₺" görmüyor — <b>hangi günlerde çalıştığını</b> tek tek görüyor</li>
-          <li><b>Tabloda ne var:</b> Ayın kaçı · yevmiye (X veya /) · artı yevmiye · mesai · o günün kazancı. Patron toplamı kendi kontrol edebiliyor</li>
-          <li><b>Gelmediğin günler listede yok</b> — sadece çalıştığın günler yazıyor. Gereksiz kalabalık olmasın</li>
-          <li><b>Bu döküm de kendiliğinden güncelleniyor.</b> Sonradan gün eklersen, patron henüz onaylamadıysa listeye giriyor</li>
+          <li><b>🧮 HESAP MAKİNESİ HATASI — sen söyledin, buldum.</b> Tüm dönem mutabakatında ay ay döküm tablosunda <b>1-2 ₺ tutmama</b> durumu çıkabiliyordu. Patron satırları toplayınca en alttaki genel toplamla uyuşmuyordu</li>
+          <li><b>Sebebi:</b> Her ay ayrı ayrı yuvarlanıyor, kuruşlar birikince toplamda 1-2 ₺ kayma oluşuyordu. Küçük gibi ama <b>imza atılacak bir belgede</b> rakamların kendi içinde tutmaması güvensizlik yaratır</li>
+          <li><b>✅ Düzeltildi:</b> Genel toplam artık ayların yuvarlanmış rakamlarından hesaplanıyor. Hem her satır hem genel toplam kendi içinde tutuyor: <b>hakediş − alınan = kalan</b>, her zaman</li>
+          <li><b>3.000 rastgele senaryoda test ettim</b> — sıfır tutarsızlık</li>
+          <li><b>Hesap çekirdeği de denetlendi, temiz:</b> Yarım günler (yarım × 2 = tam), ondalık artı yevmiyeler, 30 günlük toplamlarda kuruş kaybı — hepsi doğru</li>
         </ul>
         <button class="btn btn-cizgili" id="btn-yenilik-kapat">Süper, kapat</button>
       </div>

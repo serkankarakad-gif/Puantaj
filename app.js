@@ -1824,6 +1824,71 @@ async function mutabakatOnayla(anahtar){
   }
 }
 
+/* TÜM DÖNEM ÖZETİ (0.1.2.7)
+   İşçi yalnızca bu ayın değil, TOPLAM alacağının onaylanmasını isteyebilir.
+   Örnek: Temmuz'dan 18.500, Ağustos'tan 71.250 alacağı varsa patronun
+   tamamını görüp onaylaması gerekiyor.
+   `enEskiOdenmemisAy()` ile aynı veri kaynağını kullanıyor — tek doğru
+   kaynak korunuyor, iki ayrı hesap çıkmıyor. */
+async function tumDonemOzeti(){
+  let gSnap = tumGirdilerQS, oSnap = tumOdemelerQS;
+  if(!gSnap || !oSnap){
+    const r = await Promise.all([
+      kokRef().collection("girdiler").get(),
+      kokRef().collection("odemeler").get()
+    ]);
+    gSnap = tumGirdilerQS || r[0];
+    oSnap = tumOdemelerQS || r[1];
+  }
+  const aylar = {};
+  gSnap.forEach(doc=>{
+    const v = doc.data(), ay = doc.id.slice(0,7);
+    if(!aylar[ay]) aylar[ay] = {hak:0, alinan:0, gun:0, mesai:0, arti:0};
+    aylar[ay].hak    += girdiKazanc(v);
+    aylar[ay].gun    += girdiGun(v);
+    aylar[ay].mesai  += mesaiSaatMik(v);
+    aylar[ay].arti   += mesaiYevMik(v);
+  });
+  oSnap.forEach(doc=>{
+    const v = doc.data(), ay = odemeAyi(v);
+    if(!ay) return;
+    if(!aylar[ay]) aylar[ay] = {hak:0, alinan:0, gun:0, mesai:0, arti:0};
+    aylar[ay].alinan += Number(v.tutar)||0;
+  });
+  /* Yalnızca gerçekten kayıt olan aylar, eskiden yeniye */
+  const liste = Object.keys(aylar).sort()
+    .filter(a=> aylar[a].hak > 0 || aylar[a].alinan > 0)
+    .map(a=>{
+      const [yy, mm] = a.split("-").map(Number);
+      return {
+        ay: a,
+        ad: AYLAR[mm-1] + " " + yy,
+        gun: Math.round(aylar[a].gun * 100) / 100,
+        hak: Math.round(aylar[a].hak),
+        alinan: Math.round(aylar[a].alinan),
+        /* Kalan, ham farktan değil YUVARLANMIŞ hakediş ve alınandan
+           hesaplanıyor — satırın kendi içinde tutması için (0.1.3.0) */
+        kalan: Math.round(aylar[a].hak) - Math.round(aylar[a].alinan)
+      };
+    });
+  /* YUVARLAMA TUTARLILIĞI (0.1.3.0)
+     Her ay ayrı yuvarlandığı için toplamda 1-2 ₺ kayma oluşabiliyordu:
+     tabloda ay ay "kalan" değerlerini toplayan işveren, en alttaki
+     genel toplamla tutmadığını görüyordu. Bir mutabakat belgesinde
+     kendi içinde toplanmayan rakam güvensizlik yaratır.
+     Çözüm: toplam, ayların YUVARLANMIŞ değerlerinden hesaplanıyor —
+     ham değerlerden değil. Böylece tablo her zaman kendi içinde
+     tutuyor: Σ hakediş − Σ alınan = Σ kalan. */
+  const toplam = liste.reduce((t,a)=>({
+    gun: t.gun + a.gun, hak: t.hak + a.hak,
+    alinan: t.alinan + a.alinan, kalan: t.kalan + a.kalan
+  }), {gun:0, hak:0, alinan:0, kalan:0});
+  toplam.gun = Math.round(toplam.gun * 100) / 100;
+  /* Kalan, hakediş−alınan ile birebir aynı olmalı */
+  toplam.kalan = toplam.hak - toplam.alinan;
+  return {aylar: liste, toplam};
+}
+
 /* Mutabakat için gün gün döküm hazırlar. Yalnızca çalışılan günler. */
 function mutabakatGunListesi(){
   const liste = [];
@@ -1870,8 +1935,12 @@ async function mutabakatDurumCiz(){
   const el = document.getElementById("mutabakat-durum");
   if(!el || !kullanici){ if(el) el.classList.add("gizli"); return; }
   try{
+    /* Hem bu ayın hem TÜM DÖNEM mutabakatı aranıyor (0.1.2.8).
+       Kullanıcı tüm dönem gönderdiyse durum kartı görünmüyordu —
+       gönderdiği belgenin onaylanıp onaylanmadığını takip edemiyordu. */
     const donem = aktifYil + "-" + pad(aktifAy+1);
-    const m = await mutabakatBul(donem);
+    let m = await mutabakatBul(donem);
+    if(!m) m = await mutabakatBul("tum");
     if(!m){ el.classList.add("gizli"); return; }
 
     /* ONAYLANMAMIŞ MUTABAKAT KENDİLİĞİNDEN GÜNCELLENİYOR (0.1.2.5)
@@ -1883,53 +1952,48 @@ async function mutabakatDurumCiz(){
        doğru rakamları görüyor.
        Onaylanmış mutabakata DOKUNULMUYOR — imza atılmış belge sonradan
        değişmemeli. */
+    /* ONAYLANMAMIŞ MUTABAKAT KENDİLİĞİNDEN TAZELENİYOR (0.1.2.5 / 0.1.2.8)
+       Bağlantı, gönderildiği andaki rakamların fotoğrafı. Sonradan gün
+       eklenirse ya da yevmiye değişirse işverenin elindeki link eski
+       rakamları göstermeye devam ediyordu.
+       Kapsama göre doğru kaynak kullanılıyor: "tum" ise tüm dönem özeti,
+       "ay" ise görüntülenen ayın hesabı. Karıştırılırsa toplam bozulur.
+       Onaylanmış belgeye DOKUNULMUYOR — imzalanmış belge değişmemeli. */
     if(!m.onay){
       try{
-        const t = hesapla();
-        const yeniHak = Math.round(t.hakedis), yeniAlinan = Math.round(t.alinan);
-        if(m.hakedis !== yeniHak || m.alinan !== yeniAlinan || m.gunSayisi !== t.gunSayisi){
-          await db.collection("mutabakat").doc(m.id).update({
-            gunSayisi: t.gunSayisi,
-            mesaiToplam: t.mesaiToplam || 0,
-            artiToplam: t.artiToplam || 0,
-            yevmiye: Number(ayarlar.yevmiye) || 0,
-            hakedis: yeniHak,
-            alinan: yeniAlinan,
-            kalan: Math.round(t.kalan),
-            gunler: mutabakatGunListesi()
-          });
-          m.gunSayisi = t.gunSayisi; m.hakedis = yeniHak;
-          m.alinan = yeniAlinan; m.kalan = Math.round(t.kalan);
+        if(m.kapsam === "tum"){
+          const dz = await tumDonemOzeti();
+          if(m.hakedis !== dz.toplam.hak || m.alinan !== dz.toplam.alinan || m.gunSayisi !== dz.toplam.gun){
+            await db.collection("mutabakat").doc(m.id).update({
+              aylar: dz.aylar,
+              gunSayisi: dz.toplam.gun,
+              yevmiye: Number(ayarlar.yevmiye) || 0,
+              hakedis: dz.toplam.hak,
+              alinan: dz.toplam.alinan,
+              kalan: dz.toplam.kalan
+            });
+            m.aylar = dz.aylar; m.gunSayisi = dz.toplam.gun;
+            m.hakedis = dz.toplam.hak; m.alinan = dz.toplam.alinan; m.kalan = dz.toplam.kalan;
+          }
+        }else{
+          const t = hesapla();
+          const yeniHak = Math.round(t.hakedis), yeniAlinan = Math.round(t.alinan);
+          if(m.hakedis !== yeniHak || m.alinan !== yeniAlinan || m.gunSayisi !== t.gunSayisi){
+            await db.collection("mutabakat").doc(m.id).update({
+              gunSayisi: t.gunSayisi,
+              mesaiToplam: t.mesaiToplam || 0,
+              artiToplam: t.artiToplam || 0,
+              yevmiye: Number(ayarlar.yevmiye) || 0,
+              hakedis: yeniHak,
+              alinan: yeniAlinan,
+              kalan: Math.round(t.kalan),
+              gunler: mutabakatGunListesi()
+            });
+            m.gunSayisi = t.gunSayisi; m.hakedis = yeniHak;
+            m.alinan = yeniAlinan; m.kalan = Math.round(t.kalan);
+          }
         }
-      }catch(e){ /* güncellenemezse eski rakamlarla devam, çökme yok */ }
-    }
-
-    /* GÜN GÜN DÖKÜM (0.1.2.6)
-       İşveren "27,5 gün" rakamını doğrulayabilmeli — hangi günler
-       çalışıldığını görsün. Yalnızca çalışılan günler listeleniyor. */
-    if(Array.isArray(m.gunler) && m.gunler.length){
-      const satirlar = m.gunler.map(g=>
-        '<tr>' +
-          '<td style="padding:7px 4px;border-bottom:1px solid var(--cizgi);font-family:\'Saira Condensed\';font-size:14px;font-weight:700">' + g.g + '</td>' +
-          '<td style="padding:7px 4px;border-bottom:1px solid var(--cizgi);text-align:center;font-family:\'Saira Condensed\';font-size:14px;font-weight:800;color:var(--tam-ac)">' + esc(g.d||"") + '</td>' +
-          '<td style="padding:7px 4px;border-bottom:1px solid var(--cizgi);text-align:center;font-family:\'Saira Condensed\';font-size:13px;color:var(--sari)">' + esc(g.a||"—") + '</td>' +
-          '<td style="padding:7px 4px;border-bottom:1px solid var(--cizgi);text-align:center;font-family:\'Saira Condensed\';font-size:13px;color:var(--mesai)">' + esc(g.m||"—") + '</td>' +
-          '<td style="padding:7px 4px;border-bottom:1px solid var(--cizgi);text-align:right;font-family:\'Saira Condensed\';font-size:14px;font-weight:700">' + paraFmt(g.k||0) + '</td>' +
-        '</tr>').join("");
-      govde.innerHTML +=
-        '<div class="kart">' +
-          '<div style="font-size:14px;font-weight:700;margin-bottom:4px">📋 Gün gün döküm</div>' +
-          '<div style="font-size:11.5px;color:var(--soluk);margin-bottom:10px;line-height:1.5">' +
-            'Yalnızca çalışılan günler · X = tam yevmiye, / = yarım</div>' +
-          '<table style="width:100%;border-collapse:collapse">' +
-            '<thead><tr>' +
-              '<th style="text-align:left;font-size:10px;color:var(--soluk2);letter-spacing:.5px;padding-bottom:6px">GÜN</th>' +
-              '<th style="text-align:center;font-size:10px;color:var(--soluk2);letter-spacing:.5px;padding-bottom:6px">YEVMİYE</th>' +
-              '<th style="text-align:center;font-size:10px;color:var(--soluk2);letter-spacing:.5px;padding-bottom:6px">ARTI</th>' +
-              '<th style="text-align:center;font-size:10px;color:var(--soluk2);letter-spacing:.5px;padding-bottom:6px">MESAİ</th>' +
-              '<th style="text-align:right;font-size:10px;color:var(--soluk2);letter-spacing:.5px;padding-bottom:6px">KAZANÇ</th>' +
-            '</tr></thead><tbody>' + satirlar + '</tbody></table>' +
-        '</div>';
+      }catch(e){ /* tazelenemezse eski rakamlarla devam, çökme yok */ }
     }
 
     if(m.onay){
@@ -1939,7 +2003,8 @@ async function mutabakatDurumCiz(){
           '<div style="display:flex;align-items:center;gap:9px">' +
             '<span style="font-size:20px">✅</span>' +
             '<div style="flex:1;min-width:0">' +
-              '<div style="font-size:14px;font-weight:700;color:var(--tam-ac)">Patron onayladı</div>' +
+              '<div style="font-size:14px;font-weight:700;color:var(--tam-ac)">Patron onayladı' +
+                (m.kapsam === "tum" ? ' <span style="font-size:11px;font-weight:600;color:var(--soluk)">(tüm dönem)</span>' : '') + '</div>' +
               '<div style="font-size:11.5px;color:var(--soluk);margin-top:2px">' +
                 (m.onaylayanAd ? esc(m.onaylayanAd) : "") +
                 (t ? " · " + t.toLocaleDateString("tr-TR") + " " + t.toLocaleTimeString("tr-TR",{hour:"2-digit",minute:"2-digit"}) : "") +
@@ -1967,7 +2032,8 @@ async function mutabakatDurumCiz(){
           '<div style="display:flex;align-items:center;gap:9px">' +
             '<span style="font-size:20px">⏳</span>' +
             '<div style="flex:1">' +
-              '<div style="font-size:14px;font-weight:700;color:var(--yarim)">Onay bekleniyor</div>' +
+              '<div style="font-size:14px;font-weight:700;color:var(--yarim)">Onay bekleniyor' +
+                (m.kapsam === "tum" ? ' <span style="font-size:11px;font-weight:600;color:var(--soluk)">(tüm dönem)</span>' : '') + '</div>' +
               '<div style="font-size:11.5px;color:var(--soluk);margin-top:2px">Bağlantı gönderildi, patron henüz onaylamadı</div>' +
             '</div>' +
           '</div>' +
@@ -1978,6 +2044,30 @@ async function mutabakatDurumCiz(){
 }
 
 async function mutabakatBul(donem){
+  /* ANAHTAR ARTIK BULUTTA (0.1.2.7 — kritik düzeltme)
+     ─────────────────────────────────────────────────────────────────
+     Eskiden dönem→anahtar eşlemesi yalnızca `localStorage`'daydı.
+     Sorun: APK içindeki tarayıcı ile normal tarayıcı AYRI yerel hafıza
+     kullanıyor. Uygulama mevcut mutabakatı bulamayınca YENİ anahtar
+     üretiyordu — patronun elindeki ESKİ bağlantı ise eski rakamlarla
+     kalıyordu. Kullanıcı uygulamada 71.250 ₺ görürken patrona giden
+     linkte 50.000 ₺ görünmesinin sebebi buydu.
+     Artık eşleme kullanıcının kendi Firestore verisinde tutuluyor —
+     hangi cihazdan girilirse girilsin aynı anahtar bulunuyor. */
+  try{
+    const d = await kokRef().collection("mutabakatKey").doc(donem).get();
+    if(d.exists && d.data().anahtar){
+      const mb = await db.collection("mutabakat").doc(d.data().anahtar).get();
+      if(mb.exists && mb.data().sahipId === kullanici.uid){
+        try{ localStorage.setItem("mutabakat:" + donem, d.data().anahtar); }catch(e){}
+        return {id: mb.id, ...mb.data()};
+      }
+    }
+  }catch(e){ /* buluttan okunamazsa yerel yedeğe düşülüyor */ }
+  return mutabakatBulYerel(donem);
+}
+
+async function mutabakatBulYerel(donem){
   /* İKİ ALANLI SORGU KULLANILMIYOR (0.1.1.5)
      `where(sahipId) + where(donem)` Firestore'da bileşik indeks
      gerektiriyor. Kullanıcıya Firebase konsolunda ek kurulum
@@ -2001,19 +2091,45 @@ async function mutabakatBul(donem){
 }
 
 async function mutabakatOlustur(){
+  /* ÇİFT TIKLAMA KORUMASI (0.1.2.9)
+     Bu akış birden çok onay penceresi açıyor ve arada ağ işlemi yapıyor.
+     Kullanıcı beklerken tekrar basarsa iki ayrı belge oluşup patrona
+     hangisinin geçerli olduğu belirsiz iki bağlantı gidebilirdi. */
+  const _mbtn = document.getElementById("btn-mutabakat");
+  if(_mbtn && _mbtn.disabled) return;
+  if(_mbtn) _mbtn.disabled = true;
   try{
     if(!kullanici){ toast("Önce giriş yap"); return; }
     const t = hesapla();
     if(!t || t.gunSayisi <= 0){ toast("Bu ayda kayıt yok — önce günlerini işle"); return; }
 
-    const donem = aktifYil + "-" + pad(aktifAy+1);
+    /* KAPSAM SEÇİMİ (0.1.2.7)
+       İşçi bazen yalnızca bu ayı, bazen tüm birikmiş alacağını
+       onaylatmak istiyor. Önceki aylarda ödenmemiş bakiye varsa seçim
+       sunuluyor; yoksa doğrudan bu ay gönderiliyor. */
+    let kapsamTum = false, dOzet = null;
+    try{
+      dOzet = await tumDonemOzeti();
+      const buAyAnahtar = aktifYil + "-" + pad(aktifAy+1);
+      const oncekiKalan = dOzet.aylar
+        .filter(a=> a.ay !== buAyAnahtar && a.kalan > 0)
+        .reduce((x,a)=> x + a.kalan, 0);
+      if(oncekiKalan > 0){
+        kapsamTum = confirm(
+          "Önceki aylardan da " + paraFmt(oncekiKalan) + " alacağın görünüyor.\n\n" +
+          "TAMAM → TÜM DÖNEMİ gönder (toplam " + paraFmt(dOzet.toplam.kalan) + ")\n" +
+          "İPTAL → yalnızca " + AYLAR[aktifAy] + " " + aktifYil + " (" + paraFmt(t.kalan) + ")");
+      }
+    }catch(e){ /* özet alınamazsa yalnızca bu ay gönderilir */ }
+
+    const donem = kapsamTum ? "tum" : (aktifYil + "-" + pad(aktifAy+1));
     const mevcut = await mutabakatBul(donem);
 
     /* Zaten onaylanmışsa yeni bağlantı üretme — onay kaybolmasın */
     if(mevcut && mevcut.onay){
       const t2 = mevcut.onayTarih && mevcut.onayTarih.toDate ? mevcut.onayTarih.toDate() : null;
       const devam = confirm(
-        "Bu ay ZATEN ONAYLANMIŞ.\n\n" +
+        (kapsamTum ? "Bu TÜM DÖNEM mutabakatı" : "Bu ay") + " ZATEN ONAYLANMIŞ.\n\n" +
         (mevcut.onaylayanAd ? "Onaylayan: " + mevcut.onaylayanAd + "\n" : "") +
         (t2 ? "Tarih: " + t2.toLocaleDateString("tr-TR") + " " + t2.toLocaleTimeString("tr-TR",{hour:"2-digit",minute:"2-digit"}) + "\n" : "") +
         "\nYeniden gönderirsen mevcut onay SİLİNİR ve patronun tekrar onaylaması gerekir.\n\nDevam edilsin mi?");
@@ -2026,16 +2142,49 @@ async function mutabakatOlustur(){
     const anahtar = mevcut ? mevcut.id : mutabakatAnahtarUret();
     const ayAd = AYLAR[aktifAy] + " " + aktifYil;
 
+    /* GÖNDERİM ONAYI (0.1.2.7 · 0.1.2.9'da öne alındı)
+       Kullanıcı defalarca "linkte yanlış rakam görünüyor" dedi. Artık
+       ne gideceği gönderilmeden ÖNCE ekranda gösteriliyor — yanlışsa
+       kullanıcı gönderimi iptal edip düzeltebiliyor.
+
+       0.1.2.9 — SIRA DÜZELTİLDİ: bu onay eskiden belge YAZILDIKTAN
+       sonra soruluyordu. Kullanıcı "İptal" dese bile belge çoktan
+       güncellenmiş oluyordu; daha kötüsü, patron o belgeyi ONAYLAMIŞSA
+       `set()` işlemi `onay:false` yazarak onayı SİLİYORDU ve kullanıcının
+       haberi olmuyordu. Artık hiçbir yazma yapılmadan önce soruluyor. */
+    {
+      const gy = Number(ayarlar.yevmiye) || 0;
+      const gs = (kapsamTum && dOzet) ? dOzet.toplam.gun : t.gunSayisi;
+      const gh = (kapsamTum && dOzet) ? dOzet.toplam.hak : Math.round(t.hakedis);
+      const ga = (kapsamTum && dOzet) ? dOzet.toplam.alinan : Math.round(t.alinan);
+      const gk = (kapsamTum && dOzet) ? dOzet.toplam.kalan : Math.round(t.kalan);
+      const gonder = confirm(
+        "PATRONA GİDECEK RAKAMLAR\n" +
+        (kapsamTum ? "TÜM DÖNEM" : ayAd) + "\n" +
+        "──────────────────────\n" +
+        "Çalışılan gün : " + gs + "\n" +
+        "Günlük yevmiye: " + paraFmt(gy) + "\n" +
+        "Hakediş       : " + paraFmt(gh) + "\n" +
+        "Alınan        : " + paraFmt(ga) + "\n" +
+        "KALAN         : " + paraFmt(gk) + "\n" +
+        "──────────────────────\n" +
+        "Kontrol: " + gs + " × " + paraFmt(gy) + " = " + paraFmt(gs * gy) + "\n\n" +
+        "Doğruysa TAMAM'a bas, gönderilsin.");
+      if(!gonder) return;
+    }
+
     /* Belgede YALNIZCA özet — kişisel veri veya gün gün döküm yok */
     await db.collection("mutabakat").doc(anahtar).set({
       sahipId: kullanici.uid,
       isciAd: (kullanici.displayName || "").slice(0, 60),
-      donem: aktifYil + "-" + pad(aktifAy+1),
-      donemAd: ayAd,
+      donem: donem,
+      donemAd: kapsamTum ? "TÜM DÖNEM" : ayAd,
+      kapsam: kapsamTum ? "tum" : "ay",
+      aylar: (kapsamTum && dOzet) ? dOzet.aylar : [],
       santiye: String(ayarlar.santiye || "").slice(0, 80),
-      gunSayisi: t.gunSayisi,
-      mesaiToplam: t.mesaiToplam || 0,
-      artiToplam: t.artiToplam || 0,
+      gunSayisi: (kapsamTum && dOzet) ? dOzet.toplam.gun : t.gunSayisi,
+      mesaiToplam: kapsamTum ? 0 : (t.mesaiToplam || 0),
+      artiToplam: kapsamTum ? 0 : (t.artiToplam || 0),
       /* YEVMİYE — bugünkü ayar DEĞİL, o dönemde gerçekten uygulanan (0.1.2.1)
          Uygulama her günü kaydedildiği andaki ücretle mühürlüyor. Yevmiye
          sonradan yükseltilirse eski günler eski ücretten kalıyor — doğru
@@ -2045,21 +2194,29 @@ async function mutabakatOlustur(){
          Artık dönemin gerçek ortalaması yazılıyor ve ücretler farklıysa
          bu ayrıca belirtiliyor. */
       yevmiye: Number(ayarlar.yevmiye) || 0,
-      hakedis: Math.round(t.hakedis),
-      alinan: Math.round(t.alinan),
-      kalan: Math.round(t.kalan),
+      hakedis: (kapsamTum && dOzet) ? dOzet.toplam.hak : Math.round(t.hakedis),
+      alinan: (kapsamTum && dOzet) ? dOzet.toplam.alinan : Math.round(t.alinan),
+      kalan: (kapsamTum && dOzet) ? dOzet.toplam.kalan : Math.round(t.kalan),
       /* GÜN GÜN DÖKÜM (0.1.2.6)
          İşveren yalnızca toplamı değil, hangi günlerin çalışıldığını da
          görebilmeli — "27,5 gün" demek yetmiyor, hangi günler olduğu
          sorulabilir. Yalnızca çalışılan günler yazılıyor; gelinmeyen
          günler belgeye girmiyor (gereksiz yer kaplamasın).
          Alan adları kısa tutuldu: g=gün, d=durum, a=artı, m=mesai, k=kazanç */
-      gunler: mutabakatGunListesi(),
+      gunler: kapsamTum ? [] : mutabakatGunListesi(),
       olusturma: firebase.firestore.FieldValue.serverTimestamp(),
       onay: false
     });
 
-    /* Anahtarı yerel olarak sakla — durum gösterimi indekssiz çalışsın */
+    /* Anahtarı HEM buluta HEM yerele yaz.
+       Bulut: hangi cihazdan girilirse girilsin aynı bağlantı bulunur.
+       Yerel: bulut okunamazsa (çevrimdışı) yedek olarak kullanılır. */
+    try{
+      await kokRef().collection("mutabakatKey").doc(donem).set({
+        anahtar: anahtar,
+        guncelleme: firebase.firestore.FieldValue.serverTimestamp()
+      });
+    }catch(e){ /* buluta yazılamazsa yerel yine de tutuluyor */ }
     try{ localStorage.setItem("mutabakat:" + donem, anahtar); }catch(e){}
     /* Gönderim sonrası durumu tazele — "onay bekleniyor" görünsün */
     try{ mutabakatDurumCiz(); }catch(e){}
@@ -2087,6 +2244,8 @@ async function mutabakatOlustur(){
   }catch(e){
     toast("Onay bağlantısı oluşturulamadı — internetini kontrol et 📡");
     try{ hataKaydet("mutabakatOlustur", e); }catch(_){}
+  }finally{
+    if(_mbtn) _mbtn.disabled = false;
   }
 }
 
@@ -9683,7 +9842,7 @@ document.addEventListener("DOMContentLoaded", ()=>{
   });
 
   /* Neler yeni kartı */
-  const YENILIK_SURUM = "0.1.2.6";
+  const YENILIK_SURUM = "0.1.3.0";
   window.__SURUM = YENILIK_SURUM;   /* tanı raporu bunu okur */
   try{ $("#cekmece-surum").textContent = "Puantaj Defterim " + YENILIK_SURUM; }catch(e){}
   /* Sürümü çekmece başlığında da göster. Sebep: "değişiklik gelmedi" durumunda
