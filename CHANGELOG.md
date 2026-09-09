@@ -5,6 +5,26 @@ kullanır: `0.0.0.X` — X, her güncellemede 1 artar. Uygulama içindeki sürü
 (alt bilgi + "Neler yeni" kartı) ve dağıtılan zip dosyasının adı her zaman
 birebir aynıdır.
 
+## 0.1.2.5 — 🔄 Mutabakat bağlantısı otomatik tazeleniyor
+- Kullanıcı bildirdi: hakediş 0.1.2.4 ile düzeldi (71.250 ₺) ancak işverene gönderilen bağlantı hâlâ eski rakamları gösteriyordu
+- **Sebep**: `mutabakat` belgesi gönderim anındaki değerlerin anlık görüntüsü. Sonradan gün eklenmesi ya da yevmiye değişmesi belgeye yansımıyordu
+- 🔄 **`mutabakatDurumCiz()` içinde otomatik tazeleme**: ay ekranı her açıldığında, **henüz onaylanmamış** mutabakat güncel `hesapla()` sonuçlarıyla güncelleniyor (`gunSayisi`, `mesaiToplam`, `artiToplam`, `yevmiye`, `hakedis`, `alinan`, `kalan`). İşveren aynı bağlantıya tıkladığında doğru rakamları görüyor
+  - Yalnızca değer farkı varsa yazılıyor (gereksiz Firestore yazımı yok)
+  - Hata durumunda sessizce eski rakamlarla devam ediliyor
+- 🔒 **Onaylanmış mutabakata dokunulmuyor**: imzalanmış belgenin sonradan değişebilir olması onayın değerini sıfırlardı. Bunun yerine kullanıcıya uyarı gösteriliyor: "Onaydan sonra bu ay değişti (eski → yeni). Yeni hâlini onaylatmak istersen tekrar gönder."
+- Üç yerde sürüm güncellendi: `app.js`, `sw.js`, zip adı — hepsi `0.1.2.5`
+
+## 0.1.2.4 — 💰 Hesap kökten sadeleşti: GÜN × GÜNCEL YEVMİYE
+- Kullanıcı üç sürüm boyunca aynı şeyi söyledi: **"Günlük yevmiyem kaç TL ise onunla çarpacaksın."** 0.1.2.1'deki ortalama gösterimi ve 0.1.2.2'deki güncelleme düğmesi ikisi de dolaylı çözümdü; asıl sorun hesabın kendisindeydi
+- 💰 **`oranBul()` değişti**: gün kaydına mühürlenmiş `uYevmiye` / `uMesai` / `uSaatU` değerleri **artık hesaba girmiyor**. Ayarlardaki güncel yevmiye esas alınıyor
+  - Gerekçe: yevmiyeli işçi için hesap `gün × yevmiye`'dir. Mühürlü eski ücretle hesaplamak ne kullanıcının beklentisine ne de işverenle yapılan konuşmaya uyuyordu; mutabakat belgesinde rakamlar tutmuyordu
+  - Mühürlü değerler **kayıtta duruyor** (silinmedi) — geçmişte hangi ücretin geçerli olduğu gerekirse görülebilir
+  - **Şantiye bazlı ücret korundu**: `v.santiyeId` varsa o şantiyenin yevmiyesi geçerli
+  - `uEk` (güne özel yol/yemek) korundu — 0 geçerli bir değer ve güne göre değişebiliyor
+- 🧹 **Artık gereksiz kalanlar kaldırıldı**: `ayUcretleriniGuncelle()` fonksiyonu ve düğmesi, `mutabakatOlustur()` içindeki ücret tutarlılık uyarısı, `yevmiyeDegisken` alanı
+- **Test**: 20 tam gün (1.500 ₺ mühürlü) + 5 gelmedi günü, ayarda 2.500 ₺ → gün sayısı 20, hakediş **50.000 ₺**. `20 × 2.500` ile birebir tutuyor
+- Üç yerde sürüm güncellendi: `app.js`, `sw.js`, zip adı — hepsi `0.1.2.4`
+
 ## 0.1.2.3 — ❌ "Ortalama günlük" kaldırıldı, tutarlılık kaynağında çözülüyor
 - 0.1.2.1'de mutabakat tutarsızlığına çözüm olarak "ortalama günlük ücret" gösterilmişti. **Yanlış yaklaşımdı**: kullanıcı yevmiyeli çalışıyor ve "gün × yevmiye" diye düşünüyor; 1.842 ₺ gibi türetilmiş bir rakam hem kafa karıştırıyor hem de çalışma biçimine aykırı
 - ❌ `yevmiye` alanı tekrar `ayarlar.yevmiye` (düz günlük ücret) oldu; onay ekranındaki "Ortalama günlük" etiketi ve "farklı ücretler uygulanmış" notu kaldırıldı

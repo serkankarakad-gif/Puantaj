@@ -400,11 +400,10 @@
       <div class="kart gizli" id="yenilik-kart" style="border-color:var(--sari)">
         <h2>🎁 Neler yeni?</h2>
         <ul style="padding-left:18px;font-size:13.5px;line-height:1.9">
-          <li><b>❌ "Ortalama günlük" kaldırıldı — yanlış bir fikirdi.</b> Sen günlük çalışıyorsun: <b>20 gün çalıştıysan 20 × 2.500 = 50.000 ₺.</b> Ortalama alıp 1.842 gibi bir rakam göstermek hem kafa karıştırıyor hem de senin çalışma şekline aykırı. Patrona giden sayfada artık düz <b>"Günlük yevmiye: 2.500 ₺"</b> yazıyor</li>
-          <li><b>✅ Asıl sorun kaynağında çözülüyor.</b> "Patrona onaya gönder"e bastığında uygulama önce kontrol ediyor: bu ayın tüm günleri güncel yevmiyende mi?</li>
-          <li><b>Hepsi 2.500 ise</b> doğrudan gönderiyor. Patron görüyor: 20 gün × 2.500 = 50.000 ₺ — rakamlar tutuyor</li>
-          <li><b>Farklı ücretli gün varsa uyarıyor:</b> <i>"Bu ayda 8 gün farklı ücretle kayıtlı. Bu hâliyle gönderirsen patron rakamların tutmadığını görecek. Önce güncelleyelim mi?"</i> Evet dersen düzeltiyor, sonra gönderiyorsun</li>
-          <li><b>Not:</b> Gelmediğin günler zaten hiç sayılmıyor — ne gün sayısına ne paraya giriyor</li>
+          <li><b>🔄 Patrona gönderdiğin link artık kendiliğinden güncelleniyor.</b> Sorun şuydu: link, gönderdiğin andaki rakamların fotoğrafıydı. Sonradan gün eklesen ya da yevmiye değişse patronun elindeki link <b>eski rakamları</b> göstermeye devam ediyordu</li>
+          <li><b>Artık:</b> Sen o ayın ekranını açtığında, patron <b>henüz onaylamadıysa</b> link sessizce güncelleniyor. Patron aynı linke tıklasa doğru rakamları görüyor. Senin bir şey yapmana gerek yok</li>
+          <li><b>🔒 Onaylanmış belgeye dokunulmuyor.</b> Patron imza atmışsa o belge olduğu gibi kalıyor — sonradan değiştirilebilir olsa hiçbir değeri kalmazdı</li>
+          <li><b>Onaydan sonra rakam değişirse seni uyarıyor:</b> <i>"Onaydan sonra bu ay değişti (52.500 → 71.250). Yeni hâlini onaylatmak istersen tekrar gönder."</i></li>
         </ul>
         <button class="btn btn-cizgili" id="btn-yenilik-kapat">Süper, kapat</button>
       </div>
@@ -1540,19 +1539,7 @@
         </div>
         <button class="btn btn-sari" id="btn-ayar-kaydet">Ayarları kaydet</button>
 
-        <!-- AY ÜCRETLERİNİ GÜNCELLE (0.1.2.2)
-             Her gün kaydedildiği andaki ücretle mühürleniyor. Yevmiye
-             zamlandığında eski günler eski ücretten kalıyor ve toplam
-             düşük görünüyor. Bu araç görüntülenen ayı güncel yevmiyeye
-             çeviriyor — önce ne değişeceğini gösterip onay alarak. -->
-        <div style="margin-top:14px;padding-top:14px;border-top:1px solid var(--cizgi)">
-          <div style="font-size:12px;color:var(--soluk);line-height:1.55;margin-bottom:8px">
-            💰 <b style="color:var(--sari)">Yevmiyene zam geldiyse</b><br>
-            Her gün, işlendiği tarihteki ücretle kayıtlıdır. Zamdan önceki günler
-            eski ücretten kalır. Görüntülediğin ayı güncel yevmiyeye çevirmek için:
-          </div>
-          <button class="btn btn-cizgili" id="btn-ay-ucret-guncelle">🔄 Bu ayın ücretlerini güncelle</button>
-        </div>
+
       </div>
       <div class="kart ayar-kart kapali">
         <h2 class="ayar-bas" role="button" tabindex="0">🏗️ Şantiyeler / Patronlar<span class="ayar-ok">▾</span></h2>
