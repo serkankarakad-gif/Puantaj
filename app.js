@@ -1751,6 +1751,35 @@ async function mutabakatGoster(anahtar){
         satir("KALAN ALACAK", paraFmt(m.kalan||0), true) +
       '</div>';
 
+    /* GÜN GÜN DÖKÜM (0.1.2.6)
+       İşveren "27,5 gün" rakamını doğrulayabilmeli — hangi günlerde
+       çalışıldığını görsün. Yalnızca çalışılan günler listeleniyor;
+       gelinmeyen günler belgeye hiç girmiyor. */
+    if(Array.isArray(m.gunler) && m.gunler.length){
+      const satirlar = m.gunler.map(g=>
+        '<tr>' +
+          '<td style="padding:7px 4px;border-bottom:1px solid var(--cizgi);font-family:\'Saira Condensed\';font-size:14px;font-weight:700">' + g.g + '</td>' +
+          '<td style="padding:7px 4px;border-bottom:1px solid var(--cizgi);text-align:center;font-family:\'Saira Condensed\';font-size:14px;font-weight:800;color:var(--tam-ac)">' + esc(g.d||"") + '</td>' +
+          '<td style="padding:7px 4px;border-bottom:1px solid var(--cizgi);text-align:center;font-family:\'Saira Condensed\';font-size:13px;color:var(--sari)">' + esc(g.a||"—") + '</td>' +
+          '<td style="padding:7px 4px;border-bottom:1px solid var(--cizgi);text-align:center;font-family:\'Saira Condensed\';font-size:13px;color:var(--mesai)">' + esc(g.m||"—") + '</td>' +
+          '<td style="padding:7px 4px;border-bottom:1px solid var(--cizgi);text-align:right;font-family:\'Saira Condensed\';font-size:14px;font-weight:700">' + paraFmt(g.k||0) + '</td>' +
+        '</tr>').join("");
+      govde.innerHTML +=
+        '<div class="kart">' +
+          '<div style="font-size:14px;font-weight:700;margin-bottom:4px">📋 Gün gün döküm</div>' +
+          '<div style="font-size:11.5px;color:var(--soluk);margin-bottom:10px;line-height:1.5">' +
+            'Yalnızca çalışılan günler · X = tam yevmiye, / = yarım</div>' +
+          '<table style="width:100%;border-collapse:collapse">' +
+            '<thead><tr>' +
+              '<th style="text-align:left;font-size:10px;color:var(--soluk2);letter-spacing:.5px;padding-bottom:6px">GÜN</th>' +
+              '<th style="text-align:center;font-size:10px;color:var(--soluk2);letter-spacing:.5px;padding-bottom:6px">YEVMİYE</th>' +
+              '<th style="text-align:center;font-size:10px;color:var(--soluk2);letter-spacing:.5px;padding-bottom:6px">ARTI</th>' +
+              '<th style="text-align:center;font-size:10px;color:var(--soluk2);letter-spacing:.5px;padding-bottom:6px">MESAİ</th>' +
+              '<th style="text-align:right;font-size:10px;color:var(--soluk2);letter-spacing:.5px;padding-bottom:6px">KAZANÇ</th>' +
+            '</tr></thead><tbody>' + satirlar + '</tbody></table>' +
+        '</div>';
+    }
+
     if(m.onay){
       const t = m.onayTarih && m.onayTarih.toDate ? m.onayTarih.toDate() : null;
       govde.innerHTML +=
@@ -1793,6 +1822,26 @@ async function mutabakatOnayla(anahtar){
     if(btn) btn.disabled = false;
     alert("Onay kaydedilemedi. İnternet bağlantınızı kontrol edip tekrar deneyin.");
   }
+}
+
+/* Mutabakat için gün gün döküm hazırlar. Yalnızca çalışılan günler. */
+function mutabakatGunListesi(){
+  const liste = [];
+  try{
+    Object.keys(girdiler).sort().forEach(id=>{
+      const v = girdiler[id];
+      if(!v || !girdiGun(v)) return;              /* gelinmeyen gün yazılmıyor */
+      const i = gunIsaret(v);
+      liste.push({
+        g: Number(id.slice(8,10)),                /* ayın kaçı */
+        d: i.yev,                                 /* X / yarım / saatlik */
+        a: (i.arti && i.arti !== "0") ? i.arti : "",
+        m: (i.mesai && i.mesai !== "0") ? i.mesai : "",
+        k: Math.round(girdiKazanc(v))
+      });
+    });
+  }catch(e){}
+  return liste;
 }
 
 function mutabakatAnahtarUret(){
@@ -1846,12 +1895,41 @@ async function mutabakatDurumCiz(){
             yevmiye: Number(ayarlar.yevmiye) || 0,
             hakedis: yeniHak,
             alinan: yeniAlinan,
-            kalan: Math.round(t.kalan)
+            kalan: Math.round(t.kalan),
+            gunler: mutabakatGunListesi()
           });
           m.gunSayisi = t.gunSayisi; m.hakedis = yeniHak;
           m.alinan = yeniAlinan; m.kalan = Math.round(t.kalan);
         }
       }catch(e){ /* güncellenemezse eski rakamlarla devam, çökme yok */ }
+    }
+
+    /* GÜN GÜN DÖKÜM (0.1.2.6)
+       İşveren "27,5 gün" rakamını doğrulayabilmeli — hangi günler
+       çalışıldığını görsün. Yalnızca çalışılan günler listeleniyor. */
+    if(Array.isArray(m.gunler) && m.gunler.length){
+      const satirlar = m.gunler.map(g=>
+        '<tr>' +
+          '<td style="padding:7px 4px;border-bottom:1px solid var(--cizgi);font-family:\'Saira Condensed\';font-size:14px;font-weight:700">' + g.g + '</td>' +
+          '<td style="padding:7px 4px;border-bottom:1px solid var(--cizgi);text-align:center;font-family:\'Saira Condensed\';font-size:14px;font-weight:800;color:var(--tam-ac)">' + esc(g.d||"") + '</td>' +
+          '<td style="padding:7px 4px;border-bottom:1px solid var(--cizgi);text-align:center;font-family:\'Saira Condensed\';font-size:13px;color:var(--sari)">' + esc(g.a||"—") + '</td>' +
+          '<td style="padding:7px 4px;border-bottom:1px solid var(--cizgi);text-align:center;font-family:\'Saira Condensed\';font-size:13px;color:var(--mesai)">' + esc(g.m||"—") + '</td>' +
+          '<td style="padding:7px 4px;border-bottom:1px solid var(--cizgi);text-align:right;font-family:\'Saira Condensed\';font-size:14px;font-weight:700">' + paraFmt(g.k||0) + '</td>' +
+        '</tr>').join("");
+      govde.innerHTML +=
+        '<div class="kart">' +
+          '<div style="font-size:14px;font-weight:700;margin-bottom:4px">📋 Gün gün döküm</div>' +
+          '<div style="font-size:11.5px;color:var(--soluk);margin-bottom:10px;line-height:1.5">' +
+            'Yalnızca çalışılan günler · X = tam yevmiye, / = yarım</div>' +
+          '<table style="width:100%;border-collapse:collapse">' +
+            '<thead><tr>' +
+              '<th style="text-align:left;font-size:10px;color:var(--soluk2);letter-spacing:.5px;padding-bottom:6px">GÜN</th>' +
+              '<th style="text-align:center;font-size:10px;color:var(--soluk2);letter-spacing:.5px;padding-bottom:6px">YEVMİYE</th>' +
+              '<th style="text-align:center;font-size:10px;color:var(--soluk2);letter-spacing:.5px;padding-bottom:6px">ARTI</th>' +
+              '<th style="text-align:center;font-size:10px;color:var(--soluk2);letter-spacing:.5px;padding-bottom:6px">MESAİ</th>' +
+              '<th style="text-align:right;font-size:10px;color:var(--soluk2);letter-spacing:.5px;padding-bottom:6px">KAZANÇ</th>' +
+            '</tr></thead><tbody>' + satirlar + '</tbody></table>' +
+        '</div>';
     }
 
     if(m.onay){
@@ -1970,6 +2048,13 @@ async function mutabakatOlustur(){
       hakedis: Math.round(t.hakedis),
       alinan: Math.round(t.alinan),
       kalan: Math.round(t.kalan),
+      /* GÜN GÜN DÖKÜM (0.1.2.6)
+         İşveren yalnızca toplamı değil, hangi günlerin çalışıldığını da
+         görebilmeli — "27,5 gün" demek yetmiyor, hangi günler olduğu
+         sorulabilir. Yalnızca çalışılan günler yazılıyor; gelinmeyen
+         günler belgeye girmiyor (gereksiz yer kaplamasın).
+         Alan adları kısa tutuldu: g=gün, d=durum, a=artı, m=mesai, k=kazanç */
+      gunler: mutabakatGunListesi(),
       olusturma: firebase.firestore.FieldValue.serverTimestamp(),
       onay: false
     });
@@ -9598,7 +9683,7 @@ document.addEventListener("DOMContentLoaded", ()=>{
   });
 
   /* Neler yeni kartı */
-  const YENILIK_SURUM = "0.1.2.5";
+  const YENILIK_SURUM = "0.1.2.6";
   window.__SURUM = YENILIK_SURUM;   /* tanı raporu bunu okur */
   try{ $("#cekmece-surum").textContent = "Puantaj Defterim " + YENILIK_SURUM; }catch(e){}
   /* Sürümü çekmece başlığında da göster. Sebep: "değişiklik gelmedi" durumunda

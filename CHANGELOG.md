@@ -5,6 +5,14 @@ kullanır: `0.0.0.X` — X, her güncellemede 1 artar. Uygulama içindeki sürü
 (alt bilgi + "Neler yeni" kartı) ve dağıtılan zip dosyasının adı her zaman
 birebir aynıdır.
 
+## 0.1.2.6 — 📋 Mutabakat sayfasına gün gün döküm
+- Kullanıcı isteği: işveren yalnızca toplamı değil puantajı da görsün
+- 📋 **`mutabakatGunListesi()`**: yalnızca çalışılan günleri (`girdiGun(v) > 0`) kısa alan adlarıyla döndürüyor — `g` (ayın kaçı), `d` (yevmiye işareti), `a` (artı), `m` (mesai), `k` (kazanç). Gelinmeyen günler belgeye girmiyor
+  - Boyut ölçümü: gün başına ~42 bayt, 31 gün ~1,3 KB — Firestore 1 MB belge sınırının %0,12'si
+- Onay sayfasında özet kartından **sonra**, onay alanından **önce** tablo gösteriliyor: GÜN · YEVMİYE · ARTI · MESAİ · KAZANÇ. Başlık altında kısa açıklama ("X = tam yevmiye, / = yarım")
+- Döküm 0.1.2.5'teki otomatik tazelemeye de dahil edildi — onaylanmamış mutabakatta gün listesi de güncelleniyor
+- Üç yerde sürüm güncellendi: `app.js`, `sw.js`, zip adı — hepsi `0.1.2.6`
+
 ## 0.1.2.5 — 🔄 Mutabakat bağlantısı otomatik tazeleniyor
 - Kullanıcı bildirdi: hakediş 0.1.2.4 ile düzeldi (71.250 ₺) ancak işverene gönderilen bağlantı hâlâ eski rakamları gösteriyordu
 - **Sebep**: `mutabakat` belgesi gönderim anındaki değerlerin anlık görüntüsü. Sonradan gün eklenmesi ya da yevmiye değişmesi belgeye yansımıyordu
