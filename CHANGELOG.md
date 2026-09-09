@@ -5,6 +5,15 @@ kullanır: `0.0.0.X` — X, her güncellemede 1 artar. Uygulama içindeki sürü
 (alt bilgi + "Neler yeni" kartı) ve dağıtılan zip dosyasının adı her zaman
 birebir aynıdır.
 
+## 0.1.2.3 — ❌ "Ortalama günlük" kaldırıldı, tutarlılık kaynağında çözülüyor
+- 0.1.2.1'de mutabakat tutarsızlığına çözüm olarak "ortalama günlük ücret" gösterilmişti. **Yanlış yaklaşımdı**: kullanıcı yevmiyeli çalışıyor ve "gün × yevmiye" diye düşünüyor; 1.842 ₺ gibi türetilmiş bir rakam hem kafa karıştırıyor hem de çalışma biçimine aykırı
+- ❌ `yevmiye` alanı tekrar `ayarlar.yevmiye` (düz günlük ücret) oldu; onay ekranındaki "Ortalama günlük" etiketi ve "farklı ücretler uygulanmış" notu kaldırıldı
+- ✅ **Sorun kaynağında çözülüyor**: `mutabakatOlustur()` gönderim öncesi tüm çalışılan günlerin `uYevmiye` değerini güncel yevmiyeyle karşılaştırıyor
+  - Tutarlıysa doğrudan gönderiyor
+  - Farklı ücretli gün varsa uyarıyor ("gün sayısı × yevmiye ≠ hakediş görünecek") ve `ayUcretleriniGuncelle()` çağrısını öneriyor. Kullanıcı kabul ederse düzeltip tekrar göndermesi isteniyor; iptal ederse mevcut hâliyle gönderiliyor
+- Böylece işverene giden belgede daima `gün × yevmiye = hakediş` tutuyor
+- Üç yerde sürüm güncellendi: `app.js`, `sw.js`, zip adı — hepsi `0.1.2.3`
+
 ## 0.1.2.2 — 💰 "Bu ayın ücretlerini güncelle" aracı
 - 0.1.2.1'deki mutabakat tutarsızlığının **kök nedenine** çözüm: her gün kaydedildiği andaki `uYevmiye` ile mühürleniyor. Bu koruma amaçlı (işveren geriye dönük düşürürse kayıt korunur) ancak **zam durumunda ters çalışıyor** — eski günler eski ücretten kalıyor, toplam düşük görünüyor
 - 💰 **`ayUcretleriniGuncelle()`**: görüntülenen ayın günlerini güncel `ayarlar.yevmiye` değerine çeviriyor

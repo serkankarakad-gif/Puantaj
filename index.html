@@ -400,11 +400,11 @@
       <div class="kart gizli" id="yenilik-kart" style="border-color:var(--sari)">
         <h2>🎁 Neler yeni?</h2>
         <ul style="padding-left:18px;font-size:13.5px;line-height:1.9">
-          <li><b>💰 "BU AYIN ÜCRETLERİNİ GÜNCELLE" düğmesi geldi.</b> Ayarlar → Ücret ayarları'nın en altında. Yevmiyene zam geldiyse eski günleri güncel ücrete çevirir</li>
-          <li><b>Sorunun sebebi buydu:</b> Uygulama her günü <b>işlendiği tarihteki ücretle</b> kaydediyor. Bu koruma amaçlı — patron sonradan yevmiyeyi düşürse geçmiş kayıtların korunuyor. Ama zam aldığında ters çalışıyordu: eski günler eski ücretten kalıyor, toplam düşük görünüyordu</li>
-          <li><b>Senin durumun:</b> 28,5 gün × 2.500 = 71.250 olmalıyken 52.500 görünüyordu. Çünkü bazı Ağustos günlerin daha düşük yevmiyeyle kayıtlıydı</li>
-          <li><b>⚠️ Basmadan önce ne olacağını gösteriyor:</b> Kaç gün değişecek, hangi ücretten hangi ücrete, hakediş kaça çıkacak, fark ne kadar. Onaylamazsan hiçbir şey değişmiyor</li>
-          <li><b>Güvenlik:</b> Gelmediğin günlere dokunmuyor · kilitli aylarda çalışmıyor · sadece görüntülediğin ayı değiştiriyor</li>
+          <li><b>❌ "Ortalama günlük" kaldırıldı — yanlış bir fikirdi.</b> Sen günlük çalışıyorsun: <b>20 gün çalıştıysan 20 × 2.500 = 50.000 ₺.</b> Ortalama alıp 1.842 gibi bir rakam göstermek hem kafa karıştırıyor hem de senin çalışma şekline aykırı. Patrona giden sayfada artık düz <b>"Günlük yevmiye: 2.500 ₺"</b> yazıyor</li>
+          <li><b>✅ Asıl sorun kaynağında çözülüyor.</b> "Patrona onaya gönder"e bastığında uygulama önce kontrol ediyor: bu ayın tüm günleri güncel yevmiyende mi?</li>
+          <li><b>Hepsi 2.500 ise</b> doğrudan gönderiyor. Patron görüyor: 20 gün × 2.500 = 50.000 ₺ — rakamlar tutuyor</li>
+          <li><b>Farklı ücretli gün varsa uyarıyor:</b> <i>"Bu ayda 8 gün farklı ücretle kayıtlı. Bu hâliyle gönderirsen patron rakamların tutmadığını görecek. Önce güncelleyelim mi?"</i> Evet dersen düzeltiyor, sonra gönderiyorsun</li>
+          <li><b>Not:</b> Gelmediğin günler zaten hiç sayılmıyor — ne gün sayısına ne paraya giriyor</li>
         </ul>
         <button class="btn btn-cizgili" id="btn-yenilik-kapat">Süper, kapat</button>
       </div>

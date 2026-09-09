@@ -1745,9 +1745,7 @@ async function mutabakatGoster(anahtar){
         satir("Çalışılan gün", (m.gunSayisi||0) + " gün") +
         (m.artiToplam > 0 ? satir("Ek yevmiye", m.artiToplam) : "") +
         (m.mesaiToplam > 0 ? satir("Mesai", m.mesaiToplam + " saat") : "") +
-        (m.yevmiye > 0 ? satir(m.yevmiyeDegisken ? "Ortalama günlük" : "Günlük yevmiye", paraFmt(m.yevmiye)) : "") +
-        (m.yevmiyeDegisken ? '<div style="font-size:11.5px;color:var(--soluk);padding:6px 0 0;line-height:1.5">' +
-          'ℹ️ Bu dönemde farklı günlük ücretler uygulanmış. Her gün kendi ücretinden hesaplanmıştır.</div>' : "") +
+        (m.yevmiye > 0 ? satir("Günlük yevmiye", paraFmt(m.yevmiye)) : "") +
         satir("Hakediş", paraFmt(m.hakedis||0)) +
         satir("Alınan (avans/ödeme)", paraFmt(m.alinan||0)) +
         satir("KALAN ALACAK", paraFmt(m.kalan||0), true) +
@@ -1961,6 +1959,40 @@ async function mutabakatOlustur(){
     const t = hesapla();
     if(!t || t.gunSayisi <= 0){ toast("Bu ayda kayıt yok — önce günlerini işle"); return; }
 
+    /* ÜCRET TUTARLILIK KONTROLÜ (0.1.2.3)
+       Patrona gönderilen belgede "28,5 gün · günlük 2.500 ₺ · hakediş
+       52.500 ₺" gibi kendi içinde tutmayan rakamlar olmamalı — işveren
+       hesap yapar, tutmaz, belgeye güvenmez.
+       Sebep: bazı günler eski (düşük) yevmiyeyle mühürlü kalmış oluyor.
+       Çözüm ORTALAMA GÖSTERMEK DEĞİL (işçi gün × yevmiye diye düşünür);
+       veriyi düzeltmek. Gönderim öncesi uyarılıyor ve tek dokunuşla
+       düzeltme sunuluyor. */
+    const guncelYev = Number(ayarlar.yevmiye) || 0;
+    if(guncelYev > 0){
+      const farkli = [];
+      Object.keys(girdiler).forEach(id=>{
+        const v = girdiler[id];
+        if(!v || !girdiGun(v)) return;
+        if((Number(v.uYevmiye)||0) !== guncelYev) farkli.push(id);
+      });
+      if(farkli.length){
+        const duzelt = confirm(
+          "⚠️ DİKKAT — rakamlar tutmayacak\n\n" +
+          "Bu ayda " + farkli.length + " gün, güncel yevmiyenden (" + paraFmt(guncelYev) +
+          ") FARKLI bir ücretle kayıtlı.\n\n" +
+          "Bu hâliyle gönderirsen patron şunu görecek:\n" +
+          "  gün sayısı × " + paraFmt(guncelYev) + " ≠ hakediş\n\n" +
+          "ve belgede yanlışlık var sanacak.\n\n" +
+          "Önce ücretleri " + paraFmt(guncelYev) + " olarak güncelleyelim mi?\n" +
+          "(İptal dersen mevcut hâliyle gönderilir)");
+        if(duzelt){
+          await ayUcretleriniGuncelle();
+          toast("Ücretler güncellendi — şimdi tekrar 'Patrona onaya gönder'e bas");
+          return;
+        }
+      }
+    }
+
     const donem = aktifYil + "-" + pad(aktifAy+1);
     const mevcut = await mutabakatBul(donem);
 
@@ -1999,7 +2031,7 @@ async function mutabakatOlustur(){
          diye haklı olarak tutarsızlık görüyordu.
          Artık dönemin gerçek ortalaması yazılıyor ve ücretler farklıysa
          bu ayrıca belirtiliyor. */
-      yevmiye: (t.gunSayisi > 0 ? Math.round(t.hakedis / t.gunSayisi) : (Number(ayarlar.yevmiye) || 0)),
+      yevmiye: Number(ayarlar.yevmiye) || 0,
       yevmiyeDegisken: (function(){
         /* Dönemde birden fazla farklı yevmiye uygulanmış mı? */
         try{
@@ -9625,7 +9657,7 @@ document.addEventListener("DOMContentLoaded", ()=>{
   });
 
   /* Neler yeni kartı */
-  const YENILIK_SURUM = "0.1.2.2";
+  const YENILIK_SURUM = "0.1.2.3";
   window.__SURUM = YENILIK_SURUM;   /* tanı raporu bunu okur */
   try{ $("#cekmece-surum").textContent = "Puantaj Defterim " + YENILIK_SURUM; }catch(e){}
   /* Sürümü çekmece başlığında da göster. Sebep: "değişiklik gelmedi" durumunda
