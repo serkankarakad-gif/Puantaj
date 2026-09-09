@@ -5165,7 +5165,20 @@ async function anaYukle(){
       const gecenGun = simdi.getDate();
       const ayGunSay = new Date(simdi.getFullYear(), simdi.getMonth()+1, 0).getDate();
       if(!gizliMod && gecenGun>=5 && gecenGun<ayGunSay && buAyHak>0){
-        const tahmin = buAyHak/gecenGun*ayGunSay;
+        /* TAHMİN DÜZ HESAPLA (0.1.3.4)
+           Eskiden: buAyHak / geçenGün × ayGünSayısı
+           Bu, ORTALAMA üzerinden gidiyordu ve iki yönden yanlıştı:
+             1) Takvim gününe bölüyordu — çalışılmayan günler de paydaya
+                giriyor, ortalama düşük çıkıyordu
+             2) Artı yevmiye ve mesai ortalamaya karışıp yevmiyeden
+                farklı bir rakam üretiyordu
+           Artık düz hesap: bugüne kadarki hakediş + (kalan iş günü ×
+           günlük yevmiye). Pazar günleri iş gününe sayılmıyor. */
+        let kalanIsGunu = 0;
+        for(let g=gecenGun+1; g<=ayGunSay; g++){
+          if(new Date(simdi.getFullYear(), simdi.getMonth(), g).getDay() !== 0) kalanIsGunu++;
+        }
+        const tahmin = buAyHak + kalanIsGunu * (Number(ayarlar.yevmiye) || 0);
         let m = "🔮 <b>Ay sonu tahmini:</b> Bu tempoyla "+AYLAR[simdi.getMonth()]+" bitince ≈ <b style='color:var(--sari)'>"+paraFmt(tahmin)+"</b> hakediş yaparsın";
         if(ayarlar.hedef>0){
           m += tahmin>=ayarlar.hedef
@@ -5241,59 +5254,13 @@ async function anaYukle(){
         + ' <span style="opacity:.75">('+AYLAR[simdi.getMonth()]+" "+simdi.getFullYear()+')</span>'
         + ' <span style="text-decoration:underline">Maaşlar (tüm aylar) ›</span>';
     }
-    /* ── AY SONU TAHMİNİ (0.1.0.8) ────────────────────────────────
-       Bakiye "bugüne kadar ne hakettin"i gösteriyor. Ay ortasında asıl
-       merak edilen ise "bu ay eline ne geçecek". Tahmin, uydurma bir
-       varsayımla değil BU AYIN GERÇEK ortalamasıyla yapılıyor:
-         işlenmiş günlerin ortalama kazancı × kalan iş günü
-       Pazar günleri kalan iş gününe sayılmıyor (uygulamanın geri kalanı
-       da pazarı iş günü saymıyor).
-       Ay bitmişse ya da hiç kayıt yoksa kutu gizleniyor — anlamsız bir
-       tahminle kullanıcıyı yanıltmamak için. */
-    try{
-      const tEl = $("#ay-tahmin");
-      if(tEl){
-        const aySonu = new Date(simdi.getFullYear(), simdi.getMonth()+1, 0).getDate();
-        const bugunG = simdi.getDate();
-        let kalanIsGunu = 0;
-        for(let g=bugunG+1; g<=aySonu; g++){
-          if(new Date(simdi.getFullYear(), simdi.getMonth(), g).getDay() !== 0) kalanIsGunu++;
-        }
-        /* Bu ayki gerçek ortalama — yalnızca kazanç getiren günlerden */
-        let ortalama = (buAyGun > 0 && buAyHak > 0) ? (buAyHak / buAyGun) : 0;
-
-        /* GÜVENİLİRLİK KORUMALARI (0.1.0.9)
-           1) EN AZ 3 GÜN: tek günün ortalaması güvenilir değil. Ayın
-              başında 1 gün çalışıp o gün 5 artı yevmiye alındıysa
-              ortalama 15.000 ₺ çıkıyor ve tahmin 330.000 ₺ gibi
-              gerçek dışı bir rakama fırlıyordu. Ayrıca 1-2 günlük
-              veriyle tahmin her yeni günde binlerce lira zıplıyor.
-           2) TAVAN: ortalama, günlük yevmiyenin 3 katını aşamaz.
-              Aşıyorsa o ay olağandışı (çok artı yevmiye) demektir;
-              tahmini ona göre şişirmek yanıltıcı olur. */
-        const enAzGun = 3;
-        const gunlukTavan = (Number(ayarlar.yevmiye) || 0) * 3;
-        if(gunlukTavan > 0 && ortalama > gunlukTavan) ortalama = gunlukTavan;
-
-        if(kalanIsGunu > 0 && ortalama > 0 && buAyGun >= enAzGun && !gizliMod){
-          const tahmin = Math.round(ortalama * kalanIsGunu);
-          tEl.innerHTML =
-            '📈 Ay sonuna <b>'+kalanIsGunu+' iş günü</b> kaldı · ' +
-            'aynı tempoyla <b style="color:var(--sari)">≈'+paraFmt(buAyHak + tahmin)+'</b> olur' +
-            '<div style="font-size:10.5px;opacity:.7;margin-top:3px">Bu ayki ortalamana göre tahmin — kesin değil</div>';
-          tEl.classList.remove("gizli");
-        }else if(kalanIsGunu > 0 && buAyGun > 0 && buAyGun < enAzGun && !gizliMod){
-          /* Veri az: tahmin verme ama sessiz de kalma — kullanıcı neden
-             görmediğini bilsin. */
-          tEl.innerHTML =
-            '📈 Ay sonuna <b>'+kalanIsGunu+' iş günü</b> kaldı' +
-            '<div style="font-size:10.5px;opacity:.7;margin-top:3px">Tahmin için birkaç gün daha işlemen gerekiyor</div>';
-          tEl.classList.remove("gizli");
-        }else{
-          tEl.classList.add("gizli");
-        }
-      }
-    }catch(e){}
+    /* AY SONU TAHMİNİ KUTUSU KALDIRILDI (0.1.3.4)
+       0.1.0.8'de eklenen bu ikinci tahmin de ORTALAMA kullanıyordu
+       (buAyHak / buAyGun). Kullanıcı ortalamaya dayalı rakamları
+       yanıltıcı buldu — haklı: yevmiyeli çalışanda ortalama diye bir
+       kavram yok. Zaten yukarıda `#tahmin-kart` ile düz hesaplı bir
+       tahmin gösteriliyor; ikisi birden gereksizdi. */
+    try{ const tE = $("#ay-tahmin"); if(tE) tE.classList.add("gizli"); }catch(e){}
 
     hareketler.sort((a,b)=> a.tarih < b.tarih ? 1 : -1);
     const ul = $("#liste-sirket-hareket");
@@ -6148,7 +6115,12 @@ function ozetCiz(){
     kut("Mesai kazancı", paraFmt(t.mesaiKazanc), "mesai-r", t.mesaiKazanc) +
     (t.ekKazanc>0 ? kut("Yol + yemek", paraFmt(t.ekKazanc), "", t.ekKazanc) : "") +
     (t.parcaKazanc>0 ? kut("📦 Parça başı kazanç", paraFmt(t.parcaKazanc), "", t.parcaKazanc) : "") +
-    (t.gunSayisi>0 ? kut("Gün başı ortalama", paraFmt(t.hakedis/t.gunSayisi), "", t.hakedis/t.gunSayisi) : "") +
+    /* "Gün başı ortalama" KALDIRILDI (0.1.3.4)
+       Yevmiyeli çalışanda böyle bir kavram yok: gün × yevmiye = hakediş.
+       Ortalama, artı yevmiye ve mesai karıştığında yevmiyeden farklı bir
+       rakam üretiyor (örn. 2.708 ₺) ve kullanıcı "benim yevmiyem 2.500,
+       bu ne?" diye haklı olarak tereddüt ediyordu. Yanıltıcı olduğu için
+       çıkarıldı. */
     kut("Toplam hakediş", paraFmt(t.hakedis), "vurgu", t.hakedis) +
     kut("Aldığım para", paraFmt(t.alinan), "", t.alinan) +
     (t.masrafToplam>0 ? kut("🧾 Masraf alacağı", paraFmt(t.masrafToplam), "", t.masrafToplam) : "") +
@@ -6991,11 +6963,12 @@ function isiHaritaCiz(gunKazanc){
         if(acikDetay && acikDetay.classList.contains("ay-detay")) return; /* aynıysa kapat */
         const i = Number(tr.dataset.ay);
         const a = aylik[i];
-        const ort = a.gun>0 ? a.hak/a.gun : 0;
         const det = document.createElement("tr");
         det.className = "ay-detay";
         det.innerHTML = '<td colspan="6">'+
-          '📌 Gün başı ortalama: <b>'+paraFmt(ort)+'</b>'+
+          /* Gün başı ortalama kaldırıldı (0.1.3.4) — yerine günlük
+             yevmiye ve gün sayısı gösteriliyor, hesap açık olsun. */
+          '📌 ' + a.gun + ' gün × ' + paraFmt(Number(ayarlar.yevmiye)||0) +
           (a.mesai>0 ? ' · Mesai: <b>'+a.mesai+' saat</b>' : '')+
           ' · Kalan: <b>'+paraFmt(a.hak-a.alinan)+'</b>'+
           ' &nbsp; <button class="eksik-cip" data-git="'+i+'">📅 '+AYLAR[i]+' takvimine git</button></td>';
@@ -9656,7 +9629,15 @@ document.addEventListener("DOMContentLoaded", ()=>{
     if(ic("tahmin","ay sonu","ay sonunda")){
       const gecen = simdi.getDate(), ayG = new Date(simdi.getFullYear(), simdi.getMonth()+1, 0).getDate();
       if(!(av.buAyHak>0) || gecen<5) return "Tahmin için biraz erken, birkaç gün daha işle de tempoyu göreyim 🔮";
-      return "🔮 Bu tempoyla " + AYLAR[simdi.getMonth()] + " sonunda ≈ " + paraFmt(av.buAyHak/gecen*ayG) + " hakediş yaparsın.";
+      /* Düz hesap (0.1.3.4) — ortalama değil: bugüne kadarki hakediş +
+         kalan iş günü × günlük yevmiye. Pazarlar sayılmıyor. */
+      let kalanIs = 0;
+      for(let g=gecen+1; g<=ayG; g++){
+        if(new Date(simdi.getFullYear(), simdi.getMonth(), g).getDay() !== 0) kalanIs++;
+      }
+      const tah = (av.buAyHak||0) + kalanIs * (Number(ayarlar.yevmiye)||0);
+      return "🔮 Her gün çalışırsan " + AYLAR[simdi.getMonth()] + " sonunda ≈ " + paraFmt(tah) +
+             " hakediş yaparsın (" + kalanIs + " iş günü kaldı).";
     }
     if(ic("izin","tatil hakkı"))
       return ayarlar.iseGiris
@@ -9896,7 +9877,7 @@ document.addEventListener("DOMContentLoaded", ()=>{
   });
 
   /* Neler yeni kartı */
-  const YENILIK_SURUM = "0.1.3.3";
+  const YENILIK_SURUM = "0.1.3.4";
   window.__SURUM = YENILIK_SURUM;   /* tanı raporu bunu okur */
   try{ $("#cekmece-surum").textContent = "Puantaj Defterim " + YENILIK_SURUM; }catch(e){}
   /* Sürümü çekmece başlığında da göster. Sebep: "değişiklik gelmedi" durumunda

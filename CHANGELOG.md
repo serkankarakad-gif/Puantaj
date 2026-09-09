@@ -5,6 +5,18 @@ kullanır: `0.0.0.X` — X, her güncellemede 1 artar. Uygulama içindeki sürü
 (alt bilgi + "Neler yeni" kartı) ve dağıtılan zip dosyasının adı her zaman
 birebir aynıdır.
 
+## 0.1.3.4 — ❌ "Gün başı ortalama" her yerden kaldırıldı
+- Kullanıcı ekran görüntüsüyle bildirdi: "GÜN BAŞI ORTALAMA 2.708 ₺" — yevmiyesi 2.500 ₺ olduğu için yanıltıcı. Yevmiyeli çalışanda ortalama diye bir kavram yok; hesap `gün × yevmiye`
+- ❌ **Kaldırılan ortalamalar**:
+  1. Hesap ekranı özet kutusu (`kut("Gün başı ortalama", t.hakedis/t.gunSayisi)`)
+  2. Yıl tablosu ay detay satırı (`a.hak/a.gun`) → yerine `N gün × yevmiye` gösteriliyor
+  3. 0.1.0.8'de eklenen `#ay-tahmin` kutusu (`buAyHak / buAyGun`) — tamamen kaldırıldı, zaten `#tahmin-kart` ile aynı işi yapıyordu
+- 🔮 **Ay sonu tahmini düz hesaba çevrildi**: eskiden `buAyHak / geçenGün × ayGünSayısı` idi. İki hatası vardı — takvim gününe bölüyordu (çalışılmayan günler paydaya giriyor) ve artı/mesai ortalamaya karışıyordu. Artık `buAyHak + kalanİşGünü × yevmiye`, pazarlar sayılmıyor
+  - Aynı düzeltme asistanın "ay sonu tahmini" cevabına da uygulandı; cevap artık kalan iş günü sayısını da söylüyor
+- ✅ **Puantaj hesabı doğrulandı**: kullanıcının ekranındaki senaryo (6 tam gün + 3 gelmedi + 0,5 mesai yevmiye, 2.500 ₺) test edildi → 15.000 + 1.250 = **16.250 ₺**, ekranla birebir. Hesap çekirdeğinde sorun yok
+- Kod genelinde ortalama deseni taraması: yalnızca yorum satırları kaldı, çalışan kod yok
+- Üç yerde sürüm güncellendi: `app.js`, `sw.js`, zip adı — hepsi `0.1.3.4`
+
 ## 0.1.3.3 — 📊 Mutabakatta gelinmeyen günler ve önceki dönem alacağı
 - Kullanıcı bildirimi: "çalıştığım ve çalışmadığım günleri doğru saymıyor, önceki ayları da saymıyor"
 - 📊 **Ayın tamamı belgede**: `hesapla()` zaten `tam`, `yarim`, `gelmedi`, `izinli` sayılarını döndürüyordu ancak mutabakata yalnızca `gunSayisi` yazılıyordu. Artık dördü de belgeye giriyor; onay sayfasında "Gelinmeyen gün" ve "İzinli gün" satırları (değer 0 ise gizli) gösteriliyor
