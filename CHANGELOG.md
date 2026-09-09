@@ -5,6 +5,15 @@ kullanır: `0.0.0.X` — X, her güncellemede 1 artar. Uygulama içindeki sürü
 (alt bilgi + "Neler yeni" kartı) ve dağıtılan zip dosyasının adı her zaman
 birebir aynıdır.
 
+## 0.1.3.5 — 🚨 Sürüm güncellenmiyordu: `updateViaCache` eksikti
+- Kullanıcı 0.1.3.4 yüklediği hâlde uygulamada 0.1.3.1 görüyordu; ekran görüntülerindeki davranış da eski sürümü doğruladı (kaldırılmış "tüm dönem" penceresi, düzeltilmiş "0,5s" birimi hâlâ görünüyordu)
+- 🚨 **KÖK SEBEP**: `navigator.serviceWorker.register("./sw.js")` çağrısında `updateViaCache` belirtilmemişti. Tarayıcı `sw.js` dosyasını **kendi HTTP önbelleğinden** sunuyordu; GitHub Pages uzun süreli önbellek başlığı gönderdiği için yeni `sw.js` hiç indirilmiyor, dolayısıyla yeni sürüm hiç fark edilmiyordu. `kayit.update()` çağrısı da önbellekteki aynı dosyayı gördüğü için etkisizdi
+  - Düzeltme: `register("./sw.js", {updateViaCache: "none"})` — service worker dosyası her kontrolde sunucudan taze alınıyor
+  - **Geçiş**: bu sürüme ulaşmak için kullanıcının bir kez "Ayarlar → önbelleği temizle" adımını uygulaması gerekiyor; sonrasında güncellemeler otomatik
+- 📊 **"6,5 yevmiyem var ama 6 gün diyor"**: rakamlar doğruydu (ÇALIŞILAN 6 gün + MESAİ 0,5 yevmiye = 16.250 ₺) ancak toplam hiçbir yerde gösterilmiyordu. Takvim altı özet kutusuna `= 6,5 yevmiye` satırı eklendi — hakedişle birebir örtüşen rakam
+- Hafta kutusunda mesai birimi belirsizdi (`0,5s` saat sanılıyordu); artık `0,5 yev` / `0,5 sa` olarak açıkça yazılıyor
+- Üç yerde sürüm güncellendi: `app.js`, `sw.js`, zip adı — hepsi `0.1.3.5`
+
 ## 0.1.3.4 — ❌ "Gün başı ortalama" her yerden kaldırıldı
 - Kullanıcı ekran görüntüsüyle bildirdi: "GÜN BAŞI ORTALAMA 2.708 ₺" — yevmiyesi 2.500 ₺ olduğu için yanıltıcı. Yevmiyeli çalışanda ortalama diye bir kavram yok; hesap `gün × yevmiye`
 - ❌ **Kaldırılan ortalamalar**:

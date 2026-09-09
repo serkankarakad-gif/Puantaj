@@ -5651,9 +5651,11 @@ function haftaCiz(){
     mesaiYev += mesaiYevMik(v);
     kazanc += girdiKazanc(v);
   }
-  /* Hangi birim doluysa o gösteriliyor; ikisi de varsa yevmiye önde */
-  const mesaiYazi = mesaiYev > 0 ? String(mesaiYev).replace(".", ",")
-                  : mesai > 0   ? String(mesai).replace(".", ",")+"s"
+  /* Hangi birim doluysa o gösteriliyor; ikisi de varsa yevmiye önde.
+     Birim açıkça yazılıyor (0.1.3.5): "0,5" tek başına ne olduğu belirsiz —
+     yevmiye mi saat mi? Kullanıcı "0,5s" görünce saat sanıyordu. */
+  const mesaiYazi = mesaiYev > 0 ? String(mesaiYev).replace(".", ",") + " yev"
+                  : mesai > 0   ? String(mesai).replace(".", ",") + " sa"
                   : "0";
   kart.classList.remove("gizli");
   $("#hafta-icerik").innerHTML =
@@ -5775,8 +5777,19 @@ function takvimCiz(){
     if(oz){
       const t = hesaplaAralik(1, new Date(aktifYil, aktifAy+1, 0).getDate());
       oz.innerHTML =
+        /* TOPLAM YEVMİYE (0.1.3.5)
+           Kullanıcı "6,5 yevmiyem var ama 6 gün diyor" dedi. Rakamlar
+           doğruydu ama ikiye bölünmüş gösteriliyordu: ÇALIŞILAN 6 gün +
+           MESAİ 0,5 yevmiye. Toplamı görmek için kafadan toplamak
+           gerekiyordu. Artık gün sayısının altında toplam yevmiye de
+           yazıyor — hakedişle birebir örtüşen rakam bu. */
         '<div class="to-kut g"><span class="e">ÇALIŞILAN</span>'+
-          '<b>'+t.gunSayisi+'</b><small>gün</small></div>'+
+          '<b>'+t.gunSayisi+'</b><small>gün</small>'+
+          ((t.artiToplam||0) > 0
+            ? '<small style="display:block;color:var(--sari);font-weight:700">= ' +
+              String(t.gunSayisi + t.artiToplam).replace(".", ",") + ' yevmiye</small>'
+            : '') +
+        '</div>'+
         '<div class="to-kut p"><span class="e">HAKEDİŞ</span>'+
           /* TAM RAKAM (0.1.0.2) — kısaltma kaldırıldı.
              Kutuda "3,8B" yazıyordu ama hemen üstündeki kazanç kartında
@@ -8442,7 +8455,14 @@ document.addEventListener("visibilitychange", ()=>{
    dokununca kendi isteğiyle yeniliyor. */
 if("serviceWorker" in navigator){
   window.addEventListener("load", ()=>{
-    navigator.serviceWorker.register("./sw.js").then(kayit=>{
+    /* updateViaCache:"none" — KRİTİK (0.1.3.5)
+       Tarayıcı `sw.js` dosyasını KENDİ HTTP ÖNBELLEĞİNDEN veriyordu.
+       GitHub Pages dosyaları uzun süreli önbellek başlığıyla sunduğu
+       için yeni sw.js hiç indirilmiyor, dolayısıyla yeni sürüm hiç
+       fark edilmiyordu: kullanıcı 0.1.3.4 yüklemesine rağmen uygulamada
+       0.1.3.1 görünüyordu.
+       "none" ile sw.js her kontrolde SUNUCUDAN taze alınıyor. */
+    navigator.serviceWorker.register("./sw.js", {updateViaCache: "none"}).then(kayit=>{
       /* Chrome, varsayılan olarak yeni bir sw.js olup olmadığını günde en
          fazla 1 kez kontrol eder. Biz sık güncelleme yaptığımız için bu,
          "sürüm hiç değişmiyor" gibi görünen bir soruna yol açıyordu — her
@@ -9877,7 +9897,7 @@ document.addEventListener("DOMContentLoaded", ()=>{
   });
 
   /* Neler yeni kartı */
-  const YENILIK_SURUM = "0.1.3.4";
+  const YENILIK_SURUM = "0.1.3.5";
   window.__SURUM = YENILIK_SURUM;   /* tanı raporu bunu okur */
   try{ $("#cekmece-surum").textContent = "Puantaj Defterim " + YENILIK_SURUM; }catch(e){}
   /* Sürümü çekmece başlığında da göster. Sebep: "değişiklik gelmedi" durumunda
