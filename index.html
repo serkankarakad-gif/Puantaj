@@ -400,11 +400,11 @@
       <div class="kart gizli" id="yenilik-kart" style="border-color:var(--sari)">
         <h2>🎁 Neler yeni?</h2>
         <ul style="padding-left:18px;font-size:13.5px;line-height:1.9">
-          <li><b>🚨 SÜRÜM GÜNCELLENMİYORDU — sebebini buldum.</b> Telefon, güncellemeyi kontrol eden dosyayı <b>kendi önbelleğinden</b> veriyordu. Yani yeni sürümü yüklesen bile telefon hiç bakmıyordu. 0.1.3.4 yüklediğin hâlde 0.1.3.1 görmenin sebebi buydu</li>
-          <li><b>Düzeltildi:</b> O dosya artık her seferinde sunucudan taze alınıyor. Bundan sonra güncellemeler normal gelecek</li>
-          <li><b>⚠️ Bu sürüme geçmek için bir kez elle yapman gerek:</b> Ayarlar → <b>"Uygulama takılırsa — önbelleği temizle"</b> → "Önbelleği temizle ve yenile". Kayıtların silinmez, sadece dosya önbelleği boşalır</li>
-          <li><b>📊 "6,5 yevmiyem var" sorunu:</b> Rakamlar doğruydu ama ikiye bölünmüş gösteriliyordu — ÇALIŞILAN 6 gün, MESAİ 0,5 yevmiye. Artık <b>toplamı da yazıyor: "= 6,5 yevmiye"</b>. Hakedişle birebir örtüşen rakam bu</li>
-          <li><b>Hafta kutusunda birim netleşti</b> — "0,5s" saat sanılıyordu, artık "0,5 yev" yazıyor</li>
+          <li><b>❌ "Ortalama günlük" kaldırıldı — yanlış bir fikirdi.</b> Sen günlük çalışıyorsun: <b>20 gün çalıştıysan 20 × 2.500 = 50.000 ₺.</b> Ortalama alıp 1.842 gibi bir rakam göstermek hem kafa karıştırıyor hem de senin çalışma şekline aykırı. Patrona giden sayfada artık düz <b>"Günlük yevmiye: 2.500 ₺"</b> yazıyor</li>
+          <li><b>✅ Asıl sorun kaynağında çözülüyor.</b> "Patrona onaya gönder"e bastığında uygulama önce kontrol ediyor: bu ayın tüm günleri güncel yevmiyende mi?</li>
+          <li><b>Hepsi 2.500 ise</b> doğrudan gönderiyor. Patron görüyor: 20 gün × 2.500 = 50.000 ₺ — rakamlar tutuyor</li>
+          <li><b>Farklı ücretli gün varsa uyarıyor:</b> <i>"Bu ayda 8 gün farklı ücretle kayıtlı. Bu hâliyle gönderirsen patron rakamların tutmadığını görecek. Önce güncelleyelim mi?"</i> Evet dersen düzeltiyor, sonra gönderiyorsun</li>
+          <li><b>Not:</b> Gelmediğin günler zaten hiç sayılmıyor — ne gün sayısına ne paraya giriyor</li>
         </ul>
         <button class="btn btn-cizgili" id="btn-yenilik-kapat">Süper, kapat</button>
       </div>
@@ -1540,7 +1540,19 @@
         </div>
         <button class="btn btn-sari" id="btn-ayar-kaydet">Ayarları kaydet</button>
 
-
+        <!-- AY ÜCRETLERİNİ GÜNCELLE (0.1.2.2)
+             Her gün kaydedildiği andaki ücretle mühürleniyor. Yevmiye
+             zamlandığında eski günler eski ücretten kalıyor ve toplam
+             düşük görünüyor. Bu araç görüntülenen ayı güncel yevmiyeye
+             çeviriyor — önce ne değişeceğini gösterip onay alarak. -->
+        <div style="margin-top:14px;padding-top:14px;border-top:1px solid var(--cizgi)">
+          <div style="font-size:12px;color:var(--soluk);line-height:1.55;margin-bottom:8px">
+            💰 <b style="color:var(--sari)">Yevmiyene zam geldiyse</b><br>
+            Her gün, işlendiği tarihteki ücretle kayıtlıdır. Zamdan önceki günler
+            eski ücretten kalır. Görüntülediğin ayı güncel yevmiyeye çevirmek için:
+          </div>
+          <button class="btn btn-cizgili" id="btn-ay-ucret-guncelle">🔄 Bu ayın ücretlerini güncelle</button>
+        </div>
       </div>
       <div class="kart ayar-kart kapali">
         <h2 class="ayar-bas" role="button" tabindex="0">🏗️ Şantiyeler / Patronlar<span class="ayar-ok">▾</span></h2>
