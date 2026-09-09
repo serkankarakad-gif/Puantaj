@@ -5,6 +5,29 @@ kullanır: `0.0.0.X` — X, her güncellemede 1 artar. Uygulama içindeki sürü
 (alt bilgi + "Neler yeni" kartı) ve dağıtılan zip dosyasının adı her zaman
 birebir aynıdır.
 
+## 0.1.2.2 — 💰 "Bu ayın ücretlerini güncelle" aracı
+- 0.1.2.1'deki mutabakat tutarsızlığının **kök nedenine** çözüm: her gün kaydedildiği andaki `uYevmiye` ile mühürleniyor. Bu koruma amaçlı (işveren geriye dönük düşürürse kayıt korunur) ancak **zam durumunda ters çalışıyor** — eski günler eski ücretten kalıyor, toplam düşük görünüyor
+- 💰 **`ayUcretleriniGuncelle()`**: görüntülenen ayın günlerini güncel `ayarlar.yevmiye` değerine çeviriyor
+  - Yalnızca `girdiGun(v) > 0` olan günler (gelmediği günlere dokunmuyor)
+  - Zaten güncel ücretteki günler atlanıyor
+  - **Önizleme zorunlu**: kaç gün değişecek, ilk 3 gün için eski→yeni ücret, ayın hakedişi eski→yeni ve fark. `confirm()` ile onay
+  - Kilitli aylarda çalışmıyor (`ayarlar.kapali` kontrolü)
+  - Firestore `batch()` ile tek işlemde yazılıyor — yarım kalma riski yok
+  - Hata durumunda anlaşılır uyarı + `hataKaydet()`
+- Düğme: Ayarlar → Ücret ayarları'nın altında, ne işe yaradığını anlatan kısa açıklamayla
+- Doğrulandı: `gelmedi` günleri `girdiGun()` içinde zaten 0 sayılıyor — kullanıcının "çalışmadığım günü hesaplamasın" endişesi mevcut kodda karşılanmış durumda
+- Üç yerde sürüm güncellendi: `app.js`, `sw.js`, zip adı — hepsi `0.1.2.2`
+
+## 0.1.2.1 — 🐞 Mutabakatta yevmiye tutarsızlığı + kurallar sadeleştirildi
+- Kullanıcı onay ekranından bildirdi: "28,5 gün nasıl 52.500 ₺ yapıyor, 2.500'den?"
+- 🐞 **Kök sebep**: `mutabakatOlustur()` `yevmiye` alanına **`ayarlar.yevmiye`** (bugünkü ayar) yazıyordu. Ancak hakediş, her günün mühürlü `uYevmiye` değerinden hesaplanıyor. Kullanıcı yevmiyesini dönem içinde/sonrasında yükselttiği için ikisi tutmuyordu
+  - 28,5 gün × 2.500 = 71.250 ₺ beklenirken 52.500 ₺ görünüyordu (gerçek ortalama 1.842 ₺/gün)
+  - İşveren tutarsızlığı görüp belgeye güvenmezdi — mutabakatın tüm amacı güven olduğu için bu kritik
+- ✅ **Düzeltme**: `yevmiye` alanına dönemin **gerçek ortalaması** (`hakedis / gunSayisi`) yazılıyor. Ayrıca `yevmiyeDegisken` bayrağı hesaplanıyor — dönemde birden fazla farklı `uYevmiye` varsa `true`
+  - Onay ekranında etiket "Günlük yevmiye" yerine **"Ortalama günlük"** oluyor ve açıklama gösteriliyor: "Bu dönemde farklı günlük ücretler uygulanmış. Her gün kendi ücretinden hesaplanmıştır."
+- 📄 **`firestore.rules` kullanıcının canlı kurallarına göre yeniden yazıldı**: kullanıcı Firebase konsolundaki mevcut kurallarını paylaştı (sade, 15 satır). Uzun dosyayı tamamen değiştirmek yerine mevcut `kullanicilar` bloğu **aynen korunup** yalnızca `mutabakat` bloğu eklendi — 45 satır, mobilde yapıştırılabilir, mevcut davranışı bozma riski yok
+- Üç yerde sürüm güncellendi: `app.js`, `sw.js`, zip adı — hepsi `0.1.2.1`
+
 ## 0.1.2.0 — 🩺 Tanı yanlış alarmları + çift tıklama koruması
 - Kullanıcının gönderdiği tanı raporu (0.1.1.8) incelendi. Üç uyarı **yanlış alarm** çıktı; rapor okuyan kişiyi olmayan sorunlara yönlendiriyorlardı
 - 🩺 **"Güvenlik kuralları — Başka kullanıcı belgesi okunabildi"**: bu bilinçli tasarım. `kullanicilar/{id}` okuması "Herkes" ekranı için giriş yapmış herkese açık, **yazma yalnızca sahibinde**. Uyarı → bilgi

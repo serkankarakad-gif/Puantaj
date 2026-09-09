@@ -1745,7 +1745,9 @@ async function mutabakatGoster(anahtar){
         satir("Çalışılan gün", (m.gunSayisi||0) + " gün") +
         (m.artiToplam > 0 ? satir("Ek yevmiye", m.artiToplam) : "") +
         (m.mesaiToplam > 0 ? satir("Mesai", m.mesaiToplam + " saat") : "") +
-        (m.yevmiye > 0 ? satir("Günlük yevmiye", paraFmt(m.yevmiye)) : "") +
+        (m.yevmiye > 0 ? satir(m.yevmiyeDegisken ? "Ortalama günlük" : "Günlük yevmiye", paraFmt(m.yevmiye)) : "") +
+        (m.yevmiyeDegisken ? '<div style="font-size:11.5px;color:var(--soluk);padding:6px 0 0;line-height:1.5">' +
+          'ℹ️ Bu dönemde farklı günlük ücretler uygulanmış. Her gün kendi ücretinden hesaplanmıştır.</div>' : "") +
         satir("Hakediş", paraFmt(m.hakedis||0)) +
         satir("Alınan (avans/ödeme)", paraFmt(m.alinan||0)) +
         satir("KALAN ALACAK", paraFmt(m.kalan||0), true) +
@@ -1792,6 +1794,79 @@ async function mutabakatOnayla(anahtar){
   }catch(e){
     if(btn) btn.disabled = false;
     alert("Onay kaydedilemedi. İnternet bağlantınızı kontrol edip tekrar deneyin.");
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   💰 AY ÜCRETLERİNİ GÜNCELLE (0.1.2.2)
+   ───────────────────────────────────────────────────────────────────
+   Uygulama her günü kaydedildiği andaki ücretle mühürlüyor. Bu doğru
+   davranış — patron sonradan yevmiyeyi düşürse geçmiş kayıtların
+   korunuyor. Ama TERS durumda sorun oluyor: yevmiyen ZAMLANDIYSA eski
+   günler eski ücretten kalıyor ve toplam düşük görünüyor.
+
+   Kullanıcı bunu mutabakat ekranında yakaladı: 28,5 gün × 2.500 =
+   71.250 olmalı ama 52.500 görünüyordu.
+
+   Bu araç, görüntülenen ayın günlerini GÜNCEL yevmiyeye çeviriyor.
+   Geçmiş parayı değiştirdiği için:
+     • Önce tam olarak ne değişeceğini gösteriyor (eski → yeni, fark)
+     • Onay istiyor
+     • Kilitli ayda çalışmıyor
+   ═══════════════════════════════════════════════════════════════════ */
+async function ayUcretleriniGuncelle(){
+  try{
+    if(!kullanici){ toast("Önce giriş yap"); return; }
+    const yeniYev = Number(ayarlar.yevmiye) || 0;
+    if(yeniYev <= 0){ toast("Önce ayarlardan günlük yevmiyeni gir"); return; }
+    if(ayarlar.kapali.includes(aktifAyAnahtar())){
+      toast("Bu ay kilitli — önce ayarlardan kilidi aç 🔒"); return;
+    }
+
+    const ayAd = AYLAR[aktifAy] + " " + aktifYil;
+    const degisecek = [];
+    let eskiToplam = 0, yeniToplam = 0;
+
+    Object.keys(girdiler).forEach(id=>{
+      const v = girdiler[id];
+      if(!v || !girdiGun(v)) return;               /* gelmediği günler atlanıyor */
+      const eskiYev = Number(v.uYevmiye) || 0;
+      if(eskiYev === yeniYev) return;              /* zaten güncel */
+      const eskiK = girdiKazanc(v);
+      const yeniK = girdiKazanc({...v, uYevmiye: yeniYev});
+      eskiToplam += eskiK; yeniToplam += yeniK;
+      degisecek.push({id, eskiYev, eskiK, yeniK});
+    });
+
+    if(!degisecek.length){
+      toast("Bu ayın tüm günleri zaten " + paraFmt(yeniYev) + " üzerinden ✅"); return;
+    }
+
+    const fark = yeniToplam - eskiToplam;
+    const ornek = degisecek.slice(0,3)
+      .map(d=> "  " + d.id.slice(8) + "." + d.id.slice(5,7) + "  " + paraFmt(d.eskiYev) + " → " + paraFmt(yeniYev))
+      .join("\n");
+
+    const onay = confirm(
+      ayAd + " — ÜCRET GÜNCELLEME\n\n" +
+      degisecek.length + " günün yevmiyesi " + paraFmt(yeniYev) + " olarak güncellenecek.\n\n" +
+      ornek + (degisecek.length>3 ? "\n  … ve " + (degisecek.length-3) + " gün daha" : "") + "\n\n" +
+      "Bu ayın hakedişi:\n" +
+      "  " + paraFmt(eskiToplam) + "  →  " + paraFmt(yeniToplam) + "\n" +
+      "  Fark: " + (fark>0?"+":"") + paraFmt(fark) + "\n\n" +
+      "Devam edilsin mi?");
+    if(!onay) return;
+
+    toast("Güncelleniyor...");
+    const yigin = db.batch();
+    degisecek.forEach(d=>{
+      yigin.update(kokRef().collection("girdiler").doc(d.id), {uYevmiye: yeniYev});
+    });
+    await yigin.commit();
+    toast("✅ " + degisecek.length + " gün güncellendi · hakediş " + paraFmt(yeniToplam));
+  }catch(e){
+    toast("Güncellenemedi — internetini kontrol edip tekrar dene 📡");
+    try{ hataKaydet("ayUcretleriniGuncelle", e); }catch(_){}
   }
 }
 
@@ -1916,7 +1991,27 @@ async function mutabakatOlustur(){
       gunSayisi: t.gunSayisi,
       mesaiToplam: t.mesaiToplam || 0,
       artiToplam: t.artiToplam || 0,
-      yevmiye: Number(ayarlar.yevmiye) || 0,
+      /* YEVMİYE — bugünkü ayar DEĞİL, o dönemde gerçekten uygulanan (0.1.2.1)
+         Uygulama her günü kaydedildiği andaki ücretle mühürlüyor. Yevmiye
+         sonradan yükseltilirse eski günler eski ücretten kalıyor — doğru
+         davranış, ama mutabakatta BUGÜNKÜ yevmiye yazılıyordu.
+         Sonuç: işveren "28,5 gün × 2.500 = 71.250 olmalı, neden 52.500?"
+         diye haklı olarak tutarsızlık görüyordu.
+         Artık dönemin gerçek ortalaması yazılıyor ve ücretler farklıysa
+         bu ayrıca belirtiliyor. */
+      yevmiye: (t.gunSayisi > 0 ? Math.round(t.hakedis / t.gunSayisi) : (Number(ayarlar.yevmiye) || 0)),
+      yevmiyeDegisken: (function(){
+        /* Dönemde birden fazla farklı yevmiye uygulanmış mı? */
+        try{
+          const set = new Set();
+          Object.keys(girdiler).forEach(id=>{
+            const v = girdiler[id];
+            if(!v || !girdiGun(v)) return;
+            set.add(Number(v.uYevmiye) || Number(ayarlar.yevmiye) || 0);
+          });
+          return set.size > 1;
+        }catch(e){ return false; }
+      })(),
       hakedis: Math.round(t.hakedis),
       alinan: Math.round(t.alinan),
       kalan: Math.round(t.kalan),
@@ -9530,7 +9625,7 @@ document.addEventListener("DOMContentLoaded", ()=>{
   });
 
   /* Neler yeni kartı */
-  const YENILIK_SURUM = "0.1.2.0";
+  const YENILIK_SURUM = "0.1.2.2";
   window.__SURUM = YENILIK_SURUM;   /* tanı raporu bunu okur */
   try{ $("#cekmece-surum").textContent = "Puantaj Defterim " + YENILIK_SURUM; }catch(e){}
   /* Sürümü çekmece başlığında da göster. Sebep: "değişiklik gelmedi" durumunda
@@ -11114,6 +11209,10 @@ document.addEventListener("DOMContentLoaded", ()=>{
   /* İşveren onayı bağlantısı */
   const btnMut = document.getElementById("btn-mutabakat");
   if(btnMut) btnMut.addEventListener("click", mutabakatOlustur);
+
+  /* Ay ücretlerini güncelle */
+  const btnAyUcret = document.getElementById("btn-ay-ucret-guncelle");
+  if(btnAyUcret) btnAyUcret.addEventListener("click", ayUcretleriniGuncelle);
 
   const btnKurTamam = document.getElementById("btn-kur-tamam");
   if(btnKurTamam){

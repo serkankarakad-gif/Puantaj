@@ -1,100 +1,44 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-
-    function girisYapmis(){
-      return request.auth != null;
-    }
-    function sahibi(kullaniciId){
-      return request.auth != null && request.auth.uid == kullaniciId;
-    }
-
+    // HERKES (giriş yapmış) OKUYABİLİR — herkes birbirinin puantajını görebilir
+    // ama herkes SADECE KENDİ verisine yazabilir
     match /kullanicilar/{kullaniciId} {
-      // Ana profil belgesi (ad, ayarlar, yevmiye, şantiyeler, belgeler vb.):
-      // "Herkes" ekranı başka kullanıcıların adını/ücret ayarlarını okuyabilmeli,
-      // bu yüzden okuma herkese (giriş yapmış) açık — ama SADECE kendi UID'in yazabilir.
-      allow read: if girisYapmis();
-      allow write: if sahibi(kullaniciId);
+      allow read: if request.auth != null;
+      allow write: if request.auth != null && request.auth.uid == kullaniciId;
 
-      // "Herkes" / kişi karşılaştırma özelliği SADECE bu iki alt koleksiyona bakıyor,
-      // o yüzden sadece bunlar herkese açık okunabilir kalıyor.
-      match /girdiler/{gunId} {
-        allow read: if girisYapmis();
-        allow write: if sahibi(kullaniciId);
-      }
-      match /odemeler/{odemeId} {
-        allow read: if girisYapmis();
-        allow write: if sahibi(kullaniciId);
-      }
-
-      // Geri kalan HER ŞEY tamamen kişisel: borçlar, cüzdan, kredi kartları,
-      // masraflar, ekip (yönettiğin işçiler), planlar, fotoğraflar, fişler,
-      // dekontlar, notlar, cihaz/bildirim jetonları, kaza kayıtları vb.
-      // Bunlara SADECE sahibi okuyup yazabilir — başka hiçbir kullanıcı göremez.
-      match /{koleksiyon}/{belgeId} {
-        allow read, write: if sahibi(kullaniciId);
-      }
-
-      // İleride 3+ seviye derine inen bir alt-alt koleksiyon eklenirse
-      // (örn. kullanicilar/x/ekip/y/notlar/z) yine sadece sahibine açık kalsın.
-      match /{koleksiyon}/{belgeId}/{altYol=**} {
-        allow read, write: if sahibi(kullaniciId);
+      match /{altKoleksiyon=**} {
+        allow read: if request.auth != null;
+        allow write: if request.auth != null && request.auth.uid == kullaniciId;
       }
     }
 
-    // ═══════════════════════════════════════════════════════════════
-    // MUTABAKAT — işveren onayı (0.1.1.4)
-    // ───────────────────────────────────────────────────────────────
-    // İşçi ay sonunda bir bağlantı üretiyor, işverene gönderiyor.
-    // İşveren HESAP AÇMADAN açıp onaylayabiliyor. Bu yüzden okuma
-    // girişsiz açık — ama güvenlik şu üç kuralla sağlanıyor:
-    //
-    //  1) Belge kimliği tahmin edilemez (uzun rastgele anahtar).
-    //     Bağlantıyı bilmeyen hiçbir şeyi göremez, listeleme yok.
-    //  2) Belgede YALNIZCA o ayın özeti var (gün sayısı, hakediş,
-    //     alınan, kalan). İşçinin diğer verilerine erişim yok.
-    //  3) İşveren SADECE onay alanlarını yazabilir. Rakamlara
-    //     dokunamaz — tutarları değiştirmesi kural düzeyinde engelli.
-    // ═══════════════════════════════════════════════════════════════
+    // ═══ MUTABAKAT — işveren onayı ═══
+    // İşçi ay sonunda bağlantı üretir, işveren HESAP AÇMADAN onaylar.
     match /mutabakat/{anahtar} {
+
       // Yalnızca onay alanlarının değiştiğini doğrular
-      function sadeceOnayAlanlari(){
+      function sadeceOnay() {
         return request.resource.data.diff(resource.data).affectedKeys()
           .hasOnly(['onay','onayTarih','onaylayanAd','onaylayanNot']);
       }
 
-      // ⚠️ KRİTİK: "read" Firestore'da hem `get` (tek belge) hem `list`
-      // (koleksiyon sorgusu) demektir. `allow read: if true` yazılsaydı
-      // herhangi biri db.collection("mutabakat").get() ile TÜM
-      // kullanıcıların mutabakat kayıtlarını (ad, şantiye, hakediş,
-      // alacak) dökebilirdi — anahtar bilmesine gerek kalmadan.
-      // Bu yüzden ikisi AYRI tanımlanıyor:
-      allow get:  if true;    // bağlantıyı (anahtarı) bilen görebilir
-      allow list: if false;   // koleksiyon listeleme tamamen kapalı
+      // get = tek belge (bağlantıyı bilen görebilir)
+      // list = koleksiyon listeleme KAPALI (yoksa herkes tüm kayıtları döker)
+      allow get: if true;
+      allow list: if false;
 
-      // Yalnızca giriş yapmış işçi oluşturabilir ve kendi kimliğini yazmalı
+      // Oluşturma: yalnızca giriş yapmış işçi, kendi kimliğiyle
       allow create: if request.auth != null
                     && request.resource.data.sahipId == request.auth.uid;
 
-      // İşveren: sadece onay alanlarını yazabilir VE yalnızca bir kez.
-      //
-      // `resource.data.onay == false` şartı kritik: onay verildikten
-      // sonra bağlantıyı bilen biri onayı İPTAL EDEMEZ, onaylayan adını
-      // DEĞİŞTİREMEZ. Anlaşmazlıkta kullanılacak bir belgede onayın
-      // sonradan oynanabilir olması kabul edilemez.
-      //
-      // İşçi (sahip) kendi belgesini her zaman güncelleyebilir —
-      // yeni dönem gönderdiğinde rakamlar yenilensin diye.
-      allow update: if (sadeceOnayAlanlari() && resource.data.onay == false)
+      // Güncelleme: işveren yalnızca onay alanlarını, YALNIZCA BİR KEZ.
+      // Onay verildikten sonra iptal edilemez, adı değiştirilemez.
+      allow update: if (sadeceOnay() && resource.data.onay == false)
                     || (request.auth != null && resource.data.sahipId == request.auth.uid);
 
       // Silme yalnızca sahibinde
       allow delete: if request.auth != null && resource.data.sahipId == request.auth.uid;
-    }
-
-    // Yukarıdakiler dışında (kullanicilar/** ve mutabakat hariç) erişim yok.
-    match /{document=**} {
-      allow read, write: if false;
     }
   }
 }
