@@ -5,6 +5,25 @@ kullanır: `0.0.0.X` — X, her güncellemede 1 artar. Uygulama içindeki sürü
 (alt bilgi + "Neler yeni" kartı) ve dağıtılan zip dosyasının adı her zaman
 birebir aynıdır.
 
+## 0.1.3.3 — 📊 Mutabakatta gelinmeyen günler ve önceki dönem alacağı
+- Kullanıcı bildirimi: "çalıştığım ve çalışmadığım günleri doğru saymıyor, önceki ayları da saymıyor"
+- 📊 **Ayın tamamı belgede**: `hesapla()` zaten `tam`, `yarim`, `gelmedi`, `izinli` sayılarını döndürüyordu ancak mutabakata yalnızca `gunSayisi` yazılıyordu. Artık dördü de belgeye giriyor; onay sayfasında "Gelinmeyen gün" ve "İzinli gün" satırları (değer 0 ise gizli) gösteriliyor
+- ⏳ **Önceki dönem alacağı**: `tumDonemOzeti()` üzerinden, seçili dönemden **önceki** ayların ödenmemiş bakiyesi hesaplanıyor (`oncekiKalan`) ve `genelKalan` ile birlikte belgeye yazılıyor. Onay sayfasında ayrı bir kartta gösteriliyor: "Önceki aylardan … · GENEL TOPLAM …"
+  - Belgenin konusu yine **seçili ay** — 0.1.3.2'de kaldırılan "tüm dönem" kapsamı geri getirilmedi. Eski alacak yalnızca bilgi olarak ekleniyor
+- **Gönderim öncesi onay penceresine** de gelinmeyen gün ve önceki alacak eklendi
+- 🐞 **Yakalanan sıra hatası**: `oncekiKalanTutar` hesabı ilk uygulamada onay penceresinden **sonra** yer alıyordu; onayda değer 0 görünecekti. Hesap onaydan öne alındı, sıra `hesap → onay → yazma` olarak doğrulandı
+- Üç yerde sürüm güncellendi: `app.js`, `sw.js`, zip adı — hepsi `0.1.3.3`
+
+## 0.1.3.2 — 📲 Paylaşım açılmıyordu + "tüm dönem" sorusu kaldırıldı
+- İki kullanıcı bildirimi: (1) WhatsApp'a yönlendirmiyor, (2) "hangi ayı seçersem o gitsin, tümü değil"
+- ✅ **Kapsam seçimi kaldırıldı**: 0.1.2.7'de eklenen "tüm dönemi mi gönderelim?" `confirm()`'i tamamen çıkarıldı. Görüntülenen ay gönderiliyor. `kapsamTum` ile ilgili 16 koşullu ifade sadeleştirildi
+- 📲 **Paylaşım sorunu**: tarayıcılar `navigator.share()` ve `window.open()` çağrılarını yalnızca **geçici kullanıcı etkinliği** varken kabul ediyor. Akışta paylaşımdan önce 3 `confirm()` ve 3 `await` bulunuyordu; etkinlik düşüyor ve paylaşım sessizce başarısız oluyordu
+  - **Üç kademeli yedek**: `navigator.share()` → `window.open(wa.me)` → bağlantıyı ekranda göster + panoya kopyala
+  - Son kademede `#mutabakat-durum` içinde bağlantı metni, kopyalandı bildirimi ve "WhatsApp'ta aç" düğmesi gösteriliyor — kullanıcı hiçbir durumda eli boş kalmıyor
+  - `AbortError` (kullanıcı bilerek kapattı) yedeklere düşmüyor
+  - Kapsam sorusunun kaldırılmasıyla paylaşım öncesi pencere sayısı 3'ten 2'ye indi
+- Üç yerde sürüm güncellendi: `app.js`, `sw.js`, zip adı — hepsi `0.1.3.2`
+
 ## 0.1.3.1 — 🎯 Mutabakat adresi deterministik hale getirildi (kök çözüm)
 - Kullanıcı üst üste bildirdi: uygulamada 71.250 ₺, işverene giden bağlantıda ~50.000 ₺. 0.1.2.7'deki bulut anahtar çözümü yetmedi
 - 🎯 **KÖK SEBEP**: belge kimliği **rastgele** üretiliyordu (`mutabakatAnahtarUret()`), bu yüzden uygulamanın "bu dönem için belge var mı?" diye **aramak** zorunda kalması gerekiyordu — önce `localStorage`, sonra `mutabakatKey` koleksiyonu. Arama başarısız olduğunda **yeni belge** oluşuyordu; işverenin elindeki eski bağlantı eski belgeyi göstermeye devam ediyordu. Sorunun kaynağı arama mekanizmasının kendisiydi

@@ -1743,13 +1743,33 @@ async function mutabakatGoster(anahtar){
       '<div class="kart">' +
         (m.isciAd ? '<div style="font-size:15px;font-weight:700;margin-bottom:10px">👷 ' + esc(m.isciAd) + '</div>' : '') +
         satir("Çalışılan gün", (m.gunSayisi||0) + " gün") +
+        /* Ayın tamamı görünsün (0.1.3.3) — işveren "kaç gün geldi,
+           kaç gün gelmedi" sorusunun cevabını burada buluyor. */
+        ((m.gelmediGun||0) > 0 ? satir("Gelinmeyen gün", m.gelmediGun + " gün") : "") +
+        ((m.izinliGun||0) > 0 ? satir("İzinli gün", m.izinliGun + " gün") : "") +
         (m.artiToplam > 0 ? satir("Ek yevmiye", m.artiToplam) : "") +
         (m.mesaiToplam > 0 ? satir("Mesai", m.mesaiToplam + " saat") : "") +
         (m.yevmiye > 0 ? satir("Günlük yevmiye", paraFmt(m.yevmiye)) : "") +
         satir("Hakediş", paraFmt(m.hakedis||0)) +
         satir("Alınan (avans/ödeme)", paraFmt(m.alinan||0)) +
         satir("KALAN ALACAK", paraFmt(m.kalan||0), true) +
-      '</div>';
+      '</div>' +
+      /* Önceki aylardan alacak varsa ayrı kartta göster (0.1.3.3).
+         Belgenin konusu bu ay ama işverenin toplam borcu görmesi
+         gerekiyor — aksi hâlde eski aylar unutulup gidiyor. */
+      ((m.oncekiKalan||0) > 0
+        ? '<div class="kart" style="border-color:var(--yarim);background:rgba(201,138,46,.08)">' +
+            '<div style="font-size:13px;font-weight:700;color:var(--yarim);margin-bottom:8px">⏳ Önceki aylardan</div>' +
+            '<div style="display:flex;justify-content:space-between;align-items:baseline;padding:6px 0">' +
+              '<span style="font-size:13px;color:var(--soluk)">Eski dönem alacağı</span>' +
+              '<span style="font-family:\'Saira Condensed\';font-size:18px;font-weight:800;color:var(--yarim)">' + paraFmt(m.oncekiKalan) + '</span>' +
+            '</div>' +
+            '<div style="display:flex;justify-content:space-between;align-items:baseline;padding:10px 0 0;margin-top:6px;border-top:1px solid var(--cizgi2)">' +
+              '<span style="font-size:13.5px;font-weight:700">GENEL TOPLAM</span>' +
+              '<span style="font-family:\'Saira Condensed\';font-size:24px;font-weight:800;color:var(--sari)">' + paraFmt(m.genelKalan||0) + '</span>' +
+            '</div>' +
+          '</div>'
+        : '');
 
     /* GÜN GÜN DÖKÜM (0.1.2.6)
        İşveren "27,5 gün" rakamını doğrulayabilmeli — hangi günlerde
@@ -2092,33 +2112,19 @@ async function mutabakatOlustur(){
     const t = hesapla();
     if(!t || t.gunSayisi <= 0){ toast("Bu ayda kayıt yok — önce günlerini işle"); return; }
 
-    /* KAPSAM SEÇİMİ (0.1.2.7)
-       İşçi bazen yalnızca bu ayı, bazen tüm birikmiş alacağını
-       onaylatmak istiyor. Önceki aylarda ödenmemiş bakiye varsa seçim
-       sunuluyor; yoksa doğrudan bu ay gönderiliyor. */
-    let kapsamTum = false, dOzet = null;
-    try{
-      dOzet = await tumDonemOzeti();
-      const buAyAnahtar = aktifYil + "-" + pad(aktifAy+1);
-      const oncekiKalan = dOzet.aylar
-        .filter(a=> a.ay !== buAyAnahtar && a.kalan > 0)
-        .reduce((x,a)=> x + a.kalan, 0);
-      if(oncekiKalan > 0){
-        kapsamTum = confirm(
-          "Önceki aylardan da " + paraFmt(oncekiKalan) + " alacağın görünüyor.\n\n" +
-          "TAMAM → TÜM DÖNEMİ gönder (toplam " + paraFmt(dOzet.toplam.kalan) + ")\n" +
-          "İPTAL → yalnızca " + AYLAR[aktifAy] + " " + aktifYil + " (" + paraFmt(t.kalan) + ")");
-      }
-    }catch(e){ /* özet alınamazsa yalnızca bu ay gönderilir */ }
-
-    const donem = kapsamTum ? "tum" : (aktifYil + "-" + pad(aktifAy+1));
+    /* HANGİ AY GÖRÜNTÜLENİYORSA O GÖNDERİLİYOR (0.1.3.2)
+       0.1.2.7'de eklenen "tüm dönemi mi gönderelim?" sorusu kaldırıldı.
+       Kullanıcı hangi ayı açtıysa onu göndermek istiyor; araya soru
+       girmesi hem kafa karıştırıyor hem de paylaşım penceresinin
+       açılmasını engelliyordu (aşağıdaki nota bakınız). */
+    const donem = aktifYil + "-" + pad(aktifAy+1);
     const mevcut = await mutabakatBul(donem);
 
     /* Zaten onaylanmışsa yeni bağlantı üretme — onay kaybolmasın */
     if(mevcut && mevcut.onay){
       const t2 = mevcut.onayTarih && mevcut.onayTarih.toDate ? mevcut.onayTarih.toDate() : null;
       const devam = confirm(
-        (kapsamTum ? "Bu TÜM DÖNEM mutabakatı" : "Bu ay") + " ZATEN ONAYLANMIŞ.\n\n" +
+        "Bu ay" + " ZATEN ONAYLANMIŞ.\n\n" +
         (mevcut.onaylayanAd ? "Onaylayan: " + mevcut.onaylayanAd + "\n" : "") +
         (t2 ? "Tarih: " + t2.toLocaleDateString("tr-TR") + " " + t2.toLocaleTimeString("tr-TR",{hour:"2-digit",minute:"2-digit"}) + "\n" : "") +
         "\nYeniden gönderirsen mevcut onay SİLİNİR ve patronun tekrar onaylaması gerekir.\n\nDevam edilsin mi?");
@@ -2133,6 +2139,15 @@ async function mutabakatOlustur(){
     const anahtar = mutabakatAdresi(donem);
     const ayAd = AYLAR[aktifAy] + " " + aktifYil;
 
+    /* Önceki ayların ödenmemiş bakiyesi (0.1.3.3) */
+    let oncekiKalanTutar = 0;
+    try{
+      const dz = await tumDonemOzeti();
+      oncekiKalanTutar = dz.aylar
+        .filter(a=> a.ay < donem && a.kalan > 0)
+        .reduce((x,a)=> x + a.kalan, 0);
+    }catch(e){ /* alınamazsa 0 kalır, belge yine üretilir */ }
+
     /* GÖNDERİM ONAYI (0.1.2.7 · 0.1.2.9'da öne alındı)
        Kullanıcı defalarca "linkte yanlış rakam görünüyor" dedi. Artık
        ne gideceği gönderilmeden ÖNCE ekranda gösteriliyor — yanlışsa
@@ -2145,19 +2160,24 @@ async function mutabakatOlustur(){
        haberi olmuyordu. Artık hiçbir yazma yapılmadan önce soruluyor. */
     {
       const gy = Number(ayarlar.yevmiye) || 0;
-      const gs = (kapsamTum && dOzet) ? dOzet.toplam.gun : t.gunSayisi;
-      const gh = (kapsamTum && dOzet) ? dOzet.toplam.hak : Math.round(t.hakedis);
-      const ga = (kapsamTum && dOzet) ? dOzet.toplam.alinan : Math.round(t.alinan);
-      const gk = (kapsamTum && dOzet) ? dOzet.toplam.kalan : Math.round(t.kalan);
+      const gs = t.gunSayisi;
+      const gh = Math.round(t.hakedis);
+      const ga = Math.round(t.alinan);
+      const gk = Math.round(t.kalan);
       const gonder = confirm(
         "PATRONA GİDECEK RAKAMLAR\n" +
-        (kapsamTum ? "TÜM DÖNEM" : ayAd) + "\n" +
+        (ayAd) + "\n" +
         "──────────────────────\n" +
         "Çalışılan gün : " + gs + "\n" +
+        ((t.gelmedi||0) > 0 ? "Gelinmeyen gün: " + t.gelmedi + "\n" : "") +
         "Günlük yevmiye: " + paraFmt(gy) + "\n" +
         "Hakediş       : " + paraFmt(gh) + "\n" +
         "Alınan        : " + paraFmt(ga) + "\n" +
         "KALAN         : " + paraFmt(gk) + "\n" +
+        (oncekiKalanTutar > 0
+          ? "Önceki aylardan: " + paraFmt(oncekiKalanTutar) + "\n" +
+            "GENEL TOPLAM  : " + paraFmt(gk + oncekiKalanTutar) + "\n"
+          : "") +
         "──────────────────────\n" +
         "Kontrol: " + gs + " × " + paraFmt(gy) + " = " + paraFmt(gs * gy) + "\n\n" +
         "Doğruysa TAMAM'a bas, gönderilsin.");
@@ -2169,13 +2189,20 @@ async function mutabakatOlustur(){
       sahipId: kullanici.uid,
       isciAd: (kullanici.displayName || "").slice(0, 60),
       donem: donem,
-      donemAd: kapsamTum ? "TÜM DÖNEM" : ayAd,
-      kapsam: kapsamTum ? "tum" : "ay",
-      aylar: (kapsamTum && dOzet) ? dOzet.aylar : [],
+      donemAd: ayAd,
+      kapsam: "ay",
+      aylar: [],
       santiye: String(ayarlar.santiye || "").slice(0, 80),
-      gunSayisi: (kapsamTum && dOzet) ? dOzet.toplam.gun : t.gunSayisi,
-      mesaiToplam: kapsamTum ? 0 : (t.mesaiToplam || 0),
-      artiToplam: kapsamTum ? 0 : (t.artiToplam || 0),
+      gunSayisi: t.gunSayisi,
+      /* Ayın TAMAMI görünsün (0.1.3.3): işveren yalnızca çalışılan günü
+         değil, gelinmeyen ve izinli günü de görmeli — ay hesabı böyle
+         kapanıyor ve "kaç gün çalıştı" sorusu tam cevaplanıyor. */
+      tamGun: t.tam || 0,
+      yarimGun: t.yarim || 0,
+      gelmediGun: t.gelmedi || 0,
+      izinliGun: t.izinli || 0,
+      mesaiToplam: t.mesaiToplam || 0,
+      artiToplam: t.artiToplam || 0,
       /* YEVMİYE — bugünkü ayar DEĞİL, o dönemde gerçekten uygulanan (0.1.2.1)
          Uygulama her günü kaydedildiği andaki ücretle mühürlüyor. Yevmiye
          sonradan yükseltilirse eski günler eski ücretten kalıyor — doğru
@@ -2185,16 +2212,21 @@ async function mutabakatOlustur(){
          Artık dönemin gerçek ortalaması yazılıyor ve ücretler farklıysa
          bu ayrıca belirtiliyor. */
       yevmiye: Number(ayarlar.yevmiye) || 0,
-      hakedis: (kapsamTum && dOzet) ? dOzet.toplam.hak : Math.round(t.hakedis),
-      alinan: (kapsamTum && dOzet) ? dOzet.toplam.alinan : Math.round(t.alinan),
-      kalan: (kapsamTum && dOzet) ? dOzet.toplam.kalan : Math.round(t.kalan),
+      hakedis: Math.round(t.hakedis),
+      alinan: Math.round(t.alinan),
+      kalan: Math.round(t.kalan),
+      /* Önceki aylardan birikmiş alacak (0.1.3.3). Belgenin konusu bu ay
+         ama işveren toplam borcu da görmeli: "bu ay 71.250 ₺, ayrıca
+         önceki aylardan 18.500 ₺ daha var" demek gerekiyor. */
+      oncekiKalan: oncekiKalanTutar,
+      genelKalan: Math.round(t.kalan) + oncekiKalanTutar,
       /* GÜN GÜN DÖKÜM (0.1.2.6)
          İşveren yalnızca toplamı değil, hangi günlerin çalışıldığını da
          görebilmeli — "27,5 gün" demek yetmiyor, hangi günler olduğu
          sorulabilir. Yalnızca çalışılan günler yazılıyor; gelinmeyen
          günler belgeye girmiyor (gereksiz yer kaplamasın).
          Alan adları kısa tutuldu: g=gün, d=durum, a=artı, m=mesai, k=kazanç */
-      gunler: kapsamTum ? [] : mutabakatGunListesi(),
+      gunler: mutabakatGunListesi(),
       olusturma: firebase.firestore.FieldValue.serverTimestamp(),
       onay: false
     });
@@ -2215,15 +2247,53 @@ async function mutabakatOlustur(){
       "\n🔸 Kalan: " + paraFmt(t.kalan) +
       "\n\nAşağıdaki bağlantıdan inceleyip onaylayabilirsiniz:\n" + url;
 
+    /* PAYLAŞIM (0.1.3.2 — yeniden yazıldı)
+       Sorun: tarayıcılar paylaşım penceresini yalnızca kullanıcı
+       dokunuşundan HEMEN SONRA açmaya izin veriyor. Bu akışta araya
+       onay pencereleri ve internet işlemleri girdiği için izin
+       düşüyordu ve WhatsApp hiç açılmıyordu.
+       Çözüm: üç kademeli yedek. Biri olmazsa diğeri devreye giriyor,
+       en kötü durumda bağlantı ekranda gösterilip kopyalanabiliyor —
+       kullanıcı hiçbir zaman eli boş kalmıyor. */
+    let paylasildi = false;
+
+    /* 1) Cihazın kendi paylaşım penceresi */
     try{
       if(navigator.share){
         await navigator.share({title: "Puantaj Mutabakatı — " + ayAd, text: metin});
-      }else{
-        window.open("https://wa.me/?text=" + encodeURIComponent(metin), "_blank", "noopener");
+        paylasildi = true;
       }
     }catch(e){
-      if(e && e.name === "AbortError") return;   /* kullanıcı iptal etti */
-      window.open("https://wa.me/?text=" + encodeURIComponent(metin), "_blank", "noopener");
+      if(e && e.name === "AbortError"){ return; }   /* kullanıcı bilerek kapattı */
+    }
+
+    /* 2) Doğrudan WhatsApp bağlantısı */
+    if(!paylasildi){
+      try{
+        const pencere = window.open("https://wa.me/?text=" + encodeURIComponent(metin), "_blank");
+        if(pencere) paylasildi = true;
+      }catch(e){}
+    }
+
+    /* 3) Hiçbiri açılmadıysa bağlantıyı ekranda göster ve panoya kopyala */
+    if(!paylasildi){
+      try{ await navigator.clipboard.writeText(metin); }catch(e){}
+      const gorunum = document.getElementById("mutabakat-durum");
+      if(gorunum){
+        gorunum.innerHTML =
+          '<div class="kart" style="border-color:var(--sari)">' +
+            '<div style="font-size:14px;font-weight:700;color:var(--sari);margin-bottom:6px">📋 Bağlantı hazır — kopyalandı</div>' +
+            '<div style="font-size:11.5px;color:var(--soluk);margin-bottom:8px;line-height:1.5">' +
+              'Paylaşım penceresi açılmadı. Aşağıdaki bağlantıyı patronuna gönder:</div>' +
+            '<div style="font-size:11px;background:var(--girdi);padding:9px;border-radius:8px;' +
+              'word-break:break-all;font-family:monospace;line-height:1.5">' + esc(url) + '</div>' +
+            '<a class="btn btn-cizgili" style="display:block;text-align:center;text-decoration:none;margin-top:9px" ' +
+              'href="https://wa.me/?text=' + encodeURIComponent(metin) + '" target="_blank" rel="noopener noreferrer">' +
+              '📲 WhatsApp\'ta aç</a>' +
+          '</div>';
+        gorunum.classList.remove("gizli");
+      }
+      toast("Bağlantı panoya kopyalandı 📋");
     }
   }catch(e){
     toast("Onay bağlantısı oluşturulamadı — internetini kontrol et 📡");
@@ -9826,7 +9896,7 @@ document.addEventListener("DOMContentLoaded", ()=>{
   });
 
   /* Neler yeni kartı */
-  const YENILIK_SURUM = "0.1.3.1";
+  const YENILIK_SURUM = "0.1.3.3";
   window.__SURUM = YENILIK_SURUM;   /* tanı raporu bunu okur */
   try{ $("#cekmece-surum").textContent = "Puantaj Defterim " + YENILIK_SURUM; }catch(e){}
   /* Sürümü çekmece başlığında da göster. Sebep: "değişiklik gelmedi" durumunda
