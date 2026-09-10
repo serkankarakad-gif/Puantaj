@@ -5,6 +5,134 @@ kullanır: `0.0.0.X` — X, her güncellemede 1 artar. Uygulama içindeki sürü
 (alt bilgi + "Neler yeni" kartı) ve dağıtılan zip dosyasının adı her zaman
 birebir aynıdır.
 
+## 0.1.3.7 — 🧾 Mutabakat belgesi: "kalan alacak" yanlış yerdeydi
+
+Kullanıcı belgeyi patrona gönderip ekran görüntüsüyle bildirdi. Hiç ödeme
+yapılmamış bir ayda belge şunu gösteriyordu:
+
+```
+Hakediş        16.250 ₺
+Alınan (avans)      0 ₺
+KALAN ALACAK   16.250 ₺
+```
+
+Aynı rakam iki kere, biri yanlış adla. Kullanıcının ifadesiyle: *"bu kalan
+alacak diye bir şey yok, o bu ayın alacağı."* Haklıydı — "kalan", ancak bir
+şey ödendikten sonra anlamlı bir kelime. İşveren de "ben bir şey ödemedim ki,
+neyin kalanı" diye takılıyor.
+
+- ✅ Ödeme yoksa tek satır: **"BU AYIN ALACAĞI"** (vurgulu). `Alınan` ve
+  `KALAN ALACAK` satırları hiç çıkmıyor
+- ✅ Ödeme varsa `Hakediş` → ödeme dökümü → `Toplam alınan` → `KALAN ALACAK`
+- ✅ Gönder onay ekranı ve WhatsApp metni de aynı dile getirildi
+
+### 💵 Avans/askeriye dökümü eklendi
+İşveren yalnızca toplam "alınan" rakamını görüyordu; hangi tarihte ne verdiğini
+göremiyordu. Belgeye `odemeList` alanı eklendi — tarih, tür (Avans / Askeriye /
+Hakediş / Kesinti) ve tutar.
+
+### 📅 Önceki aylar artık birleştirilmiyor
+`Eski dönem alacağı: 71.250 ₺` tek bir yekûndu; hangi aydan geldiği
+sorulamıyordu. `tumDonemOzeti()` veriyi zaten ay ay üretiyordu, sadece
+toplanıp tek satıra indiriliyordu.
+- ✅ Belgeye `oncekiAylar` alanı eklendi: her ay kendi hakediş / alınan /
+  kalan rakamıyla ayrı satırda
+- ✅ `GENEL TOPLAM` satırı kaldı ama "bu ay + önceki aylar" alt açıklamasıyla
+
+### ⚖️ FIFO kuralına dokunulmadı
+Kullanıcının açık talebi: *"sakın maaşların fifo kuralını bozma."*
+- `enEskiOdenmemisAy()` ve `odemeAyi()` fonksiyonları **bit bazında aynı**
+  bırakıldı (sürüm paketlenirken diff ile doğrulandı)
+- Bir ödemenin hangi aya sayılacağı hâlâ kaydın `aitAy` alanında duruyor ve
+  ödeme girilirken en eski ödenmemiş aya yönlendiriliyor
+- Belge bu kararı yalnızca **gösteriyor**, yeniden hesaplamıyor
+
+### ⏱️ Mesai birimi
+Yevmiye katı olarak girilen mesai belgede `0.5 saat` diye yazıyordu (yalnızca
+eski saat alanı okunuyordu). Artık `mesaiYevToplam` ve `mesaiToplam` ayrı
+alanlar olarak yazılıyor, ikisi ayrı satırda doğru birimle görünüyor.
+Ayrıca `Gün içi artı` ve `Toplam yevmiye` satırları eklendi.
+
+### ✅ Kontrol satırı
+Gönder onayındaki `gün × yevmiye` hesabı yol/yemek ayarı dolu olan kullanıcıda
+hakedişle tutmuyordu. Artık yol/yemek de satıra giriyor ve sonuç hakedişle
+birebir eşit çıkıyor.
+
+### 🐞 Yakalanan hata
+İlk yazımda ödeme türü etiketi `odemeTurAd()` diye çağrılmıştı; fonksiyonun
+gerçek adı `odemeTurEtiket()`. Paketlemeden önce yakalandı — yayına çıksaydı
+avansı olan her kullanıcıda "gönder" işlemi çökerdi.
+
+## 0.1.3.6 — 🚨 Hakediş eksik hesaplanıyordu: gün içi artı paraya girmiyordu
+
+### Kök sebep: iki ayrı hesap fonksiyonu ayrışmıştı
+Bir günün parasını hesaplayan **iki ayrı kod** vardı — `girdiKazanc()` ve
+`hesapla()`. Zamanla ayrıştılar ve `hesapla()` **gün içi artıyı (yeşilleri)
+hakedişe eklemeyi unuttu**. Gün sayısı ise `girdiGun()` üzerinden artıyı
+sayıyordu. Yani ekran günü sayıyor, kasa saymıyordu.
+
+Kullanıcının bildirdiği tablo birebir doğrulandı:
+
+| | Sistem | Doğrusu |
+|---|---|---|
+| Gün sayısı | 28,5 | 28,5 |
+| Hakediş | **55.000 ₺** | **71.250 ₺** |
+
+Kayıp tam olarak 6,5 artı günün karşılığı: `6,5 × 2.500 = 16.250 ₺`.
+`hesapla()` içinde `arti` değişkeni yalnızca zam hesabında geçiyordu,
+hiçbir para kutusuna eklenmiyordu.
+
+- ✅ **Düzeltme**: yeni `girdiDokum()` fonksiyonu eklendi — bir günün parası
+  artık **yalnızca orada** hesaplanıyor. `girdiKazanc()`, `hesapla()` ve
+  `hesaplaAralik()` üçü de bunu çağırıyor, dolayısıyla ayrışmaları yapısal
+  olarak imkânsız
+- ✅ Regresyon testi: `hesapla().hakedis` ile gün gün `girdiKazanc()` toplamı
+  karışık bir ayda (eski saat bazlı kayıt + yeni yevmiye katı + gece + parça
+  + pazar zammı) kuruşuna kadar eşit çıkıyor
+
+### 🍽️ Yol/yemek her yevmiye katıyla çoğalıyordu
+`arti*(yev+ek)`, `mesaiYev*(yev+ek)`, `geceYev*(yev+ek)` — ek ödeme her
+yevmiye katıyla ayrı ayrı çarpılıyordu. 3 artı yapan işçiye 3 yemek parası
+daha yazılıyordu. Oysa işçi o gün bir kere geliyor, bir kere yol parası
+veriyor, bir kere yemek yiyor; artı aynı günün içindeki fazla iştir.
+- ✅ Ek ödeme artık **gelinen gün başına bir kere** (yarım günde yarım)
+- ✅ İşe gelmeyip yalnızca akşam mesaiye gelinen günde de bir günlük hak doğuyor
+- ✅ Aynı kural "Kişiler" ekranındaki `kisiGirdiKazanc()` fonksiyonuna da
+  uygulandı — ustabaşının gördüğü rakamla işçinin gördüğü rakam artık aynı
+
+### 🛐 Pazar / bayram zammı sessizce kaybolmuştu
+0.1.2.4'te hesap "mühürlü ücret"ten "güncel yevmiye"ye geçirildi. Doğru
+karardı, ama zam oranı da mühürde duruyordu (`uYevmiye` zamlı yazılıyordu).
+Mühür yok sayılınca **zam da yok sayıldı**: pazar çalışan işçi düz yevmiye
+alıyordu. `hesapla()` ise `zamKazanc` diye bir rakam gösteriyordu — yani
+ekranda görünen zam hakedişin içinde yoktu.
+- ✅ `oranBul()` artık kaydın üstündeki `zamOrani` alanını güncel ücretlere
+  uyguluyor. Hem "güncel yevmiye" kuralı korunuyor hem de zam geri geldi
+- ✅ Zam tam olarak **bir kere** biniyor: mühürlü `uEk` zaten zamlı olduğu
+  için tekrar çarpılmıyor, gece ücreti de mühürden değil zamlı mesai
+  ücretinden türetiliyor (önceden iki kez binme riski vardı)
+- ℹ️ Zam ayarı 0 ise çarpan 1'dir, hiçbir şey değişmez
+
+### ➕ Artı toplamı hiç üretilmiyordu
+`hesapla()` `artiToplam` alanını **hiç döndürmüyordu**, ama kodun 7 ayrı yeri
+onu okuyordu (mutabakat belgesi, PNG rapor, PDF rapor, ay başlığı, özet
+kutuları). Hepsi `undefined` görüp `|| 0` ile sıfıra düşüyordu — yeşiller
+patron raporunda ve PDF'te görünmüyordu.
+- ✅ `artiToplam`, `artiSaf`, `mesaiYevToplam`, `geceYevToplam` ve
+  `yevmiyeToplam` alanları eklendi
+- ✅ **Çift sayım düzeltildi**: özet kutusunda `gunSayisi + artiToplam`
+  yazıyordu, oysa `gunSayisi` artıyı zaten içeriyor. Artı iki kez sayılıp
+  olmayan bir yevmiye rakamı çıkıyordu. Artık tek yerde hesaplanan
+  `yevmiyeToplam` kullanılıyor
+- ✅ **Artı ile mesai ayrıldı**: ay başlığı ve MESAİ kutusu gün içi artıyı
+  "mesai" diye gösteriyordu. Artı mesai değildir; ikisi artık ayrı yazılıyor
+
+### Not
+Bu sürümde para hesabı değiştiği için geçmiş ayların hakediş rakamları da
+güncellenir (artı ve pazar zammı eklenir, çoğaltılmış yol/yemek düşer).
+Patronla onaylanmış bir mutabakat varsa o belgeye dokunulmuyor — onaylanmış
+belge sonradan değişmez kuralı korunuyor.
+
 ## 0.1.3.5 — 🚨 Sürüm güncellenmiyordu: `updateViaCache` eksikti
 - Kullanıcı 0.1.3.4 yüklediği hâlde uygulamada 0.1.3.1 görüyordu; ekran görüntülerindeki davranış da eski sürümü doğruladı (kaldırılmış "tüm dönem" penceresi, düzeltilmiş "0,5s" birimi hâlâ görünüyordu)
 - 🚨 **KÖK SEBEP**: `navigator.serviceWorker.register("./sw.js")` çağrısında `updateViaCache` belirtilmemişti. Tarayıcı `sw.js` dosyasını **kendi HTTP önbelleğinden** sunuyordu; GitHub Pages uzun süreli önbellek başlığı gönderdiği için yeni `sw.js` hiç indirilmiyor, dolayısıyla yeni sürüm hiç fark edilmiyordu. `kayit.update()` çağrısı da önbellekteki aynı dosyayı gördüğü için etkisizdi

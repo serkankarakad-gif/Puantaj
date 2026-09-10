@@ -1739,33 +1739,96 @@ async function mutabakatGoster(anahtar){
         '<span style="font-family:\'Saira Condensed\';font-size:' + (vurgu?'22px':'17px') +
         ';font-weight:800' + (vurgu?';color:var(--sari)':'') + '">' + dg + '</span></div>';
 
+    /* ETİKETLER DÜZELTİLDİ (0.1.3.7)
+       ─────────────────────────────────────────────────────────────────
+       Kullanıcı: "bu kalan alacak diye bir şey yok, o bu ayın alacağı."
+       Haklıydı. Hiç ödeme yapılmamışken belge şunu gösteriyordu:
+         Hakediş       16.250 ₺
+         Alınan             0 ₺
+         KALAN ALACAK  16.250 ₺
+       Aynı rakam iki kere, biri yanlış adla. "Kalan" ancak bir şey
+       ÖDENDİKTEN sonra anlamlı bir kelime; işveren de "ben bir şey
+       ödemedim ki, neyin kalanı" diye haklı olarak takılıyor.
+
+       Artık: ödeme yoksa tek satır — "BU AYIN ALACAĞI".
+       Avans/askeriye varsa tarih tarih dökülüyor ve KALAN ALACAK satırı
+       ancak o zaman çıkıyor.
+       ───────────────────────────────────────────────────────────────── */
+    const odemeVar = Array.isArray(m.odemeList) && m.odemeList.length > 0;
+    const alinanTutar = Number(m.alinan) || 0;
+    const odendiMi = odemeVar || alinanTutar > 0;
+
+    /* Mesai iki ayrı birimde olabilir (yevmiye katı / eski saat kaydı).
+       Eskiden yalnızca saat yazılıyordu, yevmiye katı mesai belgede hiç
+       görünmüyordu — ekranda "0.5 saat" yazarken hesap 0,5 yevmiyeydi. */
+    const mesaiSatirlari =
+      ((m.mesaiYevToplam||0) > 0 ? satir("Mesai", String(m.mesaiYevToplam).replace(".", ",") + " yevmiye") : "") +
+      ((m.mesaiToplam||0)    > 0 ? satir("Mesai", String(m.mesaiToplam).replace(".", ",") + " saat") : "");
+
     govde.innerHTML =
       '<div class="kart">' +
         (m.isciAd ? '<div style="font-size:15px;font-weight:700;margin-bottom:10px">👷 ' + esc(m.isciAd) + '</div>' : '') +
-        satir("Çalışılan gün", (m.gunSayisi||0) + " gün") +
+        satir("Çalışılan gün", String(m.gunSayisi||0).replace(".", ",") + " gün") +
         /* Ayın tamamı görünsün (0.1.3.3) — işveren "kaç gün geldi,
            kaç gün gelmedi" sorusunun cevabını burada buluyor. */
         ((m.gelmediGun||0) > 0 ? satir("Gelinmeyen gün", m.gelmediGun + " gün") : "") +
         ((m.izinliGun||0) > 0 ? satir("İzinli gün", m.izinliGun + " gün") : "") +
-        (m.artiToplam > 0 ? satir("Ek yevmiye", m.artiToplam) : "") +
-        (m.mesaiToplam > 0 ? satir("Mesai", m.mesaiToplam + " saat") : "") +
+        ((m.artiSaf||0) > 0 ? satir("Gün içi artı", String(m.artiSaf).replace(".", ",") + " yevmiye") : "") +
+        mesaiSatirlari +
+        ((m.yevmiyeToplam||0) > 0 ? satir("Toplam yevmiye", String(m.yevmiyeToplam).replace(".", ",")) : "") +
         (m.yevmiye > 0 ? satir("Günlük yevmiye", paraFmt(m.yevmiye)) : "") +
-        satir("Hakediş", paraFmt(m.hakedis||0)) +
-        satir("Alınan (avans/ödeme)", paraFmt(m.alinan||0)) +
-        satir("KALAN ALACAK", paraFmt(m.kalan||0), true) +
+        (odendiMi
+          ? satir("Hakediş", paraFmt(m.hakedis||0))
+          : satir("BU AYIN ALACAĞI", paraFmt(m.hakedis||0), true)) +
       '</div>' +
-      /* Önceki aylardan alacak varsa ayrı kartta göster (0.1.3.3).
-         Belgenin konusu bu ay ama işverenin toplam borcu görmesi
-         gerekiyor — aksi hâlde eski aylar unutulup gidiyor. */
+
+      /* ÖDEME DÖKÜMÜ (0.1.3.7) — "avansım varsa yazsın".
+         Ödemenin bu aya sayılması FIFO ile belirleniyor (kaydın `aitAy`
+         alanı). Burada o karar sorgulanmıyor, sadece gösteriliyor. */
+      (odendiMi
+        ? '<div class="kart">' +
+            '<div style="font-size:14px;font-weight:700;margin-bottom:8px">💵 Bu aya sayılan ödemeler</div>' +
+            (odemeVar
+              ? m.odemeList.map(o=>
+                  '<div style="display:flex;justify-content:space-between;align-items:baseline;padding:8px 0;border-bottom:1px solid var(--cizgi)">' +
+                    '<span style="font-size:13px;color:var(--soluk)">' + esc(o.r||"Ödeme") +
+                      (o.t ? ' <span style="color:var(--soluk2)">· ' + esc(tarihFormatla(o.t)) + '</span>' : '') + '</span>' +
+                    '<span style="font-family:\'Saira Condensed\';font-size:17px;font-weight:800">' + paraFmt(o.u||0) + '</span>' +
+                  '</div>').join("")
+              : '') +
+            satir("Toplam alınan", paraFmt(alinanTutar)) +
+            satir("KALAN ALACAK", paraFmt(m.kalan||0), true) +
+          '</div>'
+        : '') +
+      /* ÖNCEKİ AYLAR ARTIK BİRLEŞTİRİLMİYOR (0.1.3.3 · 0.1.3.7)
+         Kullanıcı "tüm ayı birleştiriyor, bunu düzelt" dedi. Haklıydı:
+         işveren "Eski dönem alacağı 71.250 ₺" görüyor ama hangi aydan
+         geldiğini soramıyordu — dayanaksız tek yekûn.
+         FIFO zaten ay ay hesaplanıyor (`tumDonemOzeti`), veri hazırdı,
+         sadece toplanıp tek satıra indiriliyordu. Artık ay ay yazılıyor. */
       ((m.oncekiKalan||0) > 0
         ? '<div class="kart" style="border-color:var(--yarim);background:rgba(201,138,46,.08)">' +
-            '<div style="font-size:13px;font-weight:700;color:var(--yarim);margin-bottom:8px">⏳ Önceki aylardan</div>' +
-            '<div style="display:flex;justify-content:space-between;align-items:baseline;padding:6px 0">' +
-              '<span style="font-size:13px;color:var(--soluk)">Eski dönem alacağı</span>' +
-              '<span style="font-family:\'Saira Condensed\';font-size:18px;font-weight:800;color:var(--yarim)">' + paraFmt(m.oncekiKalan) + '</span>' +
-            '</div>' +
+            '<div style="font-size:13px;font-weight:700;color:var(--yarim);margin-bottom:4px">⏳ Önceki aylardan kalan</div>' +
+            '<div style="font-size:11.5px;color:var(--soluk);margin-bottom:8px;line-height:1.5">' +
+              'Ödemeler en eski aydan başlanarak mahsup edilir</div>' +
+            (Array.isArray(m.oncekiAylar) && m.oncekiAylar.length
+              ? m.oncekiAylar.map(a=>
+                  '<div style="display:flex;justify-content:space-between;align-items:baseline;padding:8px 0;border-bottom:1px solid var(--cizgi2)">' +
+                    '<span style="font-size:13px">' + esc(a.ad||a.ay||"") +
+                      ((Number(a.alinan)||0) > 0
+                        ? '<span style="display:block;font-size:11px;color:var(--soluk2)">hakediş ' + paraFmt(a.hak||0) +
+                          ' · alınan ' + paraFmt(a.alinan||0) + '</span>'
+                        : '') +
+                    '</span>' +
+                    '<span style="font-family:\'Saira Condensed\';font-size:18px;font-weight:800;color:var(--yarim)">' + paraFmt(a.kalan||0) + '</span>' +
+                  '</div>').join("")
+              : '<div style="display:flex;justify-content:space-between;align-items:baseline;padding:6px 0">' +
+                  '<span style="font-size:13px;color:var(--soluk)">Eski dönem alacağı</span>' +
+                  '<span style="font-family:\'Saira Condensed\';font-size:18px;font-weight:800;color:var(--yarim)">' + paraFmt(m.oncekiKalan) + '</span>' +
+                '</div>') +
             '<div style="display:flex;justify-content:space-between;align-items:baseline;padding:10px 0 0;margin-top:6px;border-top:1px solid var(--cizgi2)">' +
-              '<span style="font-size:13.5px;font-weight:700">GENEL TOPLAM</span>' +
+              '<span style="font-size:13.5px;font-weight:700">GENEL TOPLAM' +
+                '<span style="display:block;font-size:11px;color:var(--soluk2);font-weight:400">bu ay + önceki aylar</span></span>' +
               '<span style="font-family:\'Saira Condensed\';font-size:24px;font-weight:800;color:var(--sari)">' + paraFmt(m.genelKalan||0) + '</span>' +
             '</div>' +
           '</div>'
@@ -1929,6 +1992,30 @@ function mutabakatGunListesi(){
   return liste;
 }
 
+/* Mutabakat için o ayın ödemelerini tarih sırasıyla döker (0.1.3.7).
+   Kullanıcı "avansım varsa yazsın" dedi — işveren yalnızca toplam
+   "alınan" rakamını görüyordu, hangi tarihte ne verdiğini göremiyordu.
+
+   FIFO'YA DOKUNULMADI: hangi ödemenin hangi aya sayılacağı zaten
+   kaydın `aitAy` alanında duruyor ve `enEskiOdenmemisAy()` ile
+   belirleniyor. Bu fonksiyon o kararı SORGULAMIYOR, sadece bu aya
+   düşenleri yazıyor. */
+function mutabakatOdemeListesi(){
+  const liste = [];
+  try{
+    odemeler.slice()
+      .sort((a,b)=> String(a.tarih||"").localeCompare(String(b.tarih||"")))
+      .forEach(o=>{
+        liste.push({
+          t: String(o.tarih||"").slice(0,10),      /* tarih */
+          r: odemeTurEtiket(o.tur),                /* Avans / Askeriye / Hakediş ... */
+          u: Math.round(Number(o.tutar)||0)        /* tutar */
+        });
+      });
+  }catch(e){}
+  return liste;
+}
+
 /* Bu ay için daha önce gönderilmiş mutabakatı bulur.
    Aynı ay tekrar gönderilirse yeni kayıt üretmek yerine mevcut
    bağlantı yenileniyor — yoksa patronun elinde birden fazla
@@ -1987,11 +2074,15 @@ async function mutabakatDurumCiz(){
             await db.collection("mutabakat").doc(m.id).update({
               gunSayisi: t.gunSayisi,
               mesaiToplam: t.mesaiToplam || 0,
+              mesaiYevToplam: t.mesaiYevToplam || 0,
+              artiSaf: t.artiSaf || 0,
+              yevmiyeToplam: t.yevmiyeToplam || 0,
               artiToplam: t.artiToplam || 0,
               yevmiye: Number(ayarlar.yevmiye) || 0,
               hakedis: yeniHak,
               alinan: yeniAlinan,
               kalan: Math.round(t.kalan),
+              odemeList: mutabakatOdemeListesi(),
               gunler: mutabakatGunListesi()
             });
             m.gunSayisi = t.gunSayisi; m.hakedis = yeniHak;
@@ -2139,13 +2230,17 @@ async function mutabakatOlustur(){
     const anahtar = mutabakatAdresi(donem);
     const ayAd = AYLAR[aktifAy] + " " + aktifYil;
 
-    /* Önceki ayların ödenmemiş bakiyesi (0.1.3.3) */
-    let oncekiKalanTutar = 0;
+    /* Önceki ayların ödenmemiş bakiyesi (0.1.3.3)
+       0.1.3.7: tek bir yekûn yerine AY AY yazılıyor. Kullanıcı "tüm ayı
+       birleştiriyor" dedi — haklı: işveren 71.250 ₺ görüp hangi aydan
+       geldiğini soramıyordu. FIFO zaten ay ay hesaplandığı için veri
+       hazırdı, sadece yekûna çevriliyordu. */
+    let oncekiKalanTutar = 0, oncekiAylar = [];
     try{
       const dz = await tumDonemOzeti();
-      oncekiKalanTutar = dz.aylar
-        .filter(a=> a.ay < donem && a.kalan > 0)
-        .reduce((x,a)=> x + a.kalan, 0);
+      const eskiler = dz.aylar.filter(a=> a.ay < donem && a.kalan > 0);
+      oncekiKalanTutar = eskiler.reduce((x,a)=> x + a.kalan, 0);
+      oncekiAylar = eskiler.map(a=> ({ay:a.ay, ad:a.ad, hak:a.hak, alinan:a.alinan, kalan:a.kalan}));
     }catch(e){ /* alınamazsa 0 kalır, belge yine üretilir */ }
 
     /* GÖNDERİM ONAYI (0.1.2.7 · 0.1.2.9'da öne alındı)
@@ -2161,25 +2256,37 @@ async function mutabakatOlustur(){
     {
       const gy = Number(ayarlar.yevmiye) || 0;
       const gs = t.gunSayisi;
+      const gyev = t.yevmiyeToplam;
       const gh = Math.round(t.hakedis);
       const ga = Math.round(t.alinan);
       const gk = Math.round(t.kalan);
+      const gek = Math.round(t.ekKazanc||0);
+      /* KONTROL SATIRI (0.1.3.7)
+         Eskiden yalnızca `gün × yevmiye` yazıyordu; yol/yemek ayarı dolu
+         olan kullanıcıda hakedişle tutmuyor, "yine mi yanlış" izlenimi
+         veriyordu. Artık yol/yemek de satıra giriyor ve sonuç hakedişle
+         birebir eşit çıkıyor. */
       const gonder = confirm(
         "PATRONA GİDECEK RAKAMLAR\n" +
         (ayAd) + "\n" +
         "──────────────────────\n" +
         "Çalışılan gün : " + gs + "\n" +
         ((t.gelmedi||0) > 0 ? "Gelinmeyen gün: " + t.gelmedi + "\n" : "") +
+        (gyev !== gs ? "Toplam yevmiye: " + gyev + "\n" : "") +
         "Günlük yevmiye: " + paraFmt(gy) + "\n" +
-        "Hakediş       : " + paraFmt(gh) + "\n" +
-        "Alınan        : " + paraFmt(ga) + "\n" +
-        "KALAN         : " + paraFmt(gk) + "\n" +
+        (ga > 0
+          ? "Hakediş       : " + paraFmt(gh) + "\n" +
+            "Alınan        : " + paraFmt(ga) + "\n" +
+            "KALAN         : " + paraFmt(gk) + "\n"
+          : "BU AYIN ALACAĞI: " + paraFmt(gh) + "\n") +
         (oncekiKalanTutar > 0
           ? "Önceki aylardan: " + paraFmt(oncekiKalanTutar) + "\n" +
             "GENEL TOPLAM  : " + paraFmt(gk + oncekiKalanTutar) + "\n"
           : "") +
         "──────────────────────\n" +
-        "Kontrol: " + gs + " × " + paraFmt(gy) + " = " + paraFmt(gs * gy) + "\n\n" +
+        "Kontrol: " + gyev + " × " + paraFmt(gy) +
+          (gek > 0 ? " + " + paraFmt(gek) + " yol/yemek" : "") +
+          " = " + paraFmt(gyev * gy + gek) + "\n\n" +
         "Doğruysa TAMAM'a bas, gönderilsin.");
       if(!gonder) return;
     }
@@ -2202,6 +2309,11 @@ async function mutabakatOlustur(){
       gelmediGun: t.gelmedi || 0,
       izinliGun: t.izinli || 0,
       mesaiToplam: t.mesaiToplam || 0,
+      /* 0.1.3.7: mesai iki ayrı birimde olabiliyor. Eskiden yalnızca saat
+         yazılıyordu, yevmiye katı mesai belgede hiç görünmüyordu. */
+      mesaiYevToplam: t.mesaiYevToplam || 0,
+      artiSaf: t.artiSaf || 0,
+      yevmiyeToplam: t.yevmiyeToplam || 0,
       artiToplam: t.artiToplam || 0,
       /* YEVMİYE — bugünkü ayar DEĞİL, o dönemde gerçekten uygulanan (0.1.2.1)
          Uygulama her günü kaydedildiği andaki ücretle mühürlüyor. Yevmiye
@@ -2219,6 +2331,9 @@ async function mutabakatOlustur(){
          ama işveren toplam borcu da görmeli: "bu ay 71.250 ₺, ayrıca
          önceki aylardan 18.500 ₺ daha var" demek gerekiyor. */
       oncekiKalan: oncekiKalanTutar,
+      oncekiAylar: oncekiAylar,
+      /* ÖDEME DÖKÜMÜ (0.1.3.7) — "avansım varsa yazsın" */
+      odemeList: mutabakatOdemeListesi(),
       genelKalan: Math.round(t.kalan) + oncekiKalanTutar,
       /* GÜN GÜN DÖKÜM (0.1.2.6)
          İşveren yalnızca toplamı değil, hangi günlerin çalışıldığını da
@@ -2242,9 +2357,11 @@ async function mutabakatOlustur(){
       "📋 *PUANTAJ MUTABAKATI — " + ayAd + "*\n" +
       (kullanici.displayName ? "👷 " + kullanici.displayName + "\n" : "") +
       "\n✅ Çalışılan: " + t.gunSayisi + " gün" +
-      "\n💰 Hakediş: " + paraFmt(t.hakedis) +
-      "\n💵 Alınan: " + paraFmt(t.alinan) +
-      "\n🔸 Kalan: " + paraFmt(t.kalan) +
+      (Math.round(t.alinan) > 0
+        ? "\n💰 Hakediş: " + paraFmt(t.hakedis) +
+          "\n💵 Alınan: " + paraFmt(t.alinan) +
+          "\n🔸 Kalan: " + paraFmt(t.kalan)
+        : "\n💰 Bu ayın alacağı: " + paraFmt(t.hakedis)) +
       "\n\nAşağıdaki bağlantıdan inceleyip onaylayabilirsiniz:\n" + url;
 
     /* PAYLAŞIM (0.1.3.2 — yeniden yazıldı)
@@ -2757,18 +2874,28 @@ function kisiKazanc(v){
      Sonuç: yeni sistemle girilen mesai HİÇ SAYILMIYORDU. Bir "XX mesai"
      gününde 5.000 ₺ eksik görünüyordu. Ustabaşı ekibinin puantajına
      bakarken herkesin parasını eksik görüyordu. */
+  /* 0.1.3.6 — YOL/YEMEK ARTIK GÜNDE BİR KERE
+     Kendi puantajındaki `girdiDokum()` ile aynı kural buraya da
+     getirildi. Eskiden her yevmiye katıyla birlikte bir ek ödeme daha
+     yazılıyordu (3 artı = 3 yemek parası). İki ekran farklı rakam
+     gösterdiği için ustabaşı ile işçinin hesabı tutmuyordu. */
   const mYev = Number(v.mesaiYev)||0;
   const m    = mYev > 0 ? 0 : (Number(v.mesai)||0);
-  let k = mYev > 0 ? mYev*(yev + ek) : m*mes;
-  if(v.durum==="tam") k += yev + ek;
-  else if(v.durum==="yarim") k += (yev + ek)/2;
-  else if(v.durum==="saatlik"){ const st = Number(v.saat)||0; k += st*sa + (st>0?ek:0); }
-  k += (Number(v.arti)||0) * (yev + ek);
-  k += (Number(v.parcaMiktar)||0) * (v.uParcaFiyat!=null ? Number(v.uParcaFiyat) : (Number(ka.parcaFiyat)||0));
-  /* Gece mesaisi de yevmiye katına geçti (0.0.9.5) */
   const gYev = Number(v.geceYev)||0;
+  const gM   = gYev > 0 ? 0 : (Number(v.geceMesai)||0);
+  const st   = v.durum==="saatlik" ? (Number(v.saat)||0) : 0;
+  const gunPayi = v.durum==="tam" ? 1 : v.durum==="yarim" ? 0.5 : (st>0 ? 1 : 0);
   const geceOran = v.uGeceUcret!=null ? Number(v.uGeceUcret) : mes*(1+(Number(ka.geceZam)||0)/100);
-  k += gYev > 0 ? gYev*(yev + ek) : (Number(v.geceMesai)||0) * geceOran;
+
+  let ekPayi = gunPayi;
+  if(ekPayi === 0 && (mYev>0 || m>0 || gYev>0 || gM>0)) ekPayi = 1;
+
+  let k = (gunPayi + (Number(v.arti)||0) + mYev + gYev) * yev;
+  k += st*sa;
+  k += m*mes;
+  k += gM*geceOran;
+  k += ekPayi*ek;
+  k += (Number(v.parcaMiktar)||0) * (v.uParcaFiyat!=null ? Number(v.uParcaFiyat) : (Number(ka.parcaFiyat)||0));
   return k;
 }
 
@@ -5345,10 +5472,33 @@ function oranBul(v){
      Tek istisna: ŞANTİYE ücreti. Farklı şantiyede farklı yevmiye
      alınıyorsa o şantiyenin ücreti geçerli (yukarıda uygulandı).
      ───────────────────────────────────────────────────────────────── */
+  /* PAZAR / BAYRAM ZAMMI GERİ GELDİ (0.1.3.6)
+     ─────────────────────────────────────────────────────────────────
+     0.1.2.4'te hesap "mühürlü ücret" yerine "güncel yevmiye"ye geçti.
+     Doğru karardı, ama zam oranı da mühürde duruyordu (uYevmiye zaten
+     zamlı yazılıyordu). Mühür yok sayılınca PAZAR VE BAYRAM ZAMMI DA
+     SESSİZCE KAYBOLDU: pazar çalışan işçi düz yevmiye alıyordu.
+
+     Kaydın kendi üstünde duran `zamOrani` alanı hâlâ doğru (her gün
+     kaydedilirken guncelOranlar() yazıyor). Artık güncel ücretler bu
+     oranla çarpılıyor. Böylece hem "güncel yevmiye" kuralı korunuyor
+     hem de zam geri geliyor.
+
+     Zam ayarı 0 ise bu çarpan 1'dir, yani hiçbir şey değişmez.
+     ───────────────────────────────────────────────────────────────── */
+  const zc = 1 + (Number(v.zamOrani)||0);
+  yev *= zc; mes *= zc; sa *= zc;
+
   /* Ek ödeme (yol/yemek) güne özel girilmiş olabilir — o korunuyor,
-     çünkü 0 da geçerli bir değer ve güne göre değişebiliyor. */
-  if(v.uEk!=null) ek = Number(v.uEk)||0;
-  const gece = v.uGeceUcret!=null ? Number(v.uGeceUcret) : mes*(1+(ayarlar.geceZam||0)/100);
+     çünkü 0 da geçerli bir değer ve güne göre değişebiliyor.
+     Mühürlü `uEk` zaten zamlı yazıldığı için TEKRAR çarpılmıyor;
+     mühür yoksa güncel ek ödemeye zam uygulanıyor. Böylece zam her
+     durumda tam olarak BİR KERE giriyor. */
+  if(v.uEk!=null) ek = Number(v.uEk)||0; else ek *= zc;
+
+  /* Gece ücreti mühürden değil, zamlı mesai ücretinden türetiliyor —
+     yoksa zam iki kez binerdi. */
+  const gece = mes*(1+(ayarlar.geceZam||0)/100);
   return {yev, mes, ek, sa, gece};
 }
 /* Bir kaydın mesai miktarını döndürür. Yeni kayıtlar yevmiye katı
@@ -5371,31 +5521,78 @@ function girdiKazanc(v){
   /* Bozuk/eksik kayıt gelirse çökme (0.1.1.9). Bu fonksiyon her gün
      kartında, her raporda ve her toplamda çağrılıyor — tek bir null
      kayıt tüm ekranı durdururdu. */
-  if(!v) return 0;
+  const d = girdiDokum(v);
+  return d ? d.toplam : 0;
+}
+
+/* ---------- TEK DOĞRU HESAP KAYNAĞI (0.1.3.6) ----------
+   ─────────────────────────────────────────────────────────────────────
+   NEDEN BU FONKSİYON EKLENDİ:
+   Uygulamada bir günün parasını hesaplayan İKİ AYRI kod vardı —
+   `girdiKazanc()` ve `hesapla()`. İkisi zamanla ayrıştı ve `hesapla()`
+   GÜN İÇİ ARTIYI (yeşilleri) parasına EKLEMEYİ UNUTTU.
+
+   Sonuç, kullanıcının bildirdiği hata:
+     28,5 gün görünüyordu ama hakediş 55.000 ₺ çıkıyordu.
+     Doğrusu 28,5 × 2.500 = 71.250 ₺. Kayıp tam olarak 6,5 artı günün
+     parası: 16.250 ₺.
+   Ekran günü sayıyordu, kasa saymıyordu.
+
+   Artık bir günün parası SADECE burada hesaplanıyor. `girdiKazanc()` de
+   `hesapla()` de bu fonksiyonu çağırıyor, yani ikisinin ayrışması
+   yapısal olarak imkânsız.
+
+   YOL/YEMEK KURALI DA DÜZELTİLDİ:
+   Eskiden ek ödeme her yevmiye katıyla ayrı ayrı çarpılıyordu —
+   `arti*(yev+ek)`, `mesaiYev*(yev+ek)` gibi. Yani 3 artı yapan işçiye
+   3 yemek parası daha yazılıyordu. Ama işçi o gün bir kere geliyor,
+   bir kere yol parası veriyor, bir kere yemek yiyor. Artı, aynı günün
+   içindeki fazla iş — ayrı bir gün değil.
+   Artık ek ödeme GELİNEN GÜN BAŞINA BİR KERE (yarım günde yarım).
+   ───────────────────────────────────────────────────────────────────── */
+function girdiDokum(v){
+  if(!v) return null;
   const o = oranBul(v);
-  /* MESAİ HESABI (0.0.9.5)
-     Yeni sistem: mesai artık SAAT değil, yevmiye katı olarak tutuluyor.
-     `mesaiYev` alanı: 1 = X (bir tam yevmiye), 0.5 = / (yarım yevmiye).
-     Eski kayıtlarda `mesai` (saat) alanı var ve ONLARA DOKUNULMUYOR —
-     kullanıcı kararı: geçmiş tutarlar değişmesin. Eski kayıt saat ×
-     saat ücretinden, yeni kayıt yevmiye katından hesaplanıyor.
-     Bir kayıtta ikisi birden olmaz: yeni kayıtlar `mesai` yazmıyor. */
-  const mYev = Number(v.mesaiYev)||0;
-  const m    = Number(v.mesai)||0;
-  let k = mYev > 0 ? mYev*(o.yev + o.ek) : m*o.mes;
-  if(v.durum==="tam") k += o.yev + o.ek;
-  else if(v.durum==="yarim") k += (o.yev + o.ek)/2;
-  else if(v.durum==="saatlik"){
-    const s = Number(v.saat)||0;
-    k += s*o.sa + (s>0 ? o.ek : 0);
-  }
-  k += (Number(v.arti)||0) * (o.yev + o.ek);
-  k += (Number(v.parcaMiktar)||0) * (v.uParcaFiyat!=null ? Number(v.uParcaFiyat) : (ayarlar.parcaFiyat||0));
-  /* Gece mesaisi de aynı düzene geçti: `geceYev` yevmiye katı,
-     eski `geceMesai` (saat) alanı korunuyor. */
-  const gYev = Number(v.geceYev)||0;
-  k += gYev > 0 ? gYev*(o.yev + o.ek) : (Number(v.geceMesai)||0) * o.gece;
-  return k;
+
+  /* Gün payı: o gün işe fiilen gelindi mi, ne kadar? */
+  const saatlikSaat = v.durum==="saatlik" ? (Number(v.saat)||0) : 0;
+  const gunPayi = v.durum==="tam"   ? 1
+                : v.durum==="yarim" ? 0.5
+                : (v.durum==="saatlik" && saatlikSaat>0) ? 1 : 0;
+
+  /* Yevmiye katları. Yeni kayıtlar yevmiye katı (`mesaiYev`/`geceYev`),
+     eski kayıtlar saat (`mesai`/`geceMesai`) tutuyor. Bir kayıtta ikisi
+     birden olmaz — eski kayıtların tutarı değişmesin diye saat bazlılar
+     hâlâ kendi saat ücretinden hesaplanıyor. */
+  const artiYev  = Number(v.arti)||0;
+  const mesaiYev = Number(v.mesaiYev)||0;
+  const geceYev  = Number(v.geceYev)||0;
+  const mesaiSaat = mesaiYev > 0 ? 0 : (Number(v.mesai)||0);
+  const geceSaat  = geceYev  > 0 ? 0 : (Number(v.geceMesai)||0);
+
+  /* Yol/yemek payı: gelinen gün başına bir kere. İşe gelmediği hâlde
+     sadece akşam mesaiye gelmişse de bir günlük hakkı doğuyor. */
+  let ekPayi = gunPayi;
+  if(ekPayi === 0 && (mesaiYev>0 || mesaiSaat>0 || geceYev>0 || geceSaat>0)) ekPayi = 1;
+
+  const yevmiyeKazanc = gunPayi*o.yev + saatlikSaat*o.sa;
+  const artiKazanc    = artiYev*o.yev;
+  const mesaiKazanc   = mesaiYev*o.yev + mesaiSaat*o.mes;
+  const geceKazanc    = geceYev*o.yev  + geceSaat*o.gece;
+  const ekKazanc      = ekPayi*o.ek;
+  const parcaMiktar   = Number(v.parcaMiktar)||0;
+  const parcaKazanc   = parcaMiktar * (v.uParcaFiyat!=null ? Number(v.uParcaFiyat) : (ayarlar.parcaFiyat||0));
+
+  const toplam = yevmiyeKazanc + artiKazanc + mesaiKazanc + geceKazanc + ekKazanc + parcaKazanc;
+
+  return {
+    /* miktarlar */
+    gunPayi, artiYev, mesaiYev, geceYev, mesaiSaat, geceSaat, saatlikSaat, ekPayi, parcaMiktar,
+    /* toplam yevmiye katı — hakedişle birebir örtüşen sayı budur */
+    yevmiyeBirim: gunPayi + artiYev + mesaiYev + geceYev,
+    /* para kutuları */
+    yevmiyeKazanc, artiKazanc, mesaiKazanc, geceKazanc, ekKazanc, parcaKazanc, toplam
+  };
 }
 /* Bir tarihe (id: "YYYY-AA-GG") pazar/tatil zammı uygulanır mı, uygulanırsa hangi oranda? */
 function zamOrani(id){
@@ -5669,10 +5866,13 @@ function ayBarCiz(){
   const t = hesapla();
   const kilit = ayarlar.kapali.includes(aktifAyAnahtar()) ? " · 🔒" : "";
   /* Mesai artık iki birimde olabilir; ortak metin üreticisi kullanılıyor.
-     `hesapla()` yevmiye katlarını artiToplam'a topluyor (0.0.9.5). */
+     DÜZELTME (0.1.3.6): buraya `artiToplam` veriliyordu ama o değer gün
+     içi artıyı da kapsıyor. Artı MESAİ DEĞİL — aynı günün içinde yapılan
+     fazla iş. Ay başlığında "6,5 yevmiye mesai" yazıp işçiyi yanıltıyordu.
+     Artık sadece gerçek mesai katı yazılıyor. */
   try{ mutabakatDurumCiz(); }catch(e){}
   $("#ay-alt").textContent = t.gunSayisi + " gün · " +
-    mesaiOzetMetni(t.mesaiToplam || 0, t.artiToplam || 0) + kilit;
+    mesaiOzetMetni(t.mesaiToplam || 0, t.mesaiYevToplam || 0) + kilit;
 }
 
 function takvimCiz(){
@@ -5777,17 +5977,23 @@ function takvimCiz(){
     if(oz){
       const t = hesaplaAralik(1, new Date(aktifYil, aktifAy+1, 0).getDate());
       oz.innerHTML =
-        /* TOPLAM YEVMİYE (0.1.3.5)
+        /* TOPLAM YEVMİYE (0.1.3.5 · 0.1.3.6'da düzeltildi)
            Kullanıcı "6,5 yevmiyem var ama 6 gün diyor" dedi. Rakamlar
            doğruydu ama ikiye bölünmüş gösteriliyordu: ÇALIŞILAN 6 gün +
            MESAİ 0,5 yevmiye. Toplamı görmek için kafadan toplamak
            gerekiyordu. Artık gün sayısının altında toplam yevmiye de
-           yazıyor — hakedişle birebir örtüşen rakam bu. */
+           yazıyor — hakedişle birebir örtüşen rakam bu.
+
+           0.1.3.6 DÜZELTMESİ: burada `gunSayisi + artiToplam` yazıyordu
+           ama `gunSayisi` gün içi artıyı ZATEN içeriyor (girdiGun onu
+           ekliyor). Artı böylece İKİ KEZ sayılıyordu: 28,5 gün + 6,5
+           artı = "35 yevmiye" gibi olmayan bir rakam çıkıyordu.
+           Artık tek yerde hesaplanan `yevmiyeToplam` kullanılıyor. */
         '<div class="to-kut g"><span class="e">ÇALIŞILAN</span>'+
-          '<b>'+t.gunSayisi+'</b><small>gün</small>'+
-          ((t.artiToplam||0) > 0
+          '<b>'+String(t.gunSayisi).replace(".", ",")+'</b><small>gün</small>'+
+          (((t.mesaiYevToplam||0) + (t.geceYevToplam||0)) > 0
             ? '<small style="display:block;color:var(--sari);font-weight:700">= ' +
-              String(t.gunSayisi + t.artiToplam).replace(".", ",") + ' yevmiye</small>'
+              String(t.yevmiyeToplam).replace(".", ",") + ' yevmiye</small>'
             : '') +
         '</div>'+
         '<div class="to-kut p"><span class="e">HAKEDİŞ</span>'+
@@ -5801,9 +6007,14 @@ function takvimCiz(){
                 : (t.hakedis >= 1000000 ? paraKisa(t.hakedis)
                                         : Math.round(t.hakedis).toLocaleString("tr-TR")))+'</b><small>₺</small></div>'+
         '<div class="to-kut m"><span class="e">MESAİ</span>'+
-          /* Ondalık ayracı Türkçe virgül: "0.5" değil "0,5" */
-          '<b>'+String(t.artiToplam>0 ? t.artiToplam : t.mesaiToplam).replace(".", ",")+'</b>'+
-          '<small>'+(t.artiToplam>0 ? "yevmiye" : "saat")+'</small></div>';
+          /* Ondalık ayracı Türkçe virgül: "0.5" değil "0,5"
+             0.1.3.6: burada `artiToplam` yazıyordu, yani GÜN İÇİ ARTI da
+             "mesai" diye gösteriliyordu. Artı mesai değil — aynı günün
+             içinde yapılan fazla iş. Artık yalnızca mesai katı yazıyor. */
+          '<b>'+String(((t.mesaiYevToplam||0)+(t.geceYevToplam||0)) > 0
+                        ? (t.mesaiYevToplam||0)+(t.geceYevToplam||0)
+                        : t.mesaiToplam).replace(".", ",")+'</b>'+
+          '<small>'+(((t.mesaiYevToplam||0)+(t.geceYevToplam||0)) > 0 ? "yevmiye" : "saat")+'</small></div>';
     }
   }catch(e){}
 
@@ -5992,50 +6203,67 @@ function toastGeriAlVeri(mesaj, koleksiyon, id, veri, ek){
   toastZaman = setTimeout(()=> t.classList.remove("goster"), 5500);
 }
 
+/* AY TOPLAMI (0.1.3.6 — yeniden yazıldı)
+   Artık kendi başına para hesaplamıyor: her gün için `girdiDokum()`
+   çağırıp kutuları topluyor. Bu yüzden `hesapla().hakedis` ile gün gün
+   `girdiKazanc()` toplamı MATEMATİKSEL OLARAK aynı sayı — eskiden
+   ayrışıp 16.250 ₺ fark verdikleri hata bir daha çıkamaz. */
 function hesapla(){
-  let tam=0, yarim=0, gelmedi=0, izinli=0, mesaiToplam=0, saatToplam=0, gunSayisi=0;
-  let yevmiyeKazanc=0, mesaiKazanc=0, ekKazanc=0, parcaKazanc=0, geceKazanc=0;
+  let tam=0, yarim=0, gelmedi=0, izinli=0, mesaiToplam=0, saatToplam=0;
+  let gelinenGun=0, artiSaf=0, mesaiYevToplam=0, geceYevToplam=0;
+  let yevmiyeKazanc=0, artiKazanc=0, mesaiKazanc=0, ekKazanc=0, parcaKazanc=0, geceKazanc=0;
   let zamGun=0, zamKazanc=0;
   Object.values(girdiler).forEach(v=>{
-    const o = oranBul(v);
-    let gunKazanc = 0;
-    if(v.durum==="tam"){ tam++; yevmiyeKazanc+=o.yev; ekKazanc+=o.ek; gunKazanc += o.yev+o.ek; }
-    else if(v.durum==="yarim"){ yarim++; yevmiyeKazanc+=o.yev/2; ekKazanc+=o.ek/2; gunKazanc += (o.yev+o.ek)/2; }
+    if(v.durum==="tam") tam++;
+    else if(v.durum==="yarim") yarim++;
     else if(v.durum==="gelmedi") gelmedi++;
     else if(v.durum==="izin") izinli++;
-    else if(v.durum==="saatlik"){
-      const s = Number(v.saat)||0;
-      saatToplam += s;
-      yevmiyeKazanc += s*o.sa;
-      if(s>0) ekKazanc += o.ek;
-      gunKazanc += s*o.sa + (s>0 ? o.ek : 0);
-    }
-    gunSayisi += girdiGun(v);
-    const m = mesaiSaatMik(v);
-    const mY = mesaiYevMik(v);
-    mesaiToplam += m;
-    mesaiKazanc += m*o.mes + mY*(o.yev + o.ek);
-    gunKazanc += m*o.mes + mY*(o.yev + o.ek);
-    const pMiktar = Number(v.parcaMiktar)||0;
-    if(pMiktar>0){
-      const pTutar = pMiktar * (v.uParcaFiyat!=null ? Number(v.uParcaFiyat) : (ayarlar.parcaFiyat||0));
-      parcaKazanc += pTutar;
-      gunKazanc += pTutar;
-    }
-    const gMesai = Number(v.geceMesai)||0;
-    if(gMesai>0){
-      const gTutar = gMesai * o.gece;
-      geceKazanc += gTutar;
-      gunKazanc += gTutar;
-    }
-    /* Pazar/bayram zammından bu güne düşen ekstra pay (mühürlenmiş orandan geri hesaplanır) */
-    if(v.zamOrani>0 && gunKazanc>0){ zamGun++; zamKazanc += gunKazanc * (v.zamOrani/(1+v.zamOrani)); }
+
+    const d = girdiDokum(v);
+    if(!d) return;
+
+    gelinenGun     += d.gunPayi;
+    artiSaf        += d.artiYev;
+    mesaiYevToplam += d.mesaiYev;
+    geceYevToplam  += d.geceYev;
+    mesaiToplam    += d.mesaiSaat;
+    saatToplam     += d.saatlikSaat;
+
+    yevmiyeKazanc += d.yevmiyeKazanc;
+    artiKazanc    += d.artiKazanc;
+    mesaiKazanc   += d.mesaiKazanc;
+    geceKazanc    += d.geceKazanc;
+    ekKazanc      += d.ekKazanc;
+    parcaKazanc   += d.parcaKazanc;
+
+    /* Pazar/bayram zammından bu güne düşen ekstra pay */
+    if(v.zamOrani>0 && d.toplam>0){ zamGun++; zamKazanc += d.toplam * (v.zamOrani/(1+v.zamOrani)); }
   });
-  const hakedis = yevmiyeKazanc + mesaiKazanc + ekKazanc + parcaKazanc + geceKazanc;
+
+  /* Ondalık toplamada kayan nokta artığı olmasın (0,1+0,2 = 0,30000000000000004) */
+  const yuv2 = x => Math.round(x*100)/100;
+  gelinenGun     = yuv2(gelinenGun);
+  artiSaf        = yuv2(artiSaf);
+  mesaiYevToplam = yuv2(mesaiYevToplam);
+  geceYevToplam  = yuv2(geceYevToplam);
+  mesaiToplam    = yuv2(mesaiToplam);
+  saatToplam     = yuv2(saatToplam);
+
+  /* gunSayisi: gelinen gün + gün içi artı. `girdiGun()` toplamıyla birebir
+     aynı kalıyor — eski ekranlar bozulmasın diye anlamı değiştirilmedi. */
+  const gunSayisi = yuv2(gelinenGun + artiSaf);
+  /* artiToplam: "ek yevmiye" — artı + mesai + gece katları.
+     `hesaplaAralik()` ile aynı tanım kullanılıyor (0.0.9.5 düzeni). */
+  const artiToplam = yuv2(artiSaf + mesaiYevToplam + geceYevToplam);
+  /* Hakedişle birebir örtüşen toplam yevmiye katı */
+  const yevmiyeToplam = yuv2(gelinenGun + artiSaf + mesaiYevToplam + geceYevToplam);
+
+  const hakedis = yevmiyeKazanc + artiKazanc + mesaiKazanc + ekKazanc + parcaKazanc + geceKazanc;
   const alinan = odemeler.reduce((s,o)=> s + (Number(o.tutar)||0), 0);
   const masrafToplam = masraflar.filter(m=>!m.odendi).reduce((s,m)=> s + (Number(m.tutar)||0), 0);
   return { tam, yarim, gelmedi, izinli, mesaiToplam, saatToplam, gunSayisi,
-           yevmiyeKazanc, mesaiKazanc, ekKazanc, parcaKazanc, geceKazanc, hakedis, alinan, masrafToplam,
+           gelinenGun, artiSaf, artiToplam, mesaiYevToplam, geceYevToplam, yevmiyeToplam,
+           yevmiyeKazanc, artiKazanc, mesaiKazanc, ekKazanc, parcaKazanc, geceKazanc, hakedis, alinan, masrafToplam,
            zamGun, zamKazanc,
            kalan: hakedis + masrafToplam - alinan };
 }
@@ -7191,16 +7419,30 @@ function hesaplaAralik(gBas, gSon){
   if(gBas==null) gBas = 1;
   if(gSon==null) gSon = aySonu;
   gSon = Math.min(gSon, aySonu);
-  let gunSayisi=0, mesaiToplam=0, saatToplam=0, artiToplam=0, hakedis=0;
+  /* 0.1.3.6: bu fonksiyon da `girdiDokum()` üzerinden geçiyor — ay
+     toplamıyla dönem toplamı aynı kaynaktan besleniyor. */
+  let gelinenGun=0, artiSaf=0, mesaiYevToplam=0, geceYevToplam=0;
+  let mesaiToplam=0, saatToplam=0, hakedis=0;
   Object.entries(girdiler).forEach(([id, v])=>{
     const g = Number(id.slice(8,10));
     if(g<gBas || g>gSon) return;
-    gunSayisi += girdiGun(v);
-    mesaiToplam += mesaiSaatMik(v);
-    if(v.durum==="saatlik") saatToplam += Number(v.saat)||0;
-    artiToplam += (Number(v.arti)||0) + mesaiYevMik(v);
-    hakedis += girdiKazanc(v);
+    const d = girdiDokum(v);
+    if(!d) return;
+    gelinenGun     += d.gunPayi;
+    artiSaf        += d.artiYev;
+    mesaiYevToplam += d.mesaiYev;
+    geceYevToplam  += d.geceYev;
+    mesaiToplam    += d.mesaiSaat;
+    saatToplam     += d.saatlikSaat;
+    hakedis        += d.toplam;
   });
+  const yuv2 = x => Math.round(x*100)/100;
+  gelinenGun=yuv2(gelinenGun); artiSaf=yuv2(artiSaf);
+  mesaiYevToplam=yuv2(mesaiYevToplam); geceYevToplam=yuv2(geceYevToplam);
+  mesaiToplam=yuv2(mesaiToplam); saatToplam=yuv2(saatToplam);
+  const gunSayisi     = yuv2(gelinenGun + artiSaf);
+  const artiToplam    = yuv2(artiSaf + mesaiYevToplam + geceYevToplam);
+  const yevmiyeToplam = yuv2(gelinenGun + artiSaf + mesaiYevToplam + geceYevToplam);
   const bId = aktifYil+"-"+pad(aktifAy+1)+"-"+pad(gBas);
   const sId = aktifYil+"-"+pad(aktifAy+1)+"-"+pad(gSon);
   const alinan = donemOdemeSec(bId, sId)
@@ -7208,6 +7450,7 @@ function hesaplaAralik(gBas, gSon){
   const masrafToplam = masraflar.filter(m=> !m.odendi && m.tarih>=bId && m.tarih<=sId)
                                 .reduce((s,m)=> s+(Number(m.tutar)||0), 0);
   return {gBas, gSon, gunSayisi, mesaiToplam, saatToplam, artiToplam, bId, sId,
+          gelinenGun, artiSaf, mesaiYevToplam, geceYevToplam, yevmiyeToplam,
           hakedis, alinan, masrafToplam, kalan: hakedis + masrafToplam - alinan,
           etiket: (gBas===1 && gSon===aySonu) ? "" : " ("+gBas+"–"+gSon+")"};
 }
@@ -9897,7 +10140,7 @@ document.addEventListener("DOMContentLoaded", ()=>{
   });
 
   /* Neler yeni kartı */
-  const YENILIK_SURUM = "0.1.3.5";
+  const YENILIK_SURUM = "0.1.3.7";
   window.__SURUM = YENILIK_SURUM;   /* tanı raporu bunu okur */
   try{ $("#cekmece-surum").textContent = "Puantaj Defterim " + YENILIK_SURUM; }catch(e){}
   /* Sürümü çekmece başlığında da göster. Sebep: "değişiklik gelmedi" durumunda

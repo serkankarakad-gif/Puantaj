@@ -400,11 +400,12 @@
       <div class="kart gizli" id="yenilik-kart" style="border-color:var(--sari)">
         <h2>🎁 Neler yeni?</h2>
         <ul style="padding-left:18px;font-size:13.5px;line-height:1.9">
-          <li><b>🚨 SÜRÜM GÜNCELLENMİYORDU — sebebini buldum.</b> Telefon, güncellemeyi kontrol eden dosyayı <b>kendi önbelleğinden</b> veriyordu. Yani yeni sürümü yüklesen bile telefon hiç bakmıyordu. 0.1.3.4 yüklediğin hâlde 0.1.3.1 görmenin sebebi buydu</li>
-          <li><b>Düzeltildi:</b> O dosya artık her seferinde sunucudan taze alınıyor. Bundan sonra güncellemeler normal gelecek</li>
-          <li><b>⚠️ Bu sürüme geçmek için bir kez elle yapman gerek:</b> Ayarlar → <b>"Uygulama takılırsa — önbelleği temizle"</b> → "Önbelleği temizle ve yenile". Kayıtların silinmez, sadece dosya önbelleği boşalır</li>
-          <li><b>📊 "6,5 yevmiyem var" sorunu:</b> Rakamlar doğruydu ama ikiye bölünmüş gösteriliyordu — ÇALIŞILAN 6 gün, MESAİ 0,5 yevmiye. Artık <b>toplamı da yazıyor: "= 6,5 yevmiye"</b>. Hakedişle birebir örtüşen rakam bu</li>
-          <li><b>Hafta kutusunda birim netleşti</b> — "0,5s" saat sanılıyordu, artık "0,5 yev" yazıyor</li>
+          <li><b>🧾 "KALAN ALACAK" yanlış yerdeydi.</b> Patron hiç ödeme yapmamışken bile "Hakediş 16.250 / Alınan 0 / KALAN ALACAK 16.250" yazıyordu. Aynı rakam iki kere, biri yanlış adla. Artık ödeme yoksa <b>tek satır: "BU AYIN ALACAĞI"</b></li>
+          <li><b>💵 Avansların artık tarih tarih yazıyor.</b> Patron sadece toplamı görüyordu. Artık "Avans · 12 Eylül — 5.000 ₺" diye tek tek dökülüyor. <b>KALAN ALACAK satırı ancak ödeme varsa</b> çıkıyor</li>
+          <li><b>📅 Eski aylar birleştirilmiyor.</b> "Eski dönem alacağı 71.250 ₺" tek yekûndu, hangi aydan geldiği belli değildi. Artık <b>ay ay yazıyor</b>, her ayın hakedişi ve alınanıyla birlikte</li>
+          <li><b>⚖️ FIFO kuralına dokunulmadı.</b> Gelen para hâlâ en eski ödenmemiş aya yazılıyor — Maaşlar ekranındaki kuralın aynısı. Belge sadece o kararı <b>gösteriyor</b>, değiştirmiyor</li>
+          <li><b>⏱️ Mesai birimi düzeldi:</b> yevmiye katı mesai belgede "0.5 saat" diye yazıyordu. Artık "0,5 yevmiye" yazıyor, saat olanlar ayrı satırda</li>
+          <li><b>✅ Gönder ekranındaki Kontrol satırına yol/yemek eklendi</b> — hakedişle birebir tutuyor artık</li>
         </ul>
         <button class="btn btn-cizgili" id="btn-yenilik-kapat">Süper, kapat</button>
       </div>
