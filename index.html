@@ -400,12 +400,12 @@
       <div class="kart gizli" id="yenilik-kart" style="border-color:var(--sari)">
         <h2>🎁 Neler yeni?</h2>
         <ul style="padding-left:18px;font-size:13.5px;line-height:1.9">
-          <li><b>📅 "Hangi ayı seçersem tüm ayların parasını hesaplıyor" — iki ayrı sebebi varmış, ikisi de düzeldi</b></li>
-          <li><b>1) Eski "tüm dönem" belgesi her ayı ele geçiriyordu.</b> Eskiden tek bir "tüm dönem" belgesi gönderilebiliyordu. O belge hesapta duruyorsa, kendi belgesi olmayan <b>her ay</b> onu gösteriyordu. Ağustos'u aç, tüm ayların toplamı; Temmuz'u aç, yine aynı toplam. Artık her ay <b>yalnızca kendi belgesine</b> bakıyor</li>
-          <li><b>2) Önceki aylar sorulmadan ekleniyordu.</b> Eylül'ü gönderiyordun, patron 87.500 ₺ görüyordu (16.250 bu ay + 71.250 eski aylar). Artık <b>gönderirken soruyor</b>: "TAMAM = eski aylar da eklensin / İPTAL = sadece bu ay gitsin"</li>
-          <li>Eski bakiyen yoksa bu soru hiç çıkmıyor</li>
-          <li><b>Kararın korunuyor:</b> "sadece bu ay" dediysen, link sonradan kendini tazelerken eski ayları geri eklemiyor</li>
-          <li><b>⚖️ Maaşların FIFO kuralına yine dokunulmadı</b></li>
+          <li><b>📲 WhatsApp açılmıyordu — sebebi bulundu.</b> Paylaşım penceresi açılmazsa yedek olarak bağlantı ekrana yazılıyordu, ama hemen ardından durum kartı <b>aynı yeri eziyordu</b>. Bağlantı bir an görünüp siliniyordu, elin tamamen boş kalıyordu</li>
+          <li><b>Düzeltildi:</b> Artık sıra doğru. Bağlantı kartı en sona yazılıyor ve üzeri örtülmüyor</li>
+          <li><b>Uygulama için ayrı yol eklendi:</b> Bu uygulama tarayıcıda değil Android WebView içinde çalışıyor; orada normal paylaşım çoğu zaman sessizce başarısız oluyor. Artık doğrudan <b>whatsapp://</b> yolu deneniyor. WhatsApp kurulu değilse uygulamadan çıkmıyorsun, bağlantı kartı görünüyor</li>
+          <li><b>🔀 İkinci onay penceresi kaldırıldı.</b> Üst üste iki pencere hem yoruyordu hem de tarayıcının WhatsApp açma iznini düşürüyordu — asıl sorunun bir parçası buydu</li>
+          <li><b>📅 Yerine kalıcı anahtar geldi:</b> Gönder tuşunun altında artık <b>"Sadece bu ay gönderilecek"</b> yazıyor. Bir kere dokunursan <b>"Önceki aylar da eklenecek"</b> oluyor. Bir daha sormuyor</li>
+          <li><b>Varsayılan: sadece seçili ay</b> — hangi ayı seçersen o ayın parası gidiyor</li>
         </ul>
         <button class="btn btn-cizgili" id="btn-yenilik-kapat">Süper, kapat</button>
       </div>
@@ -446,6 +446,12 @@
       <button class="btn btn-cizgili" id="btn-mutabakat" style="margin-bottom:9px;border-color:var(--tam);color:var(--tam-ac)">
         🤝 Patrona onaya gönder
       </button>
+      <!-- ÖNCEKİ AYLAR ANAHTARI (0.1.4.1)
+           0.1.4.0'da bu seçim her gönderimde ayrı bir onay penceresiyle
+           soruluyordu. İki pencere üst üste hem yoruyordu hem de araya
+           girdiği için tarayıcı WhatsApp'ı açma iznini düşürüyordu.
+           Karar artık burada duruyor: bir kere seç, öyle kalsın. -->
+      <button class="btn btn-cizgili" id="btn-onceki-aylar" style="margin-bottom:9px;font-size:12.5px;padding:8px"></button>
       <!-- Onay durumu (0.1.1.5): işçi patronun onaylayıp onaylamadığını
            göremiyordu. Bağlantıyı gönderip sonucunu bilmemek eksikti. -->
       <div id="mutabakat-durum" class="gizli" style="margin-bottom:9px"></div>

@@ -2006,6 +2006,34 @@ function mutabakatGunListesi(){
    bakarak kendini yeniler — rakamları hiç değişmemiş olsa bile.
    Bu olmadan uygulama güncellense de patronun gördüğü sayfa eski
    kalıyordu. */
+/* ÖNCEKİ AYLAR DAHİL Mİ? (0.1.4.1)
+   Gönder tuşunun altındaki anahtarda tutuluyor. Varsayılan KAPALI:
+   kullanıcı "hangi ayı seçersem o ayın parası gitsin" dedi. */
+function oncekiAylarDahil(){
+  try{ return localStorage.getItem("mutabakatEskiAylar") === "1"; }catch(e){ return false; }
+}
+function oncekiAylarAnahtarCiz(){
+  const b = document.getElementById("btn-onceki-aylar");
+  if(!b) return;
+  const acik = oncekiAylarDahil();
+  b.textContent = acik ? "🔗 Önceki aylar da eklenecek" : "📅 Sadece bu ay gönderilecek";
+  b.style.borderColor = acik ? "var(--yarim)" : "var(--cizgi)";
+  b.style.color = acik ? "var(--yarim)" : "var(--soluk)";
+}
+function oncekiAylarAnahtarKur(){
+  const b = document.getElementById("btn-onceki-aylar");
+  if(!b || b.dataset.kuruldu) return;
+  b.dataset.kuruldu = "1";
+  b.addEventListener("click", ()=>{
+    try{ localStorage.setItem("mutabakatEskiAylar", oncekiAylarDahil() ? "0" : "1"); }catch(e){}
+    oncekiAylarAnahtarCiz();
+    toast(oncekiAylarDahil()
+      ? "Önceki ayların kalanı da gönderilecek 🔗"
+      : "Yalnızca seçili ay gönderilecek 📅");
+  });
+  oncekiAylarAnahtarCiz();
+}
+
 const BELGE_SURUM = 3;
 
 function mutabakatOdemeListesi(){
@@ -2293,24 +2321,13 @@ async function mutabakatOlustur(){
       oncekiAylar = eskiler.map(a=> ({ay:a.ay, ad:a.ad, hak:a.hak, alinan:a.alinan, kalan:a.kalan}));
     }catch(e){ /* alınamazsa 0 kalır, belge yine üretilir */ }
 
-    /* KAPSAM ARTIK KULLANICININ KARARI (0.1.4.0)
+    /* KAPSAM ARTIK AYRI PENCERE SORMUYOR (0.1.4.1)
        ─────────────────────────────────────────────────────────────
-       Önceki ayların bakiyesi belgeye SORULMADAN ekleniyordu. Kullanıcı
-       "hangi ayı seçersem tüm ayların parasını hesaplıyor" dedi — Eylül'ü
-       gönderiyor, patron 87.500 ₺ görüyordu (16.250 bu ay + 71.250 eski).
-       Bazen istenen bu, bazen sadece o ayın hesabı isteniyor.
-       Artık eski bakiye VARSA soruluyor; yoksa hiç sorulmuyor. */
-    if(oncekiKalanTutar > 0){
-      const eskiEklensin = confirm(
-        "ÖNCEKİ AYLAR DA EKLENSİN Mİ?\n" +
-        "──────────────────────\n" +
-        oncekiAylar.map(a=> (a.ad||a.ay) + ": " + paraFmt(a.kalan)).join("\n") + "\n" +
-        "Toplam: " + paraFmt(oncekiKalanTutar) + "\n" +
-        "──────────────────────\n\n" +
-        "TAMAM = eklensin (genel toplam görünsün)\n" +
-        "İPTAL = sadece " + AYLAR[aktifAy] + " " + aktifYil + " gitsin");
-      if(!eskiEklensin){ oncekiKalanTutar = 0; oncekiAylar = []; }
-    }
+       0.1.4.0'da burada ikinci bir onay penceresi vardı. Üst üste iki
+       pencere hem yoruyordu, hem de tarayıcının "kullanıcı dokunuşu"
+       iznini düşürüp WhatsApp'ın açılmasını engelliyordu.
+       Karar artık gönder tuşunun altındaki anahtarda duruyor. */
+    if(!oncekiAylarDahil()){ oncekiKalanTutar = 0; oncekiAylar = []; }
 
     /* GÖNDERİM ONAYI (0.1.2.7 · 0.1.2.9'da öne alındı)
        Kullanıcı defalarca "linkte yanlış rakam görünüyor" dedi. Artık
@@ -2419,8 +2436,15 @@ async function mutabakatOlustur(){
     /* Anahtarı HEM buluta HEM yerele yaz.
        Bulut: hangi cihazdan girilirse girilsin aynı bağlantı bulunur.
        Yerel: bulut okunamazsa (çevrimdışı) yedek olarak kullanılır. */
-    /* Gönderim sonrası durumu tazele — "onay bekleniyor" görünsün */
-    try{ mutabakatDurumCiz(); }catch(e){}
+    /* SIRA DÜZELTİLDİ (0.1.4.1)
+       `mutabakatDurumCiz()` burada beklenmeden çağrılıyordu. İçinde
+       internet okuması var, yani SONRADAN bitiyor ve `#mutabakat-durum`
+       kutusunu yeniden yazıyordu. Paylaşım penceresi açılmadığında
+       yedek olarak o kutuya yazdığımız BAĞLANTI KARTI bir an görünüp
+       siliniyordu — kullanıcı "WhatsApp'a yönlendirmiyor" derken eli
+       tamamen boş kalıyordu. Artık bitmesi bekleniyor, yedek kart en
+       sona yazılıyor ve üzeri örtülmüyor. */
+    try{ await mutabakatDurumCiz(); }catch(e){}
 
     const url = location.origin + location.pathname + "?mutabakat=" + anahtar;
     const metin =
@@ -2462,7 +2486,32 @@ async function mutabakatOlustur(){
       }catch(e){}
     }
 
-    /* 3) Hiçbiri açılmadıysa bağlantıyı ekranda göster ve panoya kopyala */
+    /* 3) UYGULAMA İÇİ TARAYICI YEDEĞİ (0.1.4.1)
+       Uygulama htmltoapk ile paketlendiği için normal bir tarayıcıda
+       değil, Android WebView içinde çalışıyor. WebView'de çoğu zaman
+       `navigator.share` hiç yok ve `window.open(..., "_blank")` sessizce
+       null döndürüyor — iki adım da boşa gidiyor.
+       Burada `whatsapp://` adresi kullanılıyor: Android bunu doğrudan
+       WhatsApp'a devrediyor. `location.href` ile gitmiyoruz çünkü
+       WhatsApp kurulu değilse sayfa `wa.me`ye gider ve KULLANICI
+       UYGULAMADAN ÇIKARDI. Görünmez bir bağlantıya tıklanıyor: açılırsa
+       WhatsApp gelir, açılmazsa hiçbir şey olmaz ve alttaki 4. adım
+       devreye girer. */
+    if(!paylasildi){
+      try{
+        const a = document.createElement("a");
+        a.href = "whatsapp://send?text=" + encodeURIComponent(metin);
+        a.style.display = "none";
+        document.body.appendChild(a);
+        a.click();
+        setTimeout(()=>{ try{ a.remove(); }catch(e){} }, 500);
+        /* Açılıp açılmadığını güvenilir biçimde anlayamıyoruz, o yüzden
+           `paylasildi` işaretlenmiyor — bağlantı kartı yine de gösterilip
+           panoya kopyalanıyor. Kullanıcı hiçbir durumda eli boş kalmıyor. */
+      }catch(e){}
+    }
+
+    /* 4) Bağlantıyı ekranda göster ve panoya kopyala */
     if(!paylasildi){
       try{ await navigator.clipboard.writeText(metin); }catch(e){}
       const gorunum = document.getElementById("mutabakat-durum");
@@ -2474,9 +2523,12 @@ async function mutabakatOlustur(){
               'Paylaşım penceresi açılmadı. Aşağıdaki bağlantıyı patronuna gönder:</div>' +
             '<div style="font-size:11px;background:var(--girdi);padding:9px;border-radius:8px;' +
               'word-break:break-all;font-family:monospace;line-height:1.5">' + esc(url) + '</div>' +
-            '<a class="btn btn-cizgili" style="display:block;text-align:center;text-decoration:none;margin-top:9px" ' +
-              'href="https://wa.me/?text=' + encodeURIComponent(metin) + '" target="_blank" rel="noopener noreferrer">' +
+            '<a class="btn btn-cizgili" style="display:block;text-align:center;text-decoration:none;margin-top:9px;border-color:var(--tam);color:var(--tam-ac)" ' +
+              'href="whatsapp://send?text=' + encodeURIComponent(metin) + '">' +
               '📲 WhatsApp\'ta aç</a>' +
+            '<a class="btn btn-cizgili" style="display:block;text-align:center;text-decoration:none;margin-top:6px;font-size:12px" ' +
+              'href="https://wa.me/?text=' + encodeURIComponent(metin) + '" target="_blank" rel="noopener noreferrer">' +
+              '🌐 Tarayıcıdan aç</a>' +
           '</div>';
         gorunum.classList.remove("gizli");
       }
@@ -10225,7 +10277,7 @@ document.addEventListener("DOMContentLoaded", ()=>{
   });
 
   /* Neler yeni kartı */
-  const YENILIK_SURUM = "0.1.4.0";
+  const YENILIK_SURUM = "0.1.4.1";
   window.__SURUM = YENILIK_SURUM;   /* tanı raporu bunu okur */
   try{ $("#cekmece-surum").textContent = "Puantaj Defterim " + YENILIK_SURUM; }catch(e){}
   /* Sürümü çekmece başlığında da göster. Sebep: "değişiklik gelmedi" durumunda
@@ -11809,6 +11861,7 @@ document.addEventListener("DOMContentLoaded", ()=>{
   /* İşveren onayı bağlantısı */
   const btnMut = document.getElementById("btn-mutabakat");
   if(btnMut) btnMut.addEventListener("click", mutabakatOlustur);
+  try{ oncekiAylarAnahtarKur(); }catch(e){}
 
   const btnKurTamam = document.getElementById("btn-kur-tamam");
   if(btnKurTamam){

@@ -5,6 +5,43 @@ kullanır: `0.0.0.X` — X, her güncellemede 1 artar. Uygulama içindeki sürü
 (alt bilgi + "Neler yeni" kartı) ve dağıtılan zip dosyasının adı her zaman
 birebir aynıdır.
 
+## 0.1.4.1 — 📲 WhatsApp açılmıyordu (üç ayrı sebep)
+
+Kullanıcı ekran görüntüleriyle bildirdi: iki onay penceresi arka arkaya
+geliyor, sonra hiçbir şey olmuyor, WhatsApp açılmıyor.
+
+### 1) Yedek bağlantı kartı siliniyordu
+`mutabakatOlustur()` içinde `mutabakatDurumCiz()` **beklenmeden**
+çağrılıyordu. İçinde Firestore okuması olduğu için sonradan bitiyor ve
+`#mutabakat-durum` kutusunu yeniden yazıyordu. Paylaşım penceresi
+açılmadığında yedek olarak aynı kutuya yazdığımız bağlantı kartı bir an
+görünüp siliniyordu — kullanıcı eli tamamen boş kalıyordu.
+- ✅ `await mutabakatDurumCiz()` — bitmesi bekleniyor, yedek kart en sona
+  yazılıyor ve üzeri örtülmüyor
+
+### 2) WebView'de paylaşım sessizce başarısız oluyordu
+Uygulama htmltoapk ile paketlendiği için Android WebView içinde çalışıyor
+(ekran görüntüsünün altındaki "made by htmltoapk" ibaresi bunu gösteriyor).
+WebView'de `navigator.share` çoğu zaman hiç yok ve
+`window.open(..., "_blank")` sessizce `null` döndürüyor.
+- ✅ Üçüncü kademe eklendi: görünmez bir bağlantıya programla tıklanıp
+  `whatsapp://send?text=...` çağrılıyor. Android bunu doğrudan WhatsApp'a
+  devrediyor
+- ✅ `location.href` bilerek KULLANILMADI: WhatsApp kurulu değilse sayfa
+  `wa.me`ye gider ve kullanıcı uygulamadan çıkardı
+- ✅ Yedek kartına iki ayrı tuş kondu: `whatsapp://` ve tarayıcı bağlantısı
+
+### 3) İkinci onay penceresi izni düşürüyordu
+Tarayıcılar paylaşım penceresini yalnızca kullanıcı dokunuşundan hemen
+sonra açmaya izin veriyor. 0.1.4.0'da eklediğim "önceki aylar eklensin mi"
+penceresi araya girip bu izni düşürüyordu — yani çözüm diye eklediğim şey
+yeni bir soruna yol açmıştı.
+- ✅ İkinci pencere kaldırıldı
+- ✅ Yerine gönder tuşunun altında kalıcı bir anahtar: "Sadece bu ay
+  gönderilecek" ↔ "Önceki aylar da eklenecek". Tercih `localStorage`'da
+  saklanıyor, her gönderimde tekrar sorulmuyor
+- ✅ Varsayılan **kapalı**: hangi ay seçiliyse yalnızca o ayın parası gider
+
 ## 0.1.4.0 — 📅 "Hangi ayı seçersem tüm ayların parasını hesaplıyor"
 
 İki ayrı sebep vardı.
