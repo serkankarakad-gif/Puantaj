@@ -5,6 +5,100 @@ kullanır: `0.0.0.X` — X, her güncellemede 1 artar. Uygulama içindeki sürü
 (alt bilgi + "Neler yeni" kartı) ve dağıtılan zip dosyasının adı her zaman
 birebir aynıdır.
 
+## 0.1.4.0 — 📅 "Hangi ayı seçersem tüm ayların parasını hesaplıyor"
+
+İki ayrı sebep vardı.
+
+### 1) Eski "tüm dönem" belgesi her ayı ele geçiriyordu
+`mutabakatDurumCiz()` içinde şu satır vardı:
+
+```js
+let m = await mutabakatBul(donem);
+if(!m) m = await mutabakatBul("tum");   // ← sorun
+```
+
+Eski sürümlerde `kapsam:"tum"` olan tek bir "tüm dönem" belgesi
+gönderilebiliyordu. Böyle bir belge hesapta duruyorsa, **kendi belgesi
+olmayan her ay** onu gösteriyordu: Ağustos açılıyor, tüm ayların toplamı
+görünüyor; Temmuz açılıyor, yine aynı toplam.
+
+- ✅ Yedek arama kaldırıldı. Ay ekranı yalnızca o ayın belgesine bakıyor
+- ℹ️ `kapsam` alanı okunmaya devam ediyor; eski "tüm dönem" belgeleri
+  bozulmuyor, sadece artık başka ayların ekranına sızmıyor
+
+### 2) Önceki ayların bakiyesi sorulmadan ekleniyordu
+0.1.3.3'ten beri belgeye önceki ayların kalanı otomatik ekleniyordu. Bazen
+istenen bu (işveren toplam borcunu görsün), bazen sadece o ayın hesabı
+isteniyor. Kullanıcıya sorulmuyordu.
+
+- ✅ Gönderirken **yalnızca eski bakiye varsa** soruluyor: ay ay döküm
+  gösteriliyor, `TAMAM` = eklensin, `İPTAL` = sadece bu ay
+- ✅ Eski bakiye yoksa soru hiç çıkmıyor, akış eskisi gibi
+- ✅ **Karar korunuyor**: "sadece bu ay" seçildiyse otomatik tazeleme eski
+  ayları geri eklemiyor (tazeleme yalnızca belgede zaten varsa güncelliyor)
+
+`BELGE_SURUM` 3'e çıkarıldı; gönderilmiş ve onaylanmamış belgeler ay ekranı
+açıldığında yeni biçime geçiyor.
+
+## 0.1.3.9 — 🚨 Yeni belge düzeni patrona hiç ulaşmıyordu
+
+Kullanıcı 0.1.3.7 ve 0.1.3.8'i yükledikten sonra "hâlâ aynı" dedi. Kod
+doğruydu; sorun koda hiç ulaşılamamasıydı.
+
+`mutabakatDurumCiz()` içindeki tazeleme şartı yalnızca **rakam** değişimine
+bakıyordu:
+
+```js
+if(m.hakedis !== yeniHak || m.alinan !== yeniAlinan || m.gunSayisi !== t.gunSayisi){
+```
+
+0.1.3.7'de belgeye yeni **alanlar** eklenmişti (`odemeList`, `oncekiAylar`,
+`mesaiYevToplam`, `artiSaf`, `yevmiyeToplam`). Rakamları değişmemiş bir ayda
+—kullanıcının Eylül ayı tam olarak böyleydi: hakediş 16.250, alınan 0, gün 6,
+üçü de aynı— şart hiç tutmuyor, belge eski biçimde kalıyordu. Patronun açtığı
+sayfa da eski alanları okuduğu için hiç değişmiyordu.
+
+- ✅ `BELGE_SURUM` sabiti eklendi. Belgeye yeni alan eklendiğinde artırılır
+- ✅ Tazeleme şartına biçim sürümü karşılaştırması eklendi: rakamlar hiç
+  değişmemiş olsa bile eski biçimli belge yenileniyor
+- ✅ Tazeleme yolu artık `oncekiKalan`, `oncekiAylar` ve `genelKalan`
+  alanlarını da yeniden hesaplıyor (önce yalnızca gönderme yolunda vardı)
+- ✅ Bellekteki `m` nesnesi de güncelleniyor, sayfa yenilemeden doğru görünüm
+
+### Kullanıcı ne yapmalı
+Uygulamayı güncelledikten sonra o ayın ekranını açmak yeterli; link kendini
+yeniler, tekrar göndermeye gerek yok. Onaylanmış belgeler dondurulmuş
+olduğundan kendiliğinden güncellenmez — bilerek böyle.
+
+## 0.1.3.8 — 🚨 ACİL: saatlik günlerde çift ödeme (0.1.3.7'de girmiş regresyon)
+
+**Bu hata 0.1.3.6'da benim eklediğim `girdiDokum()` fonksiyonuyla girdi.**
+`gunPayi` değişkeni iki farklı işi birden yapıyordu: hem "o gün gelindi mi"
+(yol/yemek ve gün sayımı için), hem "o günün yevmiye karşılığı" (para için).
+Saatlik günde ikisi ayrışıyor — gelinmiştir ama yevmiyeyle değil saatle
+ödenir. Tek değişkende birleştirilince şu satır çift ödeme yaptı:
+
+```js
+const yevmiyeKazanc = gunPayi*o.yev + saatlikSaat*o.sa;   // saatlikte ikisi de dolu
+```
+
+8 saat × 310 ₺ = 2.480 ₺ olması gereken gün **4.980 ₺** çıkıyordu (fazladan
+tam bir yevmiye). Hata `kisiKazanc()` fonksiyonuna da kopyalanmıştı.
+
+- ✅ Değişken ikiye ayrıldı: `gelinmePayi` (yol/yemek + gün sayımı) ve
+  `yevmiyePayi` (para). Saatlik günde `yevmiyePayi = 0`
+- ✅ `yevmiyeBirim` artık saatlik günü saymıyor — "× yevmiye" kontrol satırı
+  saatlik çalışanda da tutarlı
+- ✅ Aynı düzeltme `kisiKazanc()` içine de uygulandı
+
+### 16 senaryoluk regresyon testi
+Bu hata ancak saatlik çalışan bir kullanıcıda görünürdü ve gözle
+yakalanamazdı. Artık her sürümde şu senaryolar beklenen tutara karşı
+doğrulanıyor: tam gün · yarım gün · saatlik (8s ve 4s) · 1 ve 3 artı ·
+yevmiye katı mesai · yalnızca mesaiye gelinen gün · gelinmeyen gün · izin ·
+eski saat bazlı mesai · gece (yevmiye ve saat) · parça başı · pazar zammı ·
+pazar zammı + artı.
+
 ## 0.1.3.7 — 🧾 Mutabakat belgesi: "kalan alacak" yanlış yerdeydi
 
 Kullanıcı belgeyi patrona gönderip ekran görüntüsüyle bildirdi. Hiç ödeme

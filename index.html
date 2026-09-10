@@ -400,12 +400,12 @@
       <div class="kart gizli" id="yenilik-kart" style="border-color:var(--sari)">
         <h2>🎁 Neler yeni?</h2>
         <ul style="padding-left:18px;font-size:13.5px;line-height:1.9">
-          <li><b>🧾 "KALAN ALACAK" yanlış yerdeydi.</b> Patron hiç ödeme yapmamışken bile "Hakediş 16.250 / Alınan 0 / KALAN ALACAK 16.250" yazıyordu. Aynı rakam iki kere, biri yanlış adla. Artık ödeme yoksa <b>tek satır: "BU AYIN ALACAĞI"</b></li>
-          <li><b>💵 Avansların artık tarih tarih yazıyor.</b> Patron sadece toplamı görüyordu. Artık "Avans · 12 Eylül — 5.000 ₺" diye tek tek dökülüyor. <b>KALAN ALACAK satırı ancak ödeme varsa</b> çıkıyor</li>
-          <li><b>📅 Eski aylar birleştirilmiyor.</b> "Eski dönem alacağı 71.250 ₺" tek yekûndu, hangi aydan geldiği belli değildi. Artık <b>ay ay yazıyor</b>, her ayın hakedişi ve alınanıyla birlikte</li>
-          <li><b>⚖️ FIFO kuralına dokunulmadı.</b> Gelen para hâlâ en eski ödenmemiş aya yazılıyor — Maaşlar ekranındaki kuralın aynısı. Belge sadece o kararı <b>gösteriyor</b>, değiştirmiyor</li>
-          <li><b>⏱️ Mesai birimi düzeldi:</b> yevmiye katı mesai belgede "0.5 saat" diye yazıyordu. Artık "0,5 yevmiye" yazıyor, saat olanlar ayrı satırda</li>
-          <li><b>✅ Gönder ekranındaki Kontrol satırına yol/yemek eklendi</b> — hakedişle birebir tutuyor artık</li>
+          <li><b>📅 "Hangi ayı seçersem tüm ayların parasını hesaplıyor" — iki ayrı sebebi varmış, ikisi de düzeldi</b></li>
+          <li><b>1) Eski "tüm dönem" belgesi her ayı ele geçiriyordu.</b> Eskiden tek bir "tüm dönem" belgesi gönderilebiliyordu. O belge hesapta duruyorsa, kendi belgesi olmayan <b>her ay</b> onu gösteriyordu. Ağustos'u aç, tüm ayların toplamı; Temmuz'u aç, yine aynı toplam. Artık her ay <b>yalnızca kendi belgesine</b> bakıyor</li>
+          <li><b>2) Önceki aylar sorulmadan ekleniyordu.</b> Eylül'ü gönderiyordun, patron 87.500 ₺ görüyordu (16.250 bu ay + 71.250 eski aylar). Artık <b>gönderirken soruyor</b>: "TAMAM = eski aylar da eklensin / İPTAL = sadece bu ay gitsin"</li>
+          <li>Eski bakiyen yoksa bu soru hiç çıkmıyor</li>
+          <li><b>Kararın korunuyor:</b> "sadece bu ay" dediysen, link sonradan kendini tazelerken eski ayları geri eklemiyor</li>
+          <li><b>⚖️ Maaşların FIFO kuralına yine dokunulmadı</b></li>
         </ul>
         <button class="btn btn-cizgili" id="btn-yenilik-kapat">Süper, kapat</button>
       </div>

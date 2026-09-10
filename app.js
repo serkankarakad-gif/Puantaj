@@ -2000,6 +2000,14 @@ function mutabakatGunListesi(){
    kaydın `aitAy` alanında duruyor ve `enEskiOdenmemisAy()` ile
    belirleniyor. Bu fonksiyon o kararı SORGULAMIYOR, sadece bu aya
    düşenleri yazıyor. */
+/* MUTABAKAT BELGE BİÇİM SÜRÜMÜ (0.1.3.9)
+   Belgeye yeni alan eklendiğinde bu sayı artırılır. Gönderilmiş ama
+   henüz onaylanmamış belgeler, ayın ekranı açıldığında bu sayıya
+   bakarak kendini yeniler — rakamları hiç değişmemiş olsa bile.
+   Bu olmadan uygulama güncellense de patronun gördüğü sayfa eski
+   kalıyordu. */
+const BELGE_SURUM = 3;
+
 function mutabakatOdemeListesi(){
   const liste = [];
   try{
@@ -2031,8 +2039,17 @@ async function mutabakatDurumCiz(){
        Kullanıcı tüm dönem gönderdiyse durum kartı görünmüyordu —
        gönderdiği belgenin onaylanıp onaylanmadığını takip edemiyordu. */
     const donem = aktifYil + "-" + pad(aktifAy+1);
+    /* SADECE BU AYIN BELGESİ (0.1.4.0)
+       ─────────────────────────────────────────────────────────────
+       Burada şu satır vardı:
+           if(!m) m = await mutabakatBul("tum");
+       Eski sürümlerde "tüm dönem" kapsamlı tek bir belge gönderilebiliyordu
+       (`kapsam:"tum"`). O belge hesapta duruyorsa, kendi belgesi olmayan
+       HER AY onu gösteriyordu. Kullanıcı Ağustos'u açıyor, tüm ayların
+       toplamını görüyordu; Temmuz'u açıyor, yine aynı toplamı.
+       "Hangi ayı seçersem tüm ayların parasını hesaplıyor" şikâyeti buydu.
+       Artık ay ekranı yalnızca o ayın belgesine bakıyor. */
     let m = await mutabakatBul(donem);
-    if(!m) m = await mutabakatBul("tum");
     if(!m){ el.classList.add("gizli"); return; }
 
     /* ONAYLANMAMIŞ MUTABAKAT KENDİLİĞİNDEN GÜNCELLENİYOR (0.1.2.5)
@@ -2070,8 +2087,32 @@ async function mutabakatDurumCiz(){
         }else{
           const t = hesapla();
           const yeniHak = Math.round(t.hakedis), yeniAlinan = Math.round(t.alinan);
-          if(m.hakedis !== yeniHak || m.alinan !== yeniAlinan || m.gunSayisi !== t.gunSayisi){
+          /* BELGE BİÇİMİ DEĞİŞTİYSE DE TAZELE (0.1.3.9)
+             ─────────────────────────────────────────────────────────
+             Buradaki şart yalnızca RAKAM değişimine bakıyordu. Ama
+             0.1.3.7'de belgeye yeni ALANLAR eklendi (ödeme dökümü,
+             ay ay eski alacaklar, yevmiye katı mesai). Rakamları
+             değişmemiş bir ayda şart hiç tutmuyor, belge eski biçimde
+             kalıyordu — kullanıcı uygulamayı güncellediği hâlde patron
+             sayfası aynı görünüyordu. Hata koddaydı değil, koda hiç
+             ulaşılamamasındaydı.
+             Artık belgenin biçim sürümü de karşılaştırılıyor. */
+          const eskiBicim = (Number(m.belgeSurum)||0) < BELGE_SURUM;
+          if(eskiBicim || m.hakedis !== yeniHak || m.alinan !== yeniAlinan || m.gunSayisi !== t.gunSayisi){
+            /* Kullanıcı gönderirken "sadece bu ay" dediyse (0.1.4.0),
+               tazeleme bu kararı EZMEMELİ. Belgede eski bakiye yoksa
+               yeniden hesaplanmıyor; varsa güncel tutara çekiliyor. */
+            let oKalan = Number(m.oncekiKalan)||0, oAylar = m.oncekiAylar || [];
+            if(oKalan > 0){
+              try{
+                const dz = await tumDonemOzeti();
+                const eskiler = dz.aylar.filter(a=> a.ay < m.donem && a.kalan > 0);
+                oKalan = eskiler.reduce((x,a)=> x + a.kalan, 0);
+                oAylar = eskiler.map(a=> ({ay:a.ay, ad:a.ad, hak:a.hak, alinan:a.alinan, kalan:a.kalan}));
+              }catch(e){}
+            }
             await db.collection("mutabakat").doc(m.id).update({
+              belgeSurum: BELGE_SURUM,
               gunSayisi: t.gunSayisi,
               mesaiToplam: t.mesaiToplam || 0,
               mesaiYevToplam: t.mesaiYevToplam || 0,
@@ -2082,11 +2123,20 @@ async function mutabakatDurumCiz(){
               hakedis: yeniHak,
               alinan: yeniAlinan,
               kalan: Math.round(t.kalan),
+              oncekiKalan: oKalan,
+              oncekiAylar: oAylar,
+              genelKalan: Math.round(t.kalan) + oKalan,
               odemeList: mutabakatOdemeListesi(),
               gunler: mutabakatGunListesi()
             });
+            m.belgeSurum = BELGE_SURUM;
             m.gunSayisi = t.gunSayisi; m.hakedis = yeniHak;
             m.alinan = yeniAlinan; m.kalan = Math.round(t.kalan);
+            m.mesaiYevToplam = t.mesaiYevToplam || 0; m.artiSaf = t.artiSaf || 0;
+            m.yevmiyeToplam = t.yevmiyeToplam || 0;
+            m.oncekiKalan = oKalan; m.oncekiAylar = oAylar;
+            m.genelKalan = Math.round(t.kalan) + oKalan;
+            m.odemeList = mutabakatOdemeListesi();
           }
         }
       }catch(e){ /* tazelenemezse eski rakamlarla devam, çökme yok */ }
@@ -2243,6 +2293,25 @@ async function mutabakatOlustur(){
       oncekiAylar = eskiler.map(a=> ({ay:a.ay, ad:a.ad, hak:a.hak, alinan:a.alinan, kalan:a.kalan}));
     }catch(e){ /* alınamazsa 0 kalır, belge yine üretilir */ }
 
+    /* KAPSAM ARTIK KULLANICININ KARARI (0.1.4.0)
+       ─────────────────────────────────────────────────────────────
+       Önceki ayların bakiyesi belgeye SORULMADAN ekleniyordu. Kullanıcı
+       "hangi ayı seçersem tüm ayların parasını hesaplıyor" dedi — Eylül'ü
+       gönderiyor, patron 87.500 ₺ görüyordu (16.250 bu ay + 71.250 eski).
+       Bazen istenen bu, bazen sadece o ayın hesabı isteniyor.
+       Artık eski bakiye VARSA soruluyor; yoksa hiç sorulmuyor. */
+    if(oncekiKalanTutar > 0){
+      const eskiEklensin = confirm(
+        "ÖNCEKİ AYLAR DA EKLENSİN Mİ?\n" +
+        "──────────────────────\n" +
+        oncekiAylar.map(a=> (a.ad||a.ay) + ": " + paraFmt(a.kalan)).join("\n") + "\n" +
+        "Toplam: " + paraFmt(oncekiKalanTutar) + "\n" +
+        "──────────────────────\n\n" +
+        "TAMAM = eklensin (genel toplam görünsün)\n" +
+        "İPTAL = sadece " + AYLAR[aktifAy] + " " + aktifYil + " gitsin");
+      if(!eskiEklensin){ oncekiKalanTutar = 0; oncekiAylar = []; }
+    }
+
     /* GÖNDERİM ONAYI (0.1.2.7 · 0.1.2.9'da öne alındı)
        Kullanıcı defalarca "linkte yanlış rakam görünüyor" dedi. Artık
        ne gideceği gönderilmeden ÖNCE ekranda gösteriliyor — yanlışsa
@@ -2308,6 +2377,7 @@ async function mutabakatOlustur(){
       yarimGun: t.yarim || 0,
       gelmediGun: t.gelmedi || 0,
       izinliGun: t.izinli || 0,
+      belgeSurum: BELGE_SURUM,
       mesaiToplam: t.mesaiToplam || 0,
       /* 0.1.3.7: mesai iki ayrı birimde olabiliyor. Eskiden yalnızca saat
          yazılıyordu, yevmiye katı mesai belgede hiç görünmüyordu. */
@@ -2884,13 +2954,15 @@ function kisiKazanc(v){
   const gYev = Number(v.geceYev)||0;
   const gM   = gYev > 0 ? 0 : (Number(v.geceMesai)||0);
   const st   = v.durum==="saatlik" ? (Number(v.saat)||0) : 0;
-  const gunPayi = v.durum==="tam" ? 1 : v.durum==="yarim" ? 0.5 : (st>0 ? 1 : 0);
+  /* Saatlik gün yevmiyeye GİRMEZ, saat ücretinden ödenir (0.1.3.8) */
+  const yevmiyePayi = v.durum==="tam" ? 1 : v.durum==="yarim" ? 0.5 : 0;
+  const gelinmePayi = v.durum==="tam" ? 1 : v.durum==="yarim" ? 0.5 : (st>0 ? 1 : 0);
   const geceOran = v.uGeceUcret!=null ? Number(v.uGeceUcret) : mes*(1+(Number(ka.geceZam)||0)/100);
 
-  let ekPayi = gunPayi;
+  let ekPayi = gelinmePayi;
   if(ekPayi === 0 && (mYev>0 || m>0 || gYev>0 || gM>0)) ekPayi = 1;
 
-  let k = (gunPayi + (Number(v.arti)||0) + mYev + gYev) * yev;
+  let k = (yevmiyePayi + (Number(v.arti)||0) + mYev + gYev) * yev;
   k += st*sa;
   k += m*mes;
   k += gM*geceOran;
@@ -5554,11 +5626,19 @@ function girdiDokum(v){
   if(!v) return null;
   const o = oranBul(v);
 
-  /* Gün payı: o gün işe fiilen gelindi mi, ne kadar? */
+  /* İKİ AYRI PAY — KARIŞTIRILMAMALI (0.1.3.8'de düzeltildi)
+     `gelinmePayi`: o gün işe gelindi mi? Yol/yemek ve gün sayımı bunu
+        kullanır. Saatlik çalışılan gün de "gelinmiş" sayılır.
+     `yevmiyePayi`: o günün YEVMİYE karşılığı. Saatlik günde bu SIFIRDIR,
+        çünkü o gün saat ücretinden ödeniyor.
+     0.1.3.6'da ikisi tek değişkende birleştirilmişti ve saatlik günde
+     hem yevmiye hem saat ücreti ödeniyordu (8 saat × 310 = 2.480 ₺
+     olması gereken gün 4.980 ₺ çıkıyordu). */
   const saatlikSaat = v.durum==="saatlik" ? (Number(v.saat)||0) : 0;
-  const gunPayi = v.durum==="tam"   ? 1
-                : v.durum==="yarim" ? 0.5
-                : (v.durum==="saatlik" && saatlikSaat>0) ? 1 : 0;
+  const yevmiyePayi  = v.durum==="tam" ? 1 : v.durum==="yarim" ? 0.5 : 0;
+  const gelinmePayi  = v.durum==="tam" ? 1
+                     : v.durum==="yarim" ? 0.5
+                     : (v.durum==="saatlik" && saatlikSaat>0) ? 1 : 0;
 
   /* Yevmiye katları. Yeni kayıtlar yevmiye katı (`mesaiYev`/`geceYev`),
      eski kayıtlar saat (`mesai`/`geceMesai`) tutuyor. Bir kayıtta ikisi
@@ -5572,10 +5652,12 @@ function girdiDokum(v){
 
   /* Yol/yemek payı: gelinen gün başına bir kere. İşe gelmediği hâlde
      sadece akşam mesaiye gelmişse de bir günlük hakkı doğuyor. */
-  let ekPayi = gunPayi;
+  let ekPayi = gelinmePayi;
   if(ekPayi === 0 && (mesaiYev>0 || mesaiSaat>0 || geceYev>0 || geceSaat>0)) ekPayi = 1;
 
-  const yevmiyeKazanc = gunPayi*o.yev + saatlikSaat*o.sa;
+  /* Saatlik gün saat ücretinden, diğerleri yevmiyeden ödenir — biri
+     varsa diğeri sıfırdır, toplanmaları güvenli. */
+  const yevmiyeKazanc = yevmiyePayi*o.yev + saatlikSaat*o.sa;
   const artiKazanc    = artiYev*o.yev;
   const mesaiKazanc   = mesaiYev*o.yev + mesaiSaat*o.mes;
   const geceKazanc    = geceYev*o.yev  + geceSaat*o.gece;
@@ -5586,10 +5668,13 @@ function girdiDokum(v){
   const toplam = yevmiyeKazanc + artiKazanc + mesaiKazanc + geceKazanc + ekKazanc + parcaKazanc;
 
   return {
-    /* miktarlar */
-    gunPayi, artiYev, mesaiYev, geceYev, mesaiSaat, geceSaat, saatlikSaat, ekPayi, parcaMiktar,
-    /* toplam yevmiye katı — hakedişle birebir örtüşen sayı budur */
-    yevmiyeBirim: gunPayi + artiYev + mesaiYev + geceYev,
+    /* miktarlar. `gunPayi` adı geriye dönük korunuyor — gün sayımı için
+       kullanılıyor ve anlamı "o gün gelindi mi". */
+    gunPayi: gelinmePayi, yevmiyePayi,
+    artiYev, mesaiYev, geceYev, mesaiSaat, geceSaat, saatlikSaat, ekPayi, parcaMiktar,
+    /* Toplam yevmiye katı. Saatlik gün buraya GİRMEZ — o gün yevmiyeyle
+       değil saatle ödendiği için "× yevmiye" kontrolünü bozardı. */
+    yevmiyeBirim: yevmiyePayi + artiYev + mesaiYev + geceYev,
     /* para kutuları */
     yevmiyeKazanc, artiKazanc, mesaiKazanc, geceKazanc, ekKazanc, parcaKazanc, toplam
   };
@@ -10140,7 +10225,7 @@ document.addEventListener("DOMContentLoaded", ()=>{
   });
 
   /* Neler yeni kartı */
-  const YENILIK_SURUM = "0.1.3.7";
+  const YENILIK_SURUM = "0.1.4.0";
   window.__SURUM = YENILIK_SURUM;   /* tanı raporu bunu okur */
   try{ $("#cekmece-surum").textContent = "Puantaj Defterim " + YENILIK_SURUM; }catch(e){}
   /* Sürümü çekmece başlığında da göster. Sebep: "değişiklik gelmedi" durumunda
