@@ -4044,3 +4044,104 @@ html[data-hafif="1"] .pd50-pill,html[data-hafif="1"] .pd50-pin{transition:none!i
 @media(max-width:350px) {.pd51-update-topline {padding:17px 16px 0}.pd51-update-main {padding:19px 16px 18px}.pd51-update-versions>div{padding:10px}.pd51-update-versions strong{font-size:17px}}
 @media(max-height:670px) {.pd51-update-dialog{margin:auto}.pd51-update-main{padding-top:16px}.pd51-update-versions{margin:13px 0}.pd51-update-note{gap:8px}}
 @media(prefers-reduced-motion:reduce) {.pd51-update-dialog{animation:none}}
+
+/* ═══════════════════════════════════════════════════════════════════════
+   0.1.5.2 CANLI GOLD — GÖRSEL KATMAN
+   FIFO / AVANS / KAYIT / FIREBASE / PDF işleyişine müdahale içermez.
+   Mat soluk tonlar yerine kontrollü doygunluk, kontrast ve netlik.
+   ═══════════════════════════════════════════════════════════════════════ */
+:root {
+  --sari:#ffca28;
+  --sari-koyu:#efa416;
+  --soluk:#b4bdca;
+  --cizgi:#394452;
+  --vip-parilti:rgba(255,198,36,.10);
+}
+/* Yalnızca standart koyu/Gold tema: kullanıcıların seçtiği mavi/yeşil vb.
+   vurgu paletleri, açık mod ve AMOLED siyah özelleştirmesi korunur. */
+body:not([data-tema]) #goruntu-ana #sirket-kart,
+body[data-tema="koyu"] #goruntu-ana #sirket-kart,
+body[data-tema="altin"] #goruntu-ana #sirket-kart {
+  background:linear-gradient(142deg,#303340 0%,#272b35 52%,#25282e 100%);
+  border-color:#7a6537;border-left-color:#ffc12d;
+  box-shadow:0 9px 25px rgba(4,9,17,.25),inset 0 1px 0 rgba(255,221,126,.09);
+}
+body:not([data-tema]) #goruntu-ana #sirket-kart .bakiye,
+body[data-tema="koyu"] #goruntu-ana #sirket-kart .bakiye,
+body[data-tema="altin"] #goruntu-ana #sirket-kart .bakiye {
+  color:#ffe09c;-webkit-text-fill-color:#ffe09c;
+}
+/* Gold düğmeler canlı; diğer vurgu temalarında mevcut vurgu rengi kullanılır. */
+.btn-sari {background-image:linear-gradient(125deg,var(--sari),var(--sari-koyu));
+  border-color:var(--sari-koyu);box-shadow:0 4px 14px rgba(189,132,21,.16)}
+.btn-sari:active{filter:brightness(.91);transform:scale(.985)}
+.takvim .hucre.bugun{outline-color:var(--sari);box-shadow:0 0 0 2px rgba(255,193,43,.11)}
+/* Daha okunaklı alt gezinme / arama ikonları. */
+#pd49-komut-ac,.pd49-ana-ikon{border-color:color-mix(in srgb,var(--sari) 35%,var(--cizgi))}
+/* Canlı güncelleme vitrini: bütün etkiler sadece bu pencerede. */
+#guncelleme-ekrani {
+  background:radial-gradient(ellipse at 50% 30%,rgba(23,47,77,.66) 0%,rgba(5,9,17,.94) 72%);
+}
+.pd51-update-dialog {
+  background:radial-gradient(ellipse at 100% 0%,rgba(35,75,109,.40) 0%,transparent 49%),
+             linear-gradient(150deg,#1a2b3d 0%,#15212f 38%,#101720 100%);
+  border:1px solid rgba(250,192,59,.76);
+  box-shadow:0 24px 75px rgba(0,0,0,.80),0 0 38px rgba(255,180,36,.13),inset 0 1px 0 rgba(255,255,255,.13);
+  position:relative;
+}
+.pd51-update-dialog::before {
+  content:'';display:block;height:4px;width:100%;
+  background:linear-gradient(90deg,#f68b21 0%,#ffca32 42%,#fff1a0 62%,#f6a421 100%);
+}
+.pd51-update-topline {padding-top:22px}
+.pd51-update-mark {
+  color:#ffda62;
+  background:linear-gradient(140deg,#544018,#312a23 72%);
+  border-color:rgba(255,196,51,.70);
+  box-shadow:0 3px 17px rgba(243,164,34,.24),inset 0 1px rgba(255,244,195,.15);
+}
+.pd51-update-appname {color:#fff9eb}
+.pd51-update-appname span {color:#f5c86a}
+.pd51-update-ready {
+  color:#99f2bf;background:rgba(33,142,93,.25);border-color:rgba(72,236,145,.56);
+  box-shadow:0 0 14px rgba(39,213,123,.10)
+}
+.pd51-update-dot{background:#4bf29a;box-shadow:0 0 0 3px rgba(57,219,134,.13),0 0 10px #4bf29a99}
+.pd51-update-eyebrow{color:#ffd152;font-weight:850}
+.pd51-update-main h2{color:#ffffff;text-shadow:0 2px 13px rgba(0,0,0,.27)}
+.pd51-update-main>p{color:#d4dfeb}
+.pd51-update-versions>div {
+  background:#162434;border:1px solid #42546c;
+  box-shadow:inset 0 1px rgba(255,255,255,.07);
+}
+.pd51-update-versions>div:not(.pd51-update-latest) strong {color:#edf4ff}
+.pd51-update-versions span:not(.pd51-update-arrow){color:#ccd5e2}
+.pd51-update-versions .pd51-update-latest {
+  background:linear-gradient(135deg,#6b480d 0%,#3b351e 95%);
+  border:1px solid #ffd052;
+  box-shadow:0 0 0 1px rgba(255,195,38,.09),0 6px 20px rgba(240,162,30,.14);
+}
+.pd51-update-latest strong{color:#ffe077}
+.pd51-update-arrow{color:#ffca32}
+.pd51-update-note {
+  background:linear-gradient(145deg,rgba(43,66,88,.68),rgba(24,36,50,.76));
+  border:1px solid rgba(115,149,181,.36);
+}
+.pd51-update-note div{color:#edf3fa}
+.pd51-update-note span{color:#5cf6ae;text-shadow:0 0 10px rgba(80,246,159,.19)}
+.pd51-update-status {color:#d3dce8!important}
+.pd51-update-primary {
+  color:#171b22;
+  background:linear-gradient(110deg,#ffdd62 0%,#ffc02c 47%,#f69b19 100%);
+  border:1px solid rgba(255,237,166,.56);
+  box-shadow:0 8px 23px rgba(248,158,25,.32),inset 0 1px 0 rgba(255,255,255,.46);
+  transition:transform .16s ease,filter .16s ease,box-shadow .16s ease;
+}
+.pd51-update-primary:active {filter:brightness(.97);transform:scale(.987)}
+.pd51-update-primary:focus-visible,.pd51-update-later:focus-visible {
+  outline:3px solid #fff1a0;outline-offset:3px;
+}
+.pd51-update-later{color:#e5eaf2}
+.pd51-update-later:active{background:rgba(255,255,255,.08)}
+.pd51-update-footer{border-color:rgba(255,199,59,.17);color:#b6c6d7}
+@media(prefers-reduced-motion:reduce){.pd51-update-primary{transition:none}}

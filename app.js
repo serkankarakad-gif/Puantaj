@@ -8866,11 +8866,11 @@ document.addEventListener("visibilitychange", ()=>{
   }
 });
 
-/* 0.1.5.1 — Tek kaynaklı kullanıcıya görünen sürüm numarası.
+/* 0.1.5.2 — Tek kaynaklı kullanıcıya görünen sürüm numarası.
    Sürümü yalnızca index.html meta application-version belirler. */
 const UYGULAMA_SURUMU = (document.querySelector('meta[name="application-version"]')?.getAttribute('content') || '').trim() || '0.0.0';
 window.__SURUM = UYGULAMA_SURUMU;
-/* Eski sürüm bildirimleri için paketle birlikte yenilenen uyumluluk etiketi: YENILIK_SURUM = "0.1.5.1" */
+/* Eski sürüm bildirimleri için paketle birlikte yenilenen uyumluluk etiketi: YENILIK_SURUM = "0.1.5.2" */
 function pd51SurumEtiketleriniYenile(){
   const yazilar = [
     ['.acilis-surum-kimlik', 'UYGULAMA v'],

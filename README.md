@@ -1,3 +1,13 @@
+## 0.1.5.2 — Canlı Gold görünüm
+
+Güncelleme ekranı daha yüksek kontrastlı altın, turuncu, koyu lacivert ve canlı yeşil tonlarıyla yenilendi. Standart Gold görünümünün ana kazanç kartında ve düğmelerinde renk netliği artırıldı.
+
+**Güvenlik:** FIFO, avans, puantaj, maaş, PDF, PIN ve Firebase veri kuralları değiştirilmedi. Mevcut uygulamayı kaldırmayın veya verileri temizlemeyin. Gerçek Firebase testini tamamlamadan üretime geçmeyin.
+
+HTML to APK Builder: **Version Name = 0.1.5.2**, **Version Code** önceki APK’dan yüksek olmalı; aynı paket kimliği ve imza anahtarı korunmalı.
+
+---
+
 ## 0.1.5.1 güncellemesi
 
 Sürüm etiketi: `index.html` içindeki `<meta name="application-version" ...>`.

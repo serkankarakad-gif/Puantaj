@@ -1,3 +1,13 @@
+# 0.1.5.2 — Canlı Gold renk güncellemesi
+
+- Soluk güncelleme vitrini koyu lacivert + parlak altın + turuncu ile yenilendi.
+- Sürüm karşılaştırması, başlık, başarı işaretleri ve birincil düğme daha belirgin.
+- Varsayılan koyu Gold ana kazanç kartı, takvim vurgusu ve buton kontrastı artırıldı.
+- Tek sürüm meta değeri ve önbellek anahtarı 0.1.5.2’ye yükseltildi.
+- İş mantığı ve veritabanı dosyaları değişmedi.
+
+---
+
 # 0.1.5.1 — Güncelleme vitrini ve sürüm doğrulama
 
 - Güncelleme bildirim ekranı profesyonel, daha sade ve mobil uyumlu tasarlandı.
