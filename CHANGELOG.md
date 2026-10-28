@@ -1,3 +1,18 @@
+## 0.1.4.9 — Pro Hızlı İşlem ve Güvence Merkezi
+- Gerçek işlevsel hızlı gezinme araması ve kategorize edilmiş mevcut sayfa kısayolları.
+- Üst bar ve ana ekranda erişilebilir giriş noktaları; tam ekran arama ve klavye erişilebilirliği.
+- Mevcut göstergelerden yalnızca okuyan bağlantı ve yerel yedek durum kartları.
+- Tasarım: mat Pro, okunabilir tipografi, erişilebilir düğmeler, hafif animasyonlar.
+- FIFO/avans/maaş/PDF/PIN/Firebase iş kuralları değişmedi.
+- Kullanıcı verileri taşınmadı ya da silinmedi; 20 dosya korunuyor.
+
+# 0.1.4.8 — Sade Pro (2026-10-28)
+
+- Yalnızca UI/UX ve sürüm etiketi değişti.
+- Mat yüzeyler, okunabilir kartlar, takvim ve güncelleme ekranı.
+- FIFO/avans/maaş/PDF/Firebase/PIN kodları değiştirilmedi.
+- Tam 20 dosya. Eski sürümü kaldırmadan APK üzerinde dene; önce yedek al.
+
 ## 0.1.4.7 — Sürüm görüntüleme ve APK paketleme açıklığı
 - Açılış, hesap girişi, PIN, çekmece ve Ayarlar ekranlarında doğru uygulama içi sürüm gösterilir.
 - app.js, sw.js önbellek adı ve sürüm tanıtımı eşitlendi.

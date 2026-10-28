@@ -219,3 +219,13 @@ bilinçli her tıklaması karşılığı, azaltılabilecek bir "gereksiz" yazma 
 4. Kesinlikle eski uygulamayı kaldırma; uygulama verisini/yerel depolamayı temizleme. Öncesinde mümkünse JSON veri yedeği al ve bulut eşitlemesini doğrula.
 5. Giriş ve PIN ekranında `Uygulama sürümü: 0.1.4.7` yazmalı. Android sistem bilgilerindeki sürüm hâlâ 1.4.1 ise APK Builder sürüm adını değiştir.
 6. Bulut/PIN erişimi ayrı bir sorundur; sürüm etiketinin düzelmesi Firebase bağlantısını onarmaz.
+
+
+## 0.1.4.9 Pro — Hızlı İşlem ve Güvence Merkezi
+
+- Uygulama giriş/PIN sonrasında üstteki arama simgesinden veya ana ekrandaki kısa yoldan açılır.
+- Bölümlerde ara ve hazır gezinme seçenekleri mevcut ekranları açar, yeni hesaplama veya kayıt fonksiyonu çalıştırmaz.
+- Güvence sekmesinde cihaz bağlantısı, hesap belgesi erişimi ve cihazdaki JSON yedek bilgisi **salt okunur** şekilde gösterilir; tüm kayıtların eşitlenmesini garanti etmez.
+- Firebase Firestore kuralları ve avans/FIFO, maaş, PDF, PIN, veri yolu ile geri yükleme kodları değiştirilmemiştir.
+- Uygulama veri deposunu silme; önce JSON yedek alıp test hesabında kurulum/oturum doğrula.
+- HTML to APK Builder içinde Android Version Name ve Version Code ayrıca güncellenmelidir.

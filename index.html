@@ -21,7 +21,7 @@
 <meta name="theme-color" content="#17181C">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <title>Puantaj Defterim</title>
-<meta name="application-version" content="0.1.4.7">
+<meta name="application-version" content="0.1.4.9">
 
 <!-- ================= iOS / Safari "Ana ekrana ekle" desteği ================= -->
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -111,7 +111,7 @@
 <div id="acilis">
   <div class="logo">👷</div>
   <h1>Puantaj<br>Defterim</h1>
-  <div class="acilis-surum-kimlik" style="font-size:11px;font-weight:700;letter-spacing:.13em;color:#e2bb66;margin-top:12px">UYGULAMA v0.1.4.7</div>
+  <div class="acilis-surum-kimlik" style="font-size:11px;font-weight:700;letter-spacing:.13em;color:#e2bb66;margin-top:12px">UYGULAMA v0.1.4.9</div>
   <div class="serit-mini"></div>
   <div class="gelistiren">Alın terinin hesabı şaşmasın<b>SERKAN KARAKAŞ</b>tarafından geliştirilmiştir</div>
 </div>
@@ -140,7 +140,7 @@
     <button class="pin-bos"></button><button data-tus="0">0</button><button id="pin-sil" aria-label="Son rakamı sil">⌫</button>
   </div>
   <div class="pin-kasa-durum" id="pin-kasa-durum" role="status" aria-live="polite">☁️ Firebase PIN kasası kontrol ediliyor…</div>
-  <div class="pin-surum-kimlik" style="font-size:10px;text-align:center;letter-spacing:.08em;color:#d7b773;margin:3px auto 0">Uygulama sürümü: 0.1.4.7</div>
+  <div class="pin-surum-kimlik" style="font-size:10px;text-align:center;letter-spacing:.08em;color:#d7b773;margin:3px auto 0">Uygulama sürümü: 0.1.4.9</div>
   <div class="pin-alt-islemler">
     <button class="pin-unuttum" id="btn-pin-unuttum">PIN'imi unuttum</button>
     <button class="pin-ikincil" id="btn-pin-yeniden-dene">↻ Firebase PIN'i tekrar kontrol et</button>
@@ -187,7 +187,7 @@
     <div class="logo">👷</div>
     <h1>Puantaj<br>Defterim</h1>
     <p>Yevmiyeni, mesaini ve aldığın parayı kaydet. Hesap ay sonunda şaşmasın.</p>
-    <div class="giris-surum-kimlik" style="font-size:11px;font-weight:700;letter-spacing:.1em;color:#e5c681;margin-top:10px">Uygulama sürümü: 0.1.4.7</div>
+    <div class="giris-surum-kimlik" style="font-size:11px;font-weight:700;letter-spacing:.1em;color:#e5c681;margin-top:10px">Uygulama sürümü: 0.1.4.9</div>
   </div>
   <div class="serit"></div>
   <div class="giris-kutu">
@@ -256,9 +256,41 @@
       <button id="btn-geri" class="gizli" aria-label="Ana ekrana dön"
         style="width:44px;height:44px;border-radius:12px;background:var(--girdi);border:1.5px solid var(--cizgi);color:var(--sari);font-size:22px;font-weight:800;flex-shrink:0">‹</button>
       <h1 id="topbar-baslik">Puantaj<small id="topbar-alt">Bu ayki çizelgen</small></h1>
+      <button type="button" id="pd49-komut-ac" aria-label="Hızlı işlem merkezini aç" title="Hızlı erişim">⌕<span class="pd49-baslik-isaret" aria-hidden="true"></span></button>
     </div>
     <div class="serit"></div>
   </header>
+
+
+  <!-- 0.1.4.9 Hızlı İşlem & Güvence Merkezi: uygulamanın yetkili ekranı içinde -->
+  <div id="pd49-komut" class="gizli" role="dialog" aria-modal="true" aria-labelledby="pd49-baslik">
+    <div class="pd49-arka" aria-hidden="true"></div>
+    <div class="pd49-pencere" role="document">
+      <div class="pd49-ust">
+        <div><div class="pd49-kicker">PUANTAJ DEFTERİM / PRO</div><h2 id="pd49-baslik">Kontrol merkezi</h2><p>Bütün bölümlere tek yerden ulaş</p></div>
+        <button id="pd49-kapat" type="button" aria-label="Merkezi kapat">✕</button>
+      </div>
+      <div class="pd49-sekmeler" role="tablist" aria-label="Kontrol merkezi bölümleri">
+        <button data-pd49-tab="islemler" role="tab" aria-selected="true" class="aktif" type="button">⌕ Hızlı işlemler</button>
+        <button data-pd49-tab="guvence" role="tab" aria-selected="false" type="button">◇ Güvence durumu</button>
+      </div>
+      <section id="pd49-sayfalar" role="tabpanel">
+        <label class="pd49-arama" for="pd49-ara"><span aria-hidden="true">⌕</span><input id="pd49-ara" type="search" autocomplete="off" placeholder="Örneğin: Avans, takvim, PDF..." aria-label="Bölümlerde ara"></label>
+        <div class="pd49-sayac" id="pd49-kac" aria-live="polite">12 bölüm</div>
+        <div id="pd49-sonuclar"></div>
+        <div id="pd49-bos" class="pd49-bos gizli">Aradığın bölüm bulunamadı. Farklı bir kelime dene.</div>
+      </section>
+      <section id="pd49-guvence" class="gizli" role="tabpanel">
+        <div class="pd49-uyari"><strong>Veri güvenliği görünümü</strong><p>Bu bilgiler sadece durum göstergesidir. Buluttaki bütün kayıtların eşitlendiğini veya yedeklendiğini garanti etmez.</p></div>
+        <div class="pd49-durum-satir"><span class="pd49-durum-sembol">⌁</span><div><strong>Cihaz bağlantısı</strong><small id="pd49-net">Denetleniyor</small></div></div>
+        <div class="pd49-durum-satir"><span class="pd49-durum-sembol">☁</span><div><strong>Hesap belgesi erişimi</strong><small id="pd49-cloud">Denetleniyor</small></div></div>
+        <div class="pd49-durum-satir"><span class="pd49-durum-sembol">▣</span><div><strong>Son JSON yedek bilgisi</strong><small id="pd49-backup">Denetleniyor</small></div></div>
+        <button type="button" class="pd49-guvence-link" data-pd49-page="ayarlar">Ayarlar ve yedeklemeye git <span aria-hidden="true">›</span></button>
+        <div class="pd49-foot" id="pd49-versiyon">Uygulama 0.1.4.9</div>
+      </section>
+      <div class="pd49-alt">Buradan yapılan gezinme kayıtları değiştirmez. <span>⌘ / Ctrl + K</span></div>
+    </div>
+  </div>
 
   <div class="perde" id="perde"></div>
   <nav class="cekmece" id="cekmece">
@@ -315,7 +347,7 @@
     <div class="cekmece-alt">
       <button id="btn-cikis">Çıkış yap</button>
     </div>
-    <div class="surum" id="cekmece-surum">Puantaj Defterim 0.1.4.7</div>
+    <div class="surum" id="cekmece-surum">Puantaj Defterim 0.1.4.9</div>
   </nav>
 
   <main>
@@ -364,6 +396,9 @@
         <div class="alt" id="gunun-soz" style="margin-top:6px;color:var(--sari);font-style:italic"></div>
       </div>
 
+      <button id="pd49-ana-ac" type="button" class="pd49-ana-kisayol" aria-label="Kontrol merkezini aç">
+        <span class="pd49-ana-ikon" aria-hidden="true">⌕</span><span><strong>Bir işlem mi yapacaksın?</strong><small>Avans, puantaj, rapor ve diğer bölümleri bul</small></span><span class="pd49-ana-ok" aria-hidden="true">›</span>
+      </button>
       <!-- 0.1.4.5: Salt-okunur bağlantı göstergesi. Kayıt şeması veya hesaplama mantığı değişmez. -->
       <div id="bulut-durum" class="bulut-durum" role="status" aria-live="polite" data-durum="bekliyor">
         <span class="bulut-led" aria-hidden="true"></span>
@@ -441,15 +476,13 @@
       </div>
       <div class="kart gizli" id="yenilik-kart" style="border-color:var(--sari)">
         <h2>🎁 Neler yeni?</h2>
-        <ul style="padding-left:18px;font-size:13.5px;line-height:1.9">
-          <li><b>🔎 0.1.4.7 — Sürüm görünürlüğü düzeltildi.</b> Açılış, hesap girişi, PIN, menü ve Ayarlar alanlarında uygulama içi sürümü görebilirsin.</li>
-          <li><b>📦 APK sürümünü ayrıca ayarla.</b> Android uygulama bilgisinde görünen sürüm HTML dosyasından değil, APK oluşturucusundan yönetilir.</li>
-          <li><b>🔐 Hesap girişi → zorunlu PIN korunuyor.</b> Önce hesapla devam et, ardından PIN'i doğrula veya oluştur.</li>
-          <li><b>🔎 İsteğe bağlı bağlantı testi.</b> Sunucuya gerçek bir salt-okunur sorguyla bağlantını denetleyebilirsin; yeni veri veya kayıt yazılmaz.</li>
-          <li><b>💾 Yedek hatırlatıcısı.</b> Ayarlar bölümünde bu cihazda son indirilen JSON yedeği ve gerektiğinde yedek alma önerisi görünür. Otomatik geri yükleme yapılmaz.</li>
-          <li><b>🌟 Gold Plus görsel düzeni.</b> Kart dokuları, hareketli vurgu, odak halkaları, takvim ve buton geçişleri daha tutarlı hale getirildi.</li>
-          <li><b>📱 Küçük ekran ve erişilebilirlik.</b> 320–430 piksel telefon görünümü, dokunmatik hedefler, düşük hareket ve hafif mod desteklendi.</li>
-          <li><b>🛡️ Kayıt ve hesaplama kuralları aynı.</b> Avans/FIFO, ücret, PDF, Firestore kuralları ve PIN kasası eski sürümle aynıdır; paket yine tam 20 dosyadır.</li>
+        <ul style="padding-left:18px;font-size:13.5px;line-height:1.85">
+<li><b>0.1.4.9 — Kontrol merkezi.</b> Arama yapılabilen hızlı işlem menüsü eklendi; mevcut bölümler tek yerden açılır.</li>
+<li><b>Güvence görünümü.</b> İnternet, Firebase hesap erişimi ve cihazdaki yedek bilgisi, mevcut göstergelerden salt okunur sunulur.</li>
+<li><b>Yeni gezinme.</b> Üst başlıkta ve ana ekranda erişim düğmesi; arayüzde arama ve erişilebilir klavye kısayolu.</li>
+<li><b>Profesyonel mobil düzen.</b> Mat yüzeyler, daha iyi dokunma hedefleri, tutarlı boşluklar ve sınırlı animasyonlar.</li>
+<li><b>Eski işlevler aynen duruyor.</b> 20 dosyalık kaynak, giriş sonrası PIN, PDF ve güncelleme akışı korundu.</li>
+<li><b>FIFO korunuyor.</b> Avans, puantaj, hesaplama, Firestore veri şeması ve ödeme fonksiyonları değiştirilmedi.</li>
 </ul>
         <button class="btn btn-cizgili" id="btn-yenilik-kapat">Süper, kapat</button>
       </div>
@@ -1744,7 +1777,7 @@
         <p style="font-size:13px;color:var(--soluk);margin-bottom:12px">Hata mı gördün, fikrin mi var? Direkt geliştiriciye ulaş:</p>
         <a class="btn btn-cizgili" style="display:block;text-align:center;text-decoration:none;margin-bottom:10px" href="https://wa.me/905051252339?text=Puantaj%20Defterim%20hakkında:" target="_blank" rel="noopener noreferrer">💬 WhatsApp'tan yaz</a>
         <a class="btn btn-cizgili" style="display:block;text-align:center;text-decoration:none" href="tel:05051252339">📞 0505 125 23 39</a>
-        <p style="font-size:11px;color:var(--soluk);margin-top:12px;text-align:center">Sürüm: 0.1.4.7 · Serkan Karakaş</p>
+        <p style="font-size:11px;color:var(--soluk);margin-top:12px;text-align:center">Sürüm: 0.1.4.9 · Serkan Karakaş</p>
       </div>
       <div class="kart ayar-kart kapali">
         <h2 class="ayar-bas" role="button" tabindex="0">🔒 PIN kilidi<span class="ayar-ok">▾</span></h2>

@@ -10316,7 +10316,7 @@ document.addEventListener("DOMContentLoaded", ()=>{
   });
 
   /* Neler yeni kartı */
-  const YENILIK_SURUM = "0.1.4.7";
+  const YENILIK_SURUM = "0.1.4.9";
   window.__SURUM = YENILIK_SURUM;   /* tanı raporu bunu okur */
   try{ $("#cekmece-surum").textContent = "Puantaj Defterim " + YENILIK_SURUM; }catch(e){}
   /* Sürümü çekmece başlığında da göster. Sebep: "değişiklik gelmedi" durumunda
@@ -13194,4 +13194,125 @@ function bulutDurumBaslat(){
 }
 /* ═══════════════════════════ EKLENTİ SONU ═══════════════════════════ */
 
+})();
+
+
+
+/* ═══════════════════════════════════════════════════════════════════════
+   0.1.4.9 • PRO HIZLI İŞLEM & GÜVENCE MERKEZİ
+   Görünüm düzeyi katman: hesaplama, FIFO, avans, PIN, veri kaydı veya
+   Firestore yazma işlemine hiçbir çağrı yapmaz. Mevcut menüleri açar.
+   Bilgi kartları yalnızca mevcut ekrandaki işaretleri okur.
+   ═══════════════════════════════════════════════════════════════════════ */
+(function pd49Init(){
+  "use strict";
+  document.addEventListener("DOMContentLoaded",function(){
+    const $=id=>document.getElementById(id);
+    const overlay=$("pd49-komut"), openBtn=$("pd49-komut-ac"), homeBtn=$("pd49-ana-ac");
+    if(!overlay||!openBtn||!homeBtn)return;
+    const input=$("pd49-ara"), results=$("pd49-sonuclar"), empty=$("pd49-bos");
+    const page=$("pd49-sayfalar"), safe=$("pd49-guvence"), tabs=[...overlay.querySelectorAll("[data-pd49-tab]")];
+    const nav=[
+      ["Günlük İşler","puantaj","Puantaj takvimi","Çalışma günleri ve kayıtlar","calendar-days"],
+      ["Günlük İşler","arama","Kayıt ara","Günlük ve not araması","search"],
+      ["Günlük İşler","notlar","Not defterim","Çalışma notları","notebook"],
+      ["Para & Hesap","maaslar","Maaşlar","Aylık maaş kartları","wallet"],
+      ["Para & Hesap","odemeler","Avans ve ödemeler","Aldığım paralar, avanslar","banknote"],
+      ["Para & Hesap","ozet","Hesap özeti","Gün ve tutar özeti","calculator"],
+      ["Para & Hesap","yil","Yıllık grafikler","Çalışma analizi","chart"],
+      ["Para & Hesap","masraf","İş masrafları","Masraf kaydı","receipt"],
+      ["Rapor & Ayarlar","ayarlar","Ayarlar ve yedekleme","Veri yedeği ve hesap ayarları","settings"],
+      ["Rapor & Ayarlar","isler","İşlerim","İş geçmişi","briefcase"],
+      ["Rapor & Ayarlar","ekip","Ekibim","Ekip kayıtları","users"],
+      ["Rapor & Ayarlar","kartlar","Kredi kartlarım","Kart ve ödeme takibi","credit-card"]
+    ];
+    let before=null,selectedTab="islemler";
+    function normalize(t){return (t||"").toLocaleLowerCase("tr-TR").normalize("NFD").replace(/[\u0300-\u036f]/g,"").replace(/ı/g,"i");}
+    function createItem(item){
+      const btn=document.createElement("button");
+      btn.type="button";btn.className="pd49-sonuc";btn.dataset.pd49Page=item[1];
+      const icon=document.createElement("span");icon.className="pd49-sonuc-ikon";
+      icon.textContent=({puantaj:"▦",arama:"⌕",notlar:"≡",maaslar:"₺",odemeler:"↗",ozet:"∑",yil:"▥",masraf:"▤",ayarlar:"⚙",isler:"▣",ekip:"◎",kartlar:"▥",})[item[1]]||"•";
+      icon.setAttribute("aria-hidden","true");
+      const txt=document.createElement("span");txt.className="pd49-sonuc-metin";
+      const title=document.createElement("strong");title.textContent=item[2];
+      const desc=document.createElement("small");desc.textContent=item[3];
+      const chevron=document.createElement("span");chevron.className="pd49-ok";chevron.textContent="›";chevron.setAttribute("aria-hidden","true");
+      txt.append(title,desc);btn.append(icon,txt,chevron);return btn;
+    }
+    function render(){
+      const term=normalize(input.value.trim());results.replaceChildren();
+      const matching=nav.filter(item=>normalize(item.slice(1,4).join(" ")+" "+item[0]).includes(term));
+      const groups=[...new Set(matching.map(i=>i[0]))];
+      for(const group of groups){
+        const heading=document.createElement("h3");heading.className="pd49-grup";heading.textContent=group;
+        results.appendChild(heading);
+        const section=document.createElement("div");section.className="pd49-grup-liste";
+        matching.filter(i=>i[0]===group).forEach(i=>section.appendChild(createItem(i)));
+        results.appendChild(section);
+      }
+      empty.classList.toggle("gizli",matching.length!==0);
+      $("pd49-kac").textContent=matching.length+" bölüm";
+    }
+    function refreshSafety(){
+      const net=$("pd49-net"), cloud=$("pd49-cloud"),backup=$("pd49-backup");
+      const online=navigator.onLine;
+      net.textContent=online?"Cihaz çevrimiçi görünüyor":"Cihaz çevrimdışı görünüyor";
+      net.dataset.state=online?"ok":"warn";
+      const marker=$("bulut-durum"), label=$("bulut-durum-baslik");
+      cloud.textContent=label?.textContent?.trim()||"Bulut bağlantısı henüz denetlenmedi";
+      cloud.dataset.state=(marker?.dataset?.durum==="bagli")?"ok":"neutral";
+      const backupInfo=$("bulut-yedek-ozet");
+      backup.textContent=backupInfo?.textContent?.trim()||"Bu cihazda yedek durumu bilinmiyor";
+      backup.dataset.state="neutral";
+      $("pd49-versiyon").textContent="Uygulama 0.1.4.9";
+    }
+    function tab(name){
+      selectedTab=name;
+      tabs.forEach(b=>{const active=b.dataset.pd49Tab===name;b.classList.toggle("aktif",active);b.setAttribute("aria-selected",String(active));});
+      page.classList.toggle("gizli",name!=="islemler");safe.classList.toggle("gizli",name!=="guvence");
+      if(name==="guvence")refreshSafety();
+    }
+    function open(which="islemler"){
+      if($("ekran-uygulama")?.classList.contains("gizli"))return;
+      before=document.activeElement;
+      overlay.classList.remove("gizli");document.body.classList.add("pd49-overlay-open");
+      input.value="";render();tab(which);
+      if(which==="islemler")requestAnimationFrame(()=>input.focus());
+      else requestAnimationFrame(()=>$('pd49-kapat').focus());
+    }
+    function close(){
+      overlay.classList.add("gizli");document.body.classList.remove("pd49-overlay-open");
+      if(before?.isConnected)before.focus();
+    }
+    openBtn.addEventListener("click",()=>open());homeBtn.addEventListener("click",()=>open());
+    $("pd49-kapat").addEventListener("click",close);
+    overlay.querySelector(".pd49-arka").addEventListener("click",close);
+    input.addEventListener("input",render);
+    tabs.forEach(b=>b.addEventListener("click",()=>tab(b.dataset.pd49Tab)));
+    overlay.addEventListener("click",e=>{
+      const navBtn=e.target.closest("[data-pd49-page]");
+      if(!navBtn)return;
+      const dest=navBtn.dataset.pd49Page;
+      const target=document.querySelector('.cekmece [data-goruntu="'+dest+'"]')||document.querySelector('[data-goruntu="'+dest+'"]');
+      if(!target){return;}
+      close();target.click();
+    });
+    document.addEventListener("keydown",e=>{
+      if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==="k"){
+        if($("ekran-uygulama")?.classList.contains("gizli"))return;
+        e.preventDefault();overlay.classList.contains("gizli")?open():close();
+      }
+      if(!overlay.classList.contains("gizli")&&e.key==="Escape"){
+        e.preventDefault();close();
+      }
+      if(!overlay.classList.contains("gizli")&&e.key==="Tab"){
+        const focusable=[...overlay.querySelectorAll('button:not([disabled]),input:not([disabled])')].filter(x=>!x.closest('.gizli')&&x.getClientRects().length);
+        if(focusable.length){let at=focusable.indexOf(document.activeElement);if(e.shiftKey&&at<=0){e.preventDefault();focusable.at(-1).focus();}else if(!e.shiftKey&&at===focusable.length-1){e.preventDefault();focusable[0].focus();}}
+      }
+    });
+    window.addEventListener("online",refreshSafety);
+    window.addEventListener("offline",refreshSafety);
+    render();
+  });
 })();
