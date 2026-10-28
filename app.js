@@ -225,6 +225,7 @@ function basla(){
   }catch(e){ console.warn("App Check başlatılamadı:", e); }
   auth = firebase.auth();
   db = firebase.firestore();
+  bulutDurumBaslat();  /* 0.1.4.5: bağımsız salt-okunur durum paneli */
 
   /* MUTABAKAT MODU (0.1.1.4)
      Bağlantıda ?mutabakat=ANAHTAR varsa işveren geldi demektir.
@@ -10277,7 +10278,7 @@ document.addEventListener("DOMContentLoaded", ()=>{
   });
 
   /* Neler yeni kartı */
-  const YENILIK_SURUM = "0.1.4.1";
+  const YENILIK_SURUM = "0.1.4.5";
   window.__SURUM = YENILIK_SURUM;   /* tanı raporu bunu okur */
   try{ $("#cekmece-surum").textContent = "Puantaj Defterim " + YENILIK_SURUM; }catch(e){}
   /* Sürümü çekmece başlığında da göster. Sebep: "değişiklik gelmedi" durumunda
@@ -10489,114 +10490,236 @@ document.addEventListener("DOMContentLoaded", ()=>{
     requestAnimationFrame(cizArkaPlan);
   })();
 
-  window.pinEkraniHazirla = function(degistirMi){
-    pinDegistiriliyor = !!degistirMi;
-    let pin = null;
-    try{ pin = localStorage.getItem("pin"); }catch(e){}
-    pinGirilen = ""; pinIlkGiris = "";
-    const saat = new Date().getHours();
-    const selamMetni = saat<6 ? "İyi geceler," : saat<12 ? "Günaydın," : saat<18 ? "İyi günler," : "İyi akşamlar,";
-    const ad = (kullanici && kullanici.displayName) || "";
-    $("#pin-selam").textContent = selamMetni;
-    $("#pin-baslik-ad").textContent = ad || "İşçi kardeşim";
-    if(ayarlar && ayarlar.profilFoto){
-      $("#pin-avatar").style.backgroundImage = "url("+ayarlar.profilFoto+")";
-      $("#pin-avatar").textContent = "";
-    }else{
-      $("#pin-avatar").style.backgroundImage = "";
-      $("#pin-avatar").textContent = trBuyuk(ad.trim().charAt(0)) || "?";
-    }
-    if(degistirMi){
-      pinModu = "dogrula";
-      $("#pin-alt-baslik").textContent = "Değiştirmek için mevcut PIN'ini gir";
-    }else if(pin && pin.length===6){
-      pinModu = "gir";
-      $("#pin-alt-baslik").textContent = "Devam etmek için PIN'ini gir";
-    }else{
-      pinModu = "olustur1";
-      $("#pin-alt-baslik").textContent = "Devam etmek için 6 haneli bir PIN oluştur";
-    }
-    /* "PIN'imi unuttum" sadece normal giriş ekranında anlamlı — PIN'i yeni
-       oluştururken veya değiştirirken "unuttum" diye bir şey yok zaten */
-    $("#btn-pin-unuttum").classList.toggle("gizli", pinModu!=="gir");
-    let biyoKayitli=false; try{ biyoKayitli = !!localStorage.getItem("biyoKimlikId"); }catch(e){}
-    $("#btn-pin-biyometrik").classList.toggle("gizli", !(pinModu==="gir" && biyoKayitli));
-    $("#pin-hata").textContent = "";
-    pinNoktalariCiz();
-    $("#pin-ekran").classList.add("acik");
+  /* v0.1.4.2 — Hesaba özel PIN kasası. Diğer verilerin belge ve koleksiyon
+     yolları DEĞİŞMEZ. Firestore yalnızca /pinKasasi/{uid} belgesini kullanır.
+     PIN ASLA Firestore'a düz metin gönderilmez: rastgele salt + PBKDF2/SHA-256.
+     Bu ikinci ekran kilididir; asıl erişim güvenliği Firebase Authentication'dır. */
+  let pinKasasiKaydi = null, pinKontrolKodu = 0, pinIslemde = false;
+  const PIN_TUR = 2, PIN_TUR_SAY = 210000;
+  const pinKasaRef = ()=> db.collection("pinKasasi").doc(kullanici.uid);
+  const pinAnahtari = ()=> "puantaj:pinKasasi:v2:" + kullanici.uid;
+  const pinLegacy = ()=>{
+    try{ const p=localStorage.getItem("pin"); return /^\d{6}$/.test(p||"") ? p : null; }
+    catch(e){return null;}
   };
-  const pinNoktalariCiz = ()=> $$("#pin-noktalar span").forEach((el,i)=> el.classList.toggle("dolu", i<pinGirilen.length));
-  /* PIN doğru girildiğinde: noktalar yeşile dönüp dalgalanıyor, ardından
-     ekran yumuşakça kapanıyor.
-     Bu iki animasyon (.basarili ve .kapaniyor) CSS'te ZATEN TANIMLIYDI ama
-     JS hiç tetiklemiyordu — hazırlanmış ama hiç çalışmayan bir efekt olarak
-     duruyordu. Ölü CSS taramasında bulundu; silmek yerine bağlandı.
-     Eskiden doğru PIN girilince ekran hiçbir geri bildirim vermeden anında
-     kayboluyordu. */
-  const pinBasariKapat = ()=>{
-    const ekran = document.getElementById("pin-ekran");
-    const noktalar = document.querySelector(".pin-noktalar");
-    if(noktalar) noktalar.classList.add("basarili");
+  const pinKayitGecerli = v => !!(v && v.version===PIN_TUR &&
+    typeof v.hash==="string" && /^[A-Za-z0-9+/=]{40,60}$/.test(v.hash) &&
+    typeof v.salt==="string" && /^[A-Za-z0-9+/=]{16,48}$/.test(v.salt) &&
+    Number.isInteger(v.iterations) && v.iterations>=100000 && v.iterations<=1000000);
+  const pinVeriKaydet = v =>{try{ localStorage.setItem(pinAnahtari(), JSON.stringify(v)); }catch(e){} };
+  const pinVeriOku = ()=>{
+    try{ const o=JSON.parse(localStorage.getItem(pinAnahtari())||"null"); return pinKayitGecerli(o)?o:null; }
+    catch(e){return null;}
+  };
+  const pinB64 = u=> btoa(String.fromCharCode(...u));
+  const pinB64Coz = v=> Uint8Array.from(atob(v), c=>c.charCodeAt(0));
+  const pinDurumYaz = (s,tip="")=>{
+    const d=$("#pin-kasa-durum"); if(!d) return;
+    d.textContent=s; d.dataset.durum=tip;
+  };
+  async function pinTurev(pin,salt,iterations){
+    if(!window.crypto?.subtle) throw Error("PIN güvenliği için HTTPS bağlantısı gerekiyor");
+    const anahtar=await crypto.subtle.importKey("raw",new TextEncoder().encode(pin),"PBKDF2",false,["deriveBits"]);
+    const hash=await crypto.subtle.deriveBits({name:"PBKDF2",salt:pinB64Coz(salt),iterations,hash:"SHA-256"},anahtar,256);
+    return pinB64(new Uint8Array(hash));
+  }
+  async function pinYeniKayit(pin){
+    if(!crypto?.getRandomValues) throw Error("Güvenli PIN üretimi desteklenmiyor");
+    const salt=pinB64(crypto.getRandomValues(new Uint8Array(16)));
+    return {version:PIN_TUR,salt,iterations:PIN_TUR_SAY,hash:await pinTurev(pin,salt,PIN_TUR_SAY)};
+  }
+  async function pinDogruMu(girilen){
+    if(pinKasasiKaydi){
+      const h=await pinTurev(girilen,pinKasasiKaydi.salt,pinKasasiKaydi.iterations);
+      /* Sabit süreli bayt karşılaştırması. */
+      let fark=0; const a=pinB64Coz(h), b=pinB64Coz(pinKasasiKaydi.hash);
+      if(a.length!==b.length) return false;
+      for(let i=0;i<a.length;i++) fark|=a[i]^b[i];
+      return fark===0;
+    }
+    return girilen===pinLegacy(); /* yalnızca 0.1.4.1 yerel PIN geçişi */
+  }
+  function pinGirisModu(degistirMi){
+    pinGirilen=""; pinIlkGiris="";
+    pinModu=degistirMi?"dogrula":((pinKasasiKaydi||pinLegacy())?"gir":"olustur1");
+    $("#pin-alt-baslik").textContent=pinModu==="dogrula"?"Değiştirmek için mevcut PIN'ini gir":
+      pinModu==="gir"?"Devam etmek için PIN'ini gir":"Devam etmek için 6 haneli PIN oluştur";
+    $("#btn-pin-unuttum").classList.toggle("gizli",pinModu!=="gir");
+    let biyoKayitli=false;try{biyoKayitli=!!localStorage.getItem("biyoKimlikId");}catch(e){}
+    $("#btn-pin-biyometrik").classList.toggle("gizli",!(pinModu==="gir"&&biyoKayitli));
+    pinNoktalariCiz();
+  }
+  function pinBulutaYaz(kayit){
+    const uid=kullanici.uid;
+    const gonderilecek={version:kayit.version,salt:kayit.salt,hash:kayit.hash,
+      iterations:kayit.iterations,updatedAt:firebase.firestore.FieldValue.serverTimestamp()};
+    pinDurumYaz("☁️ PIN kasası Firebase'e eşitleniyor…");
+    /* Offline Firestore sıraya alabilir: yerel hash her zaman korunur. */
+    return pinKasaRef().set(gonderilecek).then(()=>{
+      if(!kullanici||kullanici.uid!==uid) return;
+      const mevcut=pinVeriOku();
+      if(mevcut && mevcut.hash===kayit.hash){
+        pinVeriKaydet({...mevcut,pending:false});
+        try{localStorage.removeItem("pin");}catch(e){} // eski, düz metin PIN temizlenir
+        pinDurumYaz("✓ PIN Firebase'de korumalı olarak saklandı","ok");
+      }
+    }).catch(e=>{
+      if(kullanici&&kullanici.uid===uid){
+        pinDurumYaz("⚠️ PIN cihazda korundu; Firebase eşitlemesi bekliyor","uyari");
+        console.warn("PIN kasası Firebase'e yazılamadı:",e.code||e.message);
+      }
+    });
+  }
+  async function pinKasaYukle(degistirMi,istekNo){
+    const uid=kullanici.uid;
+    const yerel=pinVeriOku(), eski=pinLegacy();
+    let sunucuOkundu=false, sunucu=null, sorun=null, sunucuBozuk=false;
+    try{
+      const d=await pinKasaRef().get({source:"server"});
+      sunucuOkundu=true;
+      if(d.exists){
+        if(!pinKayitGecerli(d.data())){sunucuBozuk=true;throw Error("Firebase PIN kasası okunamıyor. PIN sıfırlanmadı.");}
+        sunucu=d.data();
+      }
+    }catch(e){sorun=e;}
+    if(istekNo!==pinKontrolKodu || !kullanici || kullanici.uid!==uid) return;
+    if(sunucuBozuk){
+      pinModu="bekle";
+      $("#pin-hata").textContent="Firebase PIN kayıt biçimi geçersiz. Kayıt korunuyor; destek gerekiyor.";
+      pinDurumYaz("⚠️ Kayıt değişmedi, güvenlik nedeniyle giriş durduruldu","uyari");
+      return;
+    }
+    if(sunucu){
+      pinKasasiKaydi=sunucu;
+      pinVeriKaydet({...sunucu,pending:false});
+      try{localStorage.removeItem("pin");}catch(e){}
+      pinDurumYaz("✓ Firebase PIN kasası hazır","ok");
+    }else if(sunucuOkundu && yerel && yerel.pending){
+      pinKasasiKaydi=yerel;
+      pinDurumYaz("☁️ Cihazdaki PIN Firebase'e eşitlenecek");
+      pinBulutaYaz(yerel);
+    }else if(sunucuOkundu && eski){
+      /* ESKİ SÜRÜMDEN GEÇİŞ: mevcut PIN aynen korunur; kayıtlara dokunulmaz. */
+      try{
+        pinKasasiKaydi={...await pinYeniKayit(eski),pending:true};
+        pinVeriKaydet(pinKasasiKaydi);
+        pinBulutaYaz(pinKasasiKaydi);
+      }catch(e){pinKasasiKaydi=null;pinDurumYaz("⚠️ Eski PIN korunuyor","uyari");}
+    }else if(sunucuOkundu){
+      pinKasasiKaydi=null;
+      if(yerel) try{localStorage.removeItem(pinAnahtari());}catch(e){}
+      pinDurumYaz("☁️ Yeni PIN Firebase kasasına kaydedilecek");
+    }else if(yerel){
+      pinKasasiKaydi=yerel;
+      pinDurumYaz("📴 Çevrimdışı: cihazdaki güvenli PIN kullanılacak","uyari");
+    }else if(eski){
+      pinKasasiKaydi=null; /* Kayıt silinmesin: internetsizken eski PIN çalışır. */
+      pinDurumYaz("📴 Eski PIN ile çevrimdışı giriş","uyari");
+    }else{
+      pinModu="bekle";
+      $("#pin-alt-baslik").textContent="PIN kontrolü için internete bağlanıp yeniden aç";
+      $("#pin-hata").textContent= sorun ? "Firebase'e ulaşılamadı; hiçbir kayıt silinmedi." : "PIN bilgisi okunamadı.";
+      pinDurumYaz("⚠️ İlk kurulum çevrimiçi yapılmalı","uyari");
+      return;
+    }
+    pinGirisModu(degistirMi);
+  }
+  window.pinEkraniHazirla = function(degistirMi){
+    pinDegistiriliyor=!!degistirMi;
+    const istekNo=++pinKontrolKodu;
+    pinGirilen="";pinIlkGiris="";pinIslemde=false;pinModu="bekle";
+    const saat=new Date().getHours();
+    const selam=saat<6?"İyi geceler,":saat<12?"Günaydın,":saat<18?"İyi günler,":"İyi akşamlar,";
+    const ad=(kullanici&&kullanici.displayName)||"";
+    $("#pin-selam").textContent=selam;
+    $("#pin-baslik-ad").textContent=ad||"İşçi kardeşim";
+    if(ayarlar&&ayarlar.profilFoto){
+      $("#pin-avatar").style.backgroundImage="url("+ayarlar.profilFoto+")";
+      $("#pin-avatar").textContent="";
+    }else{
+      $("#pin-avatar").style.backgroundImage="";
+      $("#pin-avatar").textContent=trBuyuk(ad.trim().charAt(0))||"?";
+    }
+    $("#pin-alt-baslik").textContent="PIN kasası güvenli biçimde kontrol ediliyor…";
+    $("#pin-hata").textContent="";
+    $("#pin-ekran").classList.remove("kapaniyor");
+    $("#pin-ekran").classList.add("acik");
+    $("#btn-pin-unuttum").classList.add("gizli");
+    $("#btn-pin-biyometrik").classList.add("gizli");
+    pinDurumYaz("☁️ Firebase PIN kasası kontrol ediliyor…");
+    pinNoktalariCiz();
+    pinKasaYukle(!!degistirMi,istekNo).catch(e=>{
+      if(istekNo!==pinKontrolKodu) return;
+      $("#pin-hata").textContent="PIN yüklenemedi: "+(e.message||"Bilinmeyen hata");
+      pinDurumYaz("⚠️ PIN verisi değiştirilmedi","uyari");
+    });
+  };
+  const pinNoktalariCiz=()=> $$("#pin-noktalar span").forEach((el,i)=>el.classList.toggle("dolu",i<pinGirilen.length));
+  const pinBasariKapat=()=>{
+    const ekran=$("#pin-ekran"), noktalar=$("#pin-noktalar");
+    if(noktalar)noktalar.classList.add("basarili");
     titret(18);
     setTimeout(()=>{
-      if(ekran) ekran.classList.add("kapaniyor");
-      setTimeout(()=>{
-        if(ekran) ekran.classList.remove("acik","kapaniyor");
-        if(noktalar) noktalar.classList.remove("basarili");
-      }, 240);
-    }, 260);
+      ekran.classList.add("kapaniyor");
+      setTimeout(()=>{ekran.classList.remove("acik","kapaniyor");noktalar.classList.remove("basarili");},240);
+    },260);
   };
-
-  const pinHataGoster = (msg, sonra)=>{
-    $("#pin-hata").textContent = msg;
+  const pinHataGoster=(msg,sonra)=>{
+    $("#pin-hata").textContent=msg;
     $("#pin-noktalar").classList.add("titre");
-    setTimeout(()=>{ $("#pin-noktalar").classList.remove("titre"); sonra(); }, 420);
+    setTimeout(()=>{$("#pin-noktalar").classList.remove("titre");sonra();},420);
   };
-  const pinTamamlandi = ()=>{
-    if(pinModu==="dogrula"){
-      let pin=null; try{ pin=localStorage.getItem("pin"); }catch(e){}
-      if(pinGirilen===pin){
-        pinGirilen=""; pinModu="olustur1";
-        $("#pin-alt-baslik").textContent = "Yeni 6 haneli PIN'ini oluştur";
-        $("#pin-hata").textContent = ""; pinNoktalariCiz();
-      }else{
-        pinHataGoster("PIN yanlış, tekrar dene", ()=>{ pinGirilen=""; pinNoktalariCiz(); });
+  const pinTamamlandi=async()=>{
+    if(pinIslemde || pinModu==="bekle") return;
+    pinIslemde=true;
+    try{
+      if(pinModu==="dogrula" || pinModu==="gir"){
+        const dogru=await pinDogruMu(pinGirilen);
+        if(dogru){
+          if(pinModu==="gir") pinBasariKapat();
+          else{
+            pinGirilen="";pinModu="olustur1";
+            $("#pin-alt-baslik").textContent="Yeni 6 haneli PIN'ini oluştur";
+            $("#pin-hata").textContent="";pinNoktalariCiz();
+          }
+        }else{
+          pinHataGoster("PIN yanlış, tekrar dene",()=>{pinGirilen="";pinNoktalariCiz();});
+        }
+      }else if(pinModu==="olustur1"){
+        pinIlkGiris=pinGirilen;pinGirilen="";pinModu="olustur2";
+        $("#pin-alt-baslik").textContent="Onaylamak için PIN'ini tekrar gir";
+        pinNoktalariCiz();
+      }else if(pinModu==="olustur2"){
+        if(pinGirilen===pinIlkGiris){
+          const kayit={...await pinYeniKayit(pinGirilen),pending:true};
+          pinKasasiKaydi=kayit;pinVeriKaydet(kayit);
+          pinBulutaYaz(kayit);
+          pinGirilen="";pinIlkGiris="";
+          toast(pinDegistiriliyor?"🔒 Yeni PIN cihazda korundu; buluta eşitleniyor":"🔒 PIN oluşturuldu; buluta eşitleniyor");
+          pinBasariKapat();
+        }else{
+          pinHataGoster("PIN'ler eşleşmedi, baştan dene",()=>{
+            pinGirilen="";pinIlkGiris="";pinModu="olustur1";
+            $("#pin-alt-baslik").textContent="Devam etmek için 6 haneli bir PIN oluştur";
+            pinNoktalariCiz();
+          });
+        }
       }
-    }else if(pinModu==="gir"){
-      let pin=null; try{ pin=localStorage.getItem("pin"); }catch(e){}
-      if(pinGirilen===pin){
-        pinBasariKapat();
-      }else{
-        pinHataGoster("PIN yanlış, tekrar dene", ()=>{ pinGirilen=""; pinNoktalariCiz(); });
-      }
-    }else if(pinModu==="olustur1"){
-      pinIlkGiris = pinGirilen; pinGirilen = ""; pinModu = "olustur2";
-      $("#pin-alt-baslik").textContent = "Onaylamak için PIN'ini tekrar gir";
-      pinNoktalariCiz();
-    }else if(pinModu==="olustur2"){
-      if(pinGirilen===pinIlkGiris){
-        try{ localStorage.setItem("pin", pinGirilen); }catch(e){ toast("Bu tarayıcıda kaydedilemedi"); }
-        toast(pinDegistiriliyor ? "🔒 PIN değiştirildi" : "🔒 PIN oluşturuldu");
-        pinBasariKapat();
-      }else{
-        pinHataGoster("PIN'ler eşleşmedi, baştan dene", ()=>{
-          pinGirilen=""; pinIlkGiris=""; pinModu="olustur1";
-          $("#pin-alt-baslik").textContent = "Devam etmek için 6 haneli bir PIN oluştur";
-          pinNoktalariCiz();
-        });
-      }
-    }
+    }catch(e){
+      $("#pin-hata").textContent=e.message||"PIN işlemi başarısız; hiçbir kayıt silinmedi";
+      pinGirilen="";pinNoktalariCiz();
+    }finally{pinIslemde=false;}
   };
   $$(".pin-tus-takimi button[data-tus]").forEach(b=>{
     b.addEventListener("click", ()=>{
-      if(pinGirilen.length>=6) return;
+      if(pinModu==="bekle" || pinIslemde || pinGirilen.length>=6) return;
       pinGirilen += b.dataset.tus;
       pinNoktalariCiz();
       if(pinGirilen.length===6) setTimeout(pinTamamlandi, 150);
     });
   });
   $("#pin-sil").addEventListener("click", ()=>{ pinGirilen = pinGirilen.slice(0,-1); pinNoktalariCiz(); });
-  $("#btn-pin-degistir").addEventListener("click", ()=> pinEkraniHazirla(true));
+  $("#btn-pin-degistir").addEventListener("click", ()=> window.pinEkraniHazirla(true));
   /* GÜVENLİK: PIN ekranındaki avatardan fotoğraf değiştirmeyi BİLEREK
      kaldırdık — kullanıcı bildirdi: telefonu ele geçiren biri (PIN'i
      bilmese bile) kilidi hiç açmadan profil fotoğrafını değiştirebiliyordu,
@@ -10654,16 +10777,40 @@ document.addEventListener("DOMContentLoaded", ()=>{
   (async ()=>{
     if(await biyoPlatformVarMi()) $("#btn-biyometrik-ac").classList.remove("gizli");
   })();
-  $("#btn-pin-unuttum").addEventListener("click", ()=>{
-    /* "Site verilerini temizle" gibi ağır/mantıksız bir çözüm yerine: hesap
-       şifresi zaten kimlik kanıtı olduğundan, çıkış yapıp e-posta+şifreyle
-       tekrar giriş yapması isteniyor — bu sırada PIN sıfırlanıyor, tekrar
-       girişte yeni bir PIN oluşturması isteniyor. Diğer hiçbir verisi
-       (puantaj, ödeme, ayar vs.) silinmiyor, hepsi bulutta zaten güvende. */
-    if(!confirm("PIN'in sıfırlanacak. Çıkış yapıp e-posta/şifrenle tekrar giriş yapman gerekecek — sonra yeni bir PIN oluşturursun. Diğer hiçbir verin silinmiyor. Devam edilsin mi?")) return;
-    try{ localStorage.removeItem("pin"); }catch(e){}
-    $("#pin-ekran").classList.remove("acik");
-    auth.signOut();
+  /* PIN unutulunca yalnızca e-posta ile oturum açmış olmak YETERLİ DEĞİL:
+     hesap parolasını yeniden doğruladıktan sonra SADECE PIN kasası sıfırlanır.
+     Puantaj, ödeme, PDF, profil ve diğer tüm koleksiyonlar aynen kalır. */
+  $("#btn-pin-unuttum").addEventListener("click",()=>{
+    $("#pin-kurtarma").classList.remove("gizli");
+    $("#pin-kurtarma-sifre").value="";
+    $("#pin-kurtarma-hata").textContent="";
+    $("#pin-kurtarma-sifre").focus();
+  });
+  $("#pin-kurtarma-vazgec").addEventListener("click",()=>{
+    $("#pin-kurtarma").classList.add("gizli");$("#pin-kurtarma-sifre").value="";
+  });
+  $("#pin-kurtarma-form").addEventListener("submit",async e=>{
+    e.preventDefault();
+    const sifre=$("#pin-kurtarma-sifre").value;
+    const btn=$("#pin-kurtarma-onay");
+    if(!kullanici?.email || !sifre){$("#pin-kurtarma-hata").textContent="E-posta hesabının parolasını gir.";return;}
+    btn.disabled=true;$("#pin-kurtarma-hata").textContent="Parola doğrulanıyor…";
+    const uid=kullanici.uid;
+    try{
+      const credential=firebase.auth.EmailAuthProvider.credential(kullanici.email,sifre);
+      await kullanici.reauthenticateWithCredential(credential);
+      await db.collection("pinKasasi").doc(uid).delete();
+      if(!kullanici || kullanici.uid!==uid) return;
+      try{localStorage.removeItem(pinAnahtari());localStorage.removeItem("pin");}catch(e){}
+      pinKasasiKaydi=null;
+      $("#pin-kurtarma").classList.add("gizli");$("#pin-kurtarma-sifre").value="";
+      toast("🔒 PIN sıfırlandı; yeni PIN oluşturabilirsin");
+      window.pinEkraniHazirla();
+    }catch(e){
+      $("#pin-kurtarma-hata").textContent=e.code==="auth/wrong-password"||e.code==="auth/invalid-credential"?
+        "Parola yanlış. PIN veya puantaj verileri değiştirilmedi.":
+        "İşlem tamamlanamadı. İnterneti ve Firebase PIN kurallarını kontrol et.";
+    }finally{btn.disabled=false;}
   });
 
   /* ---- Cüzdan tarihi varsayılanı ---- */
@@ -12200,7 +12347,7 @@ async function taniCalistir(){
     }
     /* DÜZELTME: anahtar "pinKod" değil "pin" (bkz. localStorage.setItem("pin", …)).
        Yanlış anahtar yüzünden PIN kurulu olduğu hâlde "KURULU DEĞİL" deniyordu. */
-    let pin=false; try{ pin = !!localStorage.getItem("pin"); }catch(e){}
+    let pin=!!pinKasasiKaydi; try{ pin = pin || !!localStorage.getItem("pin") || !!pinVeriOku(); }catch(e){}
     taniYaz(pin?"ok":"uyari","PIN kilidi", pin?"kurulu":"KURULU DEĞİL — telefonu alan verilerini görür");
     try{
       const t=Date.now(); await taniSureli(kokRef().get(), 10);
@@ -12838,5 +12985,126 @@ function taniRaporMetni(){
     "".padEnd(52,"=") + "\n" +
     taniSatirlar.map(s=> sim[s.durum] + " " + s.baslik + (s.detay ? "\n    " + s.detay : "")).join("\n");
 }
+
+
+/* ═══════════════════ 0.1.4.5 — BULUT BAĞLANTI DURUMU ═══════════════════
+   Bu eklenti yalnızca hesap belgesini OKUR. Firestore şeması, puantaj,
+   ödeme, PIN veya PDF hesaplama/işlem kodlarına dokunmaz.
+   fromCache=false yalnızca izlenen HESAP belgesini doğrular; bütün alt
+   koleksiyonların senkronize olduğu anlamına gelmez. Bu yüzden arayüzde
+   tüm kayıtlar için hiçbir zaman "tamamen eşitlendi" mesajı gösterilmez.
+   JSON yedekleri otomatik yüklenmez, üzerine yazılmaz veya silinmez.
+*/
+function bulutDurumBaslat(){
+  const ana = document.getElementById("bulut-durum");
+  if(!ana || !auth || !db) return;
+  const bas = document.getElementById("bulut-durum-baslik");
+  const alt = document.getElementById("bulut-durum-alt");
+  const ayrinti = document.getElementById("bulut-ayrinti");
+  const ac = document.getElementById("bulut-ayrinti-ac");
+  const kontrol = document.getElementById("bulut-kontrol");
+  const yedekOzet = document.getElementById("bulut-yedek-ozet");
+  const yedekBilgi = document.getElementById("yedek-durum-bilgi");
+  let abonelik = null;
+  let etkinUid = null;
+  let istekSirasi = 0;
+  function durum(tur, b, d){
+    ana.dataset.durum = tur;
+    if(bas) bas.textContent = b;
+    if(alt) alt.textContent = d;
+  }
+  function yedekDurumunuGoster(){
+    let son = 0;
+    try{ son = Number(localStorage.getItem("sonYedekTarihi") || localStorage.getItem("yedekZaman") || 0); }catch(_){ }
+    const dogru = son>0 && son<=Date.now()+86400000 && Number.isFinite(son);
+    const gun = dogru ? Math.max(0,Math.floor((Date.now()-son)/86400000)) : -1;
+    const metin = gun<0
+      ? "Bu cihazda JSON yedeği kaydı bulunamadı. Yedeklemeye giderek bir kopya indirebilirsin."
+      : gun===0 ? "Bu cihazda bugün JSON yedeği indirildi. Fotoğraf ekleri bu yedeğe dahil değildir."
+      : "Bu cihazda son JSON yedeği " + gun + " gün önce indirildi. Fotoğraf ekleri dahil değildir.";
+    if(yedekOzet) yedekOzet.textContent = metin;
+    if(yedekBilgi) yedekBilgi.textContent = metin + (gun>=30 || gun<0 ? " · Yeni bir yedek önerilir." : "");
+    if(yedekBilgi) yedekBilgi.dataset.eski = (gun>=30 || gun<0) ? "1" : "0";
+  }
+  function durumCevrimdisi(){
+    durum("cevrimdisi","Çevrimdışı mod","Sunucu doğrulanamadı; bekleyen kayıtlar olabilir.");
+  }
+  function dinleyiciyiDurdur(){
+    istekSirasi++;
+    if(abonelik){ try{ abonelik(); }catch(_){ } abonelik=null; }
+  }
+  ac.addEventListener("click", ()=>{
+    const acik = !ayrinti.hidden;
+    ayrinti.hidden = acik;
+    ac.setAttribute("aria-expanded",String(!acik));
+    yedekDurumunuGoster();
+  });
+  const yedekAc = document.getElementById("bulut-yedek-ac");
+  if(yedekAc) yedekAc.addEventListener("click",()=>{
+    const ayarlar = document.querySelector('.cekmece button[data-goruntu="ayarlar"]')
+      || document.querySelector('button[data-goruntu="ayarlar"]');
+    if(ayarlar) ayarlar.click();
+    else toast("Menüden Ayarlar → Yedekleme bölümünü açabilirsin.");
+  });
+  const btnYedek = document.getElementById("btn-yedek");
+  if(btnYedek) btnYedek.addEventListener("click",()=>{
+    /* Mevcut indirme mantığına müdahale edilmez. İşlem bitmiş olabilir
+       veya sunucu hatası almış olabilir: yalnızca saklanan tarihi okuruz. */
+    setTimeout(yedekDurumunuGoster,2000);
+  });
+  async function sunucuDenetle(){
+    const uid=auth.currentUser && auth.currentUser.uid;
+    if(!uid || uid!==etkinUid){ durum("uyari","Hesap bekleniyor","Giriş yaptıktan sonra tekrar dene."); return; }
+    if(!navigator.onLine){ durumCevrimdisi(); return; }
+    const sirasi=++istekSirasi;
+    durum("bekliyor","Bağlantı deneniyor","Hesap belgesi Firebase sunucusundan okunuyor…");
+    if(kontrol) kontrol.disabled=true;
+    try{
+      const belge=await db.collection("kullanicilar").doc(uid).get({source:"server"});
+      if(sirasi!==istekSirasi || !auth.currentUser || auth.currentUser.uid!==uid) return;
+      if(belge.metadata && belge.metadata.fromCache){
+        durum("uyari","Önbellek yanıtı","Sunucudan güncel yanıt alınamadı.");
+      }else{
+        durum("bagli","Hesap belgesi doğrulandı","Firebase sunucusu yanıt verdi; diğer kayıtlar ayrıca eşitlenir.");
+      }
+    }catch(e){
+      if(sirasi!==istekSirasi) return;
+      durum("uyari","Bulut doğrulanamadı","Oturumu, interneti ve Firebase erişimini kontrol et.");
+    }finally{
+      if(kontrol) kontrol.disabled=false;
+    }
+  }
+  if(kontrol) kontrol.addEventListener("click",sunucuDenetle);
+  auth.onAuthStateChanged(u=>{
+    dinleyiciyiDurdur();
+    etkinUid = u ? u.uid : null;
+    yedekDurumunuGoster();
+    if(!u){ durum("bekliyor","Giriş bekleniyor","Firebase oturumu açılınca denetlenir."); return; }
+    if(!navigator.onLine){ durumCevrimdisi(); return; }
+    durum("bekliyor","Bulut durumu kontrol ediliyor","Hesap belgesi bağlantısı izleniyor.");
+    try{
+      const uid = u.uid;
+      abonelik = db.collection("kullanicilar").doc(uid).onSnapshot(
+        {includeMetadataChanges:true},
+        snap=>{
+          if(uid!==etkinUid) return;
+          const m=snap.metadata;
+          if(!navigator.onLine) return durumCevrimdisi();
+          if(!m) return durum("uyari","Bağlantı bilgisi yok","Sunucu durumu henüz belirlenmedi.");
+          if(m.hasPendingWrites) durum("gonderiliyor","Hesap ayarı gönderiliyor","Bu hesap belgesinin değişiklikleri henüz sunucuya ulaşmadı.");
+          else if(m.fromCache) durum("onbellek","Önbellek görüntüleniyor","Hesap belgesi için sunucu yanıtı bekleniyor.");
+          else durum("bagli","Hesap belgesi buluttan okundu","Hesap kaydı doğrulandı; tüm kayıtların eşitlendiği anlamına gelmez.");
+        },
+        ()=>{ if(uid===etkinUid) durum("uyari","Bulut erişimi doğrulanamadı","Hesabın ve bağlantını kontrol et."); }
+      );
+    }catch(_){ durum("uyari","Bulut durumu alınamadı","Kayıtlar üzerinde değişiklik yapılmadı."); }
+  });
+  window.addEventListener("offline", durumCevrimdisi);
+  window.addEventListener("online",()=>{
+    if(etkinUid) durum("bekliyor","Bağlantı yeniden kuruluyor","Sunucu yanıtı bekleniyor; bekleyen yazmalar olabilir.");
+  });
+  yedekDurumunuGoster();
+}
+/* ═══════════════════════════ EKLENTİ SONU ═══════════════════════════ */
 
 })();

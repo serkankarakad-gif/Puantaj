@@ -137,7 +137,20 @@
     <button data-tus="7">7</button><button data-tus="8">8</button><button data-tus="9">9</button>
     <button class="pin-bos"></button><button data-tus="0">0</button><button id="pin-sil" aria-label="Son rakamı sil">⌫</button>
   </div>
+  <div class="pin-kasa-durum" id="pin-kasa-durum" role="status" aria-live="polite">☁️ Firebase PIN kasası kontrol ediliyor…</div>
   <button class="pin-unuttum" id="btn-pin-unuttum">PIN'imi unuttum</button>
+  <div class="gizli pin-kurtarma" id="pin-kurtarma" role="dialog" aria-modal="true" aria-label="PIN kurtarma">
+    <form id="pin-kurtarma-form" class="pin-kurtarma-kart">
+      <div style="font-size:30px">🔐</div>
+      <h2>PIN kurtarma</h2>
+      <p>Yalnızca PIN kilidin sıfırlanacak. Puantaj, avans, belgeler ve diğer kayıtların değişmeyecek.</p>
+      <label for="pin-kurtarma-sifre">Hesabının e-posta parolası</label>
+      <input id="pin-kurtarma-sifre" type="password" autocomplete="current-password" required placeholder="Hesap parolan">
+      <div id="pin-kurtarma-hata" role="alert" class="pin-kurtarma-hata"></div>
+      <button type="submit" class="btn btn-sari" id="pin-kurtarma-onay">Parolamı doğrula, PIN'i sıfırla</button>
+      <button type="button" class="btn btn-cizgili" id="pin-kurtarma-vazgec">Vazgeç</button>
+    </form>
+  </div>
 </div>
 
 <!-- ============ YÜKLENİYOR ============ -->
@@ -206,10 +219,10 @@
      Eskiden yenilikler ana ekranda bir kart olarak duruyordu; kullanıcı
      aşağı kaydırmazsa hiç görmüyordu. Artık güncellemeden sonraki ilk
      açılışta ekranı kaplayarak çıkıyor. -->
-<div id="yenilik-tam" class="gizli">
+<div id="yenilik-tam" class="gizli" role="dialog" aria-modal="true" aria-label="Güncelleme notları">
   <div class="yenilik-ic">
     <div class="yenilik-bas">
-      <div class="yenilik-rozet">GÜNCELLENDİ</div>
+      <div class="yenilik-rozet">✦ GÜNCELLENDİ</div>
       <div class="yenilik-surum" id="yenilik-tam-surum">—</div>
       <h2>Neler değişti?</h2>
     </div>
@@ -336,6 +349,21 @@
         <div class="alt" id="selam-alt">—</div>
         <div class="alt" id="gunun-soz" style="margin-top:6px;color:var(--sari);font-style:italic"></div>
       </div>
+
+      <!-- 0.1.4.5: Salt-okunur bağlantı göstergesi. Kayıt şeması veya hesaplama mantığı değişmez. -->
+      <div id="bulut-durum" class="bulut-durum" role="status" aria-live="polite" data-durum="bekliyor">
+        <span class="bulut-led" aria-hidden="true"></span>
+        <div class="bulut-yazi"><strong id="bulut-durum-baslik">Bulut bağlantısı kontrol ediliyor</strong><small id="bulut-durum-alt">Bu gösterge hesap belgesinin durumunu izler.</small></div>
+        <button type="button" id="bulut-ayrinti-ac" aria-expanded="false" aria-controls="bulut-ayrinti">Detay <span aria-hidden="true">⌄</span></button>
+        <div id="bulut-ayrinti" hidden>
+          <p>Bu bağlantı göstergesi yalnızca hesap belgesinin sunucudan okunup okunamadığını bildirir. <b>Tüm puantaj, ödeme ve fotoğraf kayıtlarının buluta aktarıldığının garantisi değildir.</b></p>
+          <p id="bulut-yedek-ozet">Bu cihazın son JSON yedeği kontrol ediliyor.</p>
+          <div class="bulut-islemler">
+            <button type="button" id="bulut-kontrol" class="btn btn-cizgili">↻ Bağlantıyı denetle</button>
+            <button type="button" id="bulut-yedek-ac" class="btn btn-cizgili">⬇ Yedekleme ayarları</button>
+          </div>
+        </div>
+      </div>
       <div class="banka-kart sirket" id="sirket-kart">
         <div class="kart-ust"><span>🏢 Şirket Hesap Kartı</span><button id="btn-goz" aria-label="Tutarları gizle veya göster" style="color:#fff;font-size:17px">👁️</button></div>
         <div class="bakiye" id="sirket-bakiye">—</div>
@@ -400,13 +428,13 @@
       <div class="kart gizli" id="yenilik-kart" style="border-color:var(--sari)">
         <h2>🎁 Neler yeni?</h2>
         <ul style="padding-left:18px;font-size:13.5px;line-height:1.9">
-          <li><b>📲 WhatsApp açılmıyordu — sebebi bulundu.</b> Paylaşım penceresi açılmazsa yedek olarak bağlantı ekrana yazılıyordu, ama hemen ardından durum kartı <b>aynı yeri eziyordu</b>. Bağlantı bir an görünüp siliniyordu, elin tamamen boş kalıyordu</li>
-          <li><b>Düzeltildi:</b> Artık sıra doğru. Bağlantı kartı en sona yazılıyor ve üzeri örtülmüyor</li>
-          <li><b>Uygulama için ayrı yol eklendi:</b> Bu uygulama tarayıcıda değil Android WebView içinde çalışıyor; orada normal paylaşım çoğu zaman sessizce başarısız oluyor. Artık doğrudan <b>whatsapp://</b> yolu deneniyor. WhatsApp kurulu değilse uygulamadan çıkmıyorsun, bağlantı kartı görünüyor</li>
-          <li><b>🔀 İkinci onay penceresi kaldırıldı.</b> Üst üste iki pencere hem yoruyordu hem de tarayıcının WhatsApp açma iznini düşürüyordu — asıl sorunun bir parçası buydu</li>
-          <li><b>📅 Yerine kalıcı anahtar geldi:</b> Gönder tuşunun altında artık <b>"Sadece bu ay gönderilecek"</b> yazıyor. Bir kere dokunursan <b>"Önceki aylar da eklenecek"</b> oluyor. Bir daha sormuyor</li>
-          <li><b>Varsayılan: sadece seçili ay</b> — hangi ayı seçersen o ayın parası gidiyor</li>
-        </ul>
+          <li><b>☁️ 0.1.4.5 — Bulut durumu paneli.</b> Ana ekranda internet, Firebase hesap belgesi ve önbellek durumu anlaşılır şekilde gösterilir; bütün kayıtların eşitlendiği iddia edilmez.</li>
+          <li><b>🔎 İsteğe bağlı bağlantı testi.</b> Sunucuya gerçek bir salt-okunur sorguyla bağlantını denetleyebilirsin; yeni veri veya kayıt yazılmaz.</li>
+          <li><b>💾 Yedek hatırlatıcısı.</b> Ayarlar bölümünde bu cihazda son indirilen JSON yedeği ve gerektiğinde yedek alma önerisi görünür. Otomatik geri yükleme yapılmaz.</li>
+          <li><b>🌟 Gold Plus görsel düzeni.</b> Kart dokuları, hareketli vurgu, odak halkaları, takvim ve buton geçişleri daha tutarlı hale getirildi.</li>
+          <li><b>📱 Küçük ekran ve erişilebilirlik.</b> 320–430 piksel telefon görünümü, dokunmatik hedefler, düşük hareket ve hafif mod desteklendi.</li>
+          <li><b>🛡️ Kayıt ve hesaplama kuralları aynı.</b> Avans/FIFO, ücret, PDF, Firestore kuralları ve PIN kasası eski sürümle aynıdır; paket yine tam 20 dosyadır.</li>
+</ul>
         <button class="btn btn-cizgili" id="btn-yenilik-kapat">Süper, kapat</button>
       </div>
       <div class="kart gizli" id="ana-hedef-kart">
@@ -1700,13 +1728,14 @@
         <p style="font-size:13px;color:var(--soluk);margin-bottom:12px">Hata mı gördün, fikrin mi var? Direkt geliştiriciye ulaş:</p>
         <a class="btn btn-cizgili" style="display:block;text-align:center;text-decoration:none;margin-bottom:10px" href="https://wa.me/905051252339?text=Puantaj%20Defterim%20hakkında:" target="_blank" rel="noopener noreferrer">💬 WhatsApp'tan yaz</a>
         <a class="btn btn-cizgili" style="display:block;text-align:center;text-decoration:none" href="tel:05051252339">📞 0505 125 23 39</a>
-        <p style="font-size:11px;color:var(--soluk);margin-top:12px;text-align:center">Sürüm: 0.0.1.6 · Serkan Karakaş</p>
+        <p style="font-size:11px;color:var(--soluk);margin-top:12px;text-align:center">Sürüm: 0.1.4.5 · Serkan Karakaş</p>
       </div>
       <div class="kart ayar-kart kapali">
         <h2 class="ayar-bas" role="button" tabindex="0">🔒 PIN kilidi<span class="ayar-ok">▾</span></h2>
         <p style="font-size:13px;color:var(--soluk);margin-bottom:12px;line-height:1.6">
-          Uygulama her açıldığında 6 haneli PIN'ini soruyor — bu artık zorunlu, kapatılamıyor. Telefonunu eline alan yevmiyeni göremesin.
+          Uygulama her açıldığında 6 haneli PIN'ini soruyor — bu artık zorunlu, kapatılamıyor. PIN'in Firebase'deki hesabına özel kasada <strong>salt eklenmiş tek yönlü özetiyle</strong> saklanır; düz metin gönderilmez. Çevrimdışı açılış için cihazda da korumalı bir kopyası tutulur.
         </p>
+        <div class="pin-ayar-bilgi">☁️ PIN kasası: Firebase / hesabına özel kayıt · 0.1.4.2</div>
         <button class="btn btn-cizgili" id="btn-pin-degistir">🔒 PIN'imi değiştir</button>
         <button class="btn btn-cizgili gizli" id="btn-biyometrik-ac" style="margin-top:10px">🫆 Parmak izi/Yüz ile açmayı etkinleştir</button>
         <p style="font-size:11px;color:var(--soluk);margin-top:8px;line-height:1.6">🔒 Parmak izin/yüzün hiçbir zaman bu uygulamaya ya da bir sunucuya gönderilmiyor — eşleştirme tamamen telefonunun kendi güvenli donanımında (Face ID/parmak izi çipi) oluyor, biz sadece "eşleşti" cevabını alıyoruz.</p>
@@ -1716,6 +1745,7 @@
         <p style="font-size:13px;color:var(--soluk);margin-bottom:12px;line-height:1.6">
           Bütün puantaj, ödeme ve ayarlarını tek dosya olarak telefonuna indirir. Ara sıra yedek al, garanti olsun.
         </p>
+        <p id="yedek-durum-bilgi" class="yedek-durum-bilgi" aria-live="polite">Bu cihazdaki son JSON yedek tarihi denetleniyor.</p>
         <button class="btn btn-cizgili" id="btn-yedek">⬇️ Tüm verimi indir (JSON)</button>
         <button class="btn btn-cizgili" id="btn-geri-yukle" style="margin-top:10px">⬆️ Yedekten geri yükle</button>
         <input type="file" id="yedek-dosya" accept=".json,application/json" class="gizli">

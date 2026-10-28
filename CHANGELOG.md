@@ -1,3 +1,44 @@
+# 0.1.4.5 — Gold Plus · Salt-okunur bulut durum paneli (2026-10-28)
+
+- 0.1.4.4 üzerine kuruldu. **Paket hâlâ tam 20 dosya.**
+- Ana ekrana hesap belgesinin Firestore önbellek/pendingWrites/sunucu durumunu gösteren küçük panel eklendi.
+- Panelde **manuel sunucu denetimi** var: yalnızca `kullanicilar/{uid}` belgesini `source: "server"` ile **okur**; başka hiçbir belge yazılmaz veya silinmez.
+- **Önemli sınır:** Hesap belgesinin doğrulanması, tüm puantaj/ödeme/fotoğraf koleksiyonlarının eşitlendiği anlamına gelmez; durum metinleri bu ayrımı açıkça anlatır.
+- Var olan manuel JSON yedek indirimi korunur; bu cihazda son yedek zamanını gösteren **salt-okunur** uyarı eklenmiştir. JSON dışa aktarımında fotoğraf ekleri bulunmaz.
+- Gold kart dokusu ve basit hareketler, dokunma/klavye odakları, küçük ekran ve `prefers-reduced-motion` desteği genişletildi.
+- “GÜNCELLENDİ” ekranı 0.1.4.5 özelliklerini gösterecek şekilde yenilendi.
+- `app.js` hesaplama / puantaj / FIFO / avans / PDF / PIN işlevleri **değiştirilmedi**; yalnızca yeni salt-okunur panel ve sürüm numarası eklendi.
+- `firestore.rules`, `firebase-config.js`, `sabitler.js`, PDF fontları ve `worker.js` ikili olarak aynıdır.
+- Canlı Firebase test edilmedi. Yayın öncesi yedek alınmalı, ardından test hesabında PIN / puantaj / FIFO / PDF doğrulanmalıdır.
+
+---
+
+## 0.1.4.4 — Güncelleme ekranı + 20 dosya (28 Ekim 2026)
+
+- Hakkında ekranındaki eski sürüm etiketi de 0.1.4.4 yapıldı.
+- Güncelleme sonrası bir kez açılan mevcut “GÜNCELLENDİ / Neler değişti?” penceresinin sürüm notları güncellendi; mobil görünümü yenilendi. Önceki sürümden beri görülen kapatma/yerel sürüm kontrol akışı korundu.
+- 24 dosyadan 20 dosyaya indirildi: `0.1.4.2-GUNCELLEME-VE-VERI-GUVENLIGI.md`, `0.1.4.3-GORSEL-GUNCELLEME-VE-TEST.md`, `KOD-STILI.md`, `MALIYET-RAPORU.md` içerikleri hiç atılmadan sırasıyla CHANGELOG, CHANGELOG, CALISMA-PLANI, README belgelerine arşivlendi.
+- app.js'de yalnız sürüm sabiti 0.1.4.4 oldu; sw.js'de yalnız PWA önbelleği sürüm adı değişti. index.html'de sadece güncelleme ekranı/listesi; style.css'de sadece yalıtılmış güncelleme ekranı stilleri düzenlendi.
+- Firebase güvenlik kuralları, Firebase yapılandırması, hesaplamalar, PDF fontları, kullanıcı verileri, diğer işlev dosyaları **değiştirilmedi**.
+- Uygulamanın kullanıcısı bu paket üzerinde canlı Firebase entegrasyonu ve gerçek veriler ile ayrıca test yapmalıdır.
+
+## 0.1.4.3 — Gold Material görsel ve animasyon yenilemesi (28 Ekim 2026)
+
+- Mevcut kullanıcı verileri, Firebase koleksiyon/izin kuralları, PIN güvenliği, puantaj/avans/FIFO hesaplamaları, rapor/PDF işleyişi ve diğer işlevler olduğu gibi bırakıldı.
+- style.css sonuna yalıtılmış 24 başlıklı görsel iyileştirme katmanı eklendi: ana ekran, şirket kartı, özetler, takvim, hafta şeridi, formlar, menüler, alt gezinti, listeler ve PIN ekranı.
+- Açık/AMOLED tema, küçük telefon, hafif mod, hareket azaltma için uyumluluk iyileştirildi.
+- Yalnızca görünür sürüm etiketi 0.1.4.3 yapıldı ve kullanıcı onaylı service worker güncellemesi için önbellek adı yükseltildi.
+- Firestore güvenlik kuralları, firebase-config.js, sabitler.js, PDF fontları, hesaplama mantığı değiştirilmedi.
+- Devam eden kurulumda kullanıcı verisini silen hiçbir migrate/delete işlemi eklenmedi. Çevrimiçi gerçek hesap eşitlemesinin canlı test edildiği iddia edilmez.
+
+## 0.1.4.2 — Premium grafik/animasyon + kullanıcıya özel Firebase PIN kasası
+- 0.1.4.1 kaynak paketten devam edildi. Puantaj, mesai, para, avans, ödeme ve PDF hesaplama işlevlerinin koduna dokunulmadı.
+- Kullanıcıya özel `/pinKasasi/{uid}` Firebase kaydı; rastgele salt ve 210.000 PBKDF2-SHA256 turu; güvenli yerel hash; eski PIN göçü.
+- Yeni hesap-parolası doğrulamalı PIN kurtarma ekranı, bulut senkron durumu.
+- Altın yüzeyler, grafik, takvim, odaklanma ve dokunma efektleri; 6 eksik animasyon tamamlandı; küçük ekran ve azaltılmış hareket desteği.
+- Firestore kurallarına yalnız PIN kasası için ayrı, sadece hesap sahibine açık match eklendi.
+- Geçiş notları: `CHANGELOG.md (0.1.4.2 arşiv bölümü)`.
+
 # Değişiklik Günlüğü (Changelog)
 
 Bu proje [Anlamsal Sürümleme benzeri](VERSIYONLAMA.md) bir dörtlü numara
@@ -1566,7 +1607,7 @@ belge sonradan değişmez kuralı korunuyor.
 
 ## 0.0.0.18 — Firestore maliyet optimizasyonu
 - Liderlik tablosunun N+1 sorgu sorunu (775 okumaya kadar) 5 dakikalık önbellekle giderildi
-- `MALIYET-RAPORU.md` eklendi
+- `README.md (Maliyet Raporu arşivi)` eklendi
 
 ## 0.0.0.17 — Güvenlik (CSP, headers)
 - Content-Security-Policy eklendi (kapsamlı dış bağlantı analiziyle)
@@ -1623,3 +1664,119 @@ belge sonradan değişmez kuralı korunuyor.
 
 ## 0.0.0.2–0.0.0.3 — Güvenlik
 - Kaçışsız (XSS'e açık) kullanıcı verisi gösterimleri düzeltildi (liderlik tablosu, kişi detayı, borç/cüzdan/ekip listeleri)
+
+
+---
+
+## DOSYA ARŞİVİ — 0.1.4.2-GUNCELLEME-VE-VERI-GUVENLIGI.md
+
+# Puantaj Defterim — 0.1.4.2 veri korumalı güncelleme
+
+**Kaynak:** Gönderilen 0.1.4.1 ZIP. **Hedef:** 0.1.4.2.
+
+## Değişmeden kalanlar
+
+- Önceki tüm ekranlar, tuşlar, iş akışları, puantaj/kazanç/mesai/avans/FIFO mantığı, PDF ve rapor kodları olduğu gibi bırakıldı.
+- Firebase kullanıcı kök belgeleri ve mevcut alt koleksiyonları **taşınmadı, silinmedi, yeniden adlandırılmadı**.
+- `sabitler.js`, `firebase-config.js`, `font-liberationsans-*.js` ve diğer kaynaklar **olduğu gibi** korundu.
+- Eski 0.1.4.1 ZIP dosyası bu paketin kaynağıdır; ayrıca saklayın.
+
+## 0.1.4.2 yenilikleri
+
+- Kart ve bakiye yüzeyleri, dokular, altın yansıma, navigasyon kontrastı, düğme derinliği, odak halkaları, takvim vurguları ve grafik çubukları iyileştirildi.
+- Daha önce **boş bırakılmış altı animasyon** tamamlandı: bakiye belirme, PIN fotoğrafında yavaş hareket, PIN ekran açılışı, avatar girişi, başlık girişi, PIN noktalarının tepkisi.
+- PIN ekranı küçük/düşük yükseklikteki telefonlar için uyarlandı; azaltılmış hareket ve hafif mod desteği korunur.
+- PIN hesap bazlı özel Firebase yolunda saklanır: `pinKasasi/{FirebaseAuthUid}`. Verinin tamamı **salt + PBKDF2-SHA256** tek yönlü özeti olarak saklanır. **Açık PIN Firebase'e iletilmez.**
+- Yerel eski altı haneli PIN okunur; eşitleme gerçekleştiğinde eski düz metin kopya temizlenir. Başarısız eşitlemede mevcut PIN/veriler korunur.
+- PIN unutulursa hesap **parolası yeniden doğrulanarak** yalnızca PIN kasası sıfırlanabilir; puantaj veya ödeme kayıtlarına dokunulmaz.
+- Sürüm numarası, çevrimdışı kabuk cache kimliği ve sürüm yenilik ekranı 0.1.4.2'ye çıkarıldı.
+
+## Kurulum: ÖNCE OKU
+
+1. Canlı uygulamadaki **Ayarlar → Yedek al / geri yükle → Tüm verimi indir (JSON)** ile güncel veri yedeğini alın. İndirilen JSON dosyasını güvenli yerde saklayın.
+2. Firebase konsolunda **Firestore Database → Rules** ekranında önce mevcut kurallarınızın bir kopyasını alın. `firestore.rules` dosyasındaki yeni **`/pinKasasi/{uid}`** match bloğunu canlı kurallarınıza ekleyin; mevcut koleksiyon kurallarınızı silmeyin.
+3. **Yeni kuralları yayımlamadan** 0.1.4.2'yi gerçek kullanıcıya açmayın: PIN bulut yazma isteği `permission-denied` ile dönebilir.
+4. Test hesabında: eski PIN açılışı, PIN değişikliği, çıkış-giriş, çevrimdışı açılış, yeni cihazda PIN doğrulama ve PIN kurtarmayı kontrol edin.
+5. Test başarılıysa ZIP içeriğini (klasörün kendisini değil içindeki dosyaları) statik sitenin köküne yükleyin. Firebase projesini veya Firestore veritabanını silmeyin; kullanıcıların tarayıcı verilerini / site verilerini topluca temizlemeyin.
+6. **Üretimde Firebase kurallarını yayınlamak ve gerçek veriyi doğrulamak kullanıcı/hesap sahibi tarafından yapılmalıdır.** Bu paket harici Firebase servisine bağlanarak gerçek yazma işlemi yapmaz.
+
+## Güvenlik sınırı
+
+6 haneli bir PIN düşük entropili olduğu için Firebase Authentication / Firestore kurallarının yerini **tutmaz**. PIN ekranı uygulama içi bir ek kilittir. Mevcut `kullanicilar` alt koleksiyonu kurallarında giriş yapmış bütün kullanıcılar için geniş okuma izni bulunuyor; bu geçmiş davranışı değiştirmemek için dokunulmadı. PIN özeti bu geniş okuma alanına yerleştirilmedi. Gelecekte kişisel finans verilerinin erişim kuralları ayrıca gözden geçirilmelidir.
+
+## Teknik doğrulama
+
+- JS sözdizimi (`node --check`), HTML PIN form ID kontrolü, tüm kaynak dosyaların korunması ve değiştirilmiş dosyaların karşılaştırması yapılır.
+- UI'nin statik PIN önizlemesi 393×852 ve 360×640 ekranlarda görsel olarak incelendi.
+- Gerçek Firebase sunucusu, veri silinmezliği ve canlı oturumlar üzerinden uçtan uca doğrulama **yapılamaz**; canlı uygulamada test gerekir.
+
+
+
+---
+
+## DOSYA ARŞİVİ — 0.1.4.3-GORSEL-GUNCELLEME-VE-TEST.md
+
+# Puantaj Defterim v0.1.4.3 — Görsel Yenileme ve Koruma Raporu
+
+**Temel paket:** 0.1.4.2. Çalışan sürümün üzerine yalıtılmış görsel katman eklendi.
+
+## Neler güncellendi?
+
+1. Üst bar, menü ikonu, başlık ve gölge detayları.
+2. Kart yüzeyi, derinlik, ince yüzey aydınlatması.
+3. Şirket hesap kartında çok katmanlı altın ve koyu metal doku.
+4. Kazanç, bakiye ve özet sayılarında okunurluk.
+5. Takvimde durum renklerini koruyan hücre derinliği, bugün vurgusu.
+6. Haftalık gün kartı dokunuş animasyonu.
+7. İşlem düğmelerinde ışık, kenarlık ve etkileşim animasyonları.
+8. Form alanlarında odak ve erişilebilirlik ipuçları.
+9. Kayıt listelerinde ayraç, rakam ve rozetler.
+10. Ay seçici ve sekme geri bildirimi.
+11. Alt navigasyon çubuğunda koyu cam ve altın tema.
+12. Çekmece menüde okunurluk ve seçili sayfa vurgusu.
+13. Modaller ve alttan açılan pencerelerde yüzey / geçiş iyileştirmesi.
+14. İlerleme çubuklarında hafif derinlik.
+15. Bildirim kutusu ve açılış/pin görsel detayları.
+16. Açık tema / AMOLED tema / dar ekran / kısa ekran uyumu.
+17. Hareket azaltma ve düşük performans (hafif mod) kısıtlamaları.
+
+## Korunanlar — dokunulmadı
+
+- Firebase `firestore.rules`, kullanıcı belgeleri ve koleksiyon yolları.
+- `firebase-config.js`, `sabitler.js`, `worker.js` ve PDF fontları.
+- Avansın önceki aydan kesilmesi ve FIFO kuralları.
+- Yevmiye, mesai, ücret, borç, ekip, masraf, aylık/yıllık rapor hesaplamaları.
+- PDF/PNG çıktılarının oluşturulma fonksiyonları ve veri kaydı.
+- PIN'in önceki sürümde eklenen tek yönlü hash + hesap sahibi Firebase kasası.
+- Service worker'ın kullanıcı onaylı güncelleme ve çevrimdışı davranış yapısı.
+
+## Teknik değişikliklerin tam kapsamı
+
+- `style.css`: sonuna 0.1.4.3 yalnızca görünüm CSS bölümü eklendi.
+- `index.html`: yalnızca `Neler yeni?` listesinin başına sürüm notları eklendi.
+- `app.js`: **yalnızca** kullanıcıya görünen `YENILIK_SURUM` sabiti 0.1.4.2 → 0.1.4.3.
+- `sw.js`: **yalnızca** `KASA` önbellek adı 0.1.4.2 → 0.1.4.3.
+- `README.md`, `CHANGELOG.md`: açıklamalar eklendi.
+- Bu yeni rapor dosyası eklendi.
+
+## Yayın ve geri dönüş
+
+1. Canlı Firestore verilerini güvenli biçimde yedekleyin. ZIP paketindeki eski veriler canlı Firebase verilerini içermez.
+2. Önce test hesabıyla giriş, PIN kilidi, gün ekleme, avans/ödeme, PDF dışa aktarma ve çevrimdışı açılışı deneyin.
+3. Yeni dosyaları mevcut hosting köküne birlikte yükleyin. `firestore.rules` için yeniden publish gerekmez, içeriği değişmedi.
+4. Bir sorun çıkarsa **eski 0.1.4.2 kod dosyalarına** dönün. Firebase verilerini silmeyin, localStorage/IndexedDB/uygulama verilerini temizlemeyin.
+5. Güncelleme uyarısında yenileme kararını kullanıcı verir; onaylı service-worker güncelleme davranışı korunmuştur.
+
+**Sınır:** Statik kod ve tarayıcı mock testleri gerçek Firebase hesabına ve canlı üretim verilerine erişemez. Canlı verilerde çalışmanın tamamını doğrulamaz.
+
+## Bu paket için gerçekleştirilen kontroller
+
+- Karşılaştırma: 0.1.4.2 sürümündeki 23 dosyanın tamamı yerinde; yalnızca 6 dosya değişmiş, açıklama dosyası eklenmiştir.
+- `app.js` tam metin karşılaştırması: **tek fark** görünür sürüm sabiti. Bu nedenle hesaplama, PIN, PDF ve Firebase işleyişinin JS satırları birebir aynıdır.
+- `sw.js` tam metin karşılaştırması: **tek fark** sürüm önbelleği adı. Güncellemeyi kullanıcı onaylar, otomatik zorla yenileme eklenmemiştir.
+- `index.html` karşılaştırması: yalnızca sürüm notları listesine yeni öğeler eklenmiştir; öğe kimlikleri ve UI yapısı aynıdır.
+- `style.css`: eski dosya eksiksiz korunmuş, görsel katman yalnızca sonuna eklenmiştir. CSS ayrıştırma kontrolü ve JavaScript sözdizimi kontrolleri yapılmıştır.
+- Chromium görsel örnek testinde dört mobil ekran genişliği (320/360/393/430 px) ve üç tema (koyu/açık/AMOLED) kontrol edildi; yatay taşma gözlenmedi.
+- Sahte, bellekte tutulan Firebase oturumu ile arayüz başlatma testinde JavaScript `pageerror` alınmadı ve sürüm etiketi 0.1.4.3 görüntülendi.
+- **Sınırlama:** Bu test ortamında güvenli HTTP origin olmadığı için WebCrypto PIN hash akışının uçtan uca testi gerçekleştirilemedi. Canlı Firebase ve gerçek kullanıcı verilerine erişim olmadığı için üretim eşitleme, kayıt/PIN ve PDF kullanım senaryoları cihazda ayrıca test edilmelidir.
+

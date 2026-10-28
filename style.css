@@ -439,7 +439,7 @@ main{padding:14px 14px 150px;max-width:560px;margin:0 auto}
 }
 /* Profesyonel para animasyonları */
 .bakiye,.ozet-kut .deger{font-variant-numeric:tabular-nums}
-@keyframes paraPop{}
+@keyframes paraPop{0%{transform:translateY(5px) scale(.96);opacity:.55}70%{transform:translateY(-1px) scale(1.018);opacity:1}100%{transform:none;opacity:1}}
 .para-pop{display:inline-block;animation:paraPop .35s ease-out}
 @keyframes kartParla{from{transform:translateX(-160%) skewX(-20deg)}to{transform:translateX(320%) skewX(-20deg)}}
 .kart-parla::after{
@@ -644,16 +644,14 @@ html[data-tema="acik"] .alt-nav{background:rgba(255,255,255,.94)}
   content:""; position:absolute; inset:0;
   background:linear-gradient(180deg, rgba(10,11,13,.55) 0%, rgba(10,11,13,.72) 45%, rgba(10,11,13,.94) 100%);
 }
-@keyframes pinFotoYakinlas{ }
+@keyframes pinFotoYakinlas{from{transform:scale(1.01) translate3d(-.5%,0,0)}to{transform:scale(1.085) translate3d(.5%,-1%,0)}}
 #pin-arka-canvas{ position:absolute; inset:0; z-index:0; mix-blend-mode:overlay; opacity:.6; }
 #pin-ekran > *:not(#pin-arka-foto):not(#pin-arka-canvas){ position:relative; z-index:1; }
 #pin-ekran.acik{display:flex; animation:pinEkranGir .45s cubic-bezier(.2,.8,.2,1);}
 #pin-ekran.kapaniyor{opacity:0; transform:scale(1.04);}
-@keyframes pinEkranGir{
-}
+@keyframes pinEkranGir{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
 .pin-ust{display:flex;flex-direction:column;align-items:center;gap:10px; animation:pinAvatarGir .5s .1s cubic-bezier(.2,.8,.2,1) both;}
-@keyframes pinAvatarGir{
-}
+@keyframes pinAvatarGir{from{opacity:0;transform:translateY(-14px) scale(.94)}to{opacity:1;transform:none}}
 .pin-avatar-sarmal{position:relative;width:100px;height:100px;}
 .pin-avatar{
   width:100px;height:100px;border-radius:50%;background:var(--sari);color:var(--asfalt);
@@ -668,15 +666,14 @@ html[data-tema="acik"] .alt-nav{background:rgba(255,255,255,.94)}
 .pin-selam{font-size:14px;color:var(--soluk);font-weight:600;margin-top:6px}
 .pin-ad{font-size:21px;font-weight:800;color:var(--metin);margin-top:-6px}
 .pin-alt-baslik{font-size:13px;color:var(--soluk);margin-top:26px;text-align:center;font-weight:500; animation:pinSolgunGir .5s .18s ease both;}
-@keyframes pinSolgunGir{ }
+@keyframes pinSolgunGir{from{opacity:0;transform:translateY(9px)}to{opacity:1;transform:none}}
 .pin-noktalar{display:flex;gap:16px;margin-top:22px}
 .pin-noktalar span{
   width:16px;height:16px;border-radius:50%;border:2px solid var(--cizgi);background:transparent;
   transition:background .15s, border-color .15s, transform .32s cubic-bezier(.34,1.56,.64,1);
 }
 .pin-noktalar span.dolu{background:var(--sari);border-color:var(--sari); animation:pinNoktaSek .32s cubic-bezier(.34,1.56,.64,1);}
-@keyframes pinNoktaSek{
-}
+@keyframes pinNoktaSek{0%{transform:scale(.65)}60%{transform:scale(1.2)}100%{transform:scale(1)}}
 .pin-noktalar.titre{animation:pinTitre .45s cubic-bezier(.36,.07,.19,.97);}
 .pin-noktalar.titre span.dolu{background:#FF5A4E; border-color:#FF5A4E;}
 @keyframes pinTitre{
@@ -3146,3 +3143,552 @@ html[data-olcek="normal"] .topbar h1{ font-size:18.5px }
   html[data-olcek] select,
   html[data-olcek] textarea{ font-size:16px }
 }
+
+
+/* ════════════════════════════════════════════════════════════════════
+   0.1.4.2 · PREMIUM MOTION / GRAFİK KALİTE PAKETİ
+   Görünüm ve animasyonlar yalnızca CSS; hesaplama ve veri kuralları AYNI.
+   GPU'da transform/opacity, kullanıcı azaltılmış hareket tercihi korunur.
+   ════════════════════════════════════════════════════════════════════ */
+:root{--vip-cizgi:rgba(255,207,89,.10);--vip-parilti:rgba(255,196,0,.13)}
+body{
+  -webkit-font-smoothing:antialiased;
+  background-image:radial-gradient(ellipse at 85% -14%,rgba(231,177,41,.050),transparent 55%),
+                   radial-gradient(ellipse at 0% 90%,rgba(74,90,117,.055),transparent 65%);
+  background-attachment:fixed;
+}
+html[data-tema="acik"] body, body[data-tema="amoled"]{background-image:none}
+/* Kartlardaki fiziksel malzeme hissi: ince yüzey ışığı, net kenar ve derinlik */
+.kart{
+  background-image:linear-gradient(154deg,rgba(255,255,255,.027),transparent 42%);
+  border-color:color-mix(in srgb,var(--cizgi),var(--sari) 7%);
+  box-shadow:0 4px 18px rgba(0,0,0,.14),inset 0 1px rgba(255,255,255,.033);
+  transition:border-color .19s ease,box-shadow .19s ease;
+}
+html[data-tema="acik"] .kart{
+  background-image:linear-gradient(157deg,rgba(255,255,255,.80),transparent 55%);
+  box-shadow:0 3px 14px rgba(39,42,48,.07),0 1px 3px rgba(39,42,48,.04);
+}
+.kart h2{letter-spacing:.016em;line-height:1.18}
+.kart h2,.ayar-bas,.ekle-bas{font-kerning:normal}
+/* Büyük para sayıları altın yansımalı, sabit rakam genişliğinde */
+.banka-kart.sirket{
+  background:radial-gradient(ellipse at 90% 0%,rgba(245,202,93,.20),transparent 52%),
+             radial-gradient(ellipse at -10% 125%,rgba(88,112,159,.20),transparent 49%),
+             linear-gradient(125deg,#151820 0%,#242632 57%,#342B16 100%);
+  border:1px solid rgba(255,221,132,.22);
+  box-shadow:0 12px 32px rgba(0,0,0,.27),inset 0 1px rgba(255,255,255,.12),inset 0 -1px rgba(0,0,0,.16);
+}
+.banka-kart.sirket .bakiye{text-shadow:0 5px 24px rgba(248,193,45,.12)}
+.banka-kart::after{background:radial-gradient(circle,rgba(255,255,255,.075),transparent 74%)}
+.ozet-kut .deger,.banka-kart .bakiye,#gun-kazanc-tutar{font-feature-settings:"tnum" 1;letter-spacing:-.018em}
+/* Arayüz etkileşimleri: eski düğme davranışları korunarak yansımalar eklendi */
+.btn-sari{
+  background:linear-gradient(157deg,color-mix(in srgb,var(--sari),white 10%),var(--sari) 46%,var(--sari-koyu));
+  box-shadow:0 4px 0 var(--sari-koyu),inset 0 1px rgba(255,255,255,.28),0 6px 15px rgba(0,0,0,.13);
+}
+.btn-sari:active{box-shadow:0 1px 0 var(--sari-koyu),inset 0 1px rgba(255,255,255,.16)}
+.btn-cizgili{background-image:linear-gradient(157deg,rgba(255,255,255,.038),transparent 70%)}
+.btn:disabled{filter:saturate(.55);cursor:wait}
+.alan input,.alan select,.alan textarea{
+  transition:border-color .18s ease,background-color .18s ease,box-shadow .18s ease;
+  box-shadow:inset 0 1px 3px rgba(0,0,0,.07);
+}
+.alan input:focus,.alan select:focus,.alan textarea:focus{
+  box-shadow:0 0 0 3px color-mix(in srgb,var(--sari),transparent 84%),inset 0 1px 2px rgba(0,0,0,.07);
+}
+/* Şeffaf üst/alt navigasyonun kenarlarını daha keskin göster */
+.topbar{box-shadow:0 7px 22px rgba(0,0,0,.13),0 1px 0 rgba(255,255,255,.025)}
+.alt-nav{
+  border-top-color:color-mix(in srgb,var(--cizgi),var(--sari) 16%);
+  box-shadow:0 -8px 26px rgba(0,0,0,.18),inset 0 1px rgba(255,255,255,.055);
+}
+.alt-nav button.aktif .ikon,.alt-nav button.aktif>svg{filter:drop-shadow(0 0 6px var(--vip-parilti))}
+.alt-nav button:not(.nav-arti):active{transform:scale(.94)}
+.ay-bar button{transition:transform .14s ease,border-color .2s ease,background .2s ease}
+.ay-bar button:active{transform:scale(.91);border-color:var(--sari)}
+.ay-bar .ay-ad{letter-spacing:.03em;text-shadow:0 2px 14px var(--vip-parilti)}
+/* Takvim vurgusu — günlerin renk anlamı ve data-id aynen kalır */
+.takvim .hucre{transition:transform .14s ease,border-color .2s ease,box-shadow .2s ease}
+.takvim .hucre:active{transform:scale(.95)}
+.takvim .hucre.bugun{box-shadow:0 0 0 1px color-mix(in srgb,var(--sari),transparent 30%),0 4px 18px var(--vip-parilti)}
+/* Progress, grafik ve liste hareketleri */
+.hedef-bar .dolu,.rz-dolu,.sk-bar i{background-image:linear-gradient(90deg,var(--sari-koyu),var(--sari),color-mix(in srgb,var(--sari),white 16%));background-size:170% 100%;transition:width .5s cubic-bezier(.2,.8,.2,1)}
+.grafik .cubuk{box-shadow:inset 0 1px rgba(255,255,255,.18),0 0 14px var(--vip-parilti)}
+.sekmeler button,.cip-satir button{transition:background .18s ease,transform .15s ease,color .18s ease}
+.sekmeler button:active,.cip-satir button:active{transform:scale(.96)}
+/* Açılış ve PIN doku kalitesi */
+#acilis{background:radial-gradient(ellipse at 50% 36%,#27220f,#15171d 45%,#0c0d12 100%)}
+#acilis .logo{box-shadow:0 16px 50px rgba(245,182,25,.22),inset 0 2px rgba(255,255,255,.28);border:1px solid rgba(255,246,204,.25)}
+#acilis h1{filter:drop-shadow(0 6px 24px rgba(255,197,30,.17))}
+#pin-ekran{--metin:#f5f5f6;--soluk:#b2b1b3;--kart:#171a22;--cizgi:#45434a;--sari:#f8c54e;--sari-koyu:#bf8a23;color:#f5f5f6;background:#090a0e}
+#pin-arka-foto:after{
+  background:radial-gradient(ellipse at 50% 13%,rgba(213,161,40,.11),transparent 58%),
+    linear-gradient(180deg,rgba(8,9,13,.58) 0%,rgba(8,9,13,.81) 51%,rgba(7,8,11,.97) 100%);
+}
+#pin-arka-canvas{opacity:.36}
+.pin-avatar-sarmal{filter:drop-shadow(0 12px 20px rgba(0,0,0,.33))}
+.pin-avatar{border:3px solid rgba(245,203,101,.42);box-shadow:0 0 0 7px rgba(251,204,84,.06)}
+.pin-ad{color:#fff;letter-spacing:.012em;text-shadow:0 2px 16px rgba(0,0,0,.3)}
+.pin-noktalar span{border-color:rgba(237,222,187,.38);box-shadow:inset 0 1px 3px rgba(0,0,0,.12)}
+.pin-noktalar span.dolu{box-shadow:0 0 13px rgba(255,199,67,.38)}
+.pin-tus-takimi{border-color:rgba(255,222,150,.13);box-shadow:inset 0 1px rgba(255,255,255,.055),0 10px 34px rgba(0,0,0,.15)}
+.pin-tus-takimi button:not(.pin-bos){background:radial-gradient(circle at 35% 20%,rgba(255,255,255,.095),rgba(255,255,255,.033) 78%);border-color:rgba(255,255,255,.11);box-shadow:inset 0 1px rgba(255,255,255,.095),0 3px 8px rgba(0,0,0,.1)}
+.pin-tus-takimi button:not(.pin-bos):active{background:rgba(255,196,0,.20);border-color:rgba(255,214,105,.55)}
+.pin-kasa-durum{font-size:11.5px;line-height:1.4;color:rgba(242,237,216,.78);margin-top:12px;text-align:center;max-width:310px;min-height:16px}
+.pin-kasa-durum[data-durum="ok"]{color:#8be2b2}
+.pin-kasa-durum[data-durum="uyari"]{color:#ffd28c}
+.pin-ayar-bilgi{font-size:11.8px;color:var(--soluk);background:var(--girdi);border:1px solid var(--cizgi);padding:10px 12px;border-radius:10px;margin-bottom:11px;line-height:1.5}
+/* Kurtarma formu yalnızca kimlik yeniden doğrulanırsa PIN kasasını sıfırlar. */
+#pin-ekran .pin-kurtarma{
+  position:fixed!important;inset:0!important;z-index:20!important;
+  background:rgba(5,7,11,.92);align-items:center;justify-content:center;
+  padding:18px;overflow-y:auto;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);
+}
+#pin-ekran .pin-kurtarma:not(.gizli){display:flex}
+.pin-kurtarma-kart{width:min(100%,390px);padding:25px 20px;border:1px solid rgba(255,212,121,.22);border-radius:22px;background:linear-gradient(145deg,#242731,#12151b);box-shadow:0 18px 60px rgba(0,0,0,.52);display:flex;flex-direction:column;gap:13px;animation:pinAvatarGir .25s ease both}
+.pin-kurtarma-kart h2{color:#f6d37b;font-size:24px}
+.pin-kurtarma-kart p{font-size:13px;line-height:1.55;color:#cdccd1}
+.pin-kurtarma-kart label{font-size:12px;color:#f1e4c2}
+.pin-kurtarma-kart input{width:100%;font-size:16px;color:#fff;padding:14px;border-radius:11px;border:1px solid #60636f;background:#101218;outline:none}
+.pin-kurtarma-kart input:focus{border-color:#e8bb4e}
+.pin-kurtarma-hata{color:#ffd0be;font-size:12px;min-height:13px}
+.pin-kurtarma-kart .btn{font-size:14px}
+/* 5-6 inç telefonlarda PIN tuşları görünür kalsın. */
+#pin-ekran{padding-top:max(34px,env(safe-area-inset-top));padding-bottom:max(12px,env(safe-area-inset-bottom))}
+@media(max-height:780px){
+ #pin-ekran{padding-top:19px}
+ .pin-avatar,.pin-avatar-sarmal{width:78px;height:78px}
+ .pin-alt-baslik{margin-top:12px}
+ .pin-noktalar{margin-top:10px;gap:12px}
+ .pin-tus-takimi{margin-top:12px;gap:10px;padding:12px;border-radius:20px;grid-template-columns:repeat(3,64px)}
+ .pin-tus-takimi button{width:64px;height:64px}
+ .pin-unuttum{padding-top:10px}
+}
+@media(max-height:650px){
+ #pin-ekran{overflow-y:auto;justify-content:flex-start}
+ .pin-tus-takimi{grid-template-columns:repeat(3,54px);gap:8px;padding:9px}
+ .pin-tus-takimi button{width:54px;height:54px;font-size:23px}
+ .pin-avatar,.pin-avatar-sarmal{width:59px;height:59px}
+ .pin-ust{gap:4px}
+ .pin-selam{margin-top:0}
+ .pin-ad{font-size:18px}
+ .pin-hata{margin-top:5px}
+ .pin-unuttum{margin-top:3px}
+}
+/* Görsel özellikler hareket azaltma ve hafif modda pahalı animasyon üretmez. */
+html[data-hafif="1"] .kart{background-image:none;box-shadow:0 1px 3px rgba(0,0,0,.16)}
+html[data-hafif="1"] #pin-arka-foto{animation:none}
+html[data-hafif="1"] .pin-tus-takimi{box-shadow:none;backdrop-filter:none;-webkit-backdrop-filter:none}
+@media(prefers-reduced-motion:reduce){
+ #pin-arka-foto,.pin-avatar,.pin-tus-takimi,.pin-kurtarma-kart,.para-pop{animation:none!important}
+ .kart,.takvim .hucre,.alt-nav button,.ay-bar button{transition:none!important}
+}
+
+
+/* ========================================================================
+   PUANTAJ DEFTERİM v0.1.4.3 — GOLD MATERIAL / MOTION REFINEMENT
+   Bu bölüm SADECE görünüme aittir; kayıt, PIN, PDF, FIFO ve Firebase kodu yok.
+   Ana kuralların üstüne eklenen geri alınabilir bir stil katmanı.
+   Dokunmatik ve küçük ekran, yüksek kontrast, açık/AMOLED tema,
+   düşük performans ve azaltılmış hareket ayrı ayrı gözetilmiştir.
+   ======================================================================== */
+
+/* 01. Daha dengeli okunabilirlik ve metin işleme */
+body{font-optical-sizing:auto;text-rendering:optimizeLegibility}
+.bakiye,.ozet-kut .deger,.liste .tutar,.sayac input,.sk-tutar,
+#krono-yazi,#sirket-bakiye{font-variant-numeric:tabular-nums lining-nums}
+main > section .kart p{line-height:1.58}
+
+/* 02. Üst bar: ince altın işçilik, gölge ve menü düğmesinin gerçek dokusu */
+header.topbar{
+  background:linear-gradient(154deg,#17191f,#101116 58%,#191918);
+  border-bottom:1px solid rgba(247,206,110,.17);
+  box-shadow:0 5px 22px rgba(0,0,0,.27),inset 0 1px rgba(255,255,255,.035);
+}
+.topbar-inner{min-height:62px}
+.topbar h1{letter-spacing:.045em;filter:drop-shadow(0 2px 10px rgba(255,199,67,.10))}
+.topbar h1 small{letter-spacing:.005em}
+.hamburger{
+  border:1px solid rgba(248,214,145,.13);
+  background:linear-gradient(144deg,#2c2d35,#1a1b20);
+  box-shadow:inset 0 1px rgba(255,255,255,.06),0 3px 12px rgba(0,0,0,.15);
+  transition:border-color .18s ease,transform .18s ease;
+}
+.hamburger:active{transform:scale(.94);border-color:rgba(248,214,145,.42)}
+
+/* 03. Ekran açılışlarında yalnız opaklık animasyonu; konum değişikliği yok.
+   Böylece içindeki fixed konumlu diyalogların koordinatı değişmez. */
+@keyframes pd43BolumGiris{from{opacity:.70}to{opacity:1}}
+main > section:not(.gizli){animation:pd43BolumGiris .23s ease-out both}
+
+/* 04. Ana kartların premium ama sade kaplaması */
+main > section .kart{
+  border-radius:17px;
+  background-image:linear-gradient(141deg,rgba(255,255,255,.049),transparent 41%),
+                   linear-gradient(90deg,rgba(255,202,86,.015),transparent 55%);
+  border-color:rgba(197,185,156,.14);
+  box-shadow:0 7px 24px rgba(1,3,8,.18),0 1px 2px rgba(0,0,0,.11),
+             inset 0 1px rgba(255,255,255,.048);
+  transition:box-shadow .23s ease,border-color .23s ease;
+}
+main > section .kart h2{font-weight:800;letter-spacing:.018em;border-left-width:3px}
+@media(hover:hover) and (pointer:fine){
+  main > section .kart:hover{border-color:rgba(238,187,73,.26);box-shadow:0 10px 25px rgba(0,0,0,.24),inset 0 1px rgba(255,255,255,.04)}
+}
+
+/* 05. Şirket ana kartı: koyu metal yüzey ve sıcak aydınlatma */
+#goruntu-ana #sirket-kart,
+#ay-detay-modal .banka-kart.sirket{
+  background:radial-gradient(ellipse at 80% -12%,rgba(252,221,132,.27),transparent 52%),
+             radial-gradient(ellipse at 0% 107%,rgba(82,106,154,.14),transparent 59%),
+             linear-gradient(128deg,#171922 0%,#22232b 49%,#322916 100%);
+  border:1px solid rgba(249,216,127,.32);
+  box-shadow:0 14px 39px rgba(2,4,10,.36),0 2px 7px rgba(0,0,0,.15),
+             inset 0 1px rgba(255,255,255,.10),inset 0 -1px rgba(0,0,0,.25);
+}
+#goruntu-ana #sirket-kart::before,
+#ay-detay-modal .banka-kart.sirket::before{
+  content:"";position:absolute;pointer-events:none;inset:0;border-radius:inherit;
+  background:repeating-linear-gradient(112deg,rgba(255,255,255,.016) 0 1px,transparent 1px 10px),
+             linear-gradient(168deg,rgba(255,255,255,.07),transparent 31%);
+  opacity:.54;
+}
+#goruntu-ana #sirket-kart .kart-ust,
+#goruntu-ana #sirket-kart .bakiye,
+#goruntu-ana #sirket-kart .kart-alt,
+#goruntu-ana #sirket-kart #btn-sirket-hareket-ac,
+#goruntu-ana #sirket-kart #sirket-hareket-kutu{position:relative;z-index:1}
+#goruntu-ana #sirket-kart .bakiye{
+  background-image:linear-gradient(115deg,#ffe8a3 0%,#f8bc39 37%,#fff2bf 60%,#c98e24 100%);
+  filter:drop-shadow(0 4px 18px rgba(221,158,40,.13));
+  line-height:1.11;overflow-wrap:anywhere;
+}
+#goruntu-ana #btn-sirket-hareket-ac{
+  border:1px solid rgba(255,229,159,.14)!important;
+  box-shadow:inset 0 1px rgba(255,255,255,.06);
+  transition:background .19s ease,border-color .19s ease;
+}
+#goruntu-ana #btn-sirket-hareket-ac:active{background:rgba(255,255,255,.16)!important}
+
+/* 06. Bugünkü kazanç ve özet kutularında net sayısal hiyerarşi */
+#goruntu-ana #bugun-kazanc-kart{
+  border-color:rgba(239,194,88,.30);
+  background-image:linear-gradient(111deg,rgba(235,178,46,.08),transparent 67%);
+}
+.ozet-kut{
+  border-radius:14px;
+  background-image:linear-gradient(146deg,rgba(255,255,255,.036),transparent 62%);
+  box-shadow:inset 0 1px rgba(255,255,255,.045),0 4px 11px rgba(0,0,0,.065);
+}
+.ozet-kut::before{width:3px;border-radius:0 3px 3px 0}
+.ozet-kut .et{font-weight:700;line-height:1.4}
+.ozet-kut .deger{line-height:1.13;overflow-wrap:anywhere}
+.ozet-kut.vurgu{border-color:rgba(239,194,88,.31)}
+.ozet-grid,#genel-grid,#kisi-ozet,#ekip-ozet{align-items:stretch}
+
+/* 07. Takvim yüzeyleri: durum renkleri kesinlikle değiştirilmez */
+.takvim{gap:5px}
+.takvim-baslik{border-bottom:1px solid rgba(212,177,97,.09);padding-bottom:5px}
+.takvim .hucre:not(.bos){
+  box-shadow:inset 0 1px rgba(255,255,255,.045),0 2px 7px rgba(0,0,0,.10);
+  transition:box-shadow .18s ease,border-color .18s ease,transform .12s ease;
+}
+.takvim .hucre.d-tam,.takvim .hucre.d-yarim,
+.takvim .hucre.d-gelmedi,.takvim .hucre.d-izin{
+  box-shadow:inset 0 1px 2px rgba(255,255,255,.19),0 3px 9px rgba(0,0,0,.18);
+}
+.takvim .hucre.bugun{box-shadow:0 0 0 2px rgba(255,206,78,.16),inset 0 1px rgba(255,255,255,.20)}
+.takvim .hucre .mesai-rozet{box-shadow:0 1px 6px rgba(1,3,8,.25)}
+.takvim-ozet{border-radius:12px}
+.lejant{row-gap:8px;line-height:1.35}
+
+/* 08. Haftalık çizelge: seçili/dolu günlerin bilgisi aynen korunur */
+.hs-gun{box-shadow:inset 0 1px rgba(255,255,255,.06);transition:border-color .18s ease,transform .15s ease}
+.hs-gun:active{transform:scale(.94)}
+
+/* 09. İşlem düğmeleri ve kartlardan ayrılan kenarlıklar */
+.btn{border-radius:13px;letter-spacing:.005em}
+.btn-sari{
+  background-color:var(--sari);
+  background-image:linear-gradient(165deg,rgba(255,255,255,.23),transparent 58%);
+  box-shadow:0 3px 0 var(--sari-koyu),0 7px 17px rgba(0,0,0,.15);
+  transition:transform .12s ease,box-shadow .16s ease,filter .16s ease;
+}
+.btn-sari:active{filter:brightness(.96)}
+.btn-cizgili{
+  background-image:linear-gradient(160deg,rgba(255,255,255,.035),transparent 65%);
+  border-color:rgba(197,185,156,.23);
+  box-shadow:inset 0 1px rgba(255,255,255,.035);
+  transition:transform .12s ease,border-color .18s ease,background-color .18s ease;
+}
+.btn-cizgili:active{border-color:var(--sari)}
+.eksik-cip,.tutar-cip{transition:background-color .18s ease,border-color .18s ease,transform .12s ease}
+.eksik-cip:active,.tutar-cip:active{transform:scale(.96)}
+@media(hover:hover) and (pointer:fine){
+  .btn-sari:hover{filter:brightness(1.055)}
+  .btn-cizgili:hover{border-color:var(--sari)}
+}
+
+/* 10. Formlar: parmakla kullanıma uygun geri bildirim */
+.alan input,.alan select,.alan textarea{
+  border-radius:12px;
+  box-shadow:inset 0 2px 5px rgba(0,0,0,.08),0 1px rgba(255,255,255,.025);
+  transition:border-color .18s ease,box-shadow .18s ease,background-color .18s ease;
+}
+.alan input:focus,.alan select:focus,.alan textarea:focus{
+  box-shadow:0 0 0 3px rgba(244,194,67,.13),inset 0 1px 4px rgba(0,0,0,.08);
+}
+.alan label{font-weight:750;letter-spacing:.05em}
+.sayac button{transition:border-color .18s ease,transform .12s ease,background-color .18s ease}
+.sayac button:active{transform:scale(.94);border-color:var(--sari)}
+.durum-secim button{transition:border-color .15s ease,transform .12s ease,box-shadow .18s ease}
+.durum-secim button[class*="secili-"]{box-shadow:0 4px 14px rgba(0,0,0,.16),inset 0 1px rgba(255,255,255,.2)}
+
+/* 11. Listeler: satır yapısını değiştirmeden ayraç ve dokunma hissi */
+.liste li{border-bottom-color:rgba(192,183,165,.13)}
+.liste .rozet{box-shadow:inset 0 1px rgba(255,255,255,.07)}
+.liste .baslik{line-height:1.36}
+.liste .tutar{font-weight:800;letter-spacing:.005em}
+.liste li:active{border-radius:10px}
+
+/* 12. Ay seçici ve sekmeler */
+.ay-bar .ay-ad{letter-spacing:.014em}
+.ay-bar button{
+  border-radius:13px;
+  box-shadow:inset 0 1px rgba(255,255,255,.045),0 3px 8px rgba(0,0,0,.08);
+  transition:transform .15s ease,border-color .19s ease;
+}
+.ay-bar button:active{transform:scale(.94)}
+.sekmeler button.aktif{box-shadow:inset 0 -2px var(--sari)}
+
+/* 13. Alt gezinme, mevcut düzen ve dokunma alanları değiştirilmez */
+.alt-nav{
+  background:linear-gradient(162deg,rgba(32,34,41,.965),rgba(15,16,21,.965));
+  border-color:rgba(238,204,133,.20);
+  box-shadow:0 -5px 26px rgba(0,0,0,.29),0 9px 26px rgba(0,0,0,.18),
+             inset 0 1px rgba(255,255,255,.055);
+}
+.alt-nav button{transition:color .2s ease,transform .16s ease}
+.alt-nav button:active{transform:scale(.94)}
+.alt-nav button.aktif{filter:drop-shadow(0 1px 6px rgba(255,199,58,.14))}
+.alt-nav .nav-arti{
+  background:linear-gradient(146deg,#ffe18d,var(--sari) 58%,var(--sari-koyu));
+  box-shadow:0 8px 20px rgba(212,150,26,.36),0 1px 3px rgba(0,0,0,.25),
+             inset 0 2px rgba(255,255,255,.38);
+}
+
+/* 14. Sol menü ve profil yüzeyi */
+nav.cekmece{
+  background:linear-gradient(162deg,#202128 0%,#14161b 56%,#101114 100%);
+  box-shadow:12px 0 32px rgba(0,0,0,.39);
+  border-right:1px solid rgba(250,208,112,.13);
+}
+.cekmece li button,.cekmece li a{transition:background-color .17s ease,color .17s ease}
+.cekmece li button:active,.cekmece li a:active{background:rgba(255,204,80,.12)}
+.cekmece li button.aktif,.cekmece li a.aktif{background:rgba(243,190,71,.095)}
+.cekmece-bas .avatar{box-shadow:0 4px 15px rgba(0,0,0,.25),inset 0 1px rgba(255,255,255,.19)}
+
+/* 15. Alt sayfalar ve onay pencereleri */
+.alt-sayfa{
+  border-top:1px solid rgba(231,195,109,.27);
+  background-image:radial-gradient(ellipse at 56% 0%,rgba(236,195,81,.065),transparent 38%);
+  box-shadow:0 -18px 42px rgba(0,0,0,.32);
+  transition:transform .31s cubic-bezier(.2,.75,.24,1);
+}
+.tutamak{background:linear-gradient(90deg,#96969d,#ddd5c4,#96969d)}
+.alt-sayfa h3{letter-spacing:.018em}
+.modal-perde.acik{background:rgba(6,7,12,.62)}
+
+/* 16. İlerleme çubukları ve tablolarda sakin hareketler */
+.hedef-bar{overflow:hidden;border-radius:999px;box-shadow:inset 0 1px 3px rgba(0,0,0,.20)}
+.hedef-bar .dolu{box-shadow:inset 0 1px rgba(255,255,255,.23),0 0 10px rgba(236,195,80,.12)}
+.yil-tablo th{letter-spacing:.055em}
+.yil-tablo tbody tr{transition:background-color .14s ease}
+@media(hover:hover) and (pointer:fine){.yil-tablo tbody tr:hover{background:rgba(166,160,145,.055)}}
+
+/* 17. Bildirim/toast ve açılış ekranı */
+.toast{
+  border:1px solid rgba(248,205,109,.22);
+  box-shadow:0 10px 35px rgba(0,0,0,.38),inset 0 1px rgba(255,255,255,.065);
+}
+#acilis .logo{filter:drop-shadow(0 5px 13px rgba(242,180,33,.11))}
+
+/* 18. PIN görseli: parlak olmayan tuş, daha okunaklı hata ve durum */
+#pin-ekran .pin-tus-takimi button:not(.pin-bos){
+  box-shadow:0 4px 11px rgba(0,0,0,.19),inset 0 1px rgba(255,255,255,.12);
+  transition:transform .11s ease,background-color .18s ease,border-color .18s ease;
+}
+#pin-ekran .pin-tus-takimi button:not(.pin-bos):active{transform:scale(.93)}
+#pin-ekran .pin-hata{font-weight:650}
+#pin-ekran .pin-kasa-durum{letter-spacing:.01em}
+#pin-ekran .pin-kurtarma-kart{box-shadow:0 20px 60px rgba(0,0,0,.58),inset 0 1px rgba(255,255,255,.055)}
+
+/* 19. Açık tema: kartlar ve alt menü açık kalır, yeterli metin kontrastı */
+html[data-tema="acik"] body{background-image:radial-gradient(ellipse at 87% -20%,rgba(197,155,71,.055),transparent 58%)}
+html[data-tema="acik"] main > section .kart{
+  background-color:#fff;
+  background-image:linear-gradient(143deg,rgba(251,246,234,.8),rgba(255,255,255,0) 46%);
+  border-color:rgba(99,82,54,.13);
+  box-shadow:0 5px 15px rgba(28,30,38,.065),0 1px 3px rgba(28,30,38,.045);
+}
+html[data-tema="acik"] .ozet-kut{background-color:#faf9f6;border-color:rgba(81,81,82,.13)}
+html[data-tema="acik"] .alt-nav{
+  background:linear-gradient(135deg,rgba(255,255,255,.98),rgba(247,245,239,.98));
+  border-color:rgba(125,107,74,.20);box-shadow:0 -4px 24px rgba(20,24,29,.10);
+}
+html[data-tema="acik"] .btn-sari{color:#fff}
+html[data-tema="acik"] .btn-cizgili{border-color:rgba(87,81,69,.22);background-color:#fff}
+html[data-tema="acik"] .modal-perde.acik{background:rgba(8,11,15,.49)}
+
+/* 20. AMOLED: gerçek siyah alanlar, parlaklık minimum */
+body[data-tema="amoled"] main > section .kart{
+  background:#0c0d0e;border-color:rgba(225,202,140,.13);
+  box-shadow:0 1px 6px rgba(0,0,0,.65);
+}
+body[data-tema="amoled"] .ozet-kut{background-color:#121215}
+body[data-tema="amoled"] .alt-nav{background:#080809}
+body[data-tema="amoled"] header.topbar{background:#050506}
+
+/* 21. Minik telefon: başlıklar ve para kaymadan sığsın */
+@media(max-width:365px){
+  .topbar-inner{gap:8px}
+  .topbar h1{font-size:20px}
+  #goruntu-ana #sirket-kart .bakiye{font-size:clamp(30px,10.9vw,44px)}
+  .ozet-kut .deger{font-size:clamp(19px,6.9vw,27px)}
+  .alt-nav{left:8px;right:8px}
+  .alt-nav .nav-arti{flex-basis:62px;width:62px;height:62px}
+}
+
+/* 22. Kısa ekran: içerik ve düğmeler taşmadan kullanılabilir */
+@media(max-height:640px){
+  .alt-nav{bottom:calc(4px + env(safe-area-inset-bottom))}
+  main{padding-bottom:128px}
+}
+
+/* 23. Enerji koruma: hafif modda ekstra doku ve mikro animasyonlar yok */
+html[data-hafif="1"] body{background-image:none}
+html[data-hafif="1"] main > section:not(.gizli){animation:none}
+html[data-hafif="1"] main > section .kart{background-image:none;box-shadow:0 1px 3px rgba(0,0,0,.14)}
+html[data-hafif="1"] #goruntu-ana #sirket-kart::before,
+html[data-hafif="1"] #ay-detay-modal .banka-kart.sirket::before{display:none}
+html[data-hafif="1"] .alt-nav{backdrop-filter:none;-webkit-backdrop-filter:none}
+html[data-hafif="1"] .btn,html[data-hafif="1"] .hucre,
+html[data-hafif="1"] .hs-gun,html[data-hafif="1"] .ozet-kut,
+html[data-hafif="1"] .liste li{animation:none!important;transition:none!important}
+
+/* 24. Erişilebilirlik: sistemin hareket azaltma seçimini saygıyla uygula */
+@media(prefers-reduced-motion:reduce){
+  main > section:not(.gizli),.liste li,.hucre,.hs-gun{animation:none!important}
+  .hamburger,.alt-nav button,.btn,.ay-bar button,.btn-sari,
+  .btn-cizgili,.eksik-cip,.tutar-cip,.alan input,.alan select,
+  .alan textarea,.sayac button,.durum-secim button,
+  .ozet-kut,.kart,.alt-sayfa,#pin-ekran .pin-tus-takimi button{
+    transition:none!important;
+  }
+}
+
+
+/* 0.1.4.4 — "Güncellendi" ekranı: sadece #yenilik-tam üzerinde yalıtılmış yenileme. */
+#yenilik-tam { background:var(--beton); overscroll-behavior:contain; }
+#yenilik-tam .yenilik-ic { background:var(--beton); }
+#yenilik-tam .yenilik-bas {
+  position:relative; overflow:hidden;
+  background:linear-gradient(145deg,var(--asfalt) 3%,var(--kart) 100%);
+  border-bottom:1px solid color-mix(in srgb,var(--sari) 36%,var(--cizgi));
+  padding-bottom:21px;
+}
+#yenilik-tam .yenilik-bas::after {
+  content:""; pointer-events:none; position:absolute;
+  width:130px; height:130px; border-radius:50%; top:-86px; right:-38px;
+  background:radial-gradient(circle,rgba(239,194,89,.19),transparent 71%);
+}
+#yenilik-tam .yenilik-rozet {
+  box-shadow:0 5px 20px rgba(212,168,69,.19);
+  letter-spacing:1.1px; font-size:11px; padding:7px 14px;
+}
+#yenilik-tam .yenilik-surum { margin-top:13px; letter-spacing:.4px; }
+#yenilik-tam .yenilik-govde { padding:15px 14px 20px; }
+#yenilik-tam .yenilik-govde ul {
+  margin:0; padding:0; list-style:none;
+  display:flex; flex-direction:column; gap:10px;
+}
+#yenilik-tam .yenilik-govde li {
+  position:relative; margin:0; padding:13px 15px 14px 16px;
+  border:1px solid var(--cizgi); border-radius:15px;
+  background:var(--kart); line-height:1.55;
+  font-size:13px; overflow-wrap:anywhere;
+  box-shadow:0 3px 12px rgba(0,0,0,.035);
+}
+#yenilik-tam .yenilik-govde li::before {
+  content:""; position:absolute; left:0; top:13px; bottom:13px;
+  width:3px; border-radius:0 4px 4px 0; background:var(--sari);
+}
+#yenilik-tam .yenilik-govde li b { color:var(--metin); font-weight:750; }
+#yenilik-tam .yenilik-alt {
+  box-shadow:0 -7px 23px rgba(0,0,0,.06);
+  padding-top:14px;
+}
+#yenilik-tam .yenilik-alt button { min-height:48px; width:100%; border-radius:13px; }
+@media (max-height:620px) {
+  #yenilik-tam .yenilik-bas { padding-top:max(12px,env(safe-area-inset-top)); padding-bottom:10px; }
+  #yenilik-tam .yenilik-surum { font-size:25px; margin-top:6px; }
+  #yenilik-tam .yenilik-govde { padding-top:10px; }
+}
+@media (prefers-reduced-motion:reduce) {
+  #yenilik-tam { animation:none !important; }
+  #yenilik-tam .yenilik-govde li { animation:none !important; }
+}
+
+
+/* ═══════════ v0.1.4.5 — GOLD PLUS KORUMALI GÖRSEL KATMAN ═══════════
+   İçerik/kayıt/para işlevleri değişmez. Sadece durum göstergesi ve stil. */
+#goruntu-ana .bulut-durum{
+  position:relative;display:grid;grid-template-columns:10px minmax(0,1fr) auto;
+  align-items:center;gap:9px 10px;margin:5px 0 15px;padding:11px 12px;
+  background:linear-gradient(115deg,rgba(250,208,88,.07),var(--kart) 58%,rgba(255,255,255,.018));
+  border:1px solid color-mix(in srgb,var(--sari) 26%,var(--cizgi));
+  border-radius:14px;box-shadow:0 5px 22px rgba(0,0,0,.12);
+}
+.bulut-durum .bulut-led{width:9px;height:9px;border-radius:50%;background:var(--yarim);box-shadow:0 0 0 4px rgba(244,175,61,.12)}
+.bulut-durum[data-durum="bagli"] .bulut-led{background:var(--tam);box-shadow:0 0 0 4px rgba(52,199,89,.12)}
+.bulut-durum[data-durum="cevrimdisi"] .bulut-led,.bulut-durum[data-durum="uyari"] .bulut-led{background:var(--gelmedi);box-shadow:0 0 0 4px rgba(255,91,82,.12)}
+.bulut-durum[data-durum="gonderiliyor"] .bulut-led{animation:bulutAtim 1.8s ease-in-out infinite}
+.bulut-durum .bulut-yazi{display:flex;flex-direction:column;min-width:0;gap:3px}
+.bulut-durum .bulut-yazi strong{font-size:12.5px;font-weight:750;letter-spacing:.01em;color:var(--metin)}
+.bulut-durum .bulut-yazi small{font-size:11px;line-height:1.35;color:var(--soluk)}
+#bulut-ayrinti-ac{border:1px solid var(--cizgi);border-radius:9px;padding:8px 9px;min-height:38px;
+  color:var(--sari);font-size:12px;font-weight:750;background:var(--girdi);white-space:nowrap}
+#bulut-ayrinti-ac[aria-expanded="true"] span{display:inline-block;transform:rotate(180deg)}
+#bulut-ayrinti{grid-column:1/-1;border-top:1px solid var(--cizgi);padding-top:12px;color:var(--soluk);font-size:12px;line-height:1.55}
+#bulut-ayrinti[hidden]{display:none!important}
+#bulut-ayrinti p{margin:0 0 9px}
+#bulut-ayrinti b{color:var(--metin)}
+.bulut-islemler{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
+.bulut-islemler button{flex:1 1 145px;font-size:12px;padding:10px 8px;min-height:43px;white-space:normal}
+.yedek-durum-bilgi{font-size:12px;line-height:1.6;color:var(--soluk);padding:10px 12px;
+ background:var(--girdi);border:1px solid var(--cizgi);border-radius:11px;margin-bottom:13px}
+.yedek-durum-bilgi[data-eski="1"]{border-color:color-mix(in srgb,var(--yarim) 40%,var(--cizgi))}
+@keyframes bulutAtim{50%{opacity:.5;transform:scale(.75)}}
+/* Gold doku: para kartında grafiksel fark, okuma kontrastı korunur. */
+#goruntu-ana #sirket-kart{position:relative;isolation:isolate;overflow:hidden}
+#goruntu-ana #sirket-kart::before{content:"";position:absolute;pointer-events:none;inset:0;
+  background:linear-gradient(116deg,transparent 0%,rgba(255,255,255,.085) 36%,transparent 51%,rgba(255,255,255,.028) 73%,transparent 100%);
+  opacity:.6;z-index:-1;transform:translateX(-45%);animation:goldYansi 15s ease-in-out infinite alternate}
+@keyframes goldYansi{to{transform:translateX(40%)}}
+#goruntu-ana .kart,#goruntu-puantaj .kart{transition:border-color .18s ease,box-shadow .24s ease,transform .24s ease}
+#goruntu-ana .kart:focus-within,#goruntu-puantaj .kart:focus-within{border-color:var(--sari);box-shadow:0 0 0 2px rgba(255,195,42,.08)}
+button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible,textarea:focus-visible{
+  outline:2px solid var(--sari);outline-offset:3px}
+.btn:active,.tutar-cip:active,.eksik-cip:active{transform:scale(.984);transition:transform .09s ease}
+@media(max-width:350px){
+ #goruntu-ana .bulut-durum{padding:10px;grid-template-columns:9px minmax(0,1fr) auto;gap:6px}
+ #bulut-ayrinti-ac{padding:7px 6px;font-size:11px}
+ .bulut-durum .bulut-yazi small{font-size:10.5px}
+}
+@media (prefers-reduced-motion:reduce){
+ .bulut-durum .bulut-led,#goruntu-ana #sirket-kart::before{animation:none!important}
+ #goruntu-ana .kart,#goruntu-puantaj .kart{transition:none!important}
+}
+body.hafif-mod #goruntu-ana #sirket-kart::before,
+body[data-hafif="1"] #goruntu-ana #sirket-kart::before{animation:none!important}

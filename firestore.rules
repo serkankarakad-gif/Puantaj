@@ -1,6 +1,21 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
+    // 0.1.4.2: PIN özeti diğer kullanıcı verilerinden TAMAMEN AYRI bir kasada.
+    // Alt koleksiyonların genel okuma kurallarına ASLA dahil değil.
+    // PIN'in 6 hanesi ASLA düz metin olarak saklanmaz.
+    match /pinKasasi/{uid} {
+      allow get, list, delete: if request.auth != null && request.auth.uid == uid;
+      allow create, update: if request.auth != null && request.auth.uid == uid
+        && request.resource.data.keys().hasOnly(['version','salt','hash','iterations','updatedAt'])
+        && request.resource.data.version == 2
+        && request.resource.data.salt is string
+        && request.resource.data.hash is string
+        && request.resource.data.iterations is int
+        && request.resource.data.iterations >= 100000
+        && request.resource.data.iterations <= 1000000;
+    }
+
     // HERKES (giriş yapmış) OKUYABİLİR — herkes birbirinin puantajını görebilir
     // ama herkes SADECE KENDİ verisine yazabilir
     match /kullanicilar/{kullaniciId} {
