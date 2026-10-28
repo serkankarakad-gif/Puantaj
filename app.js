@@ -8866,6 +8866,64 @@ document.addEventListener("visibilitychange", ()=>{
   }
 });
 
+/* 0.1.5.1 — Tek kaynaklı kullanıcıya görünen sürüm numarası.
+   Sürümü yalnızca index.html meta application-version belirler. */
+const UYGULAMA_SURUMU = (document.querySelector('meta[name="application-version"]')?.getAttribute('content') || '').trim() || '0.0.0';
+window.__SURUM = UYGULAMA_SURUMU;
+/* Eski sürüm bildirimleri için paketle birlikte yenilenen uyumluluk etiketi: YENILIK_SURUM = "0.1.5.1" */
+function pd51SurumEtiketleriniYenile(){
+  const yazilar = [
+    ['.acilis-surum-kimlik', 'UYGULAMA v'],
+    ['.pin-surum-kimlik', 'Uygulama sürümü: '],
+    ['.giris-surum-kimlik', 'Uygulama sürümü: '],
+    ['#cekmece-surum', 'Puantaj Defterim '],
+    ['#pd49-versiyon', 'Uygulama ']
+  ];
+  yazilar.forEach(([sec, onEk]) => document.querySelectorAll(sec).forEach(el => { el.textContent = onEk + UYGULAMA_SURUMU; }));
+  /* Kimlik ve sürüm etiketleri tek meta değerinden güncellenir. */
+  document.querySelectorAll('.surum-otomatik').forEach(el => {el.textContent = UYGULAMA_SURUMU;});
+}
+if(document.readyState === 'loading') document.addEventListener('DOMContentLoaded',pd51SurumEtiketleriniYenile,{once:true});
+else pd51SurumEtiketleriniYenile();
+
+/* Sadece gerçekten daha yeni sürümlere yükseltme bildirimi çıkar. */
+function pd51SurumYeniMi(yeni, eskisi){
+  if(!/^\d+(?:\.\d+){1,4}$/.test(yeni||'') || !/^\d+(?:\.\d+){1,4}$/.test(eskisi||'')) return false;
+  const a=yeni.split('.').map(Number), b=eskisi.split('.').map(Number);
+  for(let i=0;i<Math.max(a.length,b.length);i++){
+    if((a[i]||0)!==(b[i]||0)) return (a[i]||0)>(b[i]||0);
+  }
+  return false;
+}
+async function pd51YeniWorkerSurumu(worker){
+  /* Bekleyen SW kendi sürümünü yanıtlar; eski SW'de bu protokol yoktur. */
+  if(worker && typeof MessageChannel !== 'undefined'){
+    const surum = await new Promise(resolve=>{
+      const kanal=new MessageChannel();
+      let tamam=false;
+      const bitir=v=>{if(!tamam){tamam=true;kanal.port1.close();resolve(v);}};
+      const bekleme=setTimeout(()=>bitir(''),800);
+      kanal.port1.onmessage= e=>{clearTimeout(bekleme);bitir(e.data?.surum || '');};
+      try{worker.postMessage({tip:'GET_VERSION'},[kanal.port2]);}
+      catch(_){clearTimeout(bekleme);bitir('');}
+    });
+    if(surum) return surum;
+  }
+  /* Eski SW uyumluluğu: içerik zorla ağdan okunur, sürüm tersse gösterilmez. */
+  try{
+    const cevap=await fetch('./app.js?pd51_version_check='+Date.now(),{cache:'no-store'});
+    if(!cevap.ok) return '';
+    const kod=await cevap.text();
+    const eslesme=kod.match(/const\s+YENILIK_SURUM\s*=\s*["']([0-9.]+)["']/);
+    if(eslesme) return eslesme[1];
+    /* Yeni sürümler meta etiketi kullanır: ağdan index.html kontrolü. */
+    const yanit=await fetch('./index.html?pd51_version_check='+Date.now(),{cache:'no-store'});
+    if(!yanit.ok)return '';
+    const html=await yanit.text();
+    return html.match(/<meta\s+name=["']application-version["']\s+content=["']([0-9.]+)["']/i)?.[1] || '';
+  }catch(_){return '';}
+}
+
 /* PWA: service worker kaydı + güncelleme bildirimi.
    Otomatik yenilemiyoruz (kullanıcı ortasında form doldurken sayfa
    birden yenilenirse yazdığı şey kaybolur) — sadece nazikçe haber veriyoruz,
@@ -8885,10 +8943,11 @@ if("serviceWorker" in navigator){
          "sürüm hiç değişmiyor" gibi görünen bir soruna yol açıyordu — her
          açılışta AÇIKÇA kontrol ettirerek bunu aşıyoruz. */
       kayit.update().catch(()=>{});
+      if(kayit.waiting && navigator.serviceWorker.controller) guncellemeBandiGoster(kayit.waiting);
       kayit.addEventListener("updatefound", ()=>{
         const yeni = kayit.installing; if(!yeni) return;
         yeni.addEventListener("statechange", ()=>{
-          if(yeni.state==="installed" && navigator.serviceWorker.controller) guncellemeBandiGoster();
+          if(yeni.state==="installed" && navigator.serviceWorker.controller) guncellemeBandiGoster(yeni);
         });
       });
     }).catch(()=>{});
@@ -8901,77 +8960,45 @@ if("serviceWorker" in navigator){
     window._swYenile = ()=>{ yenilendiMi = true; };
   });
 }
-async function guncellemeBandiGoster(){
-  const ekran = $("#guncelleme-ekrani");
-  if(!ekran || !ekran.classList.contains("gizli")) return;   /* zaten gösteriliyor ya da HTML yok */
+async function guncellemeBandiGoster(bekleyenWorker){
+  const ekran = document.getElementById('guncelleme-ekrani');
+  if(!ekran || !ekran.classList.contains('gizli')) return;
+  /* Önce yeni sürümü doğrula. Eski/bulunamayan sürüm numarasıyla
+     yanıltıcı "Yeni sürüm hazır" penceresi açma. */
+  let kayit=null;
+  try{kayit=await navigator.serviceWorker.getRegistration();}catch(_){}
+  const worker=kayit?.waiting || bekleyenWorker;
+  if(!worker || worker.state==='activated') return;
+  const hedef=await pd51YeniWorkerSurumu(worker);
+  if(!pd51SurumYeniMi(hedef,UYGULAMA_SURUMU)) return;
+  if(!ekran.classList.contains('gizli')) return;
 
-  /* AÇIK PENCERELERİ KAPAT (0.0.9.9)
-     Kullanıcı bildirimi: güncelleme penceresi açılırken arkada "Neler
-     değişti" listesi görünüyordu. Pencere "yenileyince neler değiştiğini
-     göreceksin" derken arkada zaten liste duruyor — çelişki.
-     Ayrıca yarı saydam zemin yüzünden arkadaki her ekran okunabiliyordu.
-     Kullanıcı nasıl olsa sayfayı yenileyecek; açık pencereleri kapatmak
-     hem mantıklı hem de dikkat dağınıklığını önlüyor. */
-  try{
-    ["#yenilik-tam","#kur-modal","#gun-modal","#modal-perde","#cekmece","#perde"].forEach(sec=>{
-      const el = document.querySelector(sec);
-      if(el){ el.classList.remove("acik"); el.classList.add("gizli"); }
-    });
-  }catch(e){}
-  /* 0.0.3.8 — SADELEŞTİRİLDİ.
-     Bu pencere eskiden tüm değişiklik listesini çekip burada gösteriyordu.
-     Gereksizdi: kullanıcı "Şimdi Yenile"ye bastıktan sonra zaten uygulama
-     açılışında TAM EKRAN yenilik penceresi çıkıyor ve her şeyi orada
-     okuyor. Aynı metni iki kez göstermek hem yer kaplıyor hem de bu
-     pencerenin tek işini (—yeni sürüm var, yenile—) gölgeliyordu.
-     Artık yalnızca hangi sürüme geçileceği yazıyor. */
-  let yeniSurum = "";
-  try{
-    /* Sürüm numarası index.html'de değil app.js içinde (YENILIK_SURUM sabiti)
-       yazıyor — bu yüzden yeni app.js'i çekip oradan okuyoruz. */
-    const r = await fetch("./app.js?guncelleme=" + Date.now());
-    const metin = await r.text();
-    const m = metin.match(/YENILIK_SURUM\s*=\s*"([0-9.]+)"/);
-    if(m) yeniSurum = m[1];
-  }catch(e){}
-  $("#guncelleme-yenilik-liste").innerHTML =
-    '<div style="text-align:center;padding:6px 0 2px">' +
-      '<div style="font-family:\'Saira Condensed\';font-size:34px;font-weight:800;color:var(--sari);line-height:1.1">' +
-        (yeniSurum ? "Sürüm " + yeniSurum : "Yeni sürüm") +
-      '</div>' +
-      '<div style="font-size:13.5px;color:var(--soluk);margin-top:6px;line-height:1.5">' +
-        "Yenileyince neler değiştiğini uygulama açılır açılmaz göreceksin." +
-      '</div>' +
-    '</div>';
-  ekran.classList.remove("gizli");
-  const cubuk = $("#guncelleme-cubuk");
-  const btn = $("#btn-guncelleme-yenile");
-  cubuk.style.transition = "none";
-  cubuk.style.width = "0%";
-  btn.classList.add("gizli");
-  requestAnimationFrame(()=> requestAnimationFrame(()=>{
-    cubuk.style.transition = "width 5s linear";
-    cubuk.style.width = "100%";
-  }));
-  setTimeout(()=> btn.classList.remove("gizli"), 5000);
-  btn.onclick = async ()=>{
-    btn.textContent = "Yenileniyor…";
-    window._swYenile();
-    /* 0.0.3.0: sw.js artık kurulum biter bitmez kendini devreye SOKMUYOR
-       (kullanıcı form doldururken sayfa yenilenip veri kaybolmasın diye).
-       Yeni sürüm "waiting" durumunda bekliyor; devralması için ona açıkça
-       izin vermemiz gerekiyor. Mesaj gönderildikten sonra worker devralır,
-       `controllerchange` tetiklenir ve yukarıdaki dinleyici sayfayı yeniler.
-       Mesaj gönderilemezse (worker yoksa vb.) doğrudan reload'a düşülüyor —
-       kullanıcı hiçbir durumda ekranda takılı kalmıyor. */
+  /* Kullanıcıya hedef sürüm güvenilir kaynaktan onaylandıktan sonra gösterilir. */
+  document.getElementById('pd51-eski-surum').textContent='v'+UYGULAMA_SURUMU;
+  document.getElementById('pd51-yeni-surum').textContent='v'+hedef;
+  document.getElementById('pd51-guncelleme-durum').textContent='Güncelleme indirildi, yüklemeye hazır.';
+  const btn=document.getElementById('btn-guncelleme-yenile');
+  const sonra=document.getElementById('btn-guncelleme-sonra');
+  btn.disabled=false; btn.innerHTML='Güncellemeyi yükle <span aria-hidden="true">↗</span>';
+
+  /* Güncelleme penceresi açıldığında hassas işlem formlarını KAPATMA.
+     Değişikliği kullanıcı erteleyebilir ve kaydını tamamlayabilir. */
+  ekran.classList.remove('gizli');
+  sonra.onclick=()=>ekran.classList.add('gizli');
+  btn.onclick=async()=>{
+    btn.disabled=true;sonra.disabled=true;
+    btn.textContent='Güncelleme uygulanıyor…';
+    document.getElementById('pd51-guncelleme-durum').textContent='Yeni sürüm etkinleştiriliyor.';
     try{
-      const kayit = await navigator.serviceWorker.getRegistration();
-      if(kayit && kayit.waiting){
-        kayit.waiting.postMessage({tip:"SKIP_WAITING"});
-        setTimeout(()=> location.reload(), 1200);   /* devralma olmazsa yine de yenile */
+      const aktifKayit=await navigator.serviceWorker.getRegistration();
+      const hazir=aktifKayit?.waiting || worker;
+      if(hazir?.state==='installed'){
+        if(window._swYenile) window._swYenile();
+        hazir.postMessage({tip:'SKIP_WAITING'});
+        setTimeout(()=>location.reload(),2200); // Devir bildirimi ulaşmazsa yedek
         return;
       }
-    }catch(e){}
+    }catch(_){}
     location.reload();
   };
 }
@@ -10316,7 +10343,7 @@ document.addEventListener("DOMContentLoaded", ()=>{
   });
 
   /* Neler yeni kartı */
-  const YENILIK_SURUM = "0.1.4.9";
+  const YENILIK_SURUM = UYGULAMA_SURUMU;
   window.__SURUM = YENILIK_SURUM;   /* tanı raporu bunu okur */
   try{ $("#cekmece-surum").textContent = "Puantaj Defterim " + YENILIK_SURUM; }catch(e){}
   /* Sürümü çekmece başlığında da göster. Sebep: "değişiklik gelmedi" durumunda
@@ -13199,120 +13226,155 @@ function bulutDurumBaslat(){
 
 
 /* ═══════════════════════════════════════════════════════════════════════
-   0.1.4.9 • PRO HIZLI İŞLEM & GÜVENCE MERKEZİ
-   Görünüm düzeyi katman: hesaplama, FIFO, avans, PIN, veri kaydı veya
-   Firestore yazma işlemine hiçbir çağrı yapmaz. Mevcut menüleri açar.
-   Bilgi kartları yalnızca mevcut ekrandaki işaretleri okur.
+   0.1.5.0 • AKILLI ÇALIŞMA ALANI (yalnızca arayüz)
+   Aşağıdaki modül yeni Firebase okuma/yazma, puantaj, avans, FIFO, PDF,
+   auth/PIN veya ücret hesaplama fonksiyonları ÇAĞIRMAZ. Yalnızca var olan
+   menü butonuna tıklar ve cihazda SAYFA ADLARI tercihlerini tutar.
    ═══════════════════════════════════════════════════════════════════════ */
-(function pd49Init(){
+(function pd50Init(){
   "use strict";
-  document.addEventListener("DOMContentLoaded",function(){
+  document.addEventListener("DOMContentLoaded",()=>{
     const $=id=>document.getElementById(id);
-    const overlay=$("pd49-komut"), openBtn=$("pd49-komut-ac"), homeBtn=$("pd49-ana-ac");
-    if(!overlay||!openBtn||!homeBtn)return;
-    const input=$("pd49-ara"), results=$("pd49-sonuclar"), empty=$("pd49-bos");
-    const page=$("pd49-sayfalar"), safe=$("pd49-guvence"), tabs=[...overlay.querySelectorAll("[data-pd49-tab]")];
+    const panel=$("pd49-komut"), openBtn=$("pd49-komut-ac"), homeBtn=$("pd49-ana-ac");
+    if(!panel||!openBtn||!homeBtn)return;
+    const input=$("pd49-ara"),results=$("pd49-sonuclar"),empty=$("pd49-bos"),
+      page=$("pd49-sayfalar"),safe=$("pd49-guvence"),tabs=[...panel.querySelectorAll('[data-pd49-tab]')],
+      favorites=$("pd50-favoriler"),recent=$("pd50-sonlar"),homeFavorites=$("pd50-ana-favoriler"),
+      shortcuts=$("pd50-kisayollar"),none=$("pd50-fav-bos");
     const nav=[
-      ["Günlük İşler","puantaj","Puantaj takvimi","Çalışma günleri ve kayıtlar","calendar-days"],
-      ["Günlük İşler","arama","Kayıt ara","Günlük ve not araması","search"],
-      ["Günlük İşler","notlar","Not defterim","Çalışma notları","notebook"],
-      ["Para & Hesap","maaslar","Maaşlar","Aylık maaş kartları","wallet"],
-      ["Para & Hesap","odemeler","Avans ve ödemeler","Aldığım paralar, avanslar","banknote"],
-      ["Para & Hesap","ozet","Hesap özeti","Gün ve tutar özeti","calculator"],
-      ["Para & Hesap","yil","Yıllık grafikler","Çalışma analizi","chart"],
-      ["Para & Hesap","masraf","İş masrafları","Masraf kaydı","receipt"],
-      ["Rapor & Ayarlar","ayarlar","Ayarlar ve yedekleme","Veri yedeği ve hesap ayarları","settings"],
-      ["Rapor & Ayarlar","isler","İşlerim","İş geçmişi","briefcase"],
-      ["Rapor & Ayarlar","ekip","Ekibim","Ekip kayıtları","users"],
-      ["Rapor & Ayarlar","kartlar","Kredi kartlarım","Kart ve ödeme takibi","credit-card"]
+      ["Günlük İşler","puantaj","Puantaj takvimi","Çalışma günleri ve kayıtlar","▦","takvim gün saat çizelge"],
+      ["Günlük İşler","arama","Kayıt ara","Günlük ve not araması","⌕","bul filtre"],
+      ["Günlük İşler","notlar","Not defterim","Çalışma notları","≡","yaz"],
+      ["Para & Hesap","maaslar","Maaşlar","Aylık maaş kartları","₺","ücret yevmiye bordro"],
+      ["Para & Hesap","odemeler","Avans ve ödemeler","Aldığım paralar, avanslar","↗","avans fifo kesinti"],
+      ["Para & Hesap","ozet","Hesap özeti","Gün ve tutar özeti","∑","kalan alacak"],
+      ["Para & Hesap","yil","Yıllık grafikler","Çalışma analizi","▥","istatistik grafik"],
+      ["Para & Hesap","masraf","İş masrafları","Masraf kaydı","▤","fiş harcama"],
+      ["Rapor & Ayarlar","ayarlar","Ayarlar ve yedekleme","Veri yedeği ve hesap ayarları","⚙","pdf dışa aktar json"],
+      ["Rapor & Ayarlar","isler","İşlerim","İş geçmişi","▣","şantiye"],
+      ["Rapor & Ayarlar","ekip","Ekibim","Ekip kayıtları","◎","işçi"],
+      ["Rapor & Ayarlar","kartlar","Kredi kartlarım","Kart ve ödeme takibi","▤","banka"]
     ];
-    let before=null,selectedTab="islemler";
-    function normalize(t){return (t||"").toLocaleLowerCase("tr-TR").normalize("NFD").replace(/[\u0300-\u036f]/g,"").replace(/ı/g,"i");}
-    function createItem(item){
-      const btn=document.createElement("button");
-      btn.type="button";btn.className="pd49-sonuc";btn.dataset.pd49Page=item[1];
-      const icon=document.createElement("span");icon.className="pd49-sonuc-ikon";
-      icon.textContent=({puantaj:"▦",arama:"⌕",notlar:"≡",maaslar:"₺",odemeler:"↗",ozet:"∑",yil:"▥",masraf:"▤",ayarlar:"⚙",isler:"▣",ekip:"◎",kartlar:"▥",})[item[1]]||"•";
-      icon.setAttribute("aria-hidden","true");
-      const txt=document.createElement("span");txt.className="pd49-sonuc-metin";
-      const title=document.createElement("strong");title.textContent=item[2];
-      const desc=document.createElement("small");desc.textContent=item[3];
-      const chevron=document.createElement("span");chevron.className="pd49-ok";chevron.textContent="›";chevron.setAttribute("aria-hidden","true");
-      txt.append(title,desc);btn.append(icon,txt,chevron);return btn;
+    const byId=new Map(nav.map(x=>[x[1],x]));
+    const PIN_KEY="pd50_pinned_pages_v1"; // yalnızca sabit sayfa kimlikleri; hesap verisi yok
+    let pinned=[],last=[],previousFocus=null;
+    function validated(values,max){return Array.isArray(values)?[...new Set(values.filter(v=>typeof v==='string'&&byId.has(v)))].slice(0,max):[]}
+    try{pinned=validated(JSON.parse(localStorage.getItem(PIN_KEY)||"[]"),6)}catch(_){pinned=[]}
+    function savePins(){try{localStorage.setItem(PIN_KEY,JSON.stringify(pinned))}catch(_){/* Bellek kapalı olabilir */}}
+    function normalize(t){return String(t||"").toLocaleLowerCase('tr-TR').normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/ı/g,'i')}
+    function getTarget(id){return document.querySelector('.cekmece [data-goruntu="'+id+'"]')||document.querySelector('[data-goruntu="'+id+'"]')}
+    function protectedOpen(){return !$("ekran-uygulama")?.classList.contains('gizli')}
+    function jump(id){
+      if(!protectedOpen()||!byId.has(id))return;
+      const target=getTarget(id);if(!target)return;
+      last=[id,...last.filter(x=>x!==id)].slice(0,4);
+      close();target.click();render();
+    }
+    function tag(id,cls){
+      const item=byId.get(id);if(!item)return null;
+      const btn=document.createElement('button');btn.type='button';btn.className=cls;
+      btn.dataset.pd50Jump=id;btn.textContent=item[4]+' '+item[2];return btn;
+    }
+    function paintShortcuts(){
+      favorites.replaceChildren();recent.replaceChildren();homeFavorites.replaceChildren();
+      for(const id of pinned){favorites.append(tag(id,'pd50-pill'));homeFavorites.append(tag(id,'pd50-home-pill'))}
+      for(const id of last){recent.append(tag(id,'pd50-pill pd50-recent'))}
+      none.classList.toggle('gizli',pinned.length!==0);
+      shortcuts.classList.toggle('gizli',Boolean(input.value.trim()));
+      homeFavorites.classList.toggle('gizli',pinned.length===0);
+      $("pd50-recent-wrap").classList.toggle('gizli',last.length===0);
+    }
+    function makeResult(item){
+      const wrap=document.createElement('div');wrap.className='pd50-sonuc-satir';
+      const btn=document.createElement('button');btn.type='button';btn.className='pd49-sonuc';btn.dataset.pd49Page=item[1];
+      const icon=document.createElement('span');icon.className='pd49-sonuc-ikon';icon.textContent=item[4];icon.setAttribute('aria-hidden','true');
+      const text=document.createElement('span');text.className='pd49-sonuc-metin';
+      const strong=document.createElement('strong');strong.textContent=item[2];
+      const small=document.createElement('small');small.textContent=item[3];text.append(strong,small);
+      const arrow=document.createElement('span');arrow.className='pd49-ok';arrow.textContent='›';arrow.setAttribute('aria-hidden','true');
+      btn.append(icon,text,arrow);
+      const pin=document.createElement('button');pin.type='button';pin.className='pd50-pin';pin.dataset.pd50Pin=item[1];
+      const set=pinned.includes(item[1]);pin.classList.toggle('secili',set);pin.textContent=set?'★':'☆';
+      pin.setAttribute('aria-label',(set?'Favorilerden kaldır: ':'Favorilere ekle: ')+item[2]);pin.setAttribute('aria-pressed',String(set));
+      wrap.append(btn,pin);return wrap;
     }
     function render(){
-      const term=normalize(input.value.trim());results.replaceChildren();
-      const matching=nav.filter(item=>normalize(item.slice(1,4).join(" ")+" "+item[0]).includes(term));
-      const groups=[...new Set(matching.map(i=>i[0]))];
-      for(const group of groups){
-        const heading=document.createElement("h3");heading.className="pd49-grup";heading.textContent=group;
-        results.appendChild(heading);
-        const section=document.createElement("div");section.className="pd49-grup-liste";
-        matching.filter(i=>i[0]===group).forEach(i=>section.appendChild(createItem(i)));
-        results.appendChild(section);
+      const term=normalize(input.value.trim());const matches=nav.filter(item=>normalize(item.slice(1).join(' ')).includes(term));
+      results.replaceChildren();
+      for(const group of [...new Set(matches.map(x=>x[0]))]){
+        const heading=document.createElement('h3');heading.className='pd49-grup';heading.textContent=group;
+        const list=document.createElement('div');list.className='pd49-grup-liste';
+        matches.filter(x=>x[0]===group).forEach(x=>list.append(makeResult(x)));results.append(heading,list);
       }
-      empty.classList.toggle("gizli",matching.length!==0);
-      $("pd49-kac").textContent=matching.length+" bölüm";
+      empty.classList.toggle('gizli',matches.length!==0);
+      $('pd49-kac').textContent=matches.length+' bölüm';paintShortcuts();
     }
     function refreshSafety(){
-      const net=$("pd49-net"), cloud=$("pd49-cloud"),backup=$("pd49-backup");
+      const net=$('pd49-net'), cloud=$('pd49-cloud'),backup=$('pd49-backup');
       const online=navigator.onLine;
-      net.textContent=online?"Cihaz çevrimiçi görünüyor":"Cihaz çevrimdışı görünüyor";
-      net.dataset.state=online?"ok":"warn";
-      const marker=$("bulut-durum"), label=$("bulut-durum-baslik");
-      cloud.textContent=label?.textContent?.trim()||"Bulut bağlantısı henüz denetlenmedi";
-      cloud.dataset.state=(marker?.dataset?.durum==="bagli")?"ok":"neutral";
-      const backupInfo=$("bulut-yedek-ozet");
-      backup.textContent=backupInfo?.textContent?.trim()||"Bu cihazda yedek durumu bilinmiyor";
-      backup.dataset.state="neutral";
-      $("pd49-versiyon").textContent="Uygulama 0.1.4.9";
+      net.textContent=online?'Cihaz çevrimiçi görünüyor':'Cihaz çevrimdışı görünüyor';net.dataset.state=online?'ok':'warn';
+      const marker=$('bulut-durum'),label=$('bulut-durum-baslik');
+      cloud.textContent=label?.textContent?.trim()||'Bulut bağlantısı henüz denetlenmedi';
+      cloud.dataset.state=marker?.dataset?.durum==='bagli'?'ok':'neutral';
+      const backupInfo=$('bulut-yedek-ozet');
+      backup.textContent=backupInfo?.textContent?.trim()||'Bu cihazda yedek durumu bilinmiyor';backup.dataset.state='neutral';
+      $('pd49-versiyon').textContent='Uygulama '+UYGULAMA_SURUMU;
     }
     function tab(name){
-      selectedTab=name;
-      tabs.forEach(b=>{const active=b.dataset.pd49Tab===name;b.classList.toggle("aktif",active);b.setAttribute("aria-selected",String(active));});
-      page.classList.toggle("gizli",name!=="islemler");safe.classList.toggle("gizli",name!=="guvence");
-      if(name==="guvence")refreshSafety();
+      tabs.forEach(b=>{const active=b.dataset.pd49Tab===name;b.classList.toggle('aktif',active);b.setAttribute('aria-selected',String(active))});
+      page.classList.toggle('gizli',name!=='islemler');safe.classList.toggle('gizli',name!=='guvence');
+      if(name==='guvence')refreshSafety();
     }
-    function open(which="islemler"){
-      if($("ekran-uygulama")?.classList.contains("gizli"))return;
-      before=document.activeElement;
-      overlay.classList.remove("gizli");document.body.classList.add("pd49-overlay-open");
-      input.value="";render();tab(which);
-      if(which==="islemler")requestAnimationFrame(()=>input.focus());
-      else requestAnimationFrame(()=>$('pd49-kapat').focus());
+    function open(which='islemler'){
+      if(!protectedOpen())return;
+      previousFocus=document.activeElement;panel.classList.remove('gizli');document.body.classList.add('pd49-overlay-open');
+      input.value='';render();tab(which);
+      requestAnimationFrame(()=>(which==='islemler'?input:$('pd49-kapat')).focus());
     }
-    function close(){
-      overlay.classList.add("gizli");document.body.classList.remove("pd49-overlay-open");
-      if(before?.isConnected)before.focus();
-    }
-    openBtn.addEventListener("click",()=>open());homeBtn.addEventListener("click",()=>open());
-    $("pd49-kapat").addEventListener("click",close);
-    overlay.querySelector(".pd49-arka").addEventListener("click",close);
-    input.addEventListener("input",render);
-    tabs.forEach(b=>b.addEventListener("click",()=>tab(b.dataset.pd49Tab)));
-    overlay.addEventListener("click",e=>{
-      const navBtn=e.target.closest("[data-pd49-page]");
-      if(!navBtn)return;
-      const dest=navBtn.dataset.pd49Page;
-      const target=document.querySelector('.cekmece [data-goruntu="'+dest+'"]')||document.querySelector('[data-goruntu="'+dest+'"]');
-      if(!target){return;}
-      close();target.click();
+    function close(){panel.classList.add('gizli');document.body.classList.remove('pd49-overlay-open');
+      if(previousFocus?.isConnected)previousFocus.focus();}
+    openBtn.addEventListener('click',()=>open());homeBtn.addEventListener('click',()=>open());
+    $('pd49-kapat').addEventListener('click',close);panel.querySelector('.pd49-arka').addEventListener('click',close);
+    input.addEventListener('input',render);
+    tabs.forEach(b=>b.addEventListener('click',()=>tab(b.dataset.pd49Tab)));
+    // Event delegation supports fresh search results and home shortcuts without duplicate listeners.
+    document.addEventListener('click',e=>{
+      const pin=e.target.closest('[data-pd50-pin]');
+      if(pin&&panel.contains(pin)){
+        const id=pin.dataset.pd50Pin;
+        if(pinned.includes(id))pinned=pinned.filter(x=>x!==id);
+        else pinned=[id,...pinned].slice(0,6);
+        savePins();render();return;
+      }
+      const pageBtn=e.target.closest('[data-pd49-page],[data-pd50-jump]');
+      if(!pageBtn||(!panel.contains(pageBtn)&&!homeFavorites.contains(pageBtn)))return;
+      jump(pageBtn.dataset.pd49Page||pageBtn.dataset.pd50Jump);
     });
-    document.addEventListener("keydown",e=>{
-      if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==="k"){
-        if($("ekran-uygulama")?.classList.contains("gizli"))return;
-        e.preventDefault();overlay.classList.contains("gizli")?open():close();
+    document.addEventListener('keydown',e=>{
+      if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='k'){
+        if(!protectedOpen())return;
+        e.preventDefault();panel.classList.contains('gizli')?open():close();
       }
-      if(!overlay.classList.contains("gizli")&&e.key==="Escape"){
-        e.preventDefault();close();
-      }
-      if(!overlay.classList.contains("gizli")&&e.key==="Tab"){
-        const focusable=[...overlay.querySelectorAll('button:not([disabled]),input:not([disabled])')].filter(x=>!x.closest('.gizli')&&x.getClientRects().length);
-        if(focusable.length){let at=focusable.indexOf(document.activeElement);if(e.shiftKey&&at<=0){e.preventDefault();focusable.at(-1).focus();}else if(!e.shiftKey&&at===focusable.length-1){e.preventDefault();focusable[0].focus();}}
+      if(!panel.classList.contains('gizli')&&e.key==='Escape'){e.preventDefault();close()}
+      if(!panel.classList.contains('gizli')&&e.key==='Tab'){
+        const all=[...panel.querySelectorAll('button:not([disabled]),input:not([disabled])')]
+          .filter(x=>!x.closest('.gizli')&&x.getClientRects().length);
+        if(!all.length)return;
+        const at=all.indexOf(document.activeElement);
+        if(e.shiftKey&&at<=0){e.preventDefault();all.at(-1).focus()}
+        else if(!e.shiftKey&&at===all.length-1){e.preventDefault();all[0].focus()}
       }
     });
-    window.addEventListener("online",refreshSafety);
-    window.addEventListener("offline",refreshSafety);
+    // Also remember ordinary navigation through existing drawer/bottom tabs.
+    // Capture only UI page IDs; don't inspect or store any financial/user data.
+    document.addEventListener('click',e=>{
+      const external=e.target.closest('.cekmece [data-goruntu],.alt-nav [data-goruntu]');
+      const id=external?.dataset.goruntu;
+      if(!id||!byId.has(id)||!protectedOpen())return;
+      last=[id,...last.filter(x=>x!==id)].slice(0,4);
+      if(!panel.classList.contains('gizli'))render();
+    },true);
+    window.addEventListener('online',refreshSafety);window.addEventListener('offline',refreshSafety);
     render();
   });
 })();

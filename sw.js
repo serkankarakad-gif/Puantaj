@@ -1,5 +1,6 @@
 /* Puantaj Defterim — service worker (çevrimdışı kabuk) */
-const KASA = "puantaj-0.1.4.9";
+const KASA = "puantaj-0.1.5.1";
+const SW_SURUM = "0.1.5.1";
 /* ÇEKİRDEK: uygulamanın açılması için ŞART olan dosyalar. addAll atomiktir —
    biri bile inmezse kurulum tamamen başarısız olur, bu yüzden burada sadece
    gerçekten zorunlu olanlar var. */
@@ -39,6 +40,7 @@ self.addEventListener("install", e => {
 /* Kullanıcı "Yenile"ye bastığında app.js bu mesajı gönderir. */
 self.addEventListener("message", e => {
   if (e.data && e.data.tip === "SKIP_WAITING") self.skipWaiting();
+  if (e.data && e.data.tip === "GET_VERSION" && e.ports && e.ports[0]) e.ports[0].postMessage({surum:SW_SURUM});
 });
 
 self.addEventListener("activate", e => {

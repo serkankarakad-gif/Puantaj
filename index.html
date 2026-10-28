@@ -21,7 +21,7 @@
 <meta name="theme-color" content="#17181C">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <title>Puantaj Defterim</title>
-<meta name="application-version" content="0.1.4.9">
+<meta name="application-version" content="0.1.5.1">
 
 <!-- ================= iOS / Safari "Ana ekrana ekle" desteği ================= -->
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -111,7 +111,7 @@
 <div id="acilis">
   <div class="logo">👷</div>
   <h1>Puantaj<br>Defterim</h1>
-  <div class="acilis-surum-kimlik" style="font-size:11px;font-weight:700;letter-spacing:.13em;color:#e2bb66;margin-top:12px">UYGULAMA v0.1.4.9</div>
+  <div class="acilis-surum-kimlik" style="font-size:11px;font-weight:700;letter-spacing:.13em;color:#e2bb66;margin-top:12px">UYGULAMA v—</div>
   <div class="serit-mini"></div>
   <div class="gelistiren">Alın terinin hesabı şaşmasın<b>SERKAN KARAKAŞ</b>tarafından geliştirilmiştir</div>
 </div>
@@ -140,7 +140,7 @@
     <button class="pin-bos"></button><button data-tus="0">0</button><button id="pin-sil" aria-label="Son rakamı sil">⌫</button>
   </div>
   <div class="pin-kasa-durum" id="pin-kasa-durum" role="status" aria-live="polite">☁️ Firebase PIN kasası kontrol ediliyor…</div>
-  <div class="pin-surum-kimlik" style="font-size:10px;text-align:center;letter-spacing:.08em;color:#d7b773;margin:3px auto 0">Uygulama sürümü: 0.1.4.9</div>
+  <div class="pin-surum-kimlik" style="font-size:10px;text-align:center;letter-spacing:.08em;color:#d7b773;margin:3px auto 0">Uygulama sürümü: —</div>
   <div class="pin-alt-islemler">
     <button class="pin-unuttum" id="btn-pin-unuttum">PIN'imi unuttum</button>
     <button class="pin-ikincil" id="btn-pin-yeniden-dene">↻ Firebase PIN'i tekrar kontrol et</button>
@@ -187,7 +187,7 @@
     <div class="logo">👷</div>
     <h1>Puantaj<br>Defterim</h1>
     <p>Yevmiyeni, mesaini ve aldığın parayı kaydet. Hesap ay sonunda şaşmasın.</p>
-    <div class="giris-surum-kimlik" style="font-size:11px;font-weight:700;letter-spacing:.1em;color:#e5c681;margin-top:10px">Uygulama sürümü: 0.1.4.9</div>
+    <div class="giris-surum-kimlik" style="font-size:11px;font-weight:700;letter-spacing:.1em;color:#e5c681;margin-top:10px">Uygulama sürümü: —</div>
   </div>
   <div class="serit"></div>
   <div class="giris-kutu">
@@ -262,7 +262,7 @@
   </header>
 
 
-  <!-- 0.1.4.9 Hızlı İşlem & Güvence Merkezi: uygulamanın yetkili ekranı içinde -->
+  <!-- 0.1.5.0 Hızlı İşlem & Güvence Merkezi: uygulamanın yetkili ekranı içinde -->
   <div id="pd49-komut" class="gizli" role="dialog" aria-modal="true" aria-labelledby="pd49-baslik">
     <div class="pd49-arka" aria-hidden="true"></div>
     <div class="pd49-pencere" role="document">
@@ -276,6 +276,12 @@
       </div>
       <section id="pd49-sayfalar" role="tabpanel">
         <label class="pd49-arama" for="pd49-ara"><span aria-hidden="true">⌕</span><input id="pd49-ara" type="search" autocomplete="off" placeholder="Örneğin: Avans, takvim, PDF..." aria-label="Bölümlerde ara"></label>
+        <div id="pd50-kisayollar" class="pd50-kisayollar">
+          <div class="pd50-baslik"><strong>★ Sabitlediklerin</strong><small>Yıldıza dokunarak sık kullanılanları seç</small></div>
+          <div id="pd50-favoriler" class="pd50-piller" aria-label="Favori bölümler"></div>
+          <p id="pd50-fav-bos" class="pd50-ipucu">Henüz sabitlenen bölüm yok. Aşağıdaki ☆ simgesini kullan.</p>
+          <div id="pd50-recent-wrap" class="gizli"><div class="pd50-baslik"><strong>Son açılanlar</strong></div><div id="pd50-sonlar" class="pd50-piller"></div></div>
+        </div>
         <div class="pd49-sayac" id="pd49-kac" aria-live="polite">12 bölüm</div>
         <div id="pd49-sonuclar"></div>
         <div id="pd49-bos" class="pd49-bos gizli">Aradığın bölüm bulunamadı. Farklı bir kelime dene.</div>
@@ -286,7 +292,7 @@
         <div class="pd49-durum-satir"><span class="pd49-durum-sembol">☁</span><div><strong>Hesap belgesi erişimi</strong><small id="pd49-cloud">Denetleniyor</small></div></div>
         <div class="pd49-durum-satir"><span class="pd49-durum-sembol">▣</span><div><strong>Son JSON yedek bilgisi</strong><small id="pd49-backup">Denetleniyor</small></div></div>
         <button type="button" class="pd49-guvence-link" data-pd49-page="ayarlar">Ayarlar ve yedeklemeye git <span aria-hidden="true">›</span></button>
-        <div class="pd49-foot" id="pd49-versiyon">Uygulama 0.1.4.9</div>
+        <div class="pd49-foot" id="pd49-versiyon">Uygulama —</div>
       </section>
       <div class="pd49-alt">Buradan yapılan gezinme kayıtları değiştirmez. <span>⌘ / Ctrl + K</span></div>
     </div>
@@ -347,7 +353,7 @@
     <div class="cekmece-alt">
       <button id="btn-cikis">Çıkış yap</button>
     </div>
-    <div class="surum" id="cekmece-surum">Puantaj Defterim 0.1.4.9</div>
+    <div class="surum" id="cekmece-surum">Puantaj Defterim —</div>
   </nav>
 
   <main>
@@ -399,6 +405,7 @@
       <button id="pd49-ana-ac" type="button" class="pd49-ana-kisayol" aria-label="Kontrol merkezini aç">
         <span class="pd49-ana-ikon" aria-hidden="true">⌕</span><span><strong>Bir işlem mi yapacaksın?</strong><small>Avans, puantaj, rapor ve diğer bölümleri bul</small></span><span class="pd49-ana-ok" aria-hidden="true">›</span>
       </button>
+      <div id="pd50-ana-favoriler" class="pd50-ana-favoriler gizli" aria-label="Sabitlenen bölümler"></div>
       <!-- 0.1.4.5: Salt-okunur bağlantı göstergesi. Kayıt şeması veya hesaplama mantığı değişmez. -->
       <div id="bulut-durum" class="bulut-durum" role="status" aria-live="polite" data-durum="bekliyor">
         <span class="bulut-led" aria-hidden="true"></span>
@@ -477,12 +484,12 @@
       <div class="kart gizli" id="yenilik-kart" style="border-color:var(--sari)">
         <h2>🎁 Neler yeni?</h2>
         <ul style="padding-left:18px;font-size:13.5px;line-height:1.85">
-<li><b>0.1.4.9 — Kontrol merkezi.</b> Arama yapılabilen hızlı işlem menüsü eklendi; mevcut bölümler tek yerden açılır.</li>
-<li><b>Güvence görünümü.</b> İnternet, Firebase hesap erişimi ve cihazdaki yedek bilgisi, mevcut göstergelerden salt okunur sunulur.</li>
-<li><b>Yeni gezinme.</b> Üst başlıkta ve ana ekranda erişim düğmesi; arayüzde arama ve erişilebilir klavye kısayolu.</li>
-<li><b>Profesyonel mobil düzen.</b> Mat yüzeyler, daha iyi dokunma hedefleri, tutarlı boşluklar ve sınırlı animasyonlar.</li>
-<li><b>Eski işlevler aynen duruyor.</b> 20 dosyalık kaynak, giriş sonrası PIN, PDF ve güncelleme akışı korundu.</li>
-<li><b>FIFO korunuyor.</b> Avans, puantaj, hesaplama, Firestore veri şeması ve ödeme fonksiyonları değiştirilmedi.</li>
+<li><b>Yeni güncelleme vitrini.</b> Daha sade, profesyonel tasarım; mevcut ve yeni sürümü yan yana gösterir.</li>
+<li><b>Gerçek sürüm doğrulaması.</b> Eski veya önbellekte kalmış sürümleri “yeni” diye duyurmaz.</li>
+<li><b>İstediğinde güncelle.</b> İşlemin yarım kalmasın diye şimdi veya daha sonra seçimleri.</li>
+<li><b>Tek merkezli sürüm etiketi.</b> Uygulama içindeki sürüm yazıları ortak değerden güncellenir.</li>
+<li><b>Hızlı işlem merkezi.</b> Favoriler, son açılan bölümler ve Türkçe arama korunur.</li>
+<li><b>Hesaplama güvenliği.</b> FIFO, avans, puantaj, PDF, PIN ve Firebase veri şemasına dokunulmadı.</li>
 </ul>
         <button class="btn btn-cizgili" id="btn-yenilik-kapat">Süper, kapat</button>
       </div>
@@ -583,20 +590,37 @@
     </section>
 
     <!-- ===== TAM EKRAN HAVA DURUMU ===== -->
-    <!-- ===== GÜNCELLEME EKRANI (ortalanmış, animasyonlu) ===== -->
-    <div class="gizli" id="guncelleme-ekrani" style="position:fixed;inset:0;z-index:99999;background:var(--beton);display:flex;align-items:center;justify-content:center;padding:20px">
-      <div style="background:var(--kart);border-radius:20px;padding:28px 22px 22px;max-width:340px;width:100%;text-align:center;box-shadow:0 14px 44px rgba(0,0,0,.5)">
-        <div style="font-size:46px">🔄</div>
-        <h2 style="margin-top:10px;font-size:19px">Yeni sürüm hazır!</h2>
-        <ul id="guncelleme-yenilik-liste" style="text-align:left;font-size:13px;line-height:1.7;color:var(--soluk);margin-top:14px;max-height:180px;overflow-y:auto;padding-left:18px"></ul>
-        <div style="background:var(--girdi);border-radius:8px;height:6px;margin-top:18px;overflow:hidden">
-          <div id="guncelleme-cubuk" style="height:100%;background:var(--sari);width:0%"></div>
+    <!-- Güncelleme vitrini: Hedef sürüm yalnızca gerçekten daha yeniyse gösterilir. -->
+    <div class="gizli" id="guncelleme-ekrani" role="dialog" aria-modal="true" aria-labelledby="pd51-guncelleme-baslik">
+      <div class="pd51-update-dialog">
+        <div class="pd51-update-topline">
+          <div class="pd51-update-mark" aria-hidden="true">
+            <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M12 3v11m0 0-4-4m4 4 4-4"/><path d="M4 16v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3"/>
+            </svg>
+          </div>
+          <div class="pd51-update-appname">PUANTAJ DEFTERİM <span>GÜNCELLEME</span></div>
+          <div class="pd51-update-ready"><span class="pd51-update-dot"></span> HAZIR</div>
         </div>
-        <button class="btn btn-sari gizli" id="btn-guncelleme-yenile" style="margin-top:16px">🚀 Şimdi Yenile</button>
-        <p style="font-size:11px;color:var(--soluk);margin-top:16px;line-height:1.7">
-          <b style="color:var(--sari)">SERKAN KARAKAŞ</b> tarafından geliştirilmiştir 👷<br>
-          Bir sorun mu var? <a href="tel:05051252339" style="color:var(--sari);font-weight:700">0505 125 23 39</a>
-        </p>
+        <div class="pd51-update-main">
+          <div class="pd51-update-eyebrow">YENİ BİR SÜRÜM VAR</div>
+          <h2 id="pd51-guncelleme-baslik">Daha iyi bir deneyim.</h2>
+          <p>Geliştirmeler hazır. Uygun olduğunda uygulamayı yenileyebilirsin.</p>
+          <div class="pd51-update-versions" aria-label="Sürüm karşılaştırması">
+            <div><span>ŞU AN</span><strong id="pd51-eski-surum">—</strong></div>
+            <span class="pd51-update-arrow" aria-hidden="true">→</span>
+            <div class="pd51-update-latest"><span>YENİ SÜRÜM</span><strong id="pd51-yeni-surum">—</strong></div>
+          </div>
+          <div class="pd51-update-note">
+            <div><span aria-hidden="true">✓</span> Puantaj, avans ve maaş kayıtların bu işlemle silinmez.</div>
+            <div><span aria-hidden="true">✓</span> Yenilemeden önce açık formlarını kaydet.</div>
+            <div><span aria-hidden="true">✓</span> Yenilikler yeni sürüm açıldığında gösterilir.</div>
+          </div>
+          <p class="pd51-update-status" id="pd51-guncelleme-durum" role="status" aria-live="polite">Güncelleme indirildi, yüklemeye hazır.</p>
+          <button class="pd51-update-primary" id="btn-guncelleme-yenile" type="button">Güncellemeyi yükle <span aria-hidden="true">↗</span></button>
+          <button class="pd51-update-later" id="btn-guncelleme-sonra" type="button">Şimdi değil</button>
+        </div>
+        <div class="pd51-update-footer">Güvenli sürüm geçişi · Puantaj Defterim</div>
       </div>
     </div>
 
@@ -1777,7 +1801,7 @@
         <p style="font-size:13px;color:var(--soluk);margin-bottom:12px">Hata mı gördün, fikrin mi var? Direkt geliştiriciye ulaş:</p>
         <a class="btn btn-cizgili" style="display:block;text-align:center;text-decoration:none;margin-bottom:10px" href="https://wa.me/905051252339?text=Puantaj%20Defterim%20hakkında:" target="_blank" rel="noopener noreferrer">💬 WhatsApp'tan yaz</a>
         <a class="btn btn-cizgili" style="display:block;text-align:center;text-decoration:none" href="tel:05051252339">📞 0505 125 23 39</a>
-        <p style="font-size:11px;color:var(--soluk);margin-top:12px;text-align:center">Sürüm: 0.1.4.9 · Serkan Karakaş</p>
+        <p style="font-size:11px;color:var(--soluk);margin-top:12px;text-align:center">Sürüm: <span class="surum-otomatik">—</span> · Serkan Karakaş</p>
       </div>
       <div class="kart ayar-kart kapali">
         <h2 class="ayar-bas" role="button" tabindex="0">🔒 PIN kilidi<span class="ayar-ok">▾</span></h2>

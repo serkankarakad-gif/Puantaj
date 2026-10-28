@@ -1,3 +1,12 @@
+## 0.1.5.1 güncellemesi
+
+Sürüm etiketi: `index.html` içindeki `<meta name="application-version" ...>`.
+Yeni sürüm üretirken `sw.js` içindeki `KASA` ve `SW_SURUM` ile bu metayı eşleştirin. Paketleme sırasında hepsini otomatik denetleyin.
+Android uygulama sürümünü değiştirmek için HTML to APK Builder uygulamasında **Version Name = 0.1.5.1**, Version Code önceki APK'dan büyük olmalıdır.
+Aynı paket kimliği ve imzalama anahtarıyla mevcut uygulama üstüne kurun; uygulama verilerini temizlemeyin.
+
+**0.1.5.0 — Akıllı Çalışma Alanı:** Hızlı işlemler içinde sayfa favorileri (yalnızca cihazdaki sayfa isimleri), son ziyaret edilen dört menü, arama eş anlamlıları ve ana ekran favori kısayolları eklendi. Finansal hesaplamalar / FIFO / Firebase / PDF / PIN iş akışları değiştirilmedi. Paket yine 20 dosyadır. Canlı APK/Firebase üzerinde test etmeden üretime almayın. Mevcut cihaz depolamasını temizlemeyin.
+
 **0.1.4.6 — Giriş/PIN sırası onarımı:** Önce hesap girişi veya mevcut oturumla devam etme, ardından zorunlu PIN oluşturma/doğrulama gelir. PIN doğrulanmadan veri dinleyicileri başlatılmaz. Firebase PIN kasası erişilemezse hesabın parolasıyla doğrulama sonrasında PIN yerelde oluşturulabilir; bulut eşitlemesi başarısızsa bu durum açıkça gösterilir. Firebase Firestore `pinKasasi/{uid}` izni canlı kurallarda bulunmalıdır. Önce test hesabında deneyin. Mevcut kayıtları/uygulama deposunu SİLMEYİN.
 
 **0.1.4.5 — Gold Plus:** Korumalı, 20 dosyalık güncelleme. Ana ekranda salt-okunur Firebase hesap belgesi durum paneli, manuel sunucu sorgusu, bu cihazdaki son JSON yedek tarihi ve güncelleme ekranında yeni bilgiler bulunmaktadır. Sunucudan hesap belgesi okunması **tüm alt koleksiyonların eşitlendiği garantisi değildir**. Yedek JSON fotoğraf eklerini içermez. Var olan avans/FIFO, maaş, PDF, Firebase/PIN ve kullanıcı verisi şeması değiştirilmedi. Canlı ortama yüklemeden önce test hesabında doğrulayın.

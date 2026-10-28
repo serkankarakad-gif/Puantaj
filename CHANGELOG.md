@@ -1,3 +1,29 @@
+# 0.1.5.1 — Güncelleme vitrini ve sürüm doğrulama
+
+- Güncelleme bildirim ekranı profesyonel, daha sade ve mobil uyumlu tasarlandı.
+- Geçerli ve hedef sürüm ayrı gösteriliyor; eski/aynı sürüm yeni gibi sunulmuyor.
+- Sahte 5 saniyelik ilerleme animasyonu kaldırıldı; kullanıcı isterse güncellemeyi erteleyebilir.
+- Sürüm gösterimlerinin kaynağı `index.html` application-version meta etiketi oldu.
+- Yeni service worker bekleyen sürüm numarasını yanıtlayabiliyor; eski servis işçileri için ağ kontrolü var.
+- Açık formlar güncelleme duyurusu yüzünden otomatik kapatılmıyor.
+- FIFO, avans, maaş, PDF, PIN, Firestore kayıt/kural dosyaları değiştirilmedi.
+- Android APK Version Name/Code ayarları HTML paketi tarafından otomatik değiştirilemez.
+
+---
+# 0.1.5.0 — Akıllı Çalışma Alanı (UI odaklı)
+
+- 0.1.4.9 üzerinden yapılan güncelleme. 20 dosya.
+- Hızlı işlem menüsünde seçilebilir favori ★, son açılan dört bölüm, ana sayfada favori kısayolları.
+- Türkçe alternatif arama sözcükleri: yevmiye, fiş, işçi, PDF ve avans/FIFO gibi terimler.
+- Ekran ve stil katmanına sınırlı ekleme; mevcut menülere delegasyon.
+- Yerel tercih anahtarı: `pd50_pinned_pages_v1` (yalnızca sabit sayfa kimlikleri, hassas veri içermez). Son açılanlar yalnızca uygulama oturumunda bellekte.
+- `app.js` çekirdek kodu sürüm değişikliği hariç **birebir aynı**; FIFO, ödeme, puantaj, PDF ve PIN modüllerine dokunulmadı.
+- `firestore.rules`, `sabitler.js`, `firebase-config.js`, fontlar ve `worker.js` birebir aynı.
+- Service worker önbellek sürümü yükseltildi. Oturum açıkken eski önbelleği zorla silmeyin.
+- **Test gereklidir:** Canlı Firestore/Android APK/PIN doğrulaması gerçekleştirilmedi. Veriyi yedeklemeden güncelleme yapmayın.
+
+---
+
 ## 0.1.4.9 — Pro Hızlı İşlem ve Güvence Merkezi
 - Gerçek işlevsel hızlı gezinme araması ve kategorize edilmiş mevcut sayfa kısayolları.
 - Üst bar ve ana ekranda erişilebilir giriş noktaları; tam ekran arama ve klavye erişilebilirliği.
