@@ -4145,3 +4145,105 @@ body[data-tema="altin"] #goruntu-ana #sirket-kart .bakiye {
 .pd51-update-later:active{background:rgba(255,255,255,.08)}
 .pd51-update-footer{border-color:rgba(255,199,59,.17);color:#b6c6d7}
 @media(prefers-reduced-motion:reduce){.pd51-update-primary{transition:none}}
+
+
+/* ══════════════════════════════════════════════════════════════
+   0.1.5.3 — TAKVİM OKUNURLUĞU / SADECE GÖRÜNÜM
+   Gün numarası ve günlük kazancı kare bir alana sıkıştırma:
+   Gün yukarıda, mevcut hesaplanan tutar aşağıda, iki ayrı satırda.
+   Takvim ve para hesaplama JavaScript'i değiştirilmedi.
+   ══════════════════════════════════════════════════════════════ */
+#goruntu-puantaj .takvim,
+#goruntu-puantaj .takvim-baslik {
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+}
+#goruntu-puantaj .takvim { gap: clamp(3px, .9vw, 5px); }
+#goruntu-puantaj .takvim .hucre {
+  box-sizing: border-box;
+  width: 100%;
+  min-width: 0;
+  min-height: clamp(61px, 16vw, 72px);
+  height: auto;
+  aspect-ratio: auto;
+  padding: 7px 1px 5px;
+  border-radius: 9px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 2px;
+  text-align: center;
+}
+#goruntu-puantaj .takvim .hucre > span:first-child {
+  font-family: 'Rubik', system-ui, sans-serif;
+  font-size: clamp(15px, 4.3vw, 19px);
+  font-weight: 800;
+  line-height: 1.13;
+  flex: 0 0 auto;
+  letter-spacing: -.02em;
+  font-variant-numeric: tabular-nums;
+}
+#goruntu-puantaj .takvim .hucre .para-yazi {
+  display: block;
+  box-sizing: border-box;
+  margin-top: auto;
+  width: calc(100% - 2px);
+  max-width: 100%;
+  padding: 3px 1px 2px;
+  border-radius: 5px;
+  background: rgba(0,0,0,.15);
+  color: inherit;
+  font-family: 'Rubik', system-ui, sans-serif;
+  font-size: clamp(9px, 2.7vw, 11.5px);
+  font-weight: 800;
+  line-height: 1.15;
+  letter-spacing: -.035em;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: clip;
+  text-align: center;
+  opacity: 1;
+}
+/* Kaydı olmayan pazarların gün rakamları koyu zeminde kaybolmasın. */
+#goruntu-puantaj .takvim .hucre.pazar:not(.d-tam):not(.d-yarim):not(.d-gelmedi):not(.d-izin) {
+  color: var(--metin);
+}
+/* Saatlik girişlerde üçüncü bilgi satırı da mevcut düzenin içinde kalır. */
+#goruntu-puantaj .takvim .hucre .nokta {
+  line-height: 1;
+  font-size: 9px;
+}
+/* Gün türlerinin yeşil/sarı/kırmızı/mavi anlamları değiştirilmedi. */
+@media (max-width: 359px) {
+  #goruntu-puantaj .takvim .hucre { min-height: 61px; padding: 6px 0 4px; }
+  #goruntu-puantaj .takvim .hucre > span:first-child { font-size: 15px; }
+  #goruntu-puantaj .takvim .hucre .para-yazi { font-size: 9px; padding: 3px 0 2px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  #goruntu-puantaj .takvim .hucre { transition: none; }
+}
+
+/* 0.1.5.4 — Sistem güvenliği ve kalite merkezi; finansal arayüzü etkilemez */
+#pd54-sdk-hata{position:fixed;inset:0;z-index:20090;background:#07111eeF;display:grid;place-items:center;padding:22px;}
+#pd54-sdk-hata.gizli{display:none!important}
+.pd54-hata-kart{width:min(100%,420px);border:1px solid #be7e29;border-radius:24px;padding:27px 23px;background:linear-gradient(160deg,#182335,#091321);box-shadow:0 25px 65px #000b;color:#f5f8ff;text-align:center}
+.pd54-hata-ikon{display:grid;place-items:center;font-size:25px;font-weight:900;color:#132237;background:linear-gradient(#ffdf69,#e9a721);height:54px;width:54px;border-radius:50%;margin:0 auto 12px}
+.pd54-hata-kart h2{font-size:23px;margin:10px 0;color:#fff}.pd54-hata-kart p{font-size:14px;line-height:1.6;color:#e1e6ef}.pd54-hata-kart button{width:100%;background:linear-gradient(135deg,#ffe67b,#ffba1b);color:#172235;font-weight:800;border:0;border-radius:14px;padding:14px;margin:15px 0 12px}
+.pd54-hata-kart small{display:block;color:#bec8d6;line-height:1.45}
+.pd54-denetim{border:1px solid #bd8a2c;background:linear-gradient(150deg,#151f2e,#101821);}
+.pd54-eyebrow{font-size:11px;letter-spacing:.14em;color:#f4c652;font-weight:800;margin-bottom:8px}
+.pd54-denetim h2{font-size:23px;line-height:1.25;color:#fff;margin:3px 0 8px}.pd54-denetim p{font-size:13px;line-height:1.55;color:#d4dfed;margin:8px 0 16px}
+.pd54-aksiyonlar{display:flex;gap:9px;flex-wrap:wrap}.pd54-aksiyonlar button{flex:1;min-width:140px;padding:12px 8px}
+.pd54-aksiyonlar button:disabled{opacity:.5}
+.pd54-sayac{display:flex;gap:8px;flex-wrap:wrap;border:1px solid #766028;padding:11px 13px;border-radius:13px;margin-top:15px;background:#081421;color:#ffdc68;font-size:12px;font-weight:800}
+.pd54-liste{display:grid;gap:8px;margin-top:11px}
+.pd54-sonuc{padding:11px 12px;border:1px solid #263951;background:#101e2d;border-radius:12px;display:flex;gap:10px;align-items:flex-start}
+.pd54-sonuc b{color:#f1f5fc;font-size:13px;display:block}.pd54-sonuc small{font-size:11px;line-height:1.4;color:#bdcbdc;display:block;margin-top:4px;overflow-wrap:anywhere}
+.pd54-sonuc .isaret{font-size:12px;font-weight:900;white-space:nowrap;border-radius:6px;padding:4px 5px;line-height:1.2}
+.pd54-sonuc[data-durum="ok"] .isaret{background:#124431;color:#a3fbc6}
+.pd54-sonuc[data-durum="uyari"] .isaret{background:#5b3814;color:#ffe0a0}
+.pd54-sonuc[data-durum="bilgi"] .isaret{background:#213b5b;color:#a7d3ff}
+.pd54-denetim .pd54-dipnot{font-size:11px;color:#aabbd2;margin-bottom:0}
+@media(max-width:355px){.pd54-aksiyonlar{flex-direction:column}.pd54-aksiyonlar button{width:100%}}
+@media(prefers-reduced-motion:reduce){#pd54-denetim *{animation:none!important;transition:none!important}}

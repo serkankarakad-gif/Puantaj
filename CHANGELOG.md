@@ -1,3 +1,19 @@
+## 0.1.5.4 — Güvenli sağlık kontrolü ve başlatma onarımı (28.10.2026)
+- Yeni, salt-okunur Sistem Kalite Merkezi: sürüm, 660+ DOM kimliği, bölüm hedefleri, etiketler, Firebase SDK, güvenli ortam, PIN kriptografi, çevrimdışı önbellek, yerel tercih, JSON yedek tarihi ve dışa aktarma bağımlılıklarını denetler. JSON tanı raporu indirme eklendi.
+- Firebase SDK yüklenmediğinde siyah yükleniyor ekranına takılmak yerine güvenli hata/yeniden dene ekranı gösterilir; PIN geçilemez.
+- Eski tanı sisteminin bazı yanıltıcı “tüm kayıtlar eşitlendi / işlevler çalışır” ifadeleri doğru şekilde sınırlandırıldı.
+- Mevcut Firebase erişim kurallarının geniş okuma izinleri bildirilir; kurallar canlı ortamda değiştirilmedi.
+- FIFO, avans, gün/para hesaplamaları ve PDF motoru fonksiyonları değiştirilmedi; yalnızca başlatma güvenlik kontrolü, tanı metinleri ve yeni izole arayüz modülü eklendi.
+- Gerçek Firebase/APK/çevrimdışı kayıt senaryoları test edilmedikçe tüm işlevler “sıfır hata” kabul edilmemeli.
+
+## 0.1.5.3 — Takvim hücreleri okunurluk düzeltmesi (28.10.2026)
+
+- Gün numarası üstte, kısa kazanç tutarı altta, iki ayrı satırda yer alır. Dar ekranlarda takvim hücreleri biraz daha uzun gösterilir.
+- Tam/yarım/gelmedi renkleri ve tüm dokunma/kayıt işlemleri aynıdır.
+- Mevcut `app.js`, `sabitler.js`, `firebase-config.js`, `firestore.rules`, PDF fontları ve kullanıcı veri yapısı **birebir korunmuştur**.
+- Sürüm etiketleri HTML meta bilgisi ve SW önbelleğinde 0.1.5.3'tür; APK Builder Version Name ayrıca 0.1.5.3 olmalıdır.
+- Orijinal uygulamayı silmeden, önce veri yedeği alıp test hesabında doğrulayın.
+
 # 0.1.5.2 — Canlı Gold renk güncellemesi
 
 - Soluk güncelleme vitrini koyu lacivert + parlak altın + turuncu ile yenilendi.

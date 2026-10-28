@@ -21,7 +21,7 @@
 <meta name="theme-color" content="#17181C">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <title>Puantaj Defterim</title>
-<meta name="application-version" content="0.1.5.2">
+<meta name="application-version" content="0.1.5.4">
 
 <!-- ================= iOS / Safari "Ana ekrana ekle" desteği ================= -->
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -74,6 +74,17 @@
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
+<!-- 0.1.5.4: CDN yüklenmediğinde güvenli hata ekranı; kayıt silme veya giriş atlatma yok. -->
+<div id="pd54-sdk-hata" class="gizli" role="alert" aria-live="assertive">
+  <div class="pd54-hata-kart">
+    <span class="pd54-hata-ikon" aria-hidden="true">!</span>
+    <h2>Güvenli bağlantı kurulamadı</h2>
+    <p>Uygulamanın giriş bileşenleri yüklenemedi. İnternet veya APK internet iznini kontrol et. <strong>Verilerin silinmedi; PIN kilidi kapatılmadı.</strong></p>
+    <button type="button" id="pd54-yeniden-dene" onclick="location.reload()">Tekrar dene</button>
+    <small>Uygulamanın depolama alanını temizleme veya kaldırma.</small>
+  </div>
+</div>
+
 <!-- ══════════ MUTABAKAT ONAY EKRANI (0.1.1.4) ══════════
      İşveren bu ekranı HESAP AÇMADAN görüyor. Bağlantıdaki anahtarla
      yalnızca o ayın özeti okunuyor; işçinin başka verisine erişim yok.
@@ -685,6 +696,16 @@
 
     <!-- ===== GÖRÜNÜM: TANI / TEST (yalnızca yetkili hesap) ===== -->
     <section id="goruntu-tani" class="gizli">
+<div class="kart pd54-denetim" id="pd54-denetim">
+  <div class="pd54-eyebrow">KALİTE MERKEZİ · <span class="surum-otomatik">0.1.5.4</span></div>
+  <h2>Uygulama Sağlık Kontrolü</h2>
+  <p>Arayüz, sürüm, bağlantı, PIN altyapısı, PDF kaynakları, yedekleme ve çevrimdışı hazırlığı için <strong>salt-okunur</strong> kontroller. Her kontrolün sonucu ayrı gösterilir; Firebase kayıtları yazılmaz veya silinmez.</p>
+  <div class="pd54-aksiyonlar"><button type="button" class="btn btn-sari" id="pd54-denetle">Sistem kontrolünü başlat</button><button type="button" class="btn btn-cizgili" id="pd54-rapor" disabled>Raporu indir</button></div>
+  <div class="pd54-sayac gizli" id="pd54-sayac" aria-live="polite"></div>
+  <div id="pd54-liste" class="pd54-liste" aria-live="polite"></div>
+  <p class="pd54-dipnot">Bu cihazdaki sonuçlar, gerçek Firebase işlemlerinin, ödeme dağıtımının veya PDF içeriğinin %100 doğru olduğunu kanıtlamaz. Finansal hesaplama kodu test sırasında çalıştırılmaz.</p>
+</div>
+
       <div class="kart">
         <h2>🔧 Tanı / test</h2>
         <p style="font-size:13px;color:var(--soluk);line-height:1.6;margin-bottom:12px">

@@ -1,3 +1,49 @@
+# Puantaj Defterim — 0.1.5.4 kapsamlı denetim raporu
+
+**İncelenen sürümler:** Kullanıcının 0.1.4.1 orijinal ZIP'i ile son 0.1.5.3 ZIP'i; geliştirilen yeni 0.1.5.4 ZIP'i. **İnceleme tarihi:** 28 Ekim 2026.
+
+## Sonuç özeti
+
+- **20 dosya / ZIP testi:** Başarılı. Yeni ZIP açıldı, 20 dosya doğrulandı, ZIP CRC/bütünlük testi geçti.
+- **JavaScript kontrolü:** `app.js` ve `sw.js` için Node.js sözdizimi kontrolü geçti.
+- **HTML bağları:** Son kaynakta 660 DOM kimliği, 184 ID'li buton, 22 ana bölüm belirlendi. Kimlik tekrarı ve kopuk HTML etiket hedefi bulunmadı. Kodda iki eski `#` referansı yorum satırında bulunuyor (`ayar-kumbara`, `cuzdan-tarih`); aktif hata sayılmadı.
+- **Profil düzenleme:** Kodda buton ID'sine özel olay bağlayıcısı yok; ancak buton `data-goruntu="ayarlar"` üzerinden **genel menü işleyicisiyle bağlıdır**. Bu nedenle bozuk olduğuna dair kanıt yoktur.
+- **FIFO:** 0.1.4.1 karşısında 11 kritik fonksiyon *metin bazında birebir aynı*. Bunlar `odemeAyi`, `enEskiOdenmemisAy`, `odemeAitAySecDoldur`, `odemeTarihiAyaGoreAyarla`, `tumOdemeleriGetir`, `tumDonemOzeti`, `girdiKazanc`, `hesaplaAralik`, `alinanDokum`, `donemOdemeSec`, `maaslarListCiz`. 50 TL eşiği dahil mevcut davranış aynen kaldı.
+- **Kaynak sabitliği:** `sabitler.js`, `firebase-config.js`, iki PDF font dosyası, `worker.js` ve PWA manifesti 0.1.4.1 ile birebir aynı. Firebase kural dosyası eski sürümden farklı (PIN kasası istisnası eklendi) ancak 0.1.5.3 ile 0.1.5.4 arasında değiştirilmedi.
+- **Yeni fonksiyon:** 24 ayrı cihaz/arayüz sağlık kontrolü, JSON tanı raporu indirme; kullanıcı hesaplamalarını veya Firestore belgelerini değiştirmez.
+- **Başlatma onarımı:** Gerekli Firebase SDK'sı yüklenmezse boş ekran yerine bağlantı hatası ve tekrar dene düğmesi. PIN kilidi atlanmaz; kayıtları sıfırlama komutu yoktur.
+- **Mobil deneme:** 320, 360, 393, 430 pikselde, **SDK yüklemenin engellendiği kontrollü tarayıcı ortamında** güvenli hata ekranı ve 24 tanı kontrolünün çalışması doğrulandı; yatay taşma ve JavaScript sayfa hatası görülmedi.
+
+## Güvenlik açısından yüksek öncelikli bulgular
+
+1. **Firestore alt koleksiyonları:** Paket `firestore.rules` içindeki `match /{altKoleksiyon=**}` için `allow read: if request.auth != null` kullanıyor. Yani giriş yapan bir kullanıcı, belge yolunu bildiği/öğrenebildiği durumda başka kullanıcıların ödeme, borç, fotoğraf veya diğer alt kayıtlarını okuyabilir. Bu kullanıcı gizliliği için ciddi risktir. **Düzeltilmedi**, çünkü canlı uygulamanın "Herkes" ekranı ve mutabakat akışının test edilmeden kırılması riski var. Yeni erişim politikası test hesabıyla, gerçek Firestore'da doğrulanmalı.
+2. **Firebase SDK/CDN ve APK WebView:** SDK indirme hatasında giriş çalışmayabilir. Yeni sürüm bunu açıklayan güvenli uyarı gösterir. **Çevrimdışı ilk kurulum** ve APK internet izinleri gerçek cihazda ayrıca test edilmelidir.
+3. **PIN ilk kayıt/eşitleme:** Gerçek Firebase `pinKasasi` izinleri uygulanmış mı doğrulanamadı. Yerel PIN ile bulut PIN arasında olası çakışmalar gerçek hesapla sınanmadı; kayıt temizleme önerilmez.
+4. **Yedek kapsamı:** JSON yedeğin fotoğraf/dekont dosyalarını kapsamadığı belgelerde açıkça belirtiliyor. Sadece JSON yedeğiyle tüm veriyi geri yükleme garantisi yok.
+5. **Tanı ekranında yanlış güven:** Önceki tanı aracındaki “tüm kayıtların Firestore'da”, “fonksiyonların hepsi çalışır” ve “çevrimdışı kayıt aktif” gibi doğrulama yapılmadan kullanılan ifadeler sınırlandırıldı; cihaz göstergesi sunucuya yazma kanıtı sayılmıyor.
+6. **Tutar onarımı riski:** Mevcut `btn-onarim` işlevi, 100 TL altındaki bazı tutarları kullanıcı onayından sonra 1000 ile çarpma yoluyla değiştirebiliyor. Gerçekte küçük tutarlar varsa bu işlem zarar verebilir. **Mali kayıt işleyicisi kullanıcının açık FIFO koruma talebi nedeniyle değiştirilmedi;** gerçek veri üzerinde bu onarım düğmesine özellikle dikkat edilmeli.
+
+## Doğrulanamadığı için "çalışıyor" denmeyen alanlar
+
+Canlı Firebase sunucusu üzerinde PIN kurma/doğrulama, çok kullanıcılı yetki, uygulamanın bütün veri koleksiyonları, tam çevrimdışı kayıt/senkronizasyon, PDF belgesi üretip WhatsApp üzerinden paylaşma, Excel ve OCR işlemleri, geolocation, cihaz push bildirimleri, Android APK WebView özellikleri ve gerçek para verisiyle FIFO uçtan uca testleri bu ortamda tamamlanmadı.
+
+## Güvenli yayın kontrolü
+
+Önce gerçek veri dışa aktarımını ve fotoğraf/dekont korumasını doğrula. Sonra ayrı test hesabında giriş → PIN → kayıt → kapat/aç → bulut eşitleme → rapor/PDF → FIFO senaryolarını dene. 20 dosya sınırı korunsun, mevcut APK silinmesin ve depolama alanı temizlenmesin. APK Builder'da Version Name `0.1.5.4`, Version Code eskisinden yüksek olmalı; aynı paket adı/imza kullanılmalı.
+
+**Sonuç:** Kod ve statik UI tutarlılığı açısından önceki sürümden daha güvenilir; gerçek cihaz ve canlı Firebase testi olmadan "sıfır hata" ya da "tüm modüller çalışıyor" garantisi verilemez.
+
+---
+
+## 0.1.5.4 — Yayın öncesi bloklayıcılar
+- [ ] Canlı olmayan test hesabıyla hesap girişi → PIN → puantaj akışını gerçek APK'da doğrula.
+- [ ] Ekran erişimi, gün kaydı, avans/FIFO ve PDF tutarlarının 0.1.4.1 ile birebir eşleştiğini kaydederek sınama yap.
+- [ ] Firebase Security Rules: giriş yapmış tüm kullanıcıların diğerlerinin alt koleksiyonlarını okuyabildiği izinleri gözden geçir; değişiklikten önce “Herkes” sayfası ve mutabakatı test et.
+- [ ] Var olan kullanıcıların fotoğrafları JSON yedek dosyasında olmadığı için ayrıca yedek sürecini doğrula.
+- [ ] APK Builder: Version Name 0.1.5.4, Version Code > eski, aynı package name ve imza.
+- [ ] Eski APK'yi silme / veri deposunu temizleme.
+- [ ] Gerçek APK içindeki çevrimdışı Firebase SDK, Web Crypto, PDF font ve dosya paylaşımını test et.
+
 # Üretim / Yayın Kontrol Listesi
 
 Araştırma bulgularına göre hazırlandı. **[✅] = 0.0.3.0'da kodda yapıldı**,

@@ -1,3 +1,17 @@
+## 0.1.5.4 Önemli
+- Uygulama içi Tanı / test bölümünde “Uygulama Sağlık Kontrolü” vardır. Kayıt yazmaz, tanılama raporu JSON oluşturur.
+- Tanı **sadece cihaz ve arayüz hazırlığını** doğrular; Firestore veri eşitlenmesi, PDF üretimi veya FIFO doğruluğu iddiasında bulunmaz.
+- Kayıtlar silinmemeli; bu güncelleme önce ayrı bir test hesabında denenmelidir.
+- Firebase kurallarındaki geniş okuma erişimi güvenlik riski oluşturur. Otomatik kural değişikliği yapılmadı.
+
+## 0.1.5.3 — Takvim hücreleri okunurluk düzeltmesi (28.10.2026)
+
+- Gün numarası üstte, kısa kazanç tutarı altta, iki ayrı satırda yer alır. Dar ekranlarda takvim hücreleri biraz daha uzun gösterilir.
+- Tam/yarım/gelmedi renkleri ve tüm dokunma/kayıt işlemleri aynıdır.
+- Mevcut `app.js`, `sabitler.js`, `firebase-config.js`, `firestore.rules`, PDF fontları ve kullanıcı veri yapısı **birebir korunmuştur**.
+- Sürüm etiketleri HTML meta bilgisi ve SW önbelleğinde 0.1.5.3'tür; APK Builder Version Name ayrıca 0.1.5.3 olmalıdır.
+- Orijinal uygulamayı silmeden, önce veri yedeği alıp test hesabında doğrulayın.
+
 ## 0.1.5.2 — Canlı Gold görünüm
 
 Güncelleme ekranı daha yüksek kontrastlı altın, turuncu, koyu lacivert ve canlı yeşil tonlarıyla yenilendi. Standart Gold görünümünün ana kazanç kartında ve düğmelerinde renk netliği artırıldı.

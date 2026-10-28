@@ -212,9 +212,18 @@ let aktifGoruntu="puantaj";
 
 /* ---------- Başlat ---------- */
 function basla(){
-  if(!firebaseConfig || !firebaseConfig.apiKey || firebaseConfig.apiKey.startsWith("BURAYA")){
+  if(typeof firebaseConfig === "undefined" || !firebaseConfig || !firebaseConfig.apiKey || firebaseConfig.apiKey.startsWith("BURAYA")){
     $("#ekran-yukleniyor").classList.add("gizli");
     $("#ekran-kurulum").classList.remove("gizli");
+    return;
+  }
+  /* SDK CDN ağda engellenirse boş/siyah ekranla bırakma.
+     Bu uyarı hiçbir veriyi değiştirmez, PIN kilidini atlatmaz. */
+  if(typeof firebase === "undefined" || typeof firebase.initializeApp !== "function"){
+    const yukleniyor=document.getElementById("ekran-yukleniyor");
+    const sdkHata=document.getElementById("pd54-sdk-hata");
+    if(yukleniyor) yukleniyor.classList.add("gizli");
+    if(sdkHata) sdkHata.classList.remove("gizli");
     return;
   }
   firebase.initializeApp(firebaseConfig);
@@ -12478,8 +12487,8 @@ async function taniCalistir(){
          Kritik olan YAZMA — o yalnızca belgenin sahibinde.
          Eskiden bu satır "kuralları gözden geçir" diye uyarı veriyordu ve
          tanı raporunu okuyan kişi olmayan bir açık sanıyordu. */
-      taniYaz("bilgi","Güvenlik kuralları",
-        "Profil okuma açık (Herkes ekranı için gerekli) · yazma yalnızca sahibinde");
+      taniYaz("uyari","Güvenlik kuralları",
+        "Paket kuralları giriş yapan diğer hesapların alt koleksiyonları da okuyabilmesine izin veriyor; gerçek projedeki kuralları ayrıca denetle.");
     }catch(e){
       taniYaz(String(e.code||"").includes("permission")?"ok":"bilgi","Güvenlik kuralları",
         String(e.code||"").includes("permission")?"başkasının verisi korunuyor ✓":"kontrol edilemedi: "+e.message);
@@ -12802,7 +12811,7 @@ async function taniCalistir(){
     }catch(e){ taniYaz("hata","Bildirim zinciri", e.message); }
 
     /* Çevrimdışı yazma */
-    taniYaz("bilgi","Çevrimdışı kayıt","Firestore yerel önbelleği aktif — internet yokken de gün işlenebiliyor");
+    taniYaz("bilgi","Çevrimdışı kayıt","Çevrimdışı önbellek kurma girişimi yapıldı; cihazda gerçekten etkinleştiği ve bekleyen yazmaların eşitlendiği ayrıca test edilmelidir.");
 
     /* Depolama kalıcılığı: iOS bazen önbelleği siler */
     try{
@@ -12840,7 +12849,7 @@ async function taniCalistir(){
          2) yanlışlıkla kendin silersen (silme de buluta senkronize olur),
          3) Firebase tarafında bir sorun çıkarsa.
        Bu yüzden seviye "hata"dan "uyarı"ya çekildi ve gerekçe doğru yazıldı. */
-    taniYaz("ok","Bulut senkronizasyonu","Tüm kayıtların Firestore'da — başka telefondan aynı e-postayla girince gelir");
+    taniYaz("bilgi","Bulut senkronizasyonu","Yalnızca mevcut oturumdan tüm kayıtların sunucuya ulaştığı doğrulanamaz; bu kontrol ayrı ayrı kayıt sorguları ve bekleyen yazmalarla test edilmelidir.");
     let son=null; try{ son=localStorage.getItem("sonYedekTarihi")||localStorage.getItem("yedekZaman"); }catch(e){}
     if(!son) taniYaz("uyari","Yerel yedek","Hiç yedek indirilmemiş. Bulut zaten var; yedek, hesabına erişemezsen ya da yanlışlıkla silersen işe yarar");
     else{
@@ -12942,7 +12951,7 @@ async function taniCalistir(){
       odemeListesiCiz, masrafCiz, borcCiz, beklenenCiz, ekipYoklamaCiz, pdfFontlariYukle,
       tumOdemeleriGetir, hafifModUygula, trBuyuk, trKucuk, pad, esc, modalAc, gorunumSec };
     const eksikFn=Object.keys(fonkHarita).filter(f=> typeof fonkHarita[f]!=="function");
-    taniYaz(eksikFn.length?"hata":"ok","Fonksiyonlar", eksikFn.length?"TANIMSIZ: "+eksikFn.join(", "):Object.keys(fonkHarita).length+" fonksiyonun hepsi çalışır");
+    taniYaz(eksikFn.length?"hata":"bilgi","Fonksiyonlar", eksikFn.length?"TANIMSIZ: "+eksikFn.join(", "):Object.keys(fonkHarita).length+" fonksiyon tanımlı (gerçek sonuçlar ayrı test gerektirir)");
 
     /* Ölü düğme taraması: tıklanabilir ama hiçbir olayı olmayan düğmeler */
     const tumBtn=document.querySelectorAll("#ekran-uygulama button[id]");
@@ -13377,4 +13386,70 @@ function bulutDurumBaslat(){
     window.addEventListener('online',refreshSafety);window.addEventListener('offline',refreshSafety);
     render();
   });
+})();
+
+/* 0.1.5.4 — salt-okunur uygulama sağlık kontrolü, FIFO/PIN/veri işlemlerinden bağımsız */
+(function pd54Audit(){
+"use strict";
+const init=()=>{
+ const by=id=>document.getElementById(id), btn=by("pd54-denetle"),list=by("pd54-liste"),count=by("pd54-sayac"),reportBtn=by("pd54-rapor");
+ if(!btn||!list||!count||!reportBtn)return;
+ let result=[];
+ const add=(durum,baslik,detay)=>{
+   result.push({durum,baslik,detay});
+   const row=document.createElement("div");row.className="pd54-sonuc";row.dataset.durum=durum;
+   const chip=document.createElement("span");chip.className="isaret";chip.textContent=durum==="ok"?"GEÇTİ":durum==="uyari"?"UYARI":"BİLGİ";
+   const text=document.createElement("div"),title=document.createElement("b"),desc=document.createElement("small");
+   title.textContent=baslik;desc.textContent=detay;text.append(title,desc);row.append(chip,text);list.append(row);
+ };
+ async function run(){
+   btn.disabled=true;reportBtn.disabled=true;list.replaceChildren();result=[];
+   const has=id=>Boolean(by(id));
+   const version=document.querySelector('meta[name="application-version"]')?.content||"";
+   add(/^\d+\.\d+\.\d+\.\d+$/.test(version)?"ok":"uyari","Sürüm kimliği",version||"Sürüm metası bulunamadı");
+   add(window.__SURUM===version?"ok":"uyari","Ekranda çalışan sürüm",window.__SURUM===version?"Eşleşiyor: "+version:"Sürüm meta ve çalışan kod farklı");
+   const ids=[...document.querySelectorAll('[id]')].map(x=>x.id), duplicates=ids.filter((x,i)=>ids.indexOf(x)!==i);
+   add(duplicates.length?"uyari":"ok","Arayüz kimlikleri",ids.length+" kimlik tarandı; "+(duplicates.length?"Çakışan: "+[...new Set(duplicates)].slice(0,6).join(', '):"tekrarlanan kimlik yok"));
+   const pages=[...document.querySelectorAll('main > section[id^="goruntu-"]')];
+   add(pages.length>=20?"ok":"uyari","Ana sayfa modülleri",pages.length+" bölüm HTML içinde bulundu (işlev testi değildir)");
+   const broken=[...document.querySelectorAll('[data-goruntu]')].map(x=>x.dataset.goruntu).filter(x=>!has('goruntu-'+x));
+   add(broken.length?"uyari":"ok","Menü hedefleri",broken.length?"Eksik hedefler: "+[...new Set(broken)].join(', '):"Tüm bölüm bağlantılarının hedefi var");
+   const labels=[...document.querySelectorAll('label[for]')].filter(x=>!has(x.htmlFor));
+   add(labels.length?"uyari":"ok","Form erişilebilirliği",labels.length?labels.length+" etiket hedefi eksik":"Tüm for alanları HTML içinde mevcut");
+   add(typeof window.firebase!=="undefined"?"ok":"uyari","Firebase SDK",typeof window.firebase!=="undefined"?"Kütüphane yüklü":"SDK yüklenmedi: bağlantı/APK internet izni gerekli");
+   add(typeof window.firebase?.auth==="function"?"ok":"uyari","Hesap giriş altyapısı",typeof window.firebase?.auth==="function"?"Oturum altyapısı yüklü":"Firebase Auth SDK eksik");
+   add(typeof window.firebase?.firestore==="function"?"ok":"uyari","Firestore altyapısı",typeof window.firebase?.firestore==="function"?"SDK yüklü; sunucu izinleri ayrıca kontrol edilmeli":"Firestore SDK eksik");
+   add(window.isSecureContext?"ok":"uyari","Güvenli ortam",window.isSecureContext?"HTTPS veya güvenli yerel ortam":"HTTPS gerekli olabilir");
+   add(!!globalThis.crypto?.subtle?"ok":"uyari","PIN kriptografi desteği",globalThis.crypto?.subtle?"Web Crypto kullanılabilir":"Kripto altyapısı yok; PIN çalışmayabilir");
+   const online=navigator.onLine;
+   add(online?"ok":"uyari","İnternet göstergesi",online?"Cihaz çevrimiçi bildiriyor (Firebase erişim garantisi değildir)":"Çevrimdışı");
+   add(navigator.serviceWorker?"ok":"uyari","Çevrimdışı motoru",navigator.serviceWorker?"Tarayıcı destekliyor; kayıt durumu ayrı kontrol ediliyor":"Service Worker desteklenmiyor");
+   try{const reg=await navigator.serviceWorker?.getRegistration();add(reg?.active?"ok":"bilgi","Service Worker durumu",reg?.active?"Aktif (gerçek çevrimdışı kayıt test edilmedi)":"Aktif kayıt bulunamadı");}
+   catch(e){add("bilgi","Service Worker durumu","Sorgulanamadı: "+String(e.message||e).slice(0,100))}
+   try{const storage=window.localStorage;const key='pd54_test_only';storage.setItem(key,'1');const works=storage.getItem(key)==='1';storage.removeItem(key);add(works?"ok":"uyari","Yerel ayar deposu",works?"Küçük test anahtarı yazılıp silindi (finansal veri değişmedi)":"Yerel depoya yazılamıyor");}
+   catch(e){add("uyari","Yerel ayar deposu","Erişim engellendi; yerel tercihler saklanamayabilir");}
+   let last=0;try{last=Number(localStorage.getItem('sonYedekTarihi')||localStorage.getItem('yedekZaman')||0)}catch(_){}
+   const days=last>0 && last<=Date.now()?Math.floor((Date.now()-last)/86400000):-1;
+   add(days>=0&&days<=30?"ok":"uyari","Son JSON yedeği",days>=0?days+" gün önce bu cihazdan indirme kaydı var (fotoğraflar dahil değil)":"Bu cihazda kayıtlı indirme tarihi yok");
+   add(has('btn-pdf')&&has('btn-yedek')?"ok":"uyari","PDF ve yedek kontrolü",has('btn-pdf')&&has('btn-yedek')?"Eylem düğmeleri mevcut (PDF motoru/indirme çalışması test edilmedi)":"Düğmelerden biri bulunamadı");
+   add(typeof window.jspdf!=="undefined"?"ok":"bilgi","PDF kütüphanesi",window.jspdf?"Yüklü":"İlk PDF kullanımında indiriliyor; açılışta eksik olması normal");
+   add(typeof window.XLSX!=="undefined"?"ok":"bilgi","Excel kütüphanesi",window.XLSX?"Yüklü":"İlk Excel işleminde yükleniyor");
+   add(typeof window.html2canvas!=="undefined"?"ok":"bilgi","Görsel rapor kütüphanesi",window.html2canvas?"Yüklü":"İlk görsel paylaşımında yükleniyor");
+   add(typeof window.Tesseract!=="undefined"?"ok":"bilgi","Fiş OCR kütüphanesi",window.Tesseract?"Yüklü":"Deneysel OCR kütüphanesi ihtiyaç halinde yüklenir");
+   add(navigator.share?"ok":"bilgi","Paylaşım arayüzü",navigator.share?"Web Share API mevcut (dosya paylaşımını garanti etmez)":"Web Share API bulunmadı; alternatif akış gerekir");
+   add("bilgi","FIFO/avans/ödeme","Güvenlik gereği burada hesaplama veya kayıt değiştirme çalıştırılmadı. Kaynak 0.1.4.1 karşılaştırması ve ayrı senaryo testi gereklidir.");
+   add("uyari","Firestore veri gizliliği","Paketin mevcut güvenlik kuralları alt koleksiyonları diğer oturumlara da okunur kılıyor. Canlı kuralları değiştirmeden önce yetki modeli yeniden tasarlanmalıdır.");
+   const ok=result.filter(x=>x.durum==='ok').length,warn=result.filter(x=>x.durum==='uyari').length,info=result.filter(x=>x.durum==='bilgi').length;
+   count.classList.remove('gizli');count.textContent=result.length+" kontrol · "+ok+" geçti · "+warn+" uyarı · "+info+" bilgi";
+   reportBtn.disabled=false;btn.disabled=false;
+ }
+ btn.addEventListener('click',()=>{run().catch(e=>{btn.disabled=false;add('uyari','Denetim aracı',String(e.message||e))})});
+ reportBtn.addEventListener('click',()=>{
+   if(!result.length)return;
+   const safe={uygulama:'Puantaj Defterim',surum:document.querySelector('meta[name="application-version"]')?.content||'',tarih:new Date().toISOString(),sonuclar:result};
+   const blob=new Blob([JSON.stringify(safe,null,2)],{type:'application/json;charset=utf-8'}),url=URL.createObjectURL(blob),a=document.createElement('a');
+   a.href=url;a.download='puantaj-sistem-denetim-'+safe.surum+'.json';document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),3000);
+ });
+};
+if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",init,{once:true});else init();
 })();

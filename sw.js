@@ -1,6 +1,6 @@
 /* Puantaj Defterim — service worker (çevrimdışı kabuk) */
-const KASA = "puantaj-0.1.5.2";
-const SW_SURUM = "0.1.5.2";
+const KASA = "puantaj-0.1.5.4";
+const SW_SURUM = "0.1.5.4";
 /* ÇEKİRDEK: uygulamanın açılması için ŞART olan dosyalar. addAll atomiktir —
    biri bile inmezse kurulum tamamen başarısız olur, bu yüzden burada sadece
    gerçekten zorunlu olanlar var. */
