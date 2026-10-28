@@ -21,6 +21,7 @@
 <meta name="theme-color" content="#17181C">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <title>Puantaj Defterim</title>
+<meta name="application-version" content="0.1.4.7">
 
 <!-- ================= iOS / Safari "Ana ekrana ekle" desteği ================= -->
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -110,6 +111,7 @@
 <div id="acilis">
   <div class="logo">👷</div>
   <h1>Puantaj<br>Defterim</h1>
+  <div class="acilis-surum-kimlik" style="font-size:11px;font-weight:700;letter-spacing:.13em;color:#e2bb66;margin-top:12px">UYGULAMA v0.1.4.7</div>
   <div class="serit-mini"></div>
   <div class="gelistiren">Alın terinin hesabı şaşmasın<b>SERKAN KARAKAŞ</b>tarafından geliştirilmiştir</div>
 </div>
@@ -138,7 +140,12 @@
     <button class="pin-bos"></button><button data-tus="0">0</button><button id="pin-sil" aria-label="Son rakamı sil">⌫</button>
   </div>
   <div class="pin-kasa-durum" id="pin-kasa-durum" role="status" aria-live="polite">☁️ Firebase PIN kasası kontrol ediliyor…</div>
-  <button class="pin-unuttum" id="btn-pin-unuttum">PIN'imi unuttum</button>
+  <div class="pin-surum-kimlik" style="font-size:10px;text-align:center;letter-spacing:.08em;color:#d7b773;margin:3px auto 0">Uygulama sürümü: 0.1.4.7</div>
+  <div class="pin-alt-islemler">
+    <button class="pin-unuttum" id="btn-pin-unuttum">PIN'imi unuttum</button>
+    <button class="pin-ikincil" id="btn-pin-yeniden-dene">↻ Firebase PIN'i tekrar kontrol et</button>
+    <button class="pin-ikincil" id="btn-pin-hesap-degistir">← Hesap girişine dön</button>
+  </div>
   <div class="gizli pin-kurtarma" id="pin-kurtarma" role="dialog" aria-modal="true" aria-label="PIN kurtarma">
     <form id="pin-kurtarma-form" class="pin-kurtarma-kart">
       <div style="font-size:30px">🔐</div>
@@ -180,6 +187,7 @@
     <div class="logo">👷</div>
     <h1>Puantaj<br>Defterim</h1>
     <p>Yevmiyeni, mesaini ve aldığın parayı kaydet. Hesap ay sonunda şaşmasın.</p>
+    <div class="giris-surum-kimlik" style="font-size:11px;font-weight:700;letter-spacing:.1em;color:#e5c681;margin-top:10px">Uygulama sürümü: 0.1.4.7</div>
   </div>
   <div class="serit"></div>
   <div class="giris-kutu">
@@ -188,6 +196,12 @@
       <button id="sekme-kayit">Yeni hesap</button>
     </div>
     <div id="giris-hata" class="hata"></div>
+    <div id="oturum-hazir" class="oturum-hazir gizli">
+      <b>Hesabın bu cihazda açık</b>
+      <span id="oturum-hazir-bilgi"></span>
+      <button class="btn btn-sari" id="btn-oturum-devam" type="button">Hesabımla devam et → PIN</button>
+      <small>Başka hesap kullanmak için aşağıdan e-posta ve şifrenle giriş yap.</small>
+    </div>
 
     <div class="alan gizli" id="alan-ad">
       <label for="giris-ad">Adın Soyadın</label>
@@ -301,7 +315,7 @@
     <div class="cekmece-alt">
       <button id="btn-cikis">Çıkış yap</button>
     </div>
-    <div class="surum" id="cekmece-surum">Puantaj Defterim</div>
+    <div class="surum" id="cekmece-surum">Puantaj Defterim 0.1.4.7</div>
   </nav>
 
   <main>
@@ -428,7 +442,9 @@
       <div class="kart gizli" id="yenilik-kart" style="border-color:var(--sari)">
         <h2>🎁 Neler yeni?</h2>
         <ul style="padding-left:18px;font-size:13.5px;line-height:1.9">
-          <li><b>☁️ 0.1.4.5 — Bulut durumu paneli.</b> Ana ekranda internet, Firebase hesap belgesi ve önbellek durumu anlaşılır şekilde gösterilir; bütün kayıtların eşitlendiği iddia edilmez.</li>
+          <li><b>🔎 0.1.4.7 — Sürüm görünürlüğü düzeltildi.</b> Açılış, hesap girişi, PIN, menü ve Ayarlar alanlarında uygulama içi sürümü görebilirsin.</li>
+          <li><b>📦 APK sürümünü ayrıca ayarla.</b> Android uygulama bilgisinde görünen sürüm HTML dosyasından değil, APK oluşturucusundan yönetilir.</li>
+          <li><b>🔐 Hesap girişi → zorunlu PIN korunuyor.</b> Önce hesapla devam et, ardından PIN'i doğrula veya oluştur.</li>
           <li><b>🔎 İsteğe bağlı bağlantı testi.</b> Sunucuya gerçek bir salt-okunur sorguyla bağlantını denetleyebilirsin; yeni veri veya kayıt yazılmaz.</li>
           <li><b>💾 Yedek hatırlatıcısı.</b> Ayarlar bölümünde bu cihazda son indirilen JSON yedeği ve gerektiğinde yedek alma önerisi görünür. Otomatik geri yükleme yapılmaz.</li>
           <li><b>🌟 Gold Plus görsel düzeni.</b> Kart dokuları, hareketli vurgu, odak halkaları, takvim ve buton geçişleri daha tutarlı hale getirildi.</li>
@@ -1728,7 +1744,7 @@
         <p style="font-size:13px;color:var(--soluk);margin-bottom:12px">Hata mı gördün, fikrin mi var? Direkt geliştiriciye ulaş:</p>
         <a class="btn btn-cizgili" style="display:block;text-align:center;text-decoration:none;margin-bottom:10px" href="https://wa.me/905051252339?text=Puantaj%20Defterim%20hakkında:" target="_blank" rel="noopener noreferrer">💬 WhatsApp'tan yaz</a>
         <a class="btn btn-cizgili" style="display:block;text-align:center;text-decoration:none" href="tel:05051252339">📞 0505 125 23 39</a>
-        <p style="font-size:11px;color:var(--soluk);margin-top:12px;text-align:center">Sürüm: 0.1.4.5 · Serkan Karakaş</p>
+        <p style="font-size:11px;color:var(--soluk);margin-top:12px;text-align:center">Sürüm: 0.1.4.7 · Serkan Karakaş</p>
       </div>
       <div class="kart ayar-kart kapali">
         <h2 class="ayar-bas" role="button" tabindex="0">🔒 PIN kilidi<span class="ayar-ok">▾</span></h2>

@@ -1,3 +1,17 @@
+## 0.1.4.7 — Sürüm görüntüleme ve APK paketleme açıklığı
+- Açılış, hesap girişi, PIN, çekmece ve Ayarlar ekranlarında doğru uygulama içi sürüm gösterilir.
+- app.js, sw.js önbellek adı ve sürüm tanıtımı eşitlendi.
+- Android Ayarlar > Uygulamalar ekranındaki VersionName, HTML to APK Builder içinde ayrıca ayarlanmalıdır; ZIP kendi başına Android APK sürümünü değiştirmez.
+- Mevcut avans/FIFO, puantaj, ödeme, PDF, PIN ve Firebase veri/kural kodlarına dokunulmadı.
+
+## 0.1.4.6 — Hesap girişi → zorunlu PIN → ana uygulama
+- Önce giriş/oturum devam ekranı görünür, PIN bunun ardından zorunludur.
+- PIN çözülmeden ana uygulama yüklenmez, hassas veri dinleyicileri başlamaz.
+- Firebase erişimi sorunlarında yeniden dene, hesap değiştir, parolayla kurtar seçenekleri.
+- E-posta parolası başarıyla doğrulanmışsa bulut erişimi yokken bile cihazda PIN oluşturulabilir; `pending` durumu korunur, buluta eşitlenmezse uyarılır.
+- PIN kasası/diğer bütün Firestore kuralları, avans/FIFO/PDF ve veri şemaları değiştirilmedi.
+- 20 dosya aynı kaldı. Canlı Firebase erişimi ile test edilmedi.
+
 # 0.1.4.5 — Gold Plus · Salt-okunur bulut durum paneli (2026-10-28)
 
 - 0.1.4.4 üzerine kuruldu. **Paket hâlâ tam 20 dosya.**

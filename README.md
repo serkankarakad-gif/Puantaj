@@ -1,3 +1,5 @@
+**0.1.4.6 — Giriş/PIN sırası onarımı:** Önce hesap girişi veya mevcut oturumla devam etme, ardından zorunlu PIN oluşturma/doğrulama gelir. PIN doğrulanmadan veri dinleyicileri başlatılmaz. Firebase PIN kasası erişilemezse hesabın parolasıyla doğrulama sonrasında PIN yerelde oluşturulabilir; bulut eşitlemesi başarısızsa bu durum açıkça gösterilir. Firebase Firestore `pinKasasi/{uid}` izni canlı kurallarda bulunmalıdır. Önce test hesabında deneyin. Mevcut kayıtları/uygulama deposunu SİLMEYİN.
+
 **0.1.4.5 — Gold Plus:** Korumalı, 20 dosyalık güncelleme. Ana ekranda salt-okunur Firebase hesap belgesi durum paneli, manuel sunucu sorgusu, bu cihazdaki son JSON yedek tarihi ve güncelleme ekranında yeni bilgiler bulunmaktadır. Sunucudan hesap belgesi okunması **tüm alt koleksiyonların eşitlendiği garantisi değildir**. Yedek JSON fotoğraf eklerini içermez. Var olan avans/FIFO, maaş, PDF, Firebase/PIN ve kullanıcı verisi şeması değiştirilmedi. Canlı ortama yüklemeden önce test hesabında doğrulayın.
 
 **Sürüm 0.1.4.4 — 20 dosyalık korumalı güncelleme:** Yenilik ekranındaki metin ve görünüm güncellendi. Dört eski belge, içerikleri korunarak bu paketin mevcut README / CHANGELOG / CALISMA-PLANI dosyalarına taşındı. Program kodu, veri saklama, Firebase/PIN, FIFO, PDF, PWA çekirdeği ve PDF fontları korunmuştur. Canlı Firebase üzerinde test yapılmamıştır; yayın öncesinde yedek alıp test hesabıyla doğrulayın.
@@ -208,3 +210,12 @@ yok. Tek dikkat: "hızlı işaretleme" (takvimde bir güne dokunup tam/yarım/
 gelmedi arası döndürme) her dokunuşta 1 yazma yapıyor — bu zaten kullanıcının
 bilinçli her tıklaması karşılığı, azaltılabilecek bir "gereksiz" yazma değil.
 
+
+
+## 0.1.4.7 APK yükseltme ve sürüm doğrulama
+1. Bu ZIP paketini **tamamı çıkarılmış, aynı kök klasör yapısıyla** HTML to APK Builder içine yükle; eski proje içeriğini karıştırma.
+2. APK Builder ayarlarında uygulama sürüm adını **0.1.4.7** yap ve **versionCode** değerini telefonda kurulu sürümünkinden daha büyük bir tam sayıya yükselt.
+3. **Aynı Android paket kimliği (package ID) ve aynı imzalama anahtarı** ile mevcut uygulamanın üzerine güncelleme kur. Bunlar değişirse yerel kayıtlar taşınmaz.
+4. Kesinlikle eski uygulamayı kaldırma; uygulama verisini/yerel depolamayı temizleme. Öncesinde mümkünse JSON veri yedeği al ve bulut eşitlemesini doğrula.
+5. Giriş ve PIN ekranında `Uygulama sürümü: 0.1.4.7` yazmalı. Android sistem bilgilerindeki sürüm hâlâ 1.4.1 ise APK Builder sürüm adını değiştir.
+6. Bulut/PIN erişimi ayrı bir sorundur; sürüm etiketinin düzelmesi Firebase bağlantısını onarmaz.

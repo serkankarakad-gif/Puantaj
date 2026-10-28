@@ -26,3 +26,7 @@ sw.js'nin önbelleği sürüm değişmeden tazelenmiyor.
 `index.html` içindeki `#yenilik-kart` her sürümde güncellenir; SADECE o
 sürümdeki değişiklikleri gösterir (kümülatif değil — önceki sürümlerin
 notları `CHANGELOG.md`'de kalıcı olarak tutulur, uygulama içinde değil).
+
+
+## 0.1.4.7 ek kural
+Android APK bilgi ekranındaki **Version Name** ile **Version Code**, `index.html` içinden değiştirilmez. APK oluşturulurken Version Name uygulama içi sürüme eşitlenmeli, Version Code artırılmalı; package ID ve imza anahtarı korunmalıdır. `index.html` içindeki giriş/PIN/açılış/Ayarlar sürüm etiketleri de app.js ve sw.js ile eşit olmalıdır. Eski APK silinerek güncelleme yapılmamalıdır.

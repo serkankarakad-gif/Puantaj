@@ -3692,3 +3692,15 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 }
 body.hafif-mod #goruntu-ana #sirket-kart::before,
 body[data-hafif="1"] #goruntu-ana #sirket-kart::before{animation:none!important}
+
+/* 0.1.4.6 — Önce hesap girişi, sonra güvenli PIN akışı */
+.oturum-hazir{background:linear-gradient(140deg,rgba(253,191,29,.12),rgba(253,191,29,.035));border:1px solid rgba(253,191,29,.32);border-radius:17px;padding:15px;margin:12px 0 18px;display:flex;flex-direction:column;gap:10px;align-items:stretch;color:var(--metin);}
+.oturum-hazir.gizli{display:none!important}
+.oturum-hazir b{font-size:14px}
+.oturum-hazir span{font-size:13px;color:var(--soluk);overflow-wrap:anywhere}
+.oturum-hazir small{font-size:11px;color:var(--soluk);line-height:1.4}
+.pin-alt-islemler{margin-top:auto;display:flex;align-items:center;flex-direction:column;gap:8px;padding-top:12px;padding-bottom:env(safe-area-inset-bottom,0px)}
+.pin-alt-islemler .pin-unuttum{margin-top:0;padding:6px 10px}
+.pin-ikincil{border:none;background:none;padding:5px 12px;color:#d9d1bd;font-size:12px;font-weight:600;min-height:28px}
+.pin-ikincil:active{color:var(--sari)}
+@media(max-height:780px){.pin-alt-islemler{gap:2px;padding-top:4px}.pin-ikincil{min-height:22px;font-size:11px}#pin-ekran{padding-bottom:6px}.pin-tus-takimi{margin-top:12px;gap:10px;padding:12px}.pin-tus-takimi button{height:60px;width:60px}.pin-tus-takimi{grid-template-columns:repeat(3,60px)}}

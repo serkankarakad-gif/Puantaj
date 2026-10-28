@@ -181,3 +181,12 @@ Daha sinsisi: "İbrahim" adlı işçiyi **"ibrahim" yazarak arayınca bulunamıy
 17 yerde `trBuyuk()` / `trKucuk()` yardımcılarıyla düzeltildi
 (kayıt arama, ödeme arama, kişi arama, not arama, ekip listesi, PIN avatarı,
 PDF/PNG rapor başlıkları).
+
+
+## 0.1.4.7 sürüm kontrolü — yayın öncesi
+- [ ] ZIP dosyalarının sayısı 20; tüm mevcut çalışma dosyaları yerinde.
+- [ ] app.js `YENILIK_SURUM` = 0.1.4.7; sw.js `KASA` = `puantaj-0.1.4.7`.
+- [ ] Giriş, PIN, açılış, çekmece ve Ayarlar içinde sürüm 0.1.4.7 görünür.
+- [ ] Android Builder Version Name = 0.1.4.7 ve Version Code > eski kurulu APK değeri.
+- [ ] Android Paket Kimliği ve imzalama anahtarı aynı; **silmeden üzerine yükleme** planlandı.
+- [ ] Üretim verilerini değiştirmeden ayrı test hesaplarında giriş/PIN/Firebase kontrolü yapıldı.
