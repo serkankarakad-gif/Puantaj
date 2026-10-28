@@ -1,3 +1,22 @@
+## 0.1.5.6 — Tanı raporu güvenilirlik onarımı (28.10.2026)
+- Tanı/Test PIN kontrolünde `pinKasasiKaydi is not defined` hatası düzeltildi. PIN oluşturma/doğrulama, bulut kasası ve hesap giriş işleyicileri **değişmedi**. Test yalnızca oturumdaki kullanıcıya ait yerel kayıt varlığını inceler; buluttaki durum hakkında kesin ifade kullanmaz.
+- Hata günlüğü eski kayıtları yeni çökme gibi sınıflandırmaz; 7 günlük özet gösterir, eski logları **silmez**.
+- Kronometre çalışmıyorsa "bilgi: başlatılmamış" yazar; kullanılmıyor olmasını arıza olarak etiketlemez.
+- Görsel sürüm etiketi, HTML meta ve SW önbelleği `0.1.5.6` ile eşit.
+- **0.1.4.1 FIFO/avans, maaş, PDF, Firebase kuralları ve veri şeması korunmuştur.** Firestore erişim riskleri canlı kurallar test edilmeden değiştirilmedi.
+- İki ödemenin ait-ay bilgisini otomatik doldurmaz; kişisel ödeme kayıtlarını değiştirmez.
+- Üretim öncesi test hesabıyla mutabakat yazma ve patron onayı, PIN giriş ve PDF indirme doğrulanmalı. Eski APK silinmemeli, mevcut uygulama verileri temizlenmemeli.
+
+## 0.1.5.5 — Veri Kalkanı ve güncelleme güvenlik paketi (28.10.2026)
+- Yeni 3 sekmeli Veri Kalkanı: cihaz/sürüm/Service Worker, Firebase sunucu erişimi (salt okunur), güvenli bağlam, depolama ve son JSON yedek kaydı.
+- Yedek JSON'unu **yerel olarak** kontrol et: biçim, 12 koleksiyon, kayıt adetleri ve yedek tarihi. İçerik sunucuya gönderilmez, veri geri yüklenmez. Maksimum 25 MB.
+- Yeni 8 maddelik her sürüme özel yayın güvenliği kontrol listesi (yalnızca yerel tercihlerde).
+- Kişisel veri içermeyen teknik durum raporu indirme.
+- Fotoğrafların JSON yedekte olmadığı ve tutar onarımının küçük gerçek tutarları yanlışlıkla büyütebileceği daha görünür hale getirildi.
+- 0.1.4.1 FIFO/avans ve ücret hesaplama fonksiyonları, Firebase veri kuralları, PDF motoru korunmuştur.
+- 20 dosya sınırı korundu; sürüm metaları ve Service Worker birlikte güncellendi.
+- Uyarı: Canlı Firebase ve Android APK üzerinde uçtan uca işlem testleri yayın öncesi zorunludur.
+
 ## 0.1.5.4 — Güvenli sağlık kontrolü ve başlatma onarımı (28.10.2026)
 - Yeni, salt-okunur Sistem Kalite Merkezi: sürüm, 660+ DOM kimliği, bölüm hedefleri, etiketler, Firebase SDK, güvenli ortam, PIN kriptografi, çevrimdışı önbellek, yerel tercih, JSON yedek tarihi ve dışa aktarma bağımlılıklarını denetler. JSON tanı raporu indirme eklendi.
 - Firebase SDK yüklenmediğinde siyah yükleniyor ekranına takılmak yerine güvenli hata/yeniden dene ekranı gösterilir; PIN geçilemez.

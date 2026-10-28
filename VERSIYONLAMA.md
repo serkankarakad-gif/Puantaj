@@ -1,3 +1,5 @@
+**Güncel sürüm: 0.1.5.6.** APK Builder içinde Version Name = `0.1.5.6`; Version Code önceki APK'dan büyük olmalı. Uygulama silinmeden üzerine yüklenmeli.
+
 # Versiyonlama Standardı
 
 ## Format

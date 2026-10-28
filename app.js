@@ -12468,10 +12468,24 @@ async function taniCalistir(){
       taniYaz(kullanici.emailVerified?"ok":"uyari","E-posta doğrulama", kullanici.emailVerified?"doğrulanmış":"doğrulanmamış");
       taniYaz("bilgi","Kullanıcı kimliği", kullanici.uid.slice(0,10)+"…");
     }
-    /* DÜZELTME: anahtar "pinKod" değil "pin" (bkz. localStorage.setItem("pin", …)).
-       Yanlış anahtar yüzünden PIN kurulu olduğu hâlde "KURULU DEĞİL" deniyordu. */
-    let pin=!!pinKasasiKaydi; try{ pin = pin || !!localStorage.getItem("pin") || !!pinVeriOku(); }catch(e){}
-    taniYaz(pin?"ok":"uyari","PIN kilidi", pin?"kurulu":"KURULU DEĞİL — telefonu alan verilerini görür");
+    /* 0.1.5.6: Tanı ekranı DOMContentLoaded içindeki PIN değişkenlerine
+       doğrudan erişemez. Bu kontrol YALNIZCA mevcut UID'nin cihazdaki
+       kaydının varlığını okur; PIN'i çözmez, bulut kaydı hakkında hüküm vermez.
+       Gerçek PIN giriş kilidi/koruması buradan değiştirilmez. */
+    if(!kullanici?.uid){
+      taniYaz("uyari","PIN kilidi","Oturum yok; PIN durumu belirlenemiyor");
+    }else{
+      try{
+        const ham=localStorage.getItem("puantaj:pinKasasi:v2:"+kullanici.uid);
+        let kasa=null; try{ kasa=ham?JSON.parse(ham):null; }catch(_){ }
+        const yerel=!!(kasa && kasa.version===2 && typeof kasa.hash==="string" &&
+          typeof kasa.salt==="string" && Number.isInteger(kasa.iterations));
+        const eski=/^\d{6}$/.test(localStorage.getItem("pin")||"");
+        if(yerel) taniYaz("bilgi","PIN kilidi","Bu hesap için cihazda PIN doğrulama kaydı var; giriş doğrulaması ayrıca test edilmelidir");
+        else if(eski) taniYaz("uyari","PIN kilidi","Eski biçimli cihaz PIN kaydı var; bulut kasası ve hesaba aitliği bu testle doğrulanmaz");
+        else taniYaz("bilgi","PIN kilidi","Bu cihazda hesap PIN kaydı bulunamadı; buluttaki PIN durumu buradan anlaşılamaz");
+      }catch(e){ taniYaz("uyari","PIN kilidi","Yerel PIN durumu okunamadı; gerçek PIN giriş testi yapılmalı"); }
+    }
     try{
       const t=Date.now(); await taniSureli(kokRef().get(), 10);
       taniYaz("ok","Veritabanı bağlantısı", (Date.now()-t)+" ms");
@@ -12863,12 +12877,19 @@ async function taniCalistir(){
   /* ═══════ 13b. UYGULAMANIN KENDİ HATA GÜNLÜĞÜ ═══════ */
   await bolum("13b. GERÇEK ÇÖKME KAYITLARI", async ()=>{
     let g=[]; try{ g=JSON.parse(localStorage.getItem("hataGunlugu")||"[]"); }catch(e){}
-    if(!g.length){ taniYaz("ok","Çökme kaydı","Uygulama hiç hata kaydetmemiş — temiz"); return; }
-    taniYaz(g.length>5?"hata":"uyari","Çökme kaydı", g.length+" hata kaydı var (aşağıda en son 6'sı)");
-    /* Gerçek alan adları (bkz. hataKaydet): z (zaman damgası), kaynak, mesaj, kod, yigin */
+    if(!Array.isArray(g)) { taniYaz("uyari","Çökme günlüğü","Günlük biçimi tanınmadı; kayıtlar değiştirilmedi"); return; }
+    if(!g.length){ taniYaz("bilgi","Geçmiş hata günlüğü","Bu cihazda kayıtlı hata bulunamadı; bu sonuç tüm işlevlerin test edildiği anlamına gelmez"); return; }
+    /* 0.1.5.6: Günlük biriktirilir, eski hataları bugün olmuş gibi gösterme.
+       Kayıtları silme veya otomatik onarma yoktur. */
+    const hafta=7*24*60*60*1000;
+    const yeniHatalar=g.filter(h=>{ const ms=new Date(h?.z||0).getTime(); return !Number.isFinite(ms)||!ms||Date.now()-ms<=hafta; });
+    taniYaz(yeniHatalar.length?"uyari":"bilgi","Geçmiş hata günlüğü",
+      g.length+" geçmiş kayıt · son 7 günde "+yeniHatalar.length+" kayıt. Bu rapor hataları silmez.");
     g.slice(-6).reverse().forEach((h,i)=>{
-      const z = h.z ? new Date(h.z).toLocaleString("tr-TR") : "?";
-      taniYaz("hata","Çökme "+(i+1)+" · "+(h.kaynak||"bilinmeyen yer"),
+      const ms=new Date(h?.z||0).getTime();
+      const eski=Number.isFinite(ms)&&ms>0&&Date.now()-ms>hafta;
+      const z=Number.isFinite(ms)&&ms>0?new Date(ms).toLocaleString("tr-TR"):"tarih bilinmiyor";
+      taniYaz(eski?"bilgi":"uyari",(eski?"Eski hata ":"Hata kaydı ")+(i+1)+" · "+(h.kaynak||"bilinmeyen yer"),
         z + (h.kod?" · kod: "+h.kod:"") +
         "\n   " + String(h.mesaj||"").slice(0,200) +
         (h.yigin ? "\n   " + String(h.yigin).split("\n")[0].slice(0,140) : ""));
@@ -12913,7 +12934,7 @@ async function taniCalistir(){
     if(kb){
       const saat=((Date.now()-Number(kb))/3600000);
       taniYaz(saat>16?"uyari":"bilgi","Kronometre", saat.toFixed(1)+" saattir çalışıyor"+(saat>16?" — durdurmayı unutmuş olabilirsin":""));
-    }else taniYaz("ok","Kronometre","çalışmıyor");
+    }else taniYaz("bilgi","Kronometre","şu anda başlatılmamış (arıza tespiti değildir)");
     /* Bildirim izni */
     try{
       const izin = (typeof Notification!=="undefined") ? Notification.permission : "yok";
@@ -13452,4 +13473,111 @@ const init=()=>{
  });
 };
 if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",init,{once:true});else init();
+})();
+
+/* 0.1.5.5 — Veri Kalkanı / salt-okunur güvenlik ve JSON doğrulama. */
+(function pd55VeriKalkani(){
+ "use strict";
+ const init=()=>{
+  const by=id=>document.getElementById(id); if(!by('pd55-panel'))return;
+  const v=by('pd55-version'),n=by('pd55-online'),age=by('pd55-backup-age');
+  const version=document.querySelector('meta[name="application-version"]')?.content||'bilinmiyor';v.textContent=version;
+  const safeGet=key=>{try{return localStorage.getItem(key)}catch(_){return null}};
+  function status(){
+   n.textContent=navigator.onLine?'Çevrimiçi*':'Çevrimdışı';
+   const t=Number(safeGet('sonYedekTarihi')||0);
+   const days=t>0&&t<=Date.now()?Math.floor((Date.now()-t)/86400000):null;
+   age.textContent=days===null?'Kayıt yok':days===0?'Bugün':days+' gün önce';
+  }
+  status();window.addEventListener('online',status);window.addEventListener('offline',status);
+  const tabs=[...document.querySelectorAll('[data-pd55-tab]')];
+  function tab(name){
+   tabs.forEach(el=>{const selected=el.dataset.pd55Tab===name;el.setAttribute('aria-selected',selected?'true':'false');by('pd55-page-'+el.dataset.pd55Tab).classList.toggle('gizli',!selected)});
+  }
+  tabs.forEach((el,i)=>{el.addEventListener('click',()=>tab(el.dataset.pd55Tab));el.addEventListener('keydown',e=>{if(!['ArrowLeft','ArrowRight'].includes(e.key))return;e.preventDefault();const next=tabs[(i+(e.key==='ArrowRight'?1:tabs.length-1))%tabs.length];next.focus();tab(next.dataset.pd55Tab)})});
+  const results=by('pd55-results');let report=[];
+  function draw(host,type,title,detail){
+   const row=document.createElement('div');row.className='pd55-result';row.dataset.type=type;
+   const a=document.createElement('span'),b=document.createElement('span');b.className='pd55-pill';
+   a.textContent=title;if(detail){const s=document.createElement('small');s.textContent=detail;a.append(s)}
+   b.textContent=type==='ok'?'GEÇTİ':type==='warn'?'UYARI':type==='err'?'HATA':'BİLGİ';row.append(a,b);host.append(row);
+  }
+  function add(type,title,detail){report.push({durum:type,baslik:title,aciklama:detail});draw(results,type,title,detail)}
+  const limited=(p,ms=2200)=>Promise.race([p,new Promise((_,reject)=>setTimeout(()=>reject(new Error('timeout')),ms))]);
+  async function swVersion(){
+   if(!('serviceWorker' in navigator)||!navigator.serviceWorker.controller)return '';
+   if(typeof MessageChannel==='undefined')return '';
+   const chan=new MessageChannel();
+   return new Promise(resolve=>{
+     let done=false;const finish=x=>{if(done)return;done=true;clearTimeout(to);chan.port1.close();resolve(x)};
+     const to=setTimeout(()=>finish(''),1100);chan.port1.onmessage=e=>finish(String(e.data?.surum||''));
+     try{navigator.serviceWorker.controller.postMessage({tip:'GET_VERSION'},[chan.port2])}catch(_){finish('')}
+   });
+  }
+  async function scan(){
+   by('pd55-scan').disabled=true;by('pd55-export').disabled=true;results.replaceChildren();report=[];status();
+   try{
+    add('ok','Uygulama sürümü',version);
+    add(navigator.onLine?'info':'warn','Ağ durumu',navigator.onLine?'Cihaz çevrimiçi görünüyor; gerçek Firebase bağlantısı ayrıca test edilmeli.':'Cihaz bağlantısız görünüyor.');
+    const meta=String(document.querySelector('meta[name="application-version"]')?.content||'');
+    add(meta===String(window.__SURUM||'')?'ok':'warn','Sürüm tutarlılığı','HTML: '+meta+' · JavaScript: '+String(window.__SURUM||'tanımlı değil'));
+    const sw=await swVersion();add(sw?(sw===version?'ok':'warn'):'info','Önbellek sürümü',sw?'Service Worker: '+sw:'Aktif Service Worker sürümü okunamadı (APK ortamında normal olabilir).');
+    add(!!(window.crypto&&crypto.subtle&&window.isSecureContext)?'ok':'warn','Kriptografi hazırlığı',crypto?.subtle&&isSecureContext?'Güvenli Web Crypto ve HTTPS bağlamı mevcut.':'PIN işlemleri için güvenli bağlam veya Web Crypto eksik olabilir.');
+    const uid=typeof firebase!=='undefined'&&firebase.auth?firebase.auth().currentUser:null;
+    add(uid?'ok':'warn','Firebase oturumu',uid?'Oturum açık (kimlik rapora eklenmez).':'Geçerli oturum doğrulanamadı.');
+    const last=Number(safeGet('sonYedekTarihi')||0);const days=last>0&&last<=Date.now()?Math.floor((Date.now()-last)/86400000):null;
+    add(days!==null&&days<=30?'ok':'warn','Yerel yedek tarihi',days===null?'Bu cihazda JSON indirme tarihi bulunmadı.':days+' gün önce indirildi; cihazın gerçek dosya varlığını garanti etmez.');
+    if(navigator.storage?.estimate){try{const x=await limited(navigator.storage.estimate());const pct=x.quota?Math.round(100*x.usage/x.quota):0;add(pct>85?'warn':'info','Tarayıcı depolama kullanımı',x.quota?pct+'% dolu (bu ölçüm yalnızca tarayıcı deposu içindir).':'Kota bilgisi yok.')}catch(_){add('info','Tarayıcı depolaması','Cihaz kotası okunamadı.')}}
+    else add('info','Tarayıcı depolaması','Storage Estimate API kullanılmıyor.');
+    add('warn','Fotoğraf ve dekont yedeği','JSON yedeğine fotoğraf, fiş ve dekont dahil değil.');
+    add('warn','Firestore gizlilik kuralları','Paket kurallarında diğer hesaplara geniş okuma erişimi var; canlı kural değişimi yapılmadı.');
+    add('info','FIFO / avans motoru','0.1.4.1 hesaplama fonksiyonları burada çalıştırılmadı; kayıt yazılmaz.');
+   }catch(_){add('warn','Denetim','Bir kontrol tamamlanamadı. Finansal kayıtlara müdahale edilmedi.');}
+   by('pd55-scan').disabled=false;by('pd55-export').disabled=false;
+  }
+  by('pd55-scan').addEventListener('click',()=>scan());
+  by('pd55-server').addEventListener('click',async()=>{
+   const btn=by('pd55-server');btn.disabled=true;try{
+    if(typeof firebase==='undefined'||!firebase.auth||!firebase.firestore)throw new Error('sdk');
+    const user=firebase.auth().currentUser;if(!user)throw new Error('auth');
+    const result=await limited(firebase.firestore().collection('kullanicilar').doc(user.uid).get({source:'server'}),8000);
+    add('ok','Firebase sunucu erişimi',result.exists?'Hesap belgesi sunucudan okundu (veri değiştirilmedi).':'Sunucu yanıtladı, hesap belgesi bulunmadı.');
+   }catch(_){add('warn','Firebase sunucu erişimi','Doğrulanamadı: çevrimdışı bağlantı, izin veya sunucu sorunu olabilir.');}
+   finally{btn.disabled=false;by('pd55-export').disabled=false;}
+  });
+  function download(name,data){const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json;charset=utf-8'});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download=name;document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),2000)}
+  by('pd55-export').addEventListener('click',()=>download('puantaj-veri-kalkani-'+version+'.json',{uygulama:'Puantaj Defterim',surum:version,tarih:new Date().toISOString(),kisiselVeriDahilDegil:true,kontroller:report}));
+  const collections=['girdiler','odemeler','borclar','cuzdan','notlar','masraflar','ekip','ekipGun','beklenenler','kartlar','planlar','kazalar'];
+  by('pd55-backup-file').addEventListener('change',async e=>{
+   const file=e.target.files?.[0],host=by('pd55-backup-results');host.replaceChildren();if(!file)return;
+   if(file.size>25*1024*1024){draw(host,'err','Dosya çok büyük','25 MB üzerindeki dosyalar telefonda işlenmez.');return}
+   try{
+    const data=JSON.parse(await file.text());
+    if(!data||typeof data!=='object'||Array.isArray(data)||data.uygulama!=='Puantaj Defterim')throw new Error('invalid');
+    draw(host,'ok','Yedek biçimi','Uygulama tanımlayıcısı ve JSON yapısı okunabildi.');
+    draw(host,data.fotograflarDahilMi===false?'warn':'info','Ek dosyalar',data.fotograflarDahilMi===false?'Fotoğraf ve dekontlar dahil değil.':'Fotoğraf kapsamı doğrulanamadı.');
+    let all=0,missing=0;
+    collections.forEach(k=>{const x=data[k];if(x&&typeof x==='object'&&!Array.isArray(x)){const count=Object.keys(x).length;all+=count;draw(host,'ok',k,count+' kayıt · sadece biçim denetlendi')}else{missing++;draw(host,'warn',k,'Koleksiyon yok veya uygun biçimde değil.')}});
+    const dt=Date.parse(data.tarih||'');draw(host,Number.isFinite(dt)?'ok':'warn','Yedek zamanı',Number.isFinite(dt)?new Date(dt).toLocaleDateString('tr-TR'):'Tarih alanı geçersiz veya yok.');
+    draw(host,missing?'warn':'info','Kontrol özeti',all+' kayıt · '+missing+' eksik koleksiyon. Yedek geri yüklenmedi, orijinal veriler değişmedi.');
+   }catch(_){draw(host,'err','JSON yedeği okunamadı','Dosya hasarlı olabilir veya Puantaj Defterim yedeği olmayabilir. Kayıtlar değişmedi.');}
+  });
+  by('pd55-go-backup').addEventListener('click',()=>{const b=by('btn-yedek');if(!b)return;const go=document.querySelector('.cekmece [data-goruntu="ayarlar"]')||document.querySelector('[data-goruntu="ayarlar"]');go?.click();setTimeout(()=>{const card=b.closest('.ayar-kart');if(card?.classList.contains('kapali'))card.querySelector('.ayar-bas')?.click();b.scrollIntoView({behavior:'smooth',block:'center'});},160);});
+  const checks=[
+   'Gerçek hesap verilerini ve fotoğraf/dekontları ayrıca yedekledim.',
+   'JSON dosyamı Veri Kalkanı ile doğruladım.',
+   '0.1.4.1 FIFO ve avans senaryolarını karşılaştırdım.',
+   'Test hesabında hesap girişi → PIN → açılışı sınadım.',
+   'Test hesabında puantaj kaydı ve Firebase eşitlemesini sınadım.',
+   'PDF/Excel çıktıları ve Türkçe karakterleri kontrol ettim.',
+   'APK paket adı, imzası ve yükselen Version Code aynı/uyumlu.',
+   'Kullanıcıları etkileyecek güncellemeyi kontrollü yayınlıyorum.'
+  ];
+  const checklist=by('pd55-checklist'),storageKey='pd55-release-'+version;
+  const saved=()=>{try{const arr=JSON.parse(safeGet(storageKey)||'[]');return Array.isArray(arr)?arr.filter(x=>Number.isInteger(x)&&x>=0&&x<checks.length):[]}catch(_){return []}};
+  const update=()=>{const checked=[...checklist.querySelectorAll('input:checked')].map(x=>Number(x.value));by('pd55-progress').textContent=checked.length+' / '+checks.length+' tamamlandı'+(checked.length===checks.length?' · kontrol listesi tamam':' · yayın öncesi kontroller sürüyor');try{localStorage.setItem(storageKey,JSON.stringify(checked))}catch(_){}};
+  checks.forEach((str,i)=>{const label=document.createElement('label');label.className='pd55-check';const cb=document.createElement('input');cb.type='checkbox';cb.value=i;cb.checked=saved().includes(i);const t=document.createElement('span');t.textContent=str;label.append(cb,t);cb.addEventListener('change',update);checklist.append(label)});update();
+  by('pd55-reset-list').addEventListener('click',()=>{checklist.querySelectorAll('input').forEach(x=>x.checked=false);update()});
+ };
+ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init,{once:true});else init();
 })();

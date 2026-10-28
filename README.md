@@ -1,3 +1,11 @@
+## 0.1.5.6 — Tanı raporu onarımı
+0.1.5.4 cihaz raporunda görülen `pinKasasiKaydi is not defined` kaynaklı tanı çökmesi yeni sürümde giderildi. Sonuç paneli artık yalnızca mevcut kullanıcının bu cihazdaki PIN özeti olup olmadığını bildirir; PIN doğrulama sistemi ve tüm finans kuralları aynı kaldı. Tarihi hata kayıtları silinmez. Gerçek Firebase kuralları ve mutabakat onayı uygulamanın dışındaki sunucuda ayrıca test edilmelidir. **20 dosya sınırı korunmuştur.**
+
+## 0.1.5.5 — Veri Kalkanı
+**Tanı / Test** bölümünde üç sekmeli Veri Kalkanı bulunur. JSON yedeğini geri yüklemeden analiz edebilir ve uygulamanın üretim öncesi kontrol listesini tutabilirsin. Teknik denetim raporu kimlik/ödeme verilerini içermez. Finansal kayıtlar üzerinde otomatik düzeltme yapılmaz.
+
+**Sınırlar:** Fotoğraf/fiş/dekontlar JSON yedeğinde değildir. Sunucu okuma testinin başarılı olması tüm kayıtların senkronize olduğu anlamına gelmez. Güvenlik kurallarındaki geniş okuma izni mevcut sürümde devam eder, test edilmeden değiştirilmedi. FIFO hesaplama mantığı ve eşikler 0.1.4.1 ile aynı bırakılmıştır. Eski APK'yi silme veya verilerini temizleme.
+
 ## 0.1.5.4 Önemli
 - Uygulama içi Tanı / test bölümünde “Uygulama Sağlık Kontrolü” vardır. Kayıt yazmaz, tanılama raporu JSON oluşturur.
 - Tanı **sadece cihaz ve arayüz hazırlığını** doğrular; Firestore veri eşitlenmesi, PDF üretimi veya FIFO doğruluğu iddiasında bulunmaz.

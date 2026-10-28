@@ -21,7 +21,7 @@
 <meta name="theme-color" content="#17181C">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <title>Puantaj Defterim</title>
-<meta name="application-version" content="0.1.5.4">
+<meta name="application-version" content="0.1.5.6">
 
 <!-- ================= iOS / Safari "Ana ekrana ekle" desteği ================= -->
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -494,14 +494,7 @@
       </div>
       <div class="kart gizli" id="yenilik-kart" style="border-color:var(--sari)">
         <h2>🎁 Neler yeni?</h2>
-        <ul style="padding-left:18px;font-size:13.5px;line-height:1.85">
-<li><b>Canlı Gold görünüm.</b> Güncelleme ekranında güçlü altın, turuncu ve yeşil vurgular; daha net metinler.</li>
-<li><b>Gerçek sürüm doğrulaması.</b> Eski veya önbellekte kalmış sürümleri “yeni” diye duyurmaz.</li>
-<li><b>İstediğinde güncelle.</b> İşlemin yarım kalmasın diye şimdi veya daha sonra seçimleri.</li>
-<li><b>Tek merkezli sürüm etiketi.</b> Uygulama içindeki sürüm yazıları ortak değerden güncellenir.</li>
-<li><b>Hızlı işlem merkezi.</b> Favoriler, son açılan bölümler ve Türkçe arama korunur.</li>
-<li><b>Hesaplama güvenliği.</b> FIFO, avans, puantaj, PDF, PIN ve Firebase veri şemasına dokunulmadı.</li>
-</ul>
+        <ul style="padding-left:18px;font-size:13.5px;line-height:1.85"><li><b>Veri Kalkanı:</b> cihaz, sürüm ve güvenli bulut erişimi kontrolü.</li><li><b>Yedek doğrulama:</b> JSON dosyanı geri yüklemeden yapı ve eksik kayıtlar açısından tara.</li><li><b>Yayın kontrol listesi:</b> her güncelleme öncesinde sekiz koruma adımı.</li><li><b>Güvenli rapor:</b> özel hesap bilgilerini içermeyen sistem kontrolü.</li><li><b>Şeffaf uyarılar:</b> fotoğraf/dekont yedeği ve riskli tutar onarımı uyarıları.</li><li><b>Arayüz:</b> üç sekmeli yeni mobil kontrol merkezi, daha net durum renkleri.</li></ul>
         <button class="btn btn-cizgili" id="btn-yenilik-kapat">Süper, kapat</button>
       </div>
       <div class="kart gizli" id="ana-hedef-kart">
@@ -696,8 +689,48 @@
 
     <!-- ===== GÖRÜNÜM: TANI / TEST (yalnızca yetkili hesap) ===== -->
     <section id="goruntu-tani" class="gizli">
+<!-- 0.1.5.5 Veri Kalkanı: mevcut kayıt/PIN/FIFO motorundan bağımsız, salt-okunur ekran. -->
+<div class="kart pd55-panel" id="pd55-panel">
+ <header class="pd55-head">
+  <div class="pd55-sigil" aria-hidden="true">✦</div>
+  <div><div class="pd55-overline">PUANTAJ DEFTERİM · <span class="surum-otomatik">0.1.5.6</span></div><h2>Veri Kalkanı</h2><p>Güncellemeden önce kontrol et, yedeğini doğrula, riskleri gör.</p></div>
+ </header>
+ <div class="pd55-stats" id="pd55-stats" aria-live="polite">
+  <div><small>Uygulama</small><strong id="pd55-version">0.1.5.6</strong></div>
+  <div><small>Bağlantı</small><strong id="pd55-online">Kontrol edilmeli</strong></div>
+  <div><small>JSON yedek</small><strong id="pd55-backup-age">Bilinmiyor</strong></div>
+ </div>
+ <div class="pd55-tabs" role="tablist" aria-label="Veri Kalkanı sekmeleri">
+  <button type="button" role="tab" id="pd55-tab-state" aria-controls="pd55-page-state" aria-selected="true" data-pd55-tab="state">Sistem</button>
+  <button type="button" role="tab" id="pd55-tab-backup" aria-controls="pd55-page-backup" aria-selected="false" data-pd55-tab="backup">Yedek doğrula</button>
+  <button type="button" role="tab" id="pd55-tab-release" aria-controls="pd55-page-release" aria-selected="false" data-pd55-tab="release">Yayın listesi</button>
+ </div>
+ <div id="pd55-page-state" role="tabpanel" aria-labelledby="pd55-tab-state" class="pd55-page">
+  <p class="pd55-intro">Gerçek cihaz bilgilerini gösterir. Bu kontrol Firestore'a finansal kayıt yazmaz.</p>
+  <div class="pd55-actions"><button type="button" id="pd55-scan" class="btn btn-sari">Cihazı denetle</button><button type="button" id="pd55-server" class="btn btn-cizgili">Bulut erişimini dene</button></div>
+  <div class="pd55-results" id="pd55-results" aria-live="polite"><p class="pd55-empty">Kontrolleri başlatmak için yukarıdaki düğmeyi kullan.</p></div>
+  <div class="pd55-actions"><button type="button" id="pd55-export" class="btn btn-cizgili" disabled>Gizli bilgi içermeyen raporu indir</button></div>
+ </div>
+ <div id="pd55-page-backup" role="tabpanel" aria-labelledby="pd55-tab-backup" class="pd55-page gizli">
+  <p class="pd55-intro">İndirdiğin JSON yedeği burada sadece <strong>cihazında</strong> incelenir; hiçbir yere yüklenmez ve geri yüklenmez.</p>
+  <label class="pd55-upload" for="pd55-backup-file">JSON yedeğini seç <span>En fazla 25 MB · İçerik telefonunda kalır</span></label>
+  <input type="file" id="pd55-backup-file" accept=".json,application/json" class="pd55-file" />
+  <div class="pd55-results" id="pd55-backup-results" aria-live="polite"><p class="pd55-empty">Henüz dosya seçilmedi.</p></div>
+  <div class="pd55-warning"><b>Fotoğraf ve dekont uyarısı</b><span>Mevcut JSON yedekleyici bunları dahil etmiyor. Doğrulama başarıyla geçse bile tüm dosyaların yedeklendiği anlamına gelmez.</span></div>
+  <button type="button" class="btn btn-cizgili" id="pd55-go-backup">Uygulamanın yedekleme bölümüne git</button>
+ </div>
+ <div id="pd55-page-release" role="tabpanel" aria-labelledby="pd55-tab-release" class="pd55-page gizli">
+  <p class="pd55-intro">Her yeni sürümde kontrol listesini tekrar işaretle. Onaylar sadece bu cihazdaki bir tercih olarak saklanır.</p>
+  <div id="pd55-checklist" class="pd55-checklist"></div>
+  <div class="pd55-count" id="pd55-progress" aria-live="polite">0 / 8 tamamlandı</div>
+  <div class="pd55-warning"><b>Riskli tutar onarımı</b><span>Eski araç 100 TL altındaki bazı kayıtları 1000 ile çarpmayı teklif ediyor. Gerçek küçük tutarlar varsa kullanma. Her işlemden önce bağımsız yedek al.</span></div>
+  <button type="button" id="pd55-reset-list" class="btn btn-cizgili">Listeyi yeniden başlat</button>
+ </div>
+ <p class="pd55-footer">FIFO ve avans hesaplaması bu merkez tarafından çalıştırılmaz veya değiştirilmez. Sunucu ve gerçek APK işlemleri ayrıca doğrulanmalıdır.</p>
+</div>
+
 <div class="kart pd54-denetim" id="pd54-denetim">
-  <div class="pd54-eyebrow">KALİTE MERKEZİ · <span class="surum-otomatik">0.1.5.4</span></div>
+  <div class="pd54-eyebrow">KALİTE MERKEZİ · <span class="surum-otomatik">0.1.5.6</span></div>
   <h2>Uygulama Sağlık Kontrolü</h2>
   <p>Arayüz, sürüm, bağlantı, PIN altyapısı, PDF kaynakları, yedekleme ve çevrimdışı hazırlığı için <strong>salt-okunur</strong> kontroller. Her kontrolün sonucu ayrı gösterilir; Firebase kayıtları yazılmaz veya silinmez.</p>
   <div class="pd54-aksiyonlar"><button type="button" class="btn btn-sari" id="pd54-denetle">Sistem kontrolünü başlat</button><button type="button" class="btn btn-cizgili" id="pd54-rapor" disabled>Raporu indir</button></div>
@@ -1813,7 +1846,7 @@
         <h2 class="ayar-bas" role="button" tabindex="0">🩹 Eski kayıtlarda tutar düzeltme<span class="ayar-ok">▾</span></h2>
         <p style="font-size:13px;color:var(--soluk);margin-bottom:12px;line-height:1.6">
           Eskiden "5.000" gibi noktayla yazılan tutarlar yanlışlıkla "5 TL" kaydediliyordu (özellikle iPhone'da).
-          Bu araç öyle görünen kayıtları bulur, sana listeyi gösterir, onaylarsan düzeltir.
+          Bu araç öyle görünen kayıtları bulur, sana listeyi gösterir, onaylarsan düzeltir. <strong>Uyarı: Gerçekten 100 TL altı tutarlar da 1000 katına çıkabilir. İşlemi ancak tam yedek alıp her kaydı doğruladıktan sonra kullan.</strong>
         </p>
         <button class="btn btn-cizgili" id="btn-onarim">🩹 Bozuk tutarları tara ve düzelt</button>
       </div>
@@ -1837,10 +1870,10 @@
       <div class="kart ayar-kart kapali">
         <h2 class="ayar-bas" role="button" tabindex="0">💾 Yedek al / geri yükle<span class="ayar-ok">▾</span></h2>
         <p style="font-size:13px;color:var(--soluk);margin-bottom:12px;line-height:1.6">
-          Bütün puantaj, ödeme ve ayarlarını tek dosya olarak telefonuna indirir. Ara sıra yedek al, garanti olsun.
+          Puantaj, ödeme ve ayar kayıtlarını JSON olarak indirir. Fotoğraf, fiş ve dekont dosyaları bu yedeğe dahil değildir. Yedek dosyanı güvenli bir yerde sakla.
         </p>
         <p id="yedek-durum-bilgi" class="yedek-durum-bilgi" aria-live="polite">Bu cihazdaki son JSON yedek tarihi denetleniyor.</p>
-        <button class="btn btn-cizgili" id="btn-yedek">⬇️ Tüm verimi indir (JSON)</button>
+        <button class="btn btn-cizgili" id="btn-yedek">⬇️ Kayıtlarımı indir (JSON · fotoğraflar hariç)</button>
         <button class="btn btn-cizgili" id="btn-geri-yukle" style="margin-top:10px">⬆️ Yedekten geri yükle</button>
         <input type="file" id="yedek-dosya" accept=".json,application/json" class="gizli">
       </div>

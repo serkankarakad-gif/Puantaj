@@ -1,3 +1,11 @@
+## 0.1.5.5 — Yayın öncesi
+- [ ] 0.1.4.1 ile FIFO fonksiyonlarının birebir aynı olduğunu doğrula.
+- [ ] Gerçek test hesabında PIN, Firestore izinleri, kayıt/eşitleme, PDF ve Excel'i dene.
+- [ ] JSON ve fotoğraf/dekont yedeklerini ayrı ayrı koru; kayıtlara dokunma.
+- [ ] HTML to APK Builder Version Name: 0.1.5.5; Version Code daha yüksek; paket adı ve imza aynı.
+- [ ] Test cihazındaki mevcut uygulamayı kaldırmadan güncelle.
+- [ ] Firestore'daki geniş okuma izinleri güvenlik riskidir; ayrı migration ve kurallar testi gerektirir.
+
 # Puantaj Defterim — 0.1.5.4 kapsamlı denetim raporu
 
 **İncelenen sürümler:** Kullanıcının 0.1.4.1 orijinal ZIP'i ile son 0.1.5.3 ZIP'i; geliştirilen yeni 0.1.5.4 ZIP'i. **İnceleme tarihi:** 28 Ekim 2026.
