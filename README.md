@@ -1,3 +1,6 @@
+## 0.1.5.7 — PDF avans / FIFO düzeltmesi
+Maaşlar ekranından başka bir ayın PDF'i veya WhatsApp raporu alınınca, uygulama ayı değiştiriyor ama ödeme (ve masraf) listesi önceki ayda kalıyordu; seçilen ayın avansları belgeye yazılmıyor, ALINAN/KALAN yanlış çıkıyordu. Artık seçilen ayın ödemeleri **FIFO kuralına (kaydın `aitAy` alanı) göre** getirilir. Ödemeler okunamazsa avanssız belge üretilmez. Aylık, yıllık ve yazdırma raporlarında **Askeriye** ödemeleri kendi bölümünde listelenir; her ödeme tam bir bölüme düşer, bölüm toplamları ALINAN ile birebir tutar. FIFO ile başka aya sayılan ödemelerde "… hesabına sayıldı" notu çıkar. İş raporuna **TÜR** sütunu eklendi. **FIFO hesaplama mantığı, eşikler, `aitAy` atama, maaş, PIN, Firebase kuralları ve veri şeması değişmedi.** 20 dosya sınırı korunmuştur.
+
 ## 0.1.5.6 — Tanı raporu onarımı
 0.1.5.4 cihaz raporunda görülen `pinKasasiKaydi is not defined` kaynaklı tanı çökmesi yeni sürümde giderildi. Sonuç paneli artık yalnızca mevcut kullanıcının bu cihazdaki PIN özeti olup olmadığını bildirir; PIN doğrulama sistemi ve tüm finans kuralları aynı kaldı. Tarihi hata kayıtları silinmez. Gerçek Firebase kuralları ve mutabakat onayı uygulamanın dışındaki sunucuda ayrıca test edilmelidir. **20 dosya sınırı korunmuştur.**
 

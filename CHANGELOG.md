@@ -1,3 +1,15 @@
+## 0.1.5.7 — PDF avans / FIFO düzeltmesi (02.11.2026)
+- **Kök neden:** `ayDetayPaylas` (Maaşlar → ay detayı → PDF/Paylaş) `aktifAy` ve `girdiler`i değiştiriyor, `odemeler` ve `masraflar`ı değiştirmiyordu. Seçilen ayın avansları PDF'e/mesaja yazılmıyor, önceki ayın kayıtları karışabiliyor, masraf alacağı eksik çıkıyordu. Artık seçilen ayın ödemeleri `aitAy`/FIFO'ya göre (`odemeAyi`) getirilir ve `raporKaynagi` ile raporlara verilir; canlı dinleyici dizilerine dokunulmaz.
+- Ödeme veya masraf okunamazsa (ağ/önbellek) belge **üretilmez**, hata gösterilir; ay ve veri geri konur.
+- **Askeriye** türü aylık PDF, yıllık PDF ve yazdırma raporunda listelenmiyordu (toplamda sayılıyordu). Tüm raporlar ortak `pdfOdemeBolumleri()` kullanır: her ödeme tam bir bölüme düşer (bilinmeyen/boş tür → Diğer).
+- FIFO ile başka aya sayılan ödemelerde not: "… hesabına sayıldı" (yalnızca gösterim).
+- Yıllık PDF: üst özet ve ay altbilgileri, ay detaylarıyla aynı ödeme listesinden hesaplanır (önbellek boşken özet 0, detay dolu çıkabiliyordu).
+- İş raporu PDF: alınan paralar tablosuna **TÜR** sütunu.
+- Tarihi eksik/bozuk ödeme artık `NaN / NaN` yazmaz; "—" gösterilir. Aynı tarihli ödemelerde sıra kayıt sırasıdır.
+- Puantaj ekranındaki PDF/Paylaş: ödeme önbelleği boşsa ayiYukle ile aynı yoldan yüklenir.
+- **Değişmeyenler:** `odemeAyi`, `enEskiOdenmemisAy`, `tumDonemOzeti`, ödeme kaydetme ve aitAy atama, maaş, PIN, Firebase kuralları, veri şeması, `sabitler.js`, `firebase-config.js`, `firestore.rules`, fontlar, `worker.js` (bayt düzeyinde aynı). Puantaj ekranı hesapları (`hesaplaAralik`) eski sürümle aynı sonuçları verir.
+- Yedek alıp önce test hesabında dene: Maaşlar → bir ay → PDF; Askeriye ödemeli ay; yıllık PDF; iş raporu.
+
 ## 0.1.5.6 — Tanı raporu güvenilirlik onarımı (28.10.2026)
 - Tanı/Test PIN kontrolünde `pinKasasiKaydi is not defined` hatası düzeltildi. PIN oluşturma/doğrulama, bulut kasası ve hesap giriş işleyicileri **değişmedi**. Test yalnızca oturumdaki kullanıcıya ait yerel kayıt varlığını inceler; buluttaki durum hakkında kesin ifade kullanmaz.
 - Hata günlüğü eski kayıtları yeni çökme gibi sınıflandırmaz; 7 günlük özet gösterir, eski logları **silmez**.
