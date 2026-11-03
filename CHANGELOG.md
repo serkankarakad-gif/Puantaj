@@ -1,9 +1,3 @@
-## 0.1.5.8 — Başka aya sayılan ödemeler PDF'te görünür (03.11.2026)
-- Aylık PDF, yıllık PDF (her ay detayı) ve yazdırma/resim raporu: o dönemde **alınan** ama FIFO ile **başka aya sayılan** ödemeler (`odemeAyi` ≠ rapor ayı) ayrı, gri bir bilgi bloğunda listelenir: tarih, tür, "… hesabına sayıldı" notu, tutar.
-- Blok yalnızca bilgidir: rapor ayının ALINAN, KALAN ve mutabakat toplamlarına **girmez**. Yarım dönem raporlarında yalnızca o gün aralığında alınanlar gösterilir. Hem geçmiş aya hem ileri aya sayılan ödemeler gösterilir.
-- Maaşlar ekranından başka ayın PDF'i alınırken de çalışır (`raporKaynagi.tumu`).
-- **Değişmeyenler:** `odemeAyi`, `enEskiOdenmemisAy`, `tumDonemOzeti`, ödeme kaydetme ve aitAy atama, `hesaplaAralik` sonuçları (testle doğrulandı), maaş, PIN, Firebase kuralları, veri şeması. 0.1.5.7 düzeltmeleri dahildir.
-
 ## 0.1.5.7 — PDF avans / FIFO düzeltmesi (02.11.2026)
 - **Kök neden:** `ayDetayPaylas` (Maaşlar → ay detayı → PDF/Paylaş) `aktifAy` ve `girdiler`i değiştiriyor, `odemeler` ve `masraflar`ı değiştirmiyordu. Seçilen ayın avansları PDF'e/mesaja yazılmıyor, önceki ayın kayıtları karışabiliyor, masraf alacağı eksik çıkıyordu. Artık seçilen ayın ödemeleri `aitAy`/FIFO'ya göre (`odemeAyi`) getirilir ve `raporKaynagi` ile raporlara verilir; canlı dinleyici dizilerine dokunulmaz.
 - Ödeme veya masraf okunamazsa (ağ/önbellek) belge **üretilmez**, hata gösterilir; ay ve veri geri konur.
