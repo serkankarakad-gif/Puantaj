@@ -21,7 +21,7 @@
 <meta name="theme-color" content="#17181C">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <title>Puantaj Defterim</title>
-<meta name="application-version" content="0.1.5.9">
+<meta name="application-version" content="0.1.6.0">
 
 <!-- ================= iOS / Safari "Ana ekrana ekle" desteği ================= -->
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -485,7 +485,7 @@
       </div>
       <div class="kart gizli" id="yenilik-kart" style="border-color:var(--sari)">
         <h2>🎁 Neler yeni?</h2>
-        <ul style="padding-left:18px;font-size:13.5px;line-height:1.85"><li><b>Mesai (saat):</b> gün penceresinde 1, 2, 3, 4, 5, 8, 10, 12 saatlik hazır seçenekler. Ayarlardaki mesai saat ücretiyle hesaplanır.</li><li><b>Gün notu zorunlu:</b> çalışılan günde "bugün ne yaptın" yazılır (en az 10 harf). Uzun basma ve toplu işle de not ister.</li><li><b>PDF'te günlük işler:</b> yazdığın notlar tarih tarih PDF'te görünür.</li><li><b>Kronometre kaldırıldı:</b> mesai artık saat olarak yazılır.</li><li><b>PDF avans düzeltmesi:</b> Maaşlar ekranından başka ayın PDF'inde avanslar eksiksiz yazılır; Askeriye ödemeleri listelenir.</li><li><b>Başka aya sayılan avans:</b> Ocak borcuna sayılan ama Şubat'ta alınan avans, Şubat PDF'inde ayrı blokta görünür; Şubat toplamına girmez.</li><li><b>Güvenlik:</b> ödemeler okunamazsa avanssız PDF üretilmez.</li></ul>
+        <ul style="padding-left:18px;font-size:13.5px;line-height:1.85"><li><b>Para tutarlılığı:</b> PDF, Maaşlar, ana ekran ve yıl özeti aynı yuvarlamayı kullanır; 1 ₺ tutmayan rakam kalmadı.</li><li><b>Yarım dönem raporu:</b> başka ayın tarihiyle alınıp bu aya sayılan avans artık iki raporda birden çıkmaz.</li><li><b>Avans yazımı:</b> avans yalnızca sayıldığı ayın PDF'inde yazar; diğer ayda ek açıklama çıkmaz.</li><li><b>Mesai (saat):</b> 1, 2, 3, 4, 5, 8, 10, 12 saatlik hazır seçenekler; ayardaki mesai saat ücretiyle hesaplanır.</li><li><b>Gün notu zorunlu:</b> çalışılan günde "bugün ne yaptın" (en az 10 harf). PDF'te günlük işler listelenir.</li><li><b>Kronometre kaldırıldı.</b></li><li><b>PDF avans düzeltmesi:</b> Maaşlar ekranından başka ayın PDF'inde avanslar ve Askeriye eksiksiz yazılır.</li></ul>
         <button class="btn btn-cizgili" id="btn-yenilik-kapat">Süper, kapat</button>
       </div>
       <div class="kart gizli" id="ana-hedef-kart">
@@ -684,10 +684,10 @@
 <div class="kart pd55-panel" id="pd55-panel">
  <header class="pd55-head">
   <div class="pd55-sigil" aria-hidden="true">✦</div>
-  <div><div class="pd55-overline">PUANTAJ DEFTERİM · <span class="surum-otomatik">0.1.5.9</span></div><h2>Veri Kalkanı</h2><p>Güncellemeden önce kontrol et, yedeğini doğrula, riskleri gör.</p></div>
+  <div><div class="pd55-overline">PUANTAJ DEFTERİM · <span class="surum-otomatik">0.1.6.0</span></div><h2>Veri Kalkanı</h2><p>Güncellemeden önce kontrol et, yedeğini doğrula, riskleri gör.</p></div>
  </header>
  <div class="pd55-stats" id="pd55-stats" aria-live="polite">
-  <div><small>Uygulama</small><strong id="pd55-version">0.1.5.9</strong></div>
+  <div><small>Uygulama</small><strong id="pd55-version">0.1.6.0</strong></div>
   <div><small>Bağlantı</small><strong id="pd55-online">Kontrol edilmeli</strong></div>
   <div><small>JSON yedek</small><strong id="pd55-backup-age">Bilinmiyor</strong></div>
  </div>
@@ -721,7 +721,7 @@
 </div>
 
 <div class="kart pd54-denetim" id="pd54-denetim">
-  <div class="pd54-eyebrow">KALİTE MERKEZİ · <span class="surum-otomatik">0.1.5.9</span></div>
+  <div class="pd54-eyebrow">KALİTE MERKEZİ · <span class="surum-otomatik">0.1.6.0</span></div>
   <h2>Uygulama Sağlık Kontrolü</h2>
   <p>Arayüz, sürüm, bağlantı, PIN altyapısı, PDF kaynakları, yedekleme ve çevrimdışı hazırlığı için <strong>salt-okunur</strong> kontroller. Her kontrolün sonucu ayrı gösterilir; Firebase kayıtları yazılmaz veya silinmez.</p>
   <div class="pd54-aksiyonlar"><button type="button" class="btn btn-sari" id="pd54-denetle">Sistem kontrolünü başlat</button><button type="button" class="btn btn-cizgili" id="pd54-rapor" disabled>Raporu indir</button></div>

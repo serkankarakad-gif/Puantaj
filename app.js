@@ -186,7 +186,7 @@ let planlar = [], dinleyiciPlan = null; // 📐 plan/proje linkleri
 let masraflar = [];                    // bu ayın iş masrafları
 /* 0.1.5.7: Maaşlar ekranından BAŞKA bir ayın raporu alınırken, o ayın ödemeleri/masrafları burada
    taşınır. Canlı dinleyicilerin `odemeler`/`masraflar` dizilerine dokunmaz (yarış riski yok). */
-let raporKaynagi = null;               // {odemeler:[...], tumu:[...tüm ödemeler], masraflar:[...]} | null
+let raporKaynagi = null;               // {odemeler:[...], masraflar:[...]} | null
 let ekipListe = [];                    // ekipteki işçiler
 let masrafSeciliKategori = "malzeme";  // masraf ekleme formunda seçili kategori
 let masrafFiltre = "hepsi";            // masraf listesinde gösterilen kategori ("hepsi" = filtre yok)
@@ -5436,7 +5436,11 @@ async function anaYukle(){
     /* Alacak eşiği uyarısı */
     const esikEl = $("#esik-uyari");
     if(esikEl){
-      const kalanTum = hakedis - alinan;
+      /* 0.1.6.0: Maaşlar ekranındaki toplamla birebir aynı: her ay ayrı yuvarlanıp toplanır */
+      let kalanTum = 0;
+      new Set(Object.keys(aylikHak).concat(Object.keys(aylikAlinan))).forEach(ay8=>{
+        kalanTum += Math.round(aylikHak[ay8]||0) - Math.round(aylikAlinan[ay8]||0);
+      });
       if(ayarlar.uyariEsik>0 && kalanTum >= ayarlar.uyariEsik){
         esikEl.classList.remove("gizli");
         esikEl.innerHTML = "💰 Şirkette <b>toplamda "+paraFmt(kalanTum)+"</b> biriktin (tüm aylar dahil, eşiğin: "+paraFmt(ayarlar.uyariEsik)+"). Hakedişini istemenin vakti gelmiş olabilir — \"Maaşlar\"dan hangi ayların eksik olduğuna bakabilirsin 😉";
@@ -5446,7 +5450,7 @@ async function anaYukle(){
     const sirketKart = $("#sirket-bakiye").closest(".banka-kart");
     if(sirketKart) sirketKart.classList.add("kart-parla");
     const buAyAlinan = aylikAlinan[buAyOnEk]||0;
-    const buAyKalan = buAyHak - buAyAlinan;
+    const buAyKalan = Math.round(buAyHak) - Math.round(buAyAlinan);   /* 0.1.6.0: Maaşlar ekranıyla aynı yuvarlama */
     sayacAnim($("#sirket-bakiye"), buAyKalan);
     kurSatirYaz(buAyKalan);
     /* 🔮 Ay sonu tahmini: bu tempoyla ay bitince ne kadar yaparsın */
@@ -6885,9 +6889,9 @@ async function ayDetayPaylas(tur){
       gecici = {};
       qs.forEach(doc=> gecici[doc.id] = doc.data());
     }
-    const odemeVeri = await ayOdemeleriniKesinGetir(yy + "-" + pad(aa));
+    const odemeListesi = await ayOdemeleriniKesinGetir(yy + "-" + pad(aa));
     const masrafListesi = ayDegisti ? await ayMasraflariniKesinGetir(yy, aa) : masraflar;
-    kaynak = {odemeler: odemeVeri.odemeler, tumu: odemeVeri.tumu, masraflar: masrafListesi};
+    kaynak = {odemeler: odemeListesi, masraflar: masrafListesi};
     if(ayDegisti){ aktifYil = yy; aktifAy = aa-1; girdiler = gecici; }
     raporKaynagi = kaynak;
     const aySonu = new Date(aktifYil, aktifAy+1, 0).getDate();
@@ -7362,12 +7366,16 @@ function isiHaritaCiz(gunKazanc){
        sayılan avans) sorguya hiç girmiyordu, dolayısıyla Yıl Özeti ekranı ve
        ondan beslenen Yıl PDF'i onu göstermiyordu. Artık tumOdemelerQS (tüm
        zamanların önbelleği) odemeAyi()'nin YILINA göre süzülüyor. */
+    await tumOdemeOnbellegiHazirla();   /* 0.1.6.0: önbellek boşsa ALINAN sessizce 0 çıkmasın */
     const tumOdemeListesi = [];
     if(tumOdemelerQS) tumOdemelerQS.forEach(doc=> tumOdemeListesi.push(doc.data()));
     tumOdemeListesi.filter(v=> odemeAyi(v).slice(0,4)===String(aktifYil)).forEach(v=>{
       const ay=Number(odemeAyi(v).slice(5,7))-1;
       if(ay>=0 && ay<12) aylik[ay].alinan += Number(v.tutar)||0;
     });
+    /* 0.1.6.0 — YUVARLAMA TUTARLILIĞI: her ay önce tam liraya yuvarlanır, kalan ve toplamlar bunlardan
+       hesaplanır → tablo kendi içinde tutar ve Maaşlar ekranıyla aynıdır. */
+    aylik.forEach(a=>{ a.hak = Math.round(a.hak); a.alinan = Math.round(a.alinan); });
     let T={gun:0,mesai:0,hak:0,alinan:0}, satirlar="";
     yilSon = {yil: aktifYil, aylar: [], T};
     aylik.forEach((a,i)=>{
@@ -7576,9 +7584,13 @@ function donemOdemeSec(bId, sId){
      tutuyordu → o ayın avansları PDF'e hiç düşmüyordu. Artık hedef ayın (aitAy/FIFO'ya göre
      süzülmüş) listesi `raporKaynagi` ile verilir. */
   const kaynak = (raporKaynagi && raporKaynagi.odemeler) || odemeler;
+  /* 0.1.6.0: Başka bir ayın tarihiyle alınıp FIFO ile BU aya sayılan ödeme eskiden 1–15 raporunda da,
+     16–sonu raporunda da çıkıyordu: iki yarıyı toplayan kişi ödemeyi İKİ KEZ görüyordu (ALINAN fazla,
+     KALAN eksik). Artık yalnızca ay sonunu kapsayan dönemde (16–sonu / tüm ay) yer alır. */
+  const aySonuId = buAy + "-" + pad(new Date(aktifYil, aktifAy+1, 0).getDate());
   return kaynak.filter(o=>{
     const tarihAy = String(o.tarih||"").slice(0,7);
-    if(tarihAy !== buAy) return true;
+    if(tarihAy !== buAy) return sId >= aySonuId;
     return o.tarih>=bId && o.tarih<=sId;
   });
 }
@@ -7598,9 +7610,9 @@ function raporMasraflari(){
       kalıyordu (bkz. ayDetayPaylas).
    Çözüm: her ödeme TAM BİR bölüme düşer (bilinmeyen/boş tür → "Diğer"), böylece bölümlerin
    toplamı ALINAN toplamına HER ZAMAN eşittir. FIFO'ya DOKUNULMAZ: hangi ödemenin hangi aya
-   sayılacağı kaydın `aitAy` alanıyla (odemeAyi) belirlenir; burada yalnızca gösterilir. Gerçek
-   alım tarihi başka bir aydaysa satır "… hesabına sayıldı" notu taşır — okuyan kişi parayı neden
-   o ayda gördüğünü anlar. */
+   sayılacağı kaydın `aitAy` alanıyla (odemeAyi) belirlenir; burada yalnızca gösterilir. Ödeme,
+   sayıldığı ayın PDF'inde kendi tarihiyle listelenir; başka ayın PDF'inde görünmez ve ek açıklama
+   ("devredildi" vb.) yazılmaz. */
 const PDF_ODEME_BOLUMLERI = [
   {tur:"avans",    baslik:"AVANSLAR"},
   {tur:"askeriye", baslik:"ASKERİYE ÖDEMELERİ"},
@@ -7624,15 +7636,11 @@ function pdfOdemeTarihYazi(o){
   if(isNaN(d.getTime())) return "—";
   return pad(d.getDate())+" / "+pad(d.getMonth()+1)+" / "+d.getFullYear()+" — "+GUNLER[d.getDay()];
 }
+/* Ödemenin notu OLDUĞU GİBİ yazılır. (0.1.6.0: "… hesabına sayıldı / devredildi" gibi ek açıklama
+   YOK — kullanıcı istemedi, kafa karıştırıyordu. Ödeme, FIFO ile sayıldığı ayın PDF'inde kendi
+   tarihiyle listelenir; başka ayın PDF'inde görünmez.) */
 function pdfOdemeNotu(o){
-  const not = String((o && o.not) || "");
-  const ay = odemeAyi(o);
-  const tarihAy = String((o && o.tarih) || "").slice(0,7);
-  if(!/^\d{4}-\d{2}$/.test(ay) || ay===tarihAy) return not;
-  const aa = Number(ay.slice(5,7));
-  if(aa<1 || aa>12) return not;
-  const etiket = AYLAR[aa-1]+" "+ay.slice(0,4)+" hesabına sayıldı";
-  return not ? not+" · "+etiket : etiket;
+  return String((o && o.not) || "");
 }
 /* Ödeme tarihine göre artan sıra; aynı tarihte kayıt sırası korunur (tutarlı karşılaştırıcı). */
 function pdfOdemeSirala(liste){
@@ -7644,14 +7652,13 @@ function pdfOdemeSirala(liste){
 async function ayOdemeleriniKesinGetir(hedefAy){
   let qs = tumOdemelerQS;
   if(!qs) qs = await kokRef().collection("odemeler").get();
-  const liste = [], tumu = [];
+  const liste = [];
   qs.forEach(doc=>{
     const v = doc.data();
-    tumu.push(v);   /* "başka aya sayılan" bilgi bloğu için (yalnızca gösterim) */
     if(odemeAyi(v) === hedefAy) liste.push({id:doc.id, ...v});
   });
   liste.sort((a,b)=> a.tarih < b.tarih ? 1 : -1);   /* odemeleriAyaGoreDoldur ile aynı sıra */
-  return {odemeler: liste, tumu};
+  return liste;
 }
 async function ayMasraflariniKesinGetir(yil, ay1){
   const bas = yil+"-"+pad(ay1)+"-01", son = yil+"-"+pad(ay1)+"-31";   /* ayiYukle ile aynı sorgu */
@@ -7671,59 +7678,6 @@ async function aktifAyOdemeleriniGuvenceyeAl(){
     if(!tumOdemelerQS) tumOdemelerQS = qs;
     odemeleriAyaGoreDoldur();
   }catch(e){ try{ hataKaydet("aktifAyOdemeleriniGuvenceyeAl", e); }catch(_){} }
-}
-
-/* ═════ "BU DÖNEMDE ALINIP BAŞKA AYA SAYILAN ÖDEMELER" — YALNIZCA BİLGİ (0.1.5.8) ═════
-   Örnek: Ocak'ta çalıştın, Ocak maaşını almadın; Şubat'ta avans aldın. FIFO gereği avans OCAK'a
-   sayılır ve Ocak'ın hesabından düşülür. Ocak PDF'inde zaten görünür ("… hesabına sayıldı").
-   Şubat PDF'inde ise bu avans HİÇ görünmüyordu: Şubat'ta alındığı hâlde Şubat belgesinde yoktu.
-   Artık Şubat PDF'inde ayrı, gri bir blokta yazılır; Şubat'ın ALINAN/KALAN toplamına GİRMEZ.
-   FIFO'ya dokunulmaz: hangi aya sayılacağı kaydın aitAy'ı (odemeAyi) ile belirlenir, burada
-   yalnızca gösterilir. */
-const PDF_BASKA_AY_BASLIK = "BU DÖNEMDE ALINIP BAŞKA AYA SAYILAN ÖDEMELER";
-const PDF_BASKA_AY_ACIKLAMA = "Bu ödemeler bu dönemde alındı; FIFO kuralıyla yazılan ayın hesabından düşülür. Bu dönemin ALINAN toplamına dahil değildir.";
-const PDF_BASKA_AY_TOPLAM = "TOPLAM (bu dönemin ALINAN toplamına dahil değil)";
-function baskaAyaSayilanOdemeler(kaynakListe, buAy, bId, sId){
-  return pdfOdemeSirala((kaynakListe||[]).filter(o=>{
-    const t = String((o && o.tarih) || "").slice(0,10);
-    if(!/^\d{4}-\d{2}-\d{2}$/.test(t) || t.slice(0,7) !== buAy) return false;   /* alındığı tarih bu ayda */
-    if(bId && t < bId) return false;
-    if(sId && t > sId) return false;
-    const ay = odemeAyi(o);
-    return /^\d{4}-\d{2}$/.test(ay) && ay !== buAy;                             /* ama başka aya sayılmış */
-  }));
-}
-function raporBaskaAyaOdemeleri(bId, sId){
-  const buAy = aktifYil + "-" + pad(aktifAy+1);
-  let kaynak = raporKaynagi && raporKaynagi.tumu;
-  if(!kaynak){
-    kaynak = [];
-    if(tumOdemelerQS) tumOdemelerQS.forEach(d=> kaynak.push(d.data()));
-  }
-  return baskaAyaSayilanOdemeler(kaynak, buAy, bId, sId);
-}
-/* jsPDF bloğu çizer, yeni y konumunu döndürür. */
-function pdfBaskaAyBlokCiz(doc, yaziTipi, solX, sagX, y, liste, yazi){
-  if(y + 70 + liste.length*16 > 780){ doc.addPage(); y = 50; }
-  doc.setFont(yaziTipi,"bold"); doc.setFontSize(yazi.baslik); doc.setTextColor(0);
-  doc.text(PDF_BASKA_AY_BASLIK+" ("+liste.length+" adet)", solX, y);
-  doc.setFont(yaziTipi,"normal"); doc.setFontSize(8); doc.setTextColor(90);
-  const satirlar = doc.splitTextToSize(PDF_BASKA_AY_ACIKLAMA, sagX - solX);
-  doc.text(satirlar, solX, y + 12);
-  doc.setTextColor(0);
-  const toplam = liste.reduce((s,o)=> s + (Number(o.tutar)||0), 0);
-  doc.autoTable({
-    startY: y + 12 + satirlar.length*10 + 2, margin:{left:solX, right: 595-sagX},
-    head: [["#","TARİH","TÜR","NOT","TUTAR"]],
-    body: liste.map((o,idx)=> [String(idx+1), pdfOdemeTarihYazi(o), odemeTurEtiket(o.tur), pdfOdemeNotu(o), paraFmt(o.tutar)]),
-    foot: [["","","",PDF_BASKA_AY_TOPLAM, paraFmt(toplam)]],
-    styles:{fontSize:yazi.tablo, cellPadding:4, lineColor:[200,200,200], lineWidth:0.5},
-    headStyles:{fillColor:[242,242,242], textColor:20, fontStyle:"bold"},
-    footStyles:{fillColor:[235,235,235], textColor:60, fontStyle:"bold"},
-    columnStyles:{0:{halign:"center", cellWidth:24}, 4:{halign:"right"}},
-    rowPageBreak: "avoid"
-  });
-  return doc.lastAutoTable.finalY + 18;
 }
 
 /* ═════ "GÜNLÜK YAPILAN İŞLER" — PDF / rapor (0.1.5.9) ═════
@@ -7824,9 +7778,14 @@ function hesaplaAralik(gBas, gSon){
                          .reduce((s,o)=> s+(Number(o.tutar)||0), 0);
   const masrafToplam = raporMasraflari().filter(m=> !m.odendi && m.tarih>=bId && m.tarih<=sId)
                                 .reduce((s,m)=> s+(Number(m.tutar)||0), 0);
+  /* 0.1.6.0 — YUVARLAMA TUTARLILIĞI: eskiden hakedis/alinan/kalan ham kesirli toplamlardı ve her biri
+     ekranda AYRI yuvarlanıyordu: PDF'te "hakediş 18.962 − alınan 2.501 = kalan 16.462" (doğrusu 16.461)
+     gibi 1 ₺'lik tutmayan rakamlar çıkabiliyordu ve Maaşlar ekranından 1 ₺ farklıydı. Artık tumDonemOzeti
+     (0.1.3.0) ile AYNI yöntem: önce tam liraya yuvarla, kalan yuvarlanmış değerlerden hesapla. */
+  const hakedisR = Math.round(hakedis), alinanR = Math.round(alinan), masrafR = Math.round(masrafToplam);
   return {gBas, gSon, gunSayisi, mesaiToplam, saatToplam, artiToplam, bId, sId,
           gelinenGun, artiSaf, mesaiYevToplam, geceYevToplam, yevmiyeToplam,
-          hakedis, alinan, masrafToplam, kalan: hakedis + masrafToplam - alinan,
+          hakedis: hakedisR, alinan: alinanR, masrafToplam: masrafR, kalan: hakedisR + masrafR - alinanR,
           etiket: (gBas===1 && gSon===aySonu) ? "" : " ("+gBas+"–"+gSon+")"};
 }
 
@@ -7973,20 +7932,6 @@ function raporIcerikUret(gBas, gSon){
   }else{
     odemeHtml = '<h2 style="font-size:15px;margin-top:22px;border-bottom:3px solid #FFC400;padding-bottom:5px">ALINAN PARALAR</h2>'+
       '<p style="font-size:12px;color:#666">Bu dönemde kayıtlı para girişi yok.</p>';
-  }
-  /* 0.1.5.8: bu dönemde alınıp FIFO ile başka aya sayılan ödemeler — yalnızca bilgi */
-  const baskaAyaH = raporBaskaAyaOdemeleri(t.bId, t.sId);
-  if(baskaAyaH.length){
-    let bSat = "", bTop = 0;
-    baskaAyaH.forEach((o, idx)=>{
-      bTop += Number(o.tutar)||0;
-      bSat += "<tr><td class='orta-h'>"+(idx+1)+"</td><td>"+pdfOdemeTarihYazi(o)+"</td><td>"+esc(odemeTurEtiket(o.tur))+
-        "</td><td>"+esc(pdfOdemeNotu(o))+"</td><td class='sag'>"+paraFmt(o.tutar)+"</td></tr>";
-    });
-    odemeHtml += '<h2 style="font-size:15px;margin-top:22px;border-bottom:3px solid #BBB;padding-bottom:5px">'+PDF_BASKA_AY_BASLIK+' ('+baskaAyaH.length+' adet)</h2>'+
-      '<p style="font-size:11px;color:#555;margin:6px 0 0">'+PDF_BASKA_AY_ACIKLAMA+'</p>'+
-      '<table><tr><th style="width:34px;text-align:center">#</th><th>TARİH</th><th>TÜR</th><th>NOT</th><th class="sag">TUTAR</th></tr>'+bSat+
-      '<tr><td colspan="4" style="font-weight:bold;background:#EBEBEB">'+PDF_BASKA_AY_TOPLAM+'</td><td class="sag" style="font-weight:bold;background:#EBEBEB">'+paraFmt(bTop)+'</td></tr></table>';
   }
   /* 0.1.5.9: günlük yapılan işler (işçinin kendi notları) */
   let isNotHtml = "";
@@ -8264,11 +8209,6 @@ function pdfBlobOlustur(gBas, gSon){
     y2 += 20;
   }
 
-  /* 0.1.5.8: bu dönemde alınıp FIFO ile başka aya sayılan ödemeler — yalnızca bilgi, toplamlara girmez */
-  const baskaAyaOdemeler = raporBaskaAyaOdemeleri(t.bId, t.sId);
-  if(baskaAyaOdemeler.length){
-    y2 = pdfBaskaAyBlokCiz(doc, yaziTipi, solX, sagX, y2, baskaAyaOdemeler, {baslik:11, tablo:8});
-  }
   /* 0.1.5.9: işçinin her gün için yazdığı "bugün ne yaptın" notları */
   const isNotlari = gunlukIsNotlari(t.gBas, t.gSon);
   if(isNotlari.length){
@@ -8819,7 +8759,7 @@ function yilPdfBlobOlustur(){
   });
   const aylarPdf = yilSon.aylar.map(a=>{
     const i = AYLAR.indexOf(a.ad);
-    return Object.assign({}, a, {alinan: (tumOdemelerQS && i>=0) ? (tazeAlinan[i]||0) : a.alinan});
+    return Object.assign({}, a, {alinan: (tumOdemelerQS && i>=0) ? Math.round(tazeAlinan[i]||0) : a.alinan});
   });
   const yilAlinanToplam = aylarPdf.reduce((s,a)=> s+a.alinan, 0);
   const doc = new jsPDF({unit:"pt", format:"a4"});
@@ -8940,9 +8880,6 @@ function yilPdfBlobOlustur(){
     }
     /* Her ödeme tam bir bölüme düşer (Askeriye dahil). */
     pdfOdemeBolumleri(donemOdeme).forEach(b=> odemeBolumPdf(b.baslik, b.liste));
-    /* 0.1.5.8: bu ayda alınıp FIFO ile başka aya sayılan ödemeler — yalnızca bilgi, toplamlara girmez */
-    const baskaAyaY = baskaAyaSayilanOdemeler(tumOdemeListesi, buAyStr);
-    if(baskaAyaY.length) y3 = pdfBaskaAyBlokCiz(doc, yaziTipi, solX, sagX, y3, baskaAyaY, {baslik:10.5, tablo:7.5});
   });
 
   return doc.output("blob");

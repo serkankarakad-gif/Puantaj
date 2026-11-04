@@ -1,3 +1,13 @@
+## 0.1.6.0 — Para tutarlılığı denetimi, avans yazımı sadeleşti (04.11.2026)
+- **Kaldırıldı:** 0.1.5.8'deki "Bu dönemde alınıp başka aya sayılan ödemeler" bloğu (aylık/yıllık PDF, yazdırma raporu) ve ödeme notundaki "… hesabına sayıldı" eki. Ödeme yalnızca FIFO ile sayıldığı ayın (`odemeAyi`) raporunda, kendi tarihiyle listelenir; başka ayın raporunda hiçbir ek yazı olmaz. Maaşlar akışı (`raporKaynagi`) ve 0.1.5.7 düzeltmeleri aynen duruyor.
+- **Yuvarlama (hesaplaAralik):** `hakedis`, `alinan`, `masrafToplam` önce tam liraya yuvarlanır, `kalan` yuvarlanmış değerlerden hesaplanır — `tumDonemOzeti` (0.1.3.0) ile aynı yöntem. Eskiden PDF'te "hakediş 18.962 − alınan 2.501 = kalan 16.462" gibi 1 ₺ tutmayan rakamlar çıkabiliyordu ve Maaşlar ekranıyla 1 ₺ fark olabiliyordu (rastgele veride ~%20 aylık raporda).
+- **Yarım dönem (`donemOdemeSec`):** başka ayın tarihiyle alınıp bu aya sayılan ödeme yalnızca ay sonunu kapsayan dönemde (16–sonu / tüm ay) yer alır. Eskiden 1–15 ve 16–sonu raporlarının ikisinde de çıkıyor, iki yarıyı toplayan kişi ödemeyi iki kez görüyordu. Tüm ay raporu değişmedi.
+- **Ana ekran:** "bu ay kalan" ve "toplamda biriktin" rakamları Maaşlar ekranındaki toplamla aynı yuvarlamayı kullanır.
+- **Yıl özeti:** aylık hakediş/alınan önce yuvarlanır (tablo kendi içinde tutar); ödeme önbelleği boşsa önce yüklenir, ALINAN sessizce 0 çıkmaz. Yıl PDF'i aynı değerleri kullanır.
+- **Değişmeyenler:** `odemeAyi`, `enEskiOdenmemisAy`, `tumDonemOzeti`, `girdiDokum`, `girdiKazanc`, `oranBul`, ödeme kaydetme ve aitAy atama, PIN, Firebase kuralları, veri şeması (bayt düzeyinde aynı). 0.1.5.7 / 0.1.5.8 (blok hariç) / 0.1.5.9 dahildir.
+- **Bilinen tasarım farkı (dokunulmadı):** PDF/WhatsApp raporundaki KALAN, işçinin yaptığı masrafı (masraf alacağı) da içerir; Maaşlar ve ana ekran masrafı ayrı tutar. Masraf kaydı yoksa hepsi aynıdır.
+- Yedek alıp önce test hesabında dene: aylık PDF (kesirli yevmiye/mesai ile), 1–15 ve 16–sonu raporları, Maaşlar ve yıl özeti rakamlarının aynı olduğunu kontrol et.
+
 ## 0.1.5.9 — Mesai (saat), zorunlu gün notu, PDF'te günlük işler, kronometre kaldırıldı (04.11.2026)
 - **Mesai (saat):** yeni `gun-mesai-saatlik` alanı, ± düğmeleri ve 1/2/3/4/5/8/10/12 çipleri. Kayıtta `mesai` (saat) yazılır; hesap mevcut `girdiDokum` saat yolunu kullanır (saat × mesai saat ücreti) — hesap fonksiyonları değişmedi. Ayarlar'daki `ayar-mesai` (mesai saat ücreti) yeniden görünür alan.
 - Yevmiye katı mesai ile saat mesai **aynı kayıtta birlikte tutulmaz** (hesap `mesaiYev>0` ise saati yok sayar): kutular birbirini sıfırlar, ikisi doluysa kayıt reddedilir. Saat ücreti (ayar ya da şantiye) 0 ise saat mesai kaydedilmez, ayarlara yönlendirilir.
