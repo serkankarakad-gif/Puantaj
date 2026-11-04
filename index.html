@@ -21,7 +21,7 @@
 <meta name="theme-color" content="#17181C">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <title>Puantaj Defterim</title>
-<meta name="application-version" content="0.1.5.7">
+<meta name="application-version" content="0.1.5.9">
 
 <!-- ================= iOS / Safari "Ana ekrana ekle" desteği ================= -->
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -460,15 +460,6 @@
         <div class="hafta-serit" id="hafta-serit"></div>
         <div id="tahmin-kart" class="gizli" style="margin-top:12px;background:var(--girdi);border:1.5px solid var(--cizgi);border-radius:12px;padding:11px 14px;font-size:13.5px;line-height:1.6"></div>
       </div>
-      <div class="kart" id="krono-kart" style="padding:13px 14px">
-        <div style="display:flex;align-items:center;gap:12px">
-          <div style="flex:1">
-            <div style="font-weight:700;font-size:14px">⏱️ Mesai kronometresi</div>
-            <div id="krono-yazi" style="font-family:'Saira Condensed';font-size:26px;font-weight:800;color:var(--sari)">00:00:00</div>
-          </div>
-          <button class="btn btn-sari" id="btn-krono" style="width:auto;padding:12px 18px;font-size:14px">▶ Başlat</button>
-        </div>
-      </div>
       <div style="display:flex;gap:8px;margin-bottom:14px">
         <button class="btn btn-sari" id="btn-ana-bugun" style="flex:1;padding:12px 4px;font-size:13px">✚ Bugünü işle</button>
         <button class="btn btn-cizgili" id="btn-ana-avans" style="flex:1;padding:12px 4px;font-size:13px">💵 Avans</button>
@@ -494,7 +485,7 @@
       </div>
       <div class="kart gizli" id="yenilik-kart" style="border-color:var(--sari)">
         <h2>🎁 Neler yeni?</h2>
-        <ul style="padding-left:18px;font-size:13.5px;line-height:1.85"><li><b>PDF avans düzeltmesi:</b> Maaşlar ekranından başka bir ayın PDF'i alındığında o ayın avansları artık eksiksiz yazılır.</li><li><b>Askeriye ödemeleri:</b> aylık, yıllık ve yazdırma PDF'inde kendi bölümünde listelenir; toplamla birebir tutar.</li><li><b>FIFO görünür:</b> başka ayın borcuna sayılan ödemelerde "… hesabına sayıldı" notu çıkar. Hesap mantığı değişmedi.</li><li><b>İş raporu:</b> alınan paralarda tür sütunu (Avans, Askeriye, Hakediş, Kesinti).</li><li><b>Güvenlik:</b> ödemeler okunamazsa avanssız PDF üretilmez, uyarı gösterilir.</li></ul>
+        <ul style="padding-left:18px;font-size:13.5px;line-height:1.85"><li><b>Mesai (saat):</b> gün penceresinde 1, 2, 3, 4, 5, 8, 10, 12 saatlik hazır seçenekler. Ayarlardaki mesai saat ücretiyle hesaplanır.</li><li><b>Gün notu zorunlu:</b> çalışılan günde "bugün ne yaptın" yazılır (en az 10 harf). Uzun basma ve toplu işle de not ister.</li><li><b>PDF'te günlük işler:</b> yazdığın notlar tarih tarih PDF'te görünür.</li><li><b>Kronometre kaldırıldı:</b> mesai artık saat olarak yazılır.</li><li><b>PDF avans düzeltmesi:</b> Maaşlar ekranından başka ayın PDF'inde avanslar eksiksiz yazılır; Askeriye ödemeleri listelenir.</li><li><b>Başka aya sayılan avans:</b> Ocak borcuna sayılan ama Şubat'ta alınan avans, Şubat PDF'inde ayrı blokta görünür; Şubat toplamına girmez.</li><li><b>Güvenlik:</b> ödemeler okunamazsa avanssız PDF üretilmez.</li></ul>
         <button class="btn btn-cizgili" id="btn-yenilik-kapat">Süper, kapat</button>
       </div>
       <div class="kart gizli" id="ana-hedef-kart">
@@ -693,10 +684,10 @@
 <div class="kart pd55-panel" id="pd55-panel">
  <header class="pd55-head">
   <div class="pd55-sigil" aria-hidden="true">✦</div>
-  <div><div class="pd55-overline">PUANTAJ DEFTERİM · <span class="surum-otomatik">0.1.5.7</span></div><h2>Veri Kalkanı</h2><p>Güncellemeden önce kontrol et, yedeğini doğrula, riskleri gör.</p></div>
+  <div><div class="pd55-overline">PUANTAJ DEFTERİM · <span class="surum-otomatik">0.1.5.9</span></div><h2>Veri Kalkanı</h2><p>Güncellemeden önce kontrol et, yedeğini doğrula, riskleri gör.</p></div>
  </header>
  <div class="pd55-stats" id="pd55-stats" aria-live="polite">
-  <div><small>Uygulama</small><strong id="pd55-version">0.1.5.7</strong></div>
+  <div><small>Uygulama</small><strong id="pd55-version">0.1.5.9</strong></div>
   <div><small>Bağlantı</small><strong id="pd55-online">Kontrol edilmeli</strong></div>
   <div><small>JSON yedek</small><strong id="pd55-backup-age">Bilinmiyor</strong></div>
  </div>
@@ -730,7 +721,7 @@
 </div>
 
 <div class="kart pd54-denetim" id="pd54-denetim">
-  <div class="pd54-eyebrow">KALİTE MERKEZİ · <span class="surum-otomatik">0.1.5.7</span></div>
+  <div class="pd54-eyebrow">KALİTE MERKEZİ · <span class="surum-otomatik">0.1.5.9</span></div>
   <h2>Uygulama Sağlık Kontrolü</h2>
   <p>Arayüz, sürüm, bağlantı, PIN altyapısı, PDF kaynakları, yedekleme ve çevrimdışı hazırlığı için <strong>salt-okunur</strong> kontroller. Her kontrolün sonucu ayrı gösterilir; Firebase kayıtları yazılmaz veya silinmez.</p>
   <div class="pd54-aksiyonlar"><button type="button" class="btn btn-sari" id="pd54-denetle">Sistem kontrolünü başlat</button><button type="button" class="btn btn-cizgili" id="pd54-rapor" disabled>Raporu indir</button></div>
@@ -1630,13 +1621,16 @@
              `#ayar-mesai` okuyor; kaldırılsaydı hata verirdi. Eski
              kayıtlar kendi mühürlü ücretlerinden hesaplandığı için
              onların tutarı da değişmiyor. -->
-        <input type="hidden" id="ayar-mesai" value="0">
+        <div class="alan">
+          <label for="ayar-mesai">Mesai saat ücreti (TL / saat)</label>
+          <input type="text" id="ayar-mesai" inputmode="decimal" placeholder="Örn: 150">
+        </div>
         <div class="alan" style="background:var(--girdi);border-radius:11px;padding:10px 12px">
           <div style="font-size:12px;color:var(--soluk);line-height:1.55">
             ⏱ <b style="color:var(--sari)">Mesai nasıl hesaplanıyor?</b><br>
-            Mesai saat ücreti sormuyoruz. Mesaiye kaldığın gün
-            <b>X</b> (tam yevmiye) ya da <b>/</b> (yarım yevmiye) işaretliyorsun —
-            tutar günlük yevmiyenden hesaplanıyor.
+            İki yol var. <b>X</b> (tam yevmiye) ya da <b>/</b> (yarım yevmiye) işaretlersen tutar
+            günlük yevmiyenden hesaplanır. <b>Saat</b> yazarsan (örn. 4 saat) yukarıdaki
+            mesai saat ücretiyle çarpılır. Saat ücreti boşsa mesai saati kaydedilmez.
           </div>
         </div>
         <div class="alan">
@@ -1964,6 +1958,26 @@
     </div>
   </div>
 
+  <div class="alan" id="alan-mesai-saatlik">
+    <label for="gun-mesai-saatlik">Mesai (saat) — kaç saat çalıştın? Saat ücretinle hesaplanır</label>
+    <div class="sayac">
+      <button id="mesai-saatlik-eksi" aria-label="Mesai saatini azalt">−</button>
+      <input type="text" id="gun-mesai-saatlik" inputmode="decimal" min="0" step="0.5" value="0">
+      <button id="mesai-saatlik-arti" aria-label="Mesai saatini artır">＋</button>
+    </div>
+    <div id="mesai-saat-cipler" style="display:flex;flex-wrap:wrap;gap:6px;margin-top:8px">
+      <button type="button" class="eksik-cip" data-saat="1" style="font-size:13px;padding:7px 12px">1</button>
+      <button type="button" class="eksik-cip" data-saat="2" style="font-size:13px;padding:7px 12px">2</button>
+      <button type="button" class="eksik-cip" data-saat="3" style="font-size:13px;padding:7px 12px">3</button>
+      <button type="button" class="eksik-cip" data-saat="4" style="font-size:13px;padding:7px 12px">4</button>
+      <button type="button" class="eksik-cip" data-saat="5" style="font-size:13px;padding:7px 12px">5</button>
+      <button type="button" class="eksik-cip" data-saat="8" style="font-size:13px;padding:7px 12px">8</button>
+      <button type="button" class="eksik-cip" data-saat="10" style="font-size:13px;padding:7px 12px">10</button>
+      <button type="button" class="eksik-cip" data-saat="12" style="font-size:13px;padding:7px 12px">12</button>
+    </div>
+    <div style="font-size:12px;color:var(--soluk);margin-top:6px;line-height:1.5">Mesaiyi yevmiye katı (X, /) <b>ya da</b> saat olarak yaz; ikisi birlikte olmaz.</div>
+  </div>
+
 
   <!-- ── SEYREK KULLANILAN ALANLAR — katlanır ──────────────────────
        Modal 10 alanla açılıyordu; kullanım verisinde bunların çoğu hiç
@@ -2026,9 +2040,10 @@
     <div id="gun-foto-durum" style="font-size:12.5px;color:var(--soluk);margin-top:6px"></div>
   </div>
   <div class="alan">
-    <label>Not (isteğe bağlı) <button id="btn-sesli-not" style="float:right;color:var(--sari);font-size:16px">🎤 Konuş</button></label>
-    <textarea id="gun-not" rows="2" placeholder="Örn: Kalıp söküm yaptık, yağmur yüzünden erken bıraktık"></textarea>
+    <label>Bugün ne yaptın? <span style="color:var(--gelmedi);font-weight:700">(zorunlu)</span> <button id="btn-sesli-not" style="float:right;color:var(--sari);font-size:16px">🎤 Konuş</button></label>
+    <textarea id="gun-not" rows="2" placeholder="Örn: 3. kat döşeme kalıbı çaktık, demir bağladık"></textarea>
     <div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:8px" id="not-cipler"></div>
+    <div style="font-size:12px;color:var(--soluk);margin-top:6px;line-height:1.5">Çalıştığın gün için en az 10 harf yaz; patron sorarsa kanıtın bu olur. Gelmedim / İzinli günlerde gerekmez.</div>
   </div>
 
   <div class="modal-butonlar">
@@ -2226,6 +2241,10 @@
   <div class="alan">
     <label for="toplu-mesai">Her güne mesai (saat)</label>
     <input type="text" id="toplu-mesai" inputmode="decimal" min="0" step="0.5" value="0">
+  </div>
+  <div class="alan">
+    <label for="toplu-not">Bu günlerde ne yaptın? <span style="color:var(--gelmedi);font-weight:700">(çalışılan günler için zorunlu)</span></label>
+    <textarea id="toplu-not" rows="2" placeholder="Örn: 3. kat kalıp ve demir işleri"></textarea>
   </div>
   <label style="display:flex;align-items:center;gap:10px;font-size:14px;margin-bottom:6px">
     <input type="checkbox" id="toplu-pazar" checked style="width:20px;height:20px;accent-color:var(--sari)"> Pazar günlerini atla

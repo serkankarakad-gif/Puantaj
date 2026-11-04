@@ -1,3 +1,21 @@
+## 0.1.5.9 — Mesai (saat), zorunlu gün notu, PDF'te günlük işler, kronometre kaldırıldı (04.11.2026)
+- **Mesai (saat):** yeni `gun-mesai-saatlik` alanı, ± düğmeleri ve 1/2/3/4/5/8/10/12 çipleri. Kayıtta `mesai` (saat) yazılır; hesap mevcut `girdiDokum` saat yolunu kullanır (saat × mesai saat ücreti) — hesap fonksiyonları değişmedi. Ayarlar'daki `ayar-mesai` (mesai saat ücreti) yeniden görünür alan.
+- Yevmiye katı mesai ile saat mesai **aynı kayıtta birlikte tutulmaz** (hesap `mesaiYev>0` ise saati yok sayar): kutular birbirini sıfırlar, ikisi doluysa kayıt reddedilir. Saat ücreti (ayar ya da şantiye) 0 ise saat mesai kaydedilmez, ayarlara yönlendirilir.
+- Eski kayıttaki saat mesai artık gün penceresi açılıp kaydedilince **yevmiye katına çevrilmez** (eskiden çevriliyordu, tutar değişebiliyordu); saat olarak kalır, tutar aynı.
+- **Zorunlu gün notu:** `gunNotuEksikMi` — çalışılan gün (`girdiGun>0` ya da mesai/gece mesai) en az 10 harf not olmadan kaydolmaz: gün penceresi, toplu işle (tek ortak not), uzun basma (artık pencere açar), sesli komut (çalışılan gün için pencere açar). Not kutusu 'zorunlu' etiketli.
+- **PDF / yazdırma raporu:** "GÜNLÜK YAPILAN İŞLER" bölümü (tarih, durum, işçinin notu). Emoji temizlenir, HTML kaçışlanır. Yalnızca gösterim; toplamlar değişmez.
+- **Kronometre kaldırıldı** (kart, düğme, işlevler, tanı satırı, CSS). Eski sürümden takılı kalmış sayaç varsa bir kerelik uyarı gösterilir ve silinir. Kayıtlı günlere dokunulmaz.
+- Gün paylaşım metninde yevmiye katı mesai artık "yevmiye mesai", saat mesai "saat mesai" diye ayrılır.
+- **Bilinen eski hata (dokunulmadı):** asistanın sesli gün işleme dalı `sesKomutCoz(soru)` çağırıyor ama `soru` o kapsamda tanımsız (0.1.5.6'da da böyle); bu yüzden sesli komutla gün işleme hiç çalışmıyor. Yanlış tetiklenme riski olduğu için bu sürümde açılmadı.
+- **Değişmeyenler:** `girdiDokum`, `girdiKazanc`, `oranBul`, `guncelOranlar`, `gunIsaret`, `odemeAyi`, `enEskiOdenmemisAy`, `tumDonemOzeti`, ödeme kaydetme ve aitAy atama, PIN, Firebase kuralları, veri şeması (bayt düzeyinde aynı). 0.1.5.7 ve 0.1.5.8 değişiklikleri dahildir.
+- Yedek alıp önce test hesabında dene: yeni gün (notsuz/notlu), mesai 4 saat, uzun basma, toplu işle, eski saatli bir günü aç-kaydet, aylık PDF.
+
+## 0.1.5.8 — Başka aya sayılan ödemeler PDF'te görünür (03.11.2026)
+- Aylık PDF, yıllık PDF (her ay detayı) ve yazdırma/resim raporu: o dönemde **alınan** ama FIFO ile **başka aya sayılan** ödemeler (`odemeAyi` ≠ rapor ayı) ayrı, gri bir bilgi bloğunda listelenir: tarih, tür, "… hesabına sayıldı" notu, tutar.
+- Blok yalnızca bilgidir: rapor ayının ALINAN, KALAN ve mutabakat toplamlarına **girmez**. Yarım dönem raporlarında yalnızca o gün aralığında alınanlar gösterilir. Hem geçmiş aya hem ileri aya sayılan ödemeler gösterilir.
+- Maaşlar ekranından başka ayın PDF'i alınırken de çalışır (`raporKaynagi.tumu`).
+- **Değişmeyenler:** `odemeAyi`, `enEskiOdenmemisAy`, `tumDonemOzeti`, ödeme kaydetme ve aitAy atama, `hesaplaAralik` sonuçları (testle doğrulandı), maaş, PIN, Firebase kuralları, veri şeması. 0.1.5.7 düzeltmeleri dahildir.
+
 ## 0.1.5.7 — PDF avans / FIFO düzeltmesi (02.11.2026)
 - **Kök neden:** `ayDetayPaylas` (Maaşlar → ay detayı → PDF/Paylaş) `aktifAy` ve `girdiler`i değiştiriyor, `odemeler` ve `masraflar`ı değiştirmiyordu. Seçilen ayın avansları PDF'e/mesaja yazılmıyor, önceki ayın kayıtları karışabiliyor, masraf alacağı eksik çıkıyordu. Artık seçilen ayın ödemeleri `aitAy`/FIFO'ya göre (`odemeAyi`) getirilir ve `raporKaynagi` ile raporlara verilir; canlı dinleyici dizilerine dokunulmaz.
 - Ödeme veya masraf okunamazsa (ağ/önbellek) belge **üretilmez**, hata gösterilir; ay ve veri geri konur.

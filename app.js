@@ -186,7 +186,7 @@ let planlar = [], dinleyiciPlan = null; // 📐 plan/proje linkleri
 let masraflar = [];                    // bu ayın iş masrafları
 /* 0.1.5.7: Maaşlar ekranından BAŞKA bir ayın raporu alınırken, o ayın ödemeleri/masrafları burada
    taşınır. Canlı dinleyicilerin `odemeler`/`masraflar` dizilerine dokunmaz (yarış riski yok). */
-let raporKaynagi = null;               // {odemeler:[...], masraflar:[...]} | null
+let raporKaynagi = null;               // {odemeler:[...], tumu:[...tüm ödemeler], masraflar:[...]} | null
 let ekipListe = [];                    // ekipteki işçiler
 let masrafSeciliKategori = "malzeme";  // masraf ekleme formunda seçili kategori
 let masrafFiltre = "hepsi";            // masraf listesinde gösterilen kategori ("hepsi" = filtre yok)
@@ -3381,56 +3381,44 @@ async function gorselPaylas(gBas, gSon){
   toast(dosyalar.length>1 ? "Görseller indirildi 🖼️ Galerinden paylaşabilirsin" : "Görsel indirildi 🖼️ Galerinden paylaşabilirsin");
 }
 
-/* ---------- Mesai kronometresi ---------- */
-let kronoZamanlayici = null;
-function kronoYaz(){
-  let bas = 0;
-  try{ bas = Number(localStorage.getItem("kronoBas"))||0; }catch(e){}
-  const el = $("#krono-yazi"), btn = $("#btn-krono");
-  if(!el) return;
-  if(!bas){
-    el.textContent = "00:00:00";
-    btn.textContent = "▶ Başlat";
-    if(kronoZamanlayici){ clearInterval(kronoZamanlayici); kronoZamanlayici = null; }
-    return;
-  }
-  btn.textContent = "⏹ Bitir";
-  const s = Math.floor((Date.now()-bas)/1000);
-  el.textContent = pad(Math.floor(s/3600))+":"+pad(Math.floor(s/60)%60)+":"+pad(s%60);
-  if(!kronoZamanlayici) kronoZamanlayici = setInterval(kronoYaz, 1000);
+/* ---------- Gün notu zorunluluğu + mesai (saat) yardımcıları (0.1.5.9) ---------- */
+/* Mesai kronometresi 0.1.5.9'da tamamen kaldırıldı. Yerine mesai SAAT olarak elle yazılıyor. */
+const GUN_NOT_MIN = 10;
+const GUN_NOT_MESAJ = "Bugün ne yaptığını yaz (en az " + GUN_NOT_MIN + " harf) ✍️ Patron sorarsa kanıtın bu olacak";
+function gunNotuYeterli(not){ return String(not||"").trim().length >= GUN_NOT_MIN; }
+/* Çalışılan gün mü? Not ZORUNLU olan günler bunlar. Gelmedim/İzinli günler not istemez;
+   ama gelmediği hâlde akşam mesaiye geldiyse (mesai/gece mesai) o da çalışılmış sayılır. */
+function gunCalisildiMi(v){
+  if(!v) return false;
+  return girdiGun(v) > 0 || (Number(v.mesaiYev)||0) > 0 || (Number(v.mesai)||0) > 0 ||
+         (Number(v.geceYev)||0) > 0 || (Number(v.geceMesai)||0) > 0;
 }
-async function kronoDurdur(bas){
-  const saat = Math.max(0.5, Math.round(((Date.now()-bas)/3600000)*2)/2);
-  const id = tarihId(new Date());
-  /* KRİTİK DÜZELTME — çalışılan saatler geri dönüşsüz kaybolabiliyordu.
-     Eskiden sıra şöyleydi: (1) localStorage'daki kronometre SİLİNİR,
-     (2) kullanıcıya "eklensin mi?" diye sorulur, (3) ay kilidi kontrol edilir.
-     Yani kullanıcı yanlışlıkla "İptal"e bassa YA DA ay kilitli olsa, kronometre
-     çoktan silinmiş oluyordu — 5 saat mesai tutmuşsan hepsi yok oluyordu, geri
-     getirmenin hiçbir yolu yoktu ve kaç saat olduğunu da bir daha göremiyordun.
-     Artık önce kilit kontrolü + onay alınıyor, kronometre ancak kayıt yapılacağı
-     kesinleşince siliniyor. Vazgeçilirse kronometre çalışmaya devam ediyor. */
-  if(ayKilitli(id)){
-    toast("Bu ay kilitli 🔒 Kronometre duruyor, ayı açınca tekrar bitir ("+saat+" saat)");
-    return;
-  }
-  if(!confirm(saat+" saat mesai yaptın. Bugünün kaydına eklensin mi?\n\n(İptal dersen kronometre çalışmaya devam eder, saatlerin kaybolmaz.)")) return;
-  try{
-    const ref = kokRef().collection("girdiler").doc(id);
-    const doc = await ref.get();
-    const v = doc.exists ? doc.data() : null;
-    const yeni = v ? {...v, mesai: (Number(v.mesai)||0) + saat}
-                   : {durum:"tam", mesai:saat, arti:0, santiye:ayarlar.santiye||"", santiyeId:"", not:"",
-                      ...guncelOranlar("", id), guncelleme: firebase.firestore.FieldValue.serverTimestamp()};
-    await ref.set(yeni);
-    /* Kayıt BAŞARILI olduktan sonra kronometreyi sıfırla — yazma hata verirse
-       (internet yok vb.) kronometre duruyor, kullanıcı tekrar deneyebiliyor. */
-    try{ if(window._kilit){ window._kilit.release(); window._kilit=null; } }catch(e){}
-    try{ localStorage.removeItem("kronoBas"); }catch(e){}
-    kronoYaz();
-    toast("⏱ "+saat+" saat mesai bugüne eklendi ✅");
-  }catch(e){ hataGoster(e); }
+function gunNotuEksikMi(v){ return gunCalisildiMi(v) && !gunNotuYeterli(v.not); }
+/* Mesai alanlarını doldurur. Yevmiye katı (`mesaiYev`) ve saat (`mesai`) AYRI kutularda durur ve
+   kayıtta TEK BİRİ dolu olur: hesap `mesaiYev>0` ise saati yok sayar (girdiDokum). Eski kayıtlardaki
+   saat değeri artık yevmiye katına ÇEVRİLMEZ — saat olarak kalır, tutarı değişmez. */
+function mesaiAlanlariYaz(v){
+  v = v || {};
+  const yev = Number(v.mesaiYev)||0;
+  $("#mesai-saat").value = yev;
+  $("#gun-mesai-saatlik").value = yev > 0 ? 0 : (Number(v.mesai)||0);
 }
+/* Biri doldurulunca diğerini sıfırla — ikisi birlikte kaydolmasın (sessiz kayıp olmasın). */
+function mesaiKarsitiniSifirla(kaynak){
+  if(kaynak === "yev" && (sayi($("#mesai-saat").value, true)||0) > 0) $("#gun-mesai-saatlik").value = 0;
+  if(kaynak === "saat" && (sayi($("#gun-mesai-saatlik").value, true)||0) > 0) $("#mesai-saat").value = 0;
+}
+/* Eski sürümde başlatılmış ve takılı kalmış bir sayaç varsa sessizce yok etme: kullanıcıya söyle. */
+try{
+  const kb = Number(localStorage.getItem("kronoBas"))||0;
+  if(kb){
+    localStorage.removeItem("kronoBas");
+    const eskiSaat = Math.round(((Date.now()-kb)/3600000)*2)/2;
+    if(eskiSaat >= 0.5 && eskiSaat <= 24){
+      setTimeout(()=> toast("Kronometre kaldırıldı. Sayacın "+eskiSaat+" saat gösteriyordu — gün penceresinde Mesai (saat) olarak yaz ✍️"), 4000);
+    }
+  }
+}catch(e){}
 
 /* ---------- Bakiye sayaç animasyonu ---------- */
 /* ---------- ⚡ Hafif mod: eski/yavaş cihazlarda akıcılık ----------
@@ -4117,7 +4105,9 @@ function gunPaylasMetni(){
   const durumAd = {tam:"Tam yevmiye ✅", yarim:"Yarım yevmiye 🌗", gelmedi:"Gelmedim 🚫", izin:"İzinli 🏖️", saatlik:"Saatlik çalışma ⏱️"};
   const parcalar = [tarihYazi, durumAd[modalDurum] || modalDurum];
   const mesai = sayi($("#mesai-saat").value, true);
-  if(mesai > 0) parcalar.push("+ "+mesai+" saat mesai");
+  if(mesai > 0) parcalar.push("+ "+mesai+" yevmiye mesai");
+  const mesaiSaatP = sayi($("#gun-mesai-saatlik").value, true);
+  if(mesaiSaatP > 0) parcalar.push("+ "+mesaiSaatP+" saat mesai");
   const arti = sayi($("#gun-arti").value, true);
   if(arti > 0) parcalar.push("+ "+arti+" gün içi artı");
   const santiye = $("#gun-santiye").value.trim();
@@ -6483,6 +6473,7 @@ function modalKazancGuncelle(){
       /* Önizleme de yeni alanı kullanmalı, yoksa "bu gün kazancın"
          satırı kaydedilecek tutarı yanlış gösterir (0.0.9.5). */
       mesaiYev: sayi($("#mesai-saat").value, true)||0,
+      mesai: sayi($("#gun-mesai-saatlik").value, true)||0,
       arti: sayi($("#gun-arti").value, true)||0,
       parcaMiktar: sayi($("#gun-parca-miktar").value, true)||0,
       geceYev: sayi($("#gun-gece-mesai").value, true)||0,
@@ -6894,9 +6885,9 @@ async function ayDetayPaylas(tur){
       gecici = {};
       qs.forEach(doc=> gecici[doc.id] = doc.data());
     }
-    const odemeListesi = await ayOdemeleriniKesinGetir(yy + "-" + pad(aa));
+    const odemeVeri = await ayOdemeleriniKesinGetir(yy + "-" + pad(aa));
     const masrafListesi = ayDegisti ? await ayMasraflariniKesinGetir(yy, aa) : masraflar;
-    kaynak = {odemeler: odemeListesi, masraflar: masrafListesi};
+    kaynak = {odemeler: odemeVeri.odemeler, tumu: odemeVeri.tumu, masraflar: masrafListesi};
     if(ayDegisti){ aktifYil = yy; aktifAy = aa-1; girdiler = gecici; }
     raporKaynagi = kaynak;
     const aySonu = new Date(aktifYil, aktifAy+1, 0).getDate();
@@ -7653,13 +7644,14 @@ function pdfOdemeSirala(liste){
 async function ayOdemeleriniKesinGetir(hedefAy){
   let qs = tumOdemelerQS;
   if(!qs) qs = await kokRef().collection("odemeler").get();
-  const liste = [];
+  const liste = [], tumu = [];
   qs.forEach(doc=>{
     const v = doc.data();
+    tumu.push(v);   /* "başka aya sayılan" bilgi bloğu için (yalnızca gösterim) */
     if(odemeAyi(v) === hedefAy) liste.push({id:doc.id, ...v});
   });
   liste.sort((a,b)=> a.tarih < b.tarih ? 1 : -1);   /* odemeleriAyaGoreDoldur ile aynı sıra */
-  return liste;
+  return {odemeler: liste, tumu};
 }
 async function ayMasraflariniKesinGetir(yil, ay1){
   const bas = yil+"-"+pad(ay1)+"-01", son = yil+"-"+pad(ay1)+"-31";   /* ayiYukle ile aynı sorgu */
@@ -7679,6 +7671,96 @@ async function aktifAyOdemeleriniGuvenceyeAl(){
     if(!tumOdemelerQS) tumOdemelerQS = qs;
     odemeleriAyaGoreDoldur();
   }catch(e){ try{ hataKaydet("aktifAyOdemeleriniGuvenceyeAl", e); }catch(_){} }
+}
+
+/* ═════ "BU DÖNEMDE ALINIP BAŞKA AYA SAYILAN ÖDEMELER" — YALNIZCA BİLGİ (0.1.5.8) ═════
+   Örnek: Ocak'ta çalıştın, Ocak maaşını almadın; Şubat'ta avans aldın. FIFO gereği avans OCAK'a
+   sayılır ve Ocak'ın hesabından düşülür. Ocak PDF'inde zaten görünür ("… hesabına sayıldı").
+   Şubat PDF'inde ise bu avans HİÇ görünmüyordu: Şubat'ta alındığı hâlde Şubat belgesinde yoktu.
+   Artık Şubat PDF'inde ayrı, gri bir blokta yazılır; Şubat'ın ALINAN/KALAN toplamına GİRMEZ.
+   FIFO'ya dokunulmaz: hangi aya sayılacağı kaydın aitAy'ı (odemeAyi) ile belirlenir, burada
+   yalnızca gösterilir. */
+const PDF_BASKA_AY_BASLIK = "BU DÖNEMDE ALINIP BAŞKA AYA SAYILAN ÖDEMELER";
+const PDF_BASKA_AY_ACIKLAMA = "Bu ödemeler bu dönemde alındı; FIFO kuralıyla yazılan ayın hesabından düşülür. Bu dönemin ALINAN toplamına dahil değildir.";
+const PDF_BASKA_AY_TOPLAM = "TOPLAM (bu dönemin ALINAN toplamına dahil değil)";
+function baskaAyaSayilanOdemeler(kaynakListe, buAy, bId, sId){
+  return pdfOdemeSirala((kaynakListe||[]).filter(o=>{
+    const t = String((o && o.tarih) || "").slice(0,10);
+    if(!/^\d{4}-\d{2}-\d{2}$/.test(t) || t.slice(0,7) !== buAy) return false;   /* alındığı tarih bu ayda */
+    if(bId && t < bId) return false;
+    if(sId && t > sId) return false;
+    const ay = odemeAyi(o);
+    return /^\d{4}-\d{2}$/.test(ay) && ay !== buAy;                             /* ama başka aya sayılmış */
+  }));
+}
+function raporBaskaAyaOdemeleri(bId, sId){
+  const buAy = aktifYil + "-" + pad(aktifAy+1);
+  let kaynak = raporKaynagi && raporKaynagi.tumu;
+  if(!kaynak){
+    kaynak = [];
+    if(tumOdemelerQS) tumOdemelerQS.forEach(d=> kaynak.push(d.data()));
+  }
+  return baskaAyaSayilanOdemeler(kaynak, buAy, bId, sId);
+}
+/* jsPDF bloğu çizer, yeni y konumunu döndürür. */
+function pdfBaskaAyBlokCiz(doc, yaziTipi, solX, sagX, y, liste, yazi){
+  if(y + 70 + liste.length*16 > 780){ doc.addPage(); y = 50; }
+  doc.setFont(yaziTipi,"bold"); doc.setFontSize(yazi.baslik); doc.setTextColor(0);
+  doc.text(PDF_BASKA_AY_BASLIK+" ("+liste.length+" adet)", solX, y);
+  doc.setFont(yaziTipi,"normal"); doc.setFontSize(8); doc.setTextColor(90);
+  const satirlar = doc.splitTextToSize(PDF_BASKA_AY_ACIKLAMA, sagX - solX);
+  doc.text(satirlar, solX, y + 12);
+  doc.setTextColor(0);
+  const toplam = liste.reduce((s,o)=> s + (Number(o.tutar)||0), 0);
+  doc.autoTable({
+    startY: y + 12 + satirlar.length*10 + 2, margin:{left:solX, right: 595-sagX},
+    head: [["#","TARİH","TÜR","NOT","TUTAR"]],
+    body: liste.map((o,idx)=> [String(idx+1), pdfOdemeTarihYazi(o), odemeTurEtiket(o.tur), pdfOdemeNotu(o), paraFmt(o.tutar)]),
+    foot: [["","","",PDF_BASKA_AY_TOPLAM, paraFmt(toplam)]],
+    styles:{fontSize:yazi.tablo, cellPadding:4, lineColor:[200,200,200], lineWidth:0.5},
+    headStyles:{fillColor:[242,242,242], textColor:20, fontStyle:"bold"},
+    footStyles:{fillColor:[235,235,235], textColor:60, fontStyle:"bold"},
+    columnStyles:{0:{halign:"center", cellWidth:24}, 4:{halign:"right"}},
+    rowPageBreak: "avoid"
+  });
+  return doc.lastAutoTable.finalY + 18;
+}
+
+/* ═════ "GÜNLÜK YAPILAN İŞLER" — PDF / rapor (0.1.5.9) ═════
+   İşçinin her çalışılan gün için kendi yazdığı "bugün ne yaptın" notları. Patron "o gün işe
+   gelmedin / ne yaptın?" dediğinde belgede tarih tarih görünür. Yalnızca gösterim — hiçbir
+   toplamı/hesabı etkilemez. */
+const PDF_IS_NOTLARI_BASLIK = "GÜNLÜK YAPILAN İŞLER";
+/* Liberation Sans emoji/özel simge çizemez; not metninden bunları temizle (kutucuk çıkmasın). */
+function pdfNotTemizle(s){
+  return String(s||"").replace(/[\u{1F000}-\u{1FFFF}\u{2190}-\u{2BFF}\u{FE0F}\u{200D}]/gu, "").replace(/[ \t]+/g, " ").trim();
+}
+function gunlukIsNotlari(gBas, gSon){
+  const liste = [];
+  for(let g = gBas; g <= gSon; g++){
+    const id = aktifYil + "-" + pad(aktifAy+1) + "-" + pad(g);
+    const v = girdiler[id];
+    const not = pdfNotTemizle(v && v.not);
+    if(!not) continue;
+    const d = new Date(aktifYil, aktifAy, g);
+    liste.push({id, tarih: pad(g)+" / "+pad(aktifAy+1)+" / "+aktifYil+" — "+GUNLER[d.getDay()], durum: gunIsaret(v).yev, not});
+  }
+  return liste;
+}
+function pdfIsNotlariCiz(doc, yaziTipi, solX, sagX, y, liste, yazi){
+  if(y + 70 + Math.min(liste.length, 3)*20 > 780){ doc.addPage(); y = 50; }
+  doc.setFont(yaziTipi,"bold"); doc.setFontSize(yazi.baslik); doc.setTextColor(0);
+  doc.text(PDF_IS_NOTLARI_BASLIK+" ("+liste.length+" gün)", solX, y);
+  doc.autoTable({
+    startY: y + 8, margin:{left:solX, right: 595-sagX},
+    head: [["TARİH","DURUM","YAPILAN İŞ (işçinin kendi yazdığı)"]],
+    body: liste.map(x=> [x.tarih, x.durum, x.not]),
+    styles:{fontSize:yazi.tablo, cellPadding:4, lineColor:[200,200,200], lineWidth:0.5, valign:"top"},
+    headStyles:{fillColor:[242,242,242], textColor:20, fontStyle:"bold"},
+    columnStyles:{0:{cellWidth:128}, 1:{halign:"center", cellWidth:44}},
+    rowPageBreak: "avoid"
+  });
+  return doc.lastAutoTable.finalY + 18;
 }
 
 /* ---------- Alınan paraların dökümü (rapor metni için) ---------- */
@@ -7805,21 +7887,14 @@ async function raporPaylas(gBas, gSon){
 /* ---------- Hızlı işaretleme + geri al ---------- */
 async function hizliIsaretle(id){
   if(ayKilitli(id)){ toast("Bu ay kilitli 🔒 Hesap özetinden açabilirsin"); return; }
-  const onceki = girdiler[id] ? {...girdiler[id]} : null;
-  const saatlikMod = ayarlar.calismaTipi==="saatlik";
-  const veri = {
-    durum: saatlikMod ? "saatlik" : "tam",
-    mesai:0,
-    santiye: ayarlar.santiye||"", santiyeId:"", not:"",
-    ...guncelOranlar("", id),
-    guncelleme: firebase.firestore.FieldValue.serverTimestamp()
-  };
-  if(saatlikMod) veri.saat = ayarlar.gunlukSaat||8;
-  try{
-    titret(35);
-    await kokRef().collection("girdiler").doc(id).set(veri);
-    toastGeriAl(saatlikMod ? "⚡ "+(ayarlar.gunlukSaat||8)+" saat işlendi" : "⚡ Tam yevmiye işlendi", {id, onceki});
-  }catch(e){ hataGoster(e); }
+  /* 0.1.5.9 — ZORUNLU GÜN NOTU: uzun basınca artık "tam" yazıp geçmiyoruz. Eskiden notsuz bir gün
+     tek dokunuşla kaydoluyordu; patron "o gün gelmedin" dediğinde işçinin elinde "ne yaptım"
+     kanıtı olmuyordu. Gün penceresi açılır (yeni gün "tam" ile başlar, kayıtlı gün olduğu gibi
+     görünür), not yazılıp Kaydet'e basılınca kaydolur. */
+  titret(35);
+  modalAc(id);
+  toast("Bugün ne yaptığını yaz, sonra Kaydet ✍️");
+  setTimeout(()=>{ try{ const nt = $("#gun-not"); if(nt) nt.focus(); }catch(e){} }, 350);
 }
 
 /* islem: {id, onceki, foto?} — foto varsa, gün kaydıyla birlikte silinmiş
@@ -7899,6 +7974,31 @@ function raporIcerikUret(gBas, gSon){
     odemeHtml = '<h2 style="font-size:15px;margin-top:22px;border-bottom:3px solid #FFC400;padding-bottom:5px">ALINAN PARALAR</h2>'+
       '<p style="font-size:12px;color:#666">Bu dönemde kayıtlı para girişi yok.</p>';
   }
+  /* 0.1.5.8: bu dönemde alınıp FIFO ile başka aya sayılan ödemeler — yalnızca bilgi */
+  const baskaAyaH = raporBaskaAyaOdemeleri(t.bId, t.sId);
+  if(baskaAyaH.length){
+    let bSat = "", bTop = 0;
+    baskaAyaH.forEach((o, idx)=>{
+      bTop += Number(o.tutar)||0;
+      bSat += "<tr><td class='orta-h'>"+(idx+1)+"</td><td>"+pdfOdemeTarihYazi(o)+"</td><td>"+esc(odemeTurEtiket(o.tur))+
+        "</td><td>"+esc(pdfOdemeNotu(o))+"</td><td class='sag'>"+paraFmt(o.tutar)+"</td></tr>";
+    });
+    odemeHtml += '<h2 style="font-size:15px;margin-top:22px;border-bottom:3px solid #BBB;padding-bottom:5px">'+PDF_BASKA_AY_BASLIK+' ('+baskaAyaH.length+' adet)</h2>'+
+      '<p style="font-size:11px;color:#555;margin:6px 0 0">'+PDF_BASKA_AY_ACIKLAMA+'</p>'+
+      '<table><tr><th style="width:34px;text-align:center">#</th><th>TARİH</th><th>TÜR</th><th>NOT</th><th class="sag">TUTAR</th></tr>'+bSat+
+      '<tr><td colspan="4" style="font-weight:bold;background:#EBEBEB">'+PDF_BASKA_AY_TOPLAM+'</td><td class="sag" style="font-weight:bold;background:#EBEBEB">'+paraFmt(bTop)+'</td></tr></table>';
+  }
+  /* 0.1.5.9: günlük yapılan işler (işçinin kendi notları) */
+  let isNotHtml = "";
+  const isNotlariH = gunlukIsNotlari(t.gBas, t.gSon);
+  if(isNotlariH.length){
+    let nSat = "";
+    isNotlariH.forEach(x=>{
+      nSat += "<tr><td>"+esc(x.tarih)+"</td><td class='orta-h'>"+esc(x.durum)+"</td><td>"+esc(x.not)+"</td></tr>";
+    });
+    isNotHtml = '<h2 style="font-size:15px;margin-top:22px;border-bottom:3px solid #FFC400;padding-bottom:5px">'+PDF_IS_NOTLARI_BASLIK+' ('+isNotlariH.length+' gün)</h2>'+
+      '<table><tr><th style="width:150px">TARİH</th><th style="width:60px;text-align:center">DURUM</th><th>YAPILAN İŞ (işçinin kendi yazdığı)</th></tr>'+nSat+'</table>';
+  }
 
   const css =
     '.pdf-rapor{font-family:Arial,sans-serif;font-size:12.5px;color:#111;padding:24px;max-width:720px;margin:auto;background:#fff}'+
@@ -7921,6 +8021,7 @@ function raporIcerikUret(gBas, gSon){
     (t.masrafToplam>0 ? '<tr class="ozet"><td></td><td colspan="4">MASRAF ALACAĞI</td><td class="sag">'+paraFmt(t.masrafToplam)+'</td></tr>' : '')+
     '<tr class="ozet"><td></td><td colspan="4">KALAN</td><td class="sag">'+paraFmt(t.kalan)+'</td></tr></table>'+
     odemeHtml+
+    isNotHtml+
     '<div class="imza"><div>İşçi<br>Ad Soyad / İmza</div><div>İşveren<br>Ad Soyad / İmza</div></div>'+
     '</div>';
 
@@ -8161,6 +8262,17 @@ function pdfBlobOlustur(gBas, gSon){
     doc.text("Bu dönemde kayıtlı para girişi yok.", solX, y2);
     doc.setTextColor(0);
     y2 += 20;
+  }
+
+  /* 0.1.5.8: bu dönemde alınıp FIFO ile başka aya sayılan ödemeler — yalnızca bilgi, toplamlara girmez */
+  const baskaAyaOdemeler = raporBaskaAyaOdemeleri(t.bId, t.sId);
+  if(baskaAyaOdemeler.length){
+    y2 = pdfBaskaAyBlokCiz(doc, yaziTipi, solX, sagX, y2, baskaAyaOdemeler, {baslik:11, tablo:8});
+  }
+  /* 0.1.5.9: işçinin her gün için yazdığı "bugün ne yaptın" notları */
+  const isNotlari = gunlukIsNotlari(t.gBas, t.gSon);
+  if(isNotlari.length){
+    y2 = pdfIsNotlariCiz(doc, yaziTipi, solX, sagX, y2, isNotlari, {baslik:11, tablo:8});
   }
 
   /* ── MUTABAKAT ÖZETİ (imzanın hemen üstünde) ──────────────────────
@@ -8828,6 +8940,9 @@ function yilPdfBlobOlustur(){
     }
     /* Her ödeme tam bir bölüme düşer (Askeriye dahil). */
     pdfOdemeBolumleri(donemOdeme).forEach(b=> odemeBolumPdf(b.baslik, b.liste));
+    /* 0.1.5.8: bu ayda alınıp FIFO ile başka aya sayılan ödemeler — yalnızca bilgi, toplamlara girmez */
+    const baskaAyaY = baskaAyaSayilanOdemeler(tumOdemeListesi, buAyStr);
+    if(baskaAyaY.length) y3 = pdfBaskaAyBlokCiz(doc, yaziTipi, solX, sagX, y3, baskaAyaY, {baslik:10.5, tablo:7.5});
   });
 
   return doc.output("blob");
@@ -8871,11 +8986,8 @@ function modalAc(id){
   if(saatlikMod){
     $("#gun-saat").value = girdiler[id] ? (Number(v.saat)||0) : (ayarlar.gunlukSaat||8);
   }
-  /* Yeni kayıtlarda `mesaiYev`, eski kayıtlarda `mesai` (saat) var.
-     Eski bir kayıt açıldığında saat değeri gösteriliyor; kullanıcı
-     kaydederse yevmiye katına dönüşür (bilinçli — düzenlenen kayıt
-     yeni sisteme geçer, dokunulmayan eski kayıt olduğu gibi kalır). */
-  $("#mesai-saat").value = (v.mesaiYev != null ? v.mesaiYev : (v.mesai || 0));
+  /* 0.1.5.9: yevmiye katı ve saat ayrı kutularda; eski kayıttaki saat artık yevmiye katına ÇEVRİLMEZ. */
+  mesaiAlanlariYaz(v);
   $("#gun-arti").value = Number(v.arti)||0;
   $("#gun-gece-mesai").value = (v.geceYev != null ? v.geceYev : (Number(v.geceMesai)||0));
   const parcaAcik = (ayarlar.parcaFiyat||0) > 0;
@@ -9938,6 +10050,24 @@ document.addEventListener("DOMContentLoaded", ()=>{
   $("#gece-eksi").addEventListener("click", ()=>{
     $("#gun-gece-mesai").value = Math.max(0, (sayi($("#gun-gece-mesai").value, true)||0) - 0.5);
   });
+  /* 0.1.5.9 — Mesai (saat): ± düğmeleri, hazır saat çipleri; yevmiye katı kutusuyla birlikte dolmaz */
+  $("#mesai-saatlik-arti").addEventListener("click", ()=>{
+    $("#gun-mesai-saatlik").value = Math.min(SINIR.mesaiSaat, (sayi($("#gun-mesai-saatlik").value, true)||0) + 0.5);
+    mesaiKarsitiniSifirla("saat"); modalKazancGuncelle();
+  });
+  $("#mesai-saatlik-eksi").addEventListener("click", ()=>{
+    $("#gun-mesai-saatlik").value = Math.max(0, (sayi($("#gun-mesai-saatlik").value, true)||0) - 0.5);
+    mesaiKarsitiniSifirla("saat"); modalKazancGuncelle();
+  });
+  $$("#mesai-saat-cipler button").forEach(b=>{
+    b.addEventListener("click", ()=>{
+      $("#gun-mesai-saatlik").value = Number(b.dataset.saat)||0;
+      mesaiKarsitiniSifirla("saat"); modalKazancGuncelle();
+    });
+  });
+  $("#gun-mesai-saatlik").addEventListener("input", ()=>{ mesaiKarsitiniSifirla("saat"); modalKazancGuncelle(); });
+  ["mesai-saat","mesai-arti","mesai-eksi"].forEach(id=>
+    $("#"+id).addEventListener(id==="mesai-saat" ? "input" : "click", ()=>{ mesaiKarsitiniSifirla("yev"); modalKazancGuncelle(); }));
 
   /* Borç defteri */
   $("#borc-tarih").value = tarihId(new Date());
@@ -10019,6 +10149,27 @@ document.addEventListener("DOMContentLoaded", ()=>{
         "(İptal dersen mesai 0 ₺ olarak kaydedilir)");
       if(git){ modalKapat(); gorunumSec("ayarlar"); toast("Ücret ayarlarından günlük yevmiyeni gir 👇"); return; }
     }
+    /* 0.1.5.9 — MESAİ (SAAT): saat ücretiyle çarpılır (ayarlardaki ya da şantiyedeki mesai saat
+       ücreti). Yevmiye katı ve saat AYNI ANDA kaydolmaz: hesap `mesaiYev>0` ise saati yok sayar,
+       sessiz kayıp olmasın diye ikisi birlikte yazılırsa kaydetmeyiz. Ücret girili değilse saat
+       0 ₺ sayılırdı — kaydetmeyiz, ayarlara yönlendiririz. */
+    const mesaiSaatGirilen = sayi($("#gun-mesai-saatlik").value, true)||0;
+    const mesaiYevGirilen = sayi($("#mesai-saat").value, true)||0;
+    if(mesaiSaatGirilen > 0 && mesaiYevGirilen > 0){
+      toast("Mesaiyi tek yöntemle yaz: yevmiye katı (X, /) YA DA saat — ikisini birden değil");
+      return;
+    }
+    if(mesaiSaatGirilen > 0){
+      const mesaiOran = guncelOranlar($("#gun-santiye-sec").value || "", modalTarih);
+      if(!(Number(mesaiOran.uMesai) > 0)){
+        const git2 = confirm(
+          "Mesai saati yazdın ama MESAİ SAAT ÜCRETİN girili değil.\n\n" +
+          "Bu hâliyle mesai 0 ₺ sayılırdı, o yüzden kaydetmiyorum.\n\n" +
+          "Ayarlara gidip saat ücretini şimdi girmek ister misin?");
+        if(git2){ modalKapat(); gorunumSec("ayarlar"); toast("Ücret ayarlarından mesai saat ücretini gir 👇"); }
+        return;
+      }
+    }
     const onceki = girdiler[modalTarih] ? {...girdiler[modalTarih]} : null;
     let silinenGunFoto = null;   /* fotoğraf kaldırıldıysa geri alma için */
     const secId = $("#gun-santiye-sec").value || "";
@@ -10029,12 +10180,10 @@ document.addEventListener("DOMContentLoaded", ()=>{
       /* Sınırlama (0.0.6.9): eskiden buraya ne yazılsa o kaydediliyordu.
          "999" yazılırsa 999 saat mesai kaydolup hakediş milyonlara çıkıyordu;
          eksi değer de kabul edilip kazancı düşürüyordu. */
-      /* Mesai artık yevmiye katı olarak kaydediliyor (0.0.9.5).
-         `mesai` (saat) alanı YAZILMIYOR — eski kayıtlarda kalmaya devam
-         ediyor ve onların hesabı bozulmuyor, ama yeni kayıtlar
-         `mesaiYev` kullanıyor. Sınır: gün içi artı ile aynı (5 yevmiye). */
+      /* Mesai iki yoldan kaydedilir (0.1.5.9): yevmiye katı (`mesaiYev`, X=1 /=0.5, sınır 5) YA DA
+         saat (`mesai`, mesai saat ücretiyle çarpılır, sınır SINIR.mesaiSaat). Biri doluysa diğeri 0. */
       mesaiYev: Math.round(sinirla(sayi($("#mesai-saat").value, true), SINIR.artiGun, "Mesai", "yevmiye")*2)/2,
-      mesai: 0,
+      mesai: Math.round(sinirla(sayi($("#gun-mesai-saatlik").value, true), SINIR.mesaiSaat, "Mesai", "saat")*4)/4,
       arti: Math.round(sinirla(sayi($("#gun-arti").value, true), SINIR.artiGun, "Gün içi artı", "yevmiye")*2)/2,
       santiyeId: secId,
       santiye: $("#gun-santiye").value.trim() || (s ? s.ad : (ayarlar.santiye||"")),
@@ -10053,6 +10202,17 @@ document.addEventListener("DOMContentLoaded", ()=>{
     /* foto bayrağı: yeni foto varsa veya eskisi korunuyorsa true */
     const fotoVar = modalFoto===undefined ? !!(onceki && onceki.foto) : !!modalFoto;
     if(fotoVar) veri.foto = true;
+    /* 0.1.5.9 — ZORUNLU GÜN NOTU: çalışılan gün "bugün ne yaptın" yazılmadan kaydedilmez. */
+    if(gunNotuEksikMi(veri)){
+      toast(GUN_NOT_MESAJ);
+      const nt = $("#gun-not");
+      if(nt){
+        nt.focus();
+        try{ nt.scrollIntoView({block:"center", behavior:"smooth"}); }catch(e){}
+        nt.classList.add("zorunlu-uyari"); setTimeout(()=>nt.classList.remove("zorunlu-uyari"), 2500);
+      }
+      return;
+    }
     try{
       await kokRef().collection("girdiler").doc(modalTarih).set(veri);
       titret(25);
@@ -10278,6 +10438,22 @@ document.addEventListener("DOMContentLoaded", ()=>{
         if(girdiler[bugunId2]){
           const e2 = {tam:"tam", yarim:"yarım", gelmedi:"gelmedin", izin:"izinli", saatlik:"saatlik"};
           return "Bugün zaten işli (" + (e2[girdiler[bugunId2].durum]||"") + ") " + ad + " — değiştirmek istersen takvimden güne dokun ✏️";
+        }
+        /* 0.1.5.9 — ZORUNLU GÜN NOTU: çalışılan gün ("çalıştım", "yarım", mesai) notsuz kaydedilmez.
+           Gün penceresi bugün için açılır; durum/mesai önceden doldurulur. Yalnızca çalışılmayan
+           günler ("gelmedim", "izinliyim") doğrudan işlenir. */
+        if(gunCalisildiMi({durum: komut.durum, mesai: komut.mesai})){
+          setTimeout(()=>{
+            try{
+              $("#asistan-panel").classList.add("gizli");
+              modalAc(bugunId2);
+              modalDurum = komut.durum; durumButonYenile();
+              if(komut.mesai > 0){ $("#mesai-saat").value = 0; $("#gun-mesai-saatlik").value = Math.min(SINIR.mesaiSaat, komut.mesai); }
+              modalKazancGuncelle();
+              const nt = $("#gun-not"); if(nt) nt.focus();
+            }catch(e){}
+          }, 700);
+          return "Anladım " + ad + " 👍 Ama bugün ne yaptığını yazmadan işleyemem. Gün penceresini açıyorum — yaz ve Kaydet'e bas ✍️";
         }
         try{
           const veri = {
@@ -11358,18 +11534,6 @@ document.addEventListener("DOMContentLoaded", ()=>{
   /* Herkes: yenile */
   $("#btn-kisiler-yenile").addEventListener("click", kisilerYukle);
 
-  /* ---- Kronometre ---- */
-  kronoYaz();
-  $("#btn-krono").addEventListener("click", ()=>{
-    let bas = 0;
-    try{ bas = Number(localStorage.getItem("kronoBas"))||0; }catch(e){}
-    if(bas){ kronoDurdur(bas); return; }
-    try{ localStorage.setItem("kronoBas", Date.now()); }catch(e){ toast("Bu tarayıcıda çalışmadı"); return; }
-    kronoYaz();
-    if(navigator.wakeLock){ navigator.wakeLock.request("screen").then(w=>{ window._kilit=w; }).catch(()=>{}); }
-    toast("Kronometre başladı ⏱ Uygulamayı kapatsan da saymaya devam eder");
-  });
-
   /* ---- Sesli not ---- */
   $("#btn-sesli-not").addEventListener("click", ()=>{
     const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -11760,7 +11924,7 @@ document.addEventListener("DOMContentLoaded", ()=>{
     const dun = girdiler[tarihId(d)];
     if(!dun){ toast("Dünün kaydı yok ki kopyalayayım 🤷"); return; }
     if(dun.durum!=="saatlik"){ modalDurum = dun.durum; durumButonYenile(); }
-    $("#mesai-saat").value = (dun.mesaiYev != null ? dun.mesaiYev : (dun.mesai||0));
+    mesaiAlanlariYaz(dun);
     $("#gun-arti").value = Number(dun.arti)||0;
     $("#gun-saat").value = Number(dun.saat)||ayarlar.gunlukSaat||8;
     $("#gun-santiye").value = dun.santiye||"";
@@ -12270,6 +12434,7 @@ document.addEventListener("DOMContentLoaded", ()=>{
     const son = aktifYil+"-"+pad(aktifAy+1)+"-"+pad(new Date(aktifYil,aktifAy+1,0).getDate());
     $("#toplu-bas").value = ilk;
     $("#toplu-son").value = son;
+    $("#toplu-not").value = "";
     topluAc(true);
   });
   $("#btn-toplu-iptal").addEventListener("click", ()=> topluAc(false));
@@ -12282,6 +12447,16 @@ document.addEventListener("DOMContentLoaded", ()=>{
     const durum = $("#toplu-durum").value;
     if(durum==="sil" && !confirm("Bu aralıktaki TÜM puantaj kayıtları silinecek. Emin misin?")) return;
     const mesai = sayi($("#toplu-mesai").value)||0;
+    /* 0.1.5.9 — ZORUNLU GÜN NOTU: çalışılan günleri (tam/yarım/mesai) toplu işlerken de tek bir ortak
+       not yazılır ve her güne eklenir. Gelmedim/silme için gerekmez. */
+    const topluNot = ($("#toplu-not").value||"").trim();
+    const topluCalisma = durum!=="sil" && (durum==="tam" || durum==="yarim" || mesai>0);
+    if(topluCalisma && !gunNotuYeterli(topluNot)){
+      toast("Bu günlerde ne yaptığını yaz (en az "+GUN_NOT_MIN+" harf) ✍️");
+      const tn = $("#toplu-not");
+      if(tn){ tn.focus(); tn.classList.add("zorunlu-uyari"); setTimeout(()=>tn.classList.remove("zorunlu-uyari"), 2500); }
+      return;
+    }
     const pazarAtla = $("#toplu-pazar").checked;
     const doluKoru = $("#toplu-koru").checked;
     const koru = new Set();
@@ -12310,7 +12485,7 @@ document.addEventListener("DOMContentLoaded", ()=>{
       const veri = {
         durum: (saatlikMod && durum!=="gelmedi") ? "saatlik" : durum,
         mesai,
-        santiye: ayarlar.santiye||"", santiyeId:"", not:"",
+        santiye: ayarlar.santiye||"", santiyeId:"", not: topluCalisma ? topluNot : "",
         ...guncelOranlar("", id),
         guncelleme: firebase.firestore.FieldValue.serverTimestamp()
       };
@@ -13044,12 +13219,6 @@ async function taniCalistir(){
       }
       taniYaz(kayip?"hata":"ok","Gün fotoğrafı bağı", kayip?kayip+" günde 'fotoğraf var' yazıyor ama YOK":fg.length+" fotoğrafın bağı sağlam");
     }
-    /* Takılı kalmış kronometre */
-    let kb=null; try{ kb=localStorage.getItem("kronoBas"); }catch(e){}
-    if(kb){
-      const saat=((Date.now()-Number(kb))/3600000);
-      taniYaz(saat>16?"uyari":"bilgi","Kronometre", saat.toFixed(1)+" saattir çalışıyor"+(saat>16?" — durdurmayı unutmuş olabilirsin":""));
-    }else taniYaz("bilgi","Kronometre","şu anda başlatılmamış (arıza tespiti değildir)");
     /* Bildirim izni */
     try{
       const izin = (typeof Notification!=="undefined") ? Notification.permission : "yok";
@@ -13076,7 +13245,7 @@ async function taniCalistir(){
     taniYaz(eksikEkran.length?"hata":"ok","Ekranlar", eksikEkran.length?"EKSİK: "+eksikEkran.join(", "):ekranlar.length+" ekranın hepsi mevcut");
 
     const zorunlu=["sirket-bakiye","sirket-alt","kur-satir","bugun-kazanc-icerik","hafta-serit",
-      "tahmin-kart","krono-yazi","takvim","ay-ad","liste-odemeler","liste-masraflar","liste-borclar",
+      "tahmin-kart","takvim","ay-ad","liste-odemeler","liste-masraflar","liste-borclar",
       "liste-beklenen","liste-notlar","liste-isciler","liste-ekip-ozet","ozet-grid","liste-maaslar",
       "toast","bildirim-kutusu","liste-sirket-hareket","liste-santiyeler","yenilik-tam","is-detay-icerik"];
     const eksikOge=zorunlu.filter(i=> !document.getElementById(i));

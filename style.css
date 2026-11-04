@@ -3297,7 +3297,9 @@ html[data-hafif="1"] .pin-tus-takimi{box-shadow:none;backdrop-filter:none;-webki
 /* 01. Daha dengeli okunabilirlik ve metin işleme */
 body{font-optical-sizing:auto;text-rendering:optimizeLegibility}
 .bakiye,.ozet-kut .deger,.liste .tutar,.sayac input,.sk-tutar,
-#krono-yazi,#sirket-bakiye{font-variant-numeric:tabular-nums lining-nums}
+#sirket-bakiye{font-variant-numeric:tabular-nums lining-nums}
+/* 0.1.5.9: zorunlu gün notu eksikse vurgu */
+#gun-not.zorunlu-uyari,#toplu-not.zorunlu-uyari{border-color:var(--gelmedi)!important;box-shadow:0 0 0 2px var(--gelmedi)}
 main > section .kart p{line-height:1.58}
 
 /* 02. Üst bar: ince altın işçilik, gölge ve menü düğmesinin gerçek dokusu */
@@ -3965,7 +3967,7 @@ body.pd49-overlay-open{overflow:hidden}
 .pd49-alt span{color:var(--sari);font-weight:700}
 /* Genel etkileşim iyileştirmeleri; var olan alanların yapı ve ID'lerini korur. */
 #goruntu-ana .selam-blok{margin-bottom:8px}
-#goruntu-ana #bugun-kazanc-kart,#goruntu-ana #krono-kart{border-radius:14px}
+#goruntu-ana #bugun-kazanc-kart{border-radius:14px}
 #goruntu-puantaj .takvim,#goruntu-odemeler .liste{scrollbar-width:thin}
 @media(min-width:700px){
   .pd49-pencere{max-height:86vh;align-self:center;border:1px solid var(--cizgi);border-radius:22px;padding-bottom:18px}
