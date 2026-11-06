@@ -186,6 +186,7 @@ let planlar = [], dinleyiciPlan = null; // 📐 plan/proje linkleri
 let masraflar = [];                    // bu ayın iş masrafları
 /* 0.1.5.7: Maaşlar ekranından BAŞKA bir ayın raporu alınırken, o ayın ödemeleri/masrafları burada
    taşınır. Canlı dinleyicilerin `odemeler`/`masraflar` dizilerine dokunmaz (yarış riski yok). */
+let yoklamaOnbellek = {};              // "uid|tarih" → {durum, ad, not, ts} — patronun cevabı (PDF/rapor için)
 let raporKaynagi = null;               // {odemeler:[...], masraflar:[...]} | null
 let ekipListe = [];                    // ekipteki işçiler
 let masrafSeciliKategori = "malzeme";  // masraf ekleme formunda seçili kategori
@@ -249,6 +250,9 @@ function basla(){
   try{
     const mutAnahtar = new URLSearchParams(location.search).get("mutabakat");
     if(mutAnahtar){ mutabakatGoster(mutAnahtar); return; }
+    /* 0.1.6.1: patron günlük yoklama bağlantısı — aynı mantık: hesap yok, yalnızca işaretleme ekranı */
+    const yokAnahtar = new URLSearchParams(location.search).get("yoklama");
+    if(yokAnahtar){ yoklamaGoster(yokAnahtar); return; }
   }catch(e){}
   db.enablePersistence({synchronizeTabs:true}).catch(()=>{ /* çevrimdışı desteklenmiyorsa sorun değil */ });
 
@@ -2589,6 +2593,268 @@ async function mutabakatOlustur(){
   }finally{
     if(_mbtn) _mbtn.disabled = false;
   }
+}
+
+/* ═════ GÜNLÜK YOKLAMA — patron bağlantısı (0.1.6.1) ═════
+   İşçi bir gün için bağlantı üretip WhatsApp'tan patrona gönderir (unutulan/dün de olur). Patron
+   HESAP AÇMADAN bağlantıyı açar, işçinin işaretini ve yazdığı işi görür, "Tam / Yarım / Gelmedi"
+   der. Cevap `yoklama/{anahtar}` belgesine BİR KEZ yazılır; işçi sonradan DEĞİŞTİREMEZ (kurallar).
+   İşçinin kaydını patron değiştirmez — ikisi yan yana görünür, uyuşmazlıkta ⚠ çıkar. */
+/* NOT: const DEĞİL, fonksiyon — patron ekranı açılışta `return` ile erken çıkıyor; sonradan tanımlanan
+   const/let değerleri o modda hiç oluşmaz (TDZ). Fonksiyon bildirimleri ise baştan kullanılabilir. */
+function yoklamaYazi(k){ return ({tam:"Tam gün", yarim:"Yarım gün", gelmedi:"Gelmedi", izin:"İzinli", saatlik:"Çalıştı"})[k] || ""; }
+function yoklamaOnbellekAnahtar(tarih){ return ((kullanici && kullanici.uid) || "") + "|" + tarih; }
+function yoklamaTarihYazi(t){
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(t||""));
+  if(!m) return "—";
+  const d = new Date(Number(m[1]), Number(m[2])-1, Number(m[3]));
+  return d.getDate()+" "+AYLAR[d.getMonth()]+" "+d.getFullYear()+" "+GUNLER[d.getDay()];
+}
+/* İşçi kaydını patronun sözlüğüne çevirir: tam/saatlik → tam, yarım → yarım, gelmedi/izin → gelmedi */
+function yoklamaDurumNormal(v){
+  if(!v) return null;
+  if(v.durum === "tam" || v.durum === "saatlik") return "tam";
+  if(v.durum === "yarim") return "yarim";
+  if(v.durum === "gelmedi" || v.durum === "izin") return "gelmedi";
+  return null;
+}
+function yoklamaAnahtarUret(tarih){
+  const b = new Uint8Array(10);
+  try{ crypto.getRandomValues(b); }catch(e){ for(let i=0;i<b.length;i++) b[i] = Math.floor(Math.random()*256); }
+  return kullanici.uid + "_" + tarih + "_" + Array.from(b, x=> x.toString(36).padStart(2,"0")).join("");
+}
+function yoklamaZamanYazi(ts){
+  try{
+    const d = ts && ts.toDate ? ts.toDate() : (ts ? new Date(ts) : null);
+    if(!d || isNaN(d.getTime())) return "";
+    return pad(d.getDate())+"."+pad(d.getMonth()+1)+" "+pad(d.getHours())+":"+pad(d.getMinutes());
+  }catch(e){ return ""; }
+}
+
+/* ── PATRON EKRANI ── */
+async function yoklamaGoster(anahtar){
+  const ekran = document.getElementById("yoklama-ekran");
+  const govde = document.getElementById("yok-govde");
+  const form = document.getElementById("yok-form");
+  try{ document.getElementById("ekran-yukleniyor").classList.add("gizli"); }catch(e){}
+  if(!ekran || !govde) return;
+  ekran.classList.remove("gizli");
+  govde.innerHTML = '<div class="bos-mesaj">⏳ Yükleniyor...</div>';
+  try{
+    const d = await db.collection("yoklama").doc(anahtar).get();
+    if(!d.exists){
+      govde.innerHTML = '<div class="bos-mesaj"><span class="buyuk">🔍</span>Bu bağlantı bulunamadı.<br>Bağlantının tamamını kopyaladığınızdan emin olun.</div>';
+      return;
+    }
+    const y = d.data();
+    document.getElementById("yok-tarih").textContent = yoklamaTarihYazi(y.tarih);
+    const satir = (et, dg)=>
+      '<div style="display:flex;justify-content:space-between;align-items:baseline;gap:12px;padding:11px 0;border-bottom:1px solid var(--cizgi)">' +
+      '<span style="font-size:13px;color:var(--soluk)">'+et+'</span>' +
+      '<span style="font-size:15px;font-weight:700;text-align:right">'+dg+'</span></div>';
+    const isci = (yoklamaYazi(y.durum) || "İşaretlenmemiş");
+    const notYazi = String(y.not||"").trim();
+    govde.innerHTML =
+      '<div class="kart">' +
+        (y.isciAd ? '<div style="font-size:15px;font-weight:700;margin-bottom:10px">👷 '+esc(y.isciAd)+'</div>' : '') +
+        satir("İşçinin işareti", esc(isci)) +
+        ((Number(y.mesaiYev)||0) > 0 ? satir("Mesai", String(y.mesaiYev).replace(".", ",")+" yevmiye") : "") +
+        ((Number(y.mesai)||0) > 0 ? satir("Mesai", String(y.mesai).replace(".", ",")+" saat") : "") +
+        (y.santiye ? satir("Şantiye", esc(y.santiye)) : "") +
+        (notYazi ? '<div style="padding:11px 0"><div style="font-size:13px;color:var(--soluk);margin-bottom:5px">İşçinin yazdığı iş</div>' +
+                   '<div style="font-size:14.5px;line-height:1.55">'+esc(notYazi)+'</div></div>' : '') +
+      '</div>';
+    if(y.patronCevap === true){
+      if(form) form.classList.add("gizli");
+      govde.innerHTML += '<div class="kart" style="border-color:var(--tam);margin-top:12px;text-align:center">' +
+        '<div style="font-size:15px;font-weight:700;color:var(--tam)">✔ Bu gün için cevap verilmiş</div>' +
+        '<div style="font-size:14px;margin-top:6px">'+esc(yoklamaYazi(y.patronDurum))+(y.patronAd ? ' — '+esc(y.patronAd) : '')+'</div>' +
+        '<div style="font-size:12px;color:var(--soluk);margin-top:4px">'+esc(yoklamaZamanYazi(y.patronTarih))+'</div></div>';
+      return;
+    }
+    if(form) form.classList.remove("gizli");
+    const dugme = (id, durum)=>{ const b = document.getElementById(id); if(b) b.onclick = ()=> yoklamaCevapla(anahtar, durum); };
+    dugme("btn-yok-tam", "tam"); dugme("btn-yok-yarim", "yarim"); dugme("btn-yok-gelmedi", "gelmedi");
+  }catch(e){
+    govde.innerHTML = '<div class="bos-mesaj"><span class="buyuk">📡</span>Bağlantı açılamadı. İnternetinizi kontrol edip tekrar deneyin.</div>';
+  }
+}
+async function yoklamaCevapla(anahtar, durum){
+  const mesaj = document.getElementById("yok-mesaj");
+  const goster = (m)=>{ if(mesaj){ mesaj.textContent = m; mesaj.classList.remove("gizli"); } };
+  const ad = (document.getElementById("yok-ad").value || "").trim().slice(0, 60);
+  const not = (document.getElementById("yok-not").value || "").trim().slice(0, 200);
+  if(ad.length < 2){ goster("Lütfen adınızı ve soyadınızı yazın."); return; }
+  if(!["tam","yarim","gelmedi"].includes(durum)) return;
+  if(mesaj) mesaj.classList.add("gizli");
+  if(!confirm("Bu günü \"" + yoklamaYazi(durum) + "\" olarak işaretliyorsunuz.\n\nCevap bir kez verilir ve sonradan değiştirilemez. Onaylıyor musunuz?")) return;
+  const dugmeler = ["btn-yok-tam","btn-yok-yarim","btn-yok-gelmedi"].map(i=> document.getElementById(i));
+  dugmeler.forEach(b=>{ if(b) b.disabled = true; });
+  try{
+    await db.collection("yoklama").doc(anahtar).update({
+      patronCevap: true, patronDurum: durum, patronNot: not, patronAd: ad,
+      patronTarih: firebase.firestore.FieldValue.serverTimestamp()
+    });
+    await yoklamaGoster(anahtar);   /* cevabı kesinleşmiş hâliyle göster */
+  }catch(e){
+    dugmeler.forEach(b=>{ if(b) b.disabled = false; });
+    /* Aynı anda başkası cevap vermiş olabilir: güncel durumu göster */
+    try{
+      const d = await db.collection("yoklama").doc(anahtar).get();
+      if(d.exists && d.data().patronCevap === true){ await yoklamaGoster(anahtar); return; }
+    }catch(_){}
+    goster("Kaydedilemedi — internetinizi kontrol edip tekrar deneyin.");
+  }
+}
+
+/* ── İŞÇİ TARAFI: bağlantı üret / paylaş ── */
+function yoklamaIsciHataMesaji(e){
+  return (e && e.code === "permission-denied")
+    ? "Yoklama için Firebase kuralına 'yoklama' bloğu eklenmeli — GUVENLIK-KURULUM.md"
+    : "Yoklama bağlantısı oluşturulamadı — internetini kontrol et 📡";
+}
+async function yoklamaGonder(tarih){
+  if(!tarih){ toast("Önce bir gün seç"); return; }
+  const btn = $("#btn-yoklama-gonder");
+  if(btn) btn.disabled = true;
+  try{
+    const v = girdiler[tarih] || null;
+    /* Belgedeki işçi alanları = SON KAYDEDİLEN kayıt (form henüz kaydedilmediyse eski hâli) */
+    const anlik = {
+      durum: v ? String(v.durum||"") : "",
+      mesaiYev: Number(v && v.mesaiYev)||0,
+      mesai: Number(v && v.mesai)||0,
+      not: String((v && v.not)||"").slice(0, 300),
+      santiye: String((v && v.santiye) || ayarlar.santiye || "").slice(0, 80)
+    };
+    const eslesme = kokRef().collection("yoklamalar").doc(tarih);
+    const ed = await eslesme.get();
+    let anahtar = ed.exists ? ed.data().anahtar : null;
+    if(anahtar){
+      const yd = await db.collection("yoklama").doc(anahtar).get();
+      if(yd.exists){
+        if(yd.data().patronCevap === true){
+          toast("Patron bu gün için zaten cevap verdi ✔");
+          await yoklamaDurumYukle(tarih);
+          return;
+        }
+        await db.collection("yoklama").doc(anahtar).update({...anlik, guncelleme: firebase.firestore.FieldValue.serverTimestamp()});
+      }else{
+        anahtar = null;   /* belge silinmiş: yenisini üret */
+      }
+    }
+    if(!anahtar){
+      anahtar = yoklamaAnahtarUret(tarih);
+      await db.collection("yoklama").doc(anahtar).set({
+        sahipId: kullanici.uid,
+        isciAd: (kullanici.displayName || "").slice(0, 60),
+        tarih,
+        ...anlik,
+        olusturma: firebase.firestore.FieldValue.serverTimestamp(),
+        patronCevap: false
+      });
+      await eslesme.set({anahtar, tarih, olusturma: firebase.firestore.FieldValue.serverTimestamp()});
+    }
+    const url = location.origin + location.pathname + "?yoklama=" + anahtar;
+    const metin =
+      "📋 *GÜNLÜK YOKLAMA — " + yoklamaTarihYazi(tarih) + "*\n" +
+      "👷 " + ((kullanici.displayName || "").slice(0, 60) || "İşçi") + "\n\n" +
+      "Bu günün çalışmasını aşağıdaki bağlantıdan tek dokunuşla işaretleyebilirsiniz (hesap gerekmez):\n" + url;
+    await yoklamaPaylas("Günlük Yoklama — " + yoklamaTarihYazi(tarih), metin, url);
+    await yoklamaDurumYukle(tarih, true);
+  }catch(e){
+    toast(yoklamaIsciHataMesaji(e));
+    try{ hataKaydet("yoklamaGonder", e); }catch(_){}
+  }finally{
+    if(btn) btn.disabled = false;
+  }
+}
+/* Paylaşım: mutabakattaki dört kademeli yedekle aynı (WebView'de navigator.share/window.open çalışmayabiliyor) */
+async function yoklamaPaylas(baslik, metin, url){
+  let paylasildi = false;
+  try{
+    if(navigator.share){ await navigator.share({title: baslik, text: metin}); paylasildi = true; }
+  }catch(e){
+    if(e && e.name === "AbortError") return;
+  }
+  if(!paylasildi){
+    try{ const p = window.open("https://wa.me/?text=" + encodeURIComponent(metin), "_blank"); if(p) paylasildi = true; }catch(e){}
+  }
+  if(!paylasildi){
+    try{
+      const a = document.createElement("a");
+      a.href = "whatsapp://send?text=" + encodeURIComponent(metin);
+      a.style.display = "none"; document.body.appendChild(a); a.click();
+      setTimeout(()=>{ try{ a.remove(); }catch(e){} }, 500);
+    }catch(e){}
+  }
+  if(!paylasildi){
+    try{ await navigator.clipboard.writeText(metin); }catch(e){}
+    const kutu = $("#yoklama-durum");
+    if(kutu){
+      kutu.innerHTML =
+        '<div class="kart" style="border-color:var(--sari)">' +
+          '<div style="font-size:14px;font-weight:700;color:var(--sari);margin-bottom:6px">📋 Bağlantı hazır — kopyalandı</div>' +
+          '<div style="font-size:11.5px;color:var(--soluk);margin-bottom:8px;line-height:1.5">Paylaşım penceresi açılmadı. Aşağıdaki bağlantıyı patronuna gönder:</div>' +
+          '<div style="font-size:11px;background:var(--girdi);padding:9px;border-radius:8px;word-break:break-all;font-family:monospace;line-height:1.5">'+esc(url)+'</div>' +
+        '</div>';
+      kutu.classList.remove("gizli");
+    }
+    toast("Bağlantı panoya kopyalandı 📋");
+  }
+}
+
+/* ── İŞÇİ TARAFI: patronun cevabını göster / PDF için topla ── */
+async function yoklamaDurumYukle(tarih, korunacakKart){
+  const kutu = $("#yoklama-durum");
+  if(!kutu) return;
+  if(!korunacakKart){ kutu.classList.add("gizli"); kutu.innerHTML = ""; }
+  try{
+    const ed = await kokRef().collection("yoklamalar").doc(tarih).get();
+    if(modalTarih !== tarih || !ed.exists) return;
+    const yd = await db.collection("yoklama").doc(ed.data().anahtar).get();
+    if(modalTarih !== tarih || !yd.exists) return;
+    const y = yd.data();
+    const kart = (renk, yazi)=> '<div class="kart" style="border-color:'+renk+';padding:11px 13px"><div style="font-size:13.5px;line-height:1.55">'+yazi+'</div></div>';
+    if(y.patronCevap !== true){
+      kutu.innerHTML = kart("var(--sari)", "⏳ Patrona gönderildi — henüz cevap vermedi");
+      kutu.classList.remove("gizli");
+      return;
+    }
+    yoklamaOnbellek[yoklamaOnbellekAnahtar(tarih)] = {durum: y.patronDurum, ad: y.patronAd||"", not: y.patronNot||"", ts: y.patronTarih||null};
+    const kendi = yoklamaDurumNormal(girdiler[tarih]);
+    const ad = y.patronAd ? esc(y.patronAd) : "Patron";
+    const zaman = yoklamaZamanYazi(y.patronTarih);
+    const patronYazi = esc(yoklamaYazi(y.patronDurum));
+    let satir, renk;
+    if(!kendi){ satir = "📋 "+ad+": <b>"+patronYazi+"</b> dedi. Bu günü henüz işaretlemedin — yukarıdan işaretleyip not yaz."; renk = "var(--sari)"; }
+    else if(kendi === y.patronDurum){ satir = "✔ "+ad+": <b>"+patronYazi+"</b> — senin işaretinle aynı"; renk = "var(--tam)"; }
+    else { satir = "⚠ "+ad+": <b>"+patronYazi+"</b> dedi; senin işaretin: <b>"+esc(yoklamaYazi(kendi))+"</b>. Uyuşmuyor."; renk = "var(--gelmedi)"; }
+    if(y.patronNot) satir += '<br><span style="color:var(--soluk)">Patron notu: '+esc(y.patronNot)+'</span>';
+    if(zaman) satir += '<br><span style="font-size:11.5px;color:var(--soluk)">'+esc(zaman)+'</span>';
+    kutu.innerHTML = kart(renk, satir);
+    kutu.classList.remove("gizli");
+  }catch(e){}
+}
+/* PDF/rapor öncesi: o ayın patron cevaplarını topla. Okunamazsa PDF yine üretilir (sütun boş kalır). */
+async function yoklamaCevaplariniYukle(yil, ay0){
+  try{
+    const bas = yil + "-" + pad(ay0+1) + "-01", son = yil + "-" + pad(ay0+1) + "-31";
+    const qs = await kokRef().collection("yoklamalar")
+      .where(firebase.firestore.FieldPath.documentId(), ">=", bas)
+      .where(firebase.firestore.FieldPath.documentId(), "<=", son).get();
+    const isler = [];
+    qs.forEach(d=>{ const a = d.data().anahtar; if(a) isler.push([d.id, a]); });
+    await Promise.all(isler.map(async ([tarih, a])=>{
+      try{
+        const yd = await db.collection("yoklama").doc(a).get();
+        if(yd.exists && yd.data().patronCevap === true){
+          const y = yd.data();
+          yoklamaOnbellek[yoklamaOnbellekAnahtar(tarih)] = {durum: y.patronDurum, ad: y.patronAd||"", not: y.patronNot||"", ts: y.patronTarih||null};
+        }
+      }catch(e){}
+    }));
+  }catch(e){ try{ hataKaydet("yoklamaCevaplariniYukle", e); }catch(_){} }
 }
 
 function masrafCiz(){
@@ -7695,9 +7961,12 @@ function gunlukIsNotlari(gBas, gSon){
     const id = aktifYil + "-" + pad(aktifAy+1) + "-" + pad(g);
     const v = girdiler[id];
     const not = pdfNotTemizle(v && v.not);
-    if(!not) continue;
+    const yc = yoklamaOnbellek[yoklamaOnbellekAnahtar(id)];   /* 0.1.6.1: patronun cevabı (varsa) */
+    if(!not && !yc) continue;
     const d = new Date(aktifYil, aktifAy, g);
-    liste.push({id, tarih: pad(g)+" / "+pad(aktifAy+1)+" / "+aktifYil+" — "+GUNLER[d.getDay()], durum: gunIsaret(v).yev, not});
+    liste.push({id, tarih: pad(g)+" / "+pad(aktifAy+1)+" / "+aktifYil+" — "+GUNLER[d.getDay()],
+      durum: v ? gunIsaret(v).yev : "–", not: not || "—",
+      patron: yc ? ((yoklamaYazi(yc.durum)) + (yc.ad ? " — " + pdfNotTemizle(yc.ad) : "")) : ""});
   }
   return liste;
 }
@@ -7705,13 +7974,14 @@ function pdfIsNotlariCiz(doc, yaziTipi, solX, sagX, y, liste, yazi){
   if(y + 70 + Math.min(liste.length, 3)*20 > 780){ doc.addPage(); y = 50; }
   doc.setFont(yaziTipi,"bold"); doc.setFontSize(yazi.baslik); doc.setTextColor(0);
   doc.text(PDF_IS_NOTLARI_BASLIK+" ("+liste.length+" gün)", solX, y);
+  const patronVar = liste.some(x=> x.patron);   /* patron cevabı yoksa tablo eskisiyle birebir aynı */
   doc.autoTable({
     startY: y + 8, margin:{left:solX, right: 595-sagX},
-    head: [["TARİH","DURUM","YAPILAN İŞ (işçinin kendi yazdığı)"]],
-    body: liste.map(x=> [x.tarih, x.durum, x.not]),
+    head: [patronVar ? ["TARİH","DURUM","PATRON","YAPILAN İŞ (işçinin kendi yazdığı)"] : ["TARİH","DURUM","YAPILAN İŞ (işçinin kendi yazdığı)"]],
+    body: liste.map(x=> patronVar ? [x.tarih, x.durum, x.patron || "—", x.not] : [x.tarih, x.durum, x.not]),
     styles:{fontSize:yazi.tablo, cellPadding:4, lineColor:[200,200,200], lineWidth:0.5, valign:"top"},
     headStyles:{fillColor:[242,242,242], textColor:20, fontStyle:"bold"},
-    columnStyles:{0:{cellWidth:128}, 1:{halign:"center", cellWidth:44}},
+    columnStyles: patronVar ? {0:{cellWidth:118}, 1:{halign:"center", cellWidth:40}, 2:{cellWidth:92}} : {0:{cellWidth:128}, 1:{halign:"center", cellWidth:44}},
     rowPageBreak: "avoid"
   });
   return doc.lastAutoTable.finalY + 18;
@@ -7938,11 +8208,13 @@ function raporIcerikUret(gBas, gSon){
   const isNotlariH = gunlukIsNotlari(t.gBas, t.gSon);
   if(isNotlariH.length){
     let nSat = "";
+    const patronVarH = isNotlariH.some(x=> x.patron);
     isNotlariH.forEach(x=>{
-      nSat += "<tr><td>"+esc(x.tarih)+"</td><td class='orta-h'>"+esc(x.durum)+"</td><td>"+esc(x.not)+"</td></tr>";
+      nSat += "<tr><td>"+esc(x.tarih)+"</td><td class='orta-h'>"+esc(x.durum)+"</td>"+
+        (patronVarH ? "<td>"+esc(x.patron || "—")+"</td>" : "")+"<td>"+esc(x.not)+"</td></tr>";
     });
     isNotHtml = '<h2 style="font-size:15px;margin-top:22px;border-bottom:3px solid #FFC400;padding-bottom:5px">'+PDF_IS_NOTLARI_BASLIK+' ('+isNotlariH.length+' gün)</h2>'+
-      '<table><tr><th style="width:150px">TARİH</th><th style="width:60px;text-align:center">DURUM</th><th>YAPILAN İŞ (işçinin kendi yazdığı)</th></tr>'+nSat+'</table>';
+      '<table><tr><th style="width:150px">TARİH</th><th style="width:60px;text-align:center">DURUM</th>'+(patronVarH ? '<th style="width:110px">PATRON</th>' : '')+'<th>YAPILAN İŞ (işçinin kendi yazdığı)</th></tr>'+nSat+'</table>';
   }
 
   const css =
@@ -8300,6 +8572,7 @@ async function pdfPaylas(gBas, gSon){
   /* 0.1.5.7: ödeme önbelleği boşsa (dinleyici düştüyse/henüz gelmediyse) PDF avanssız çıkmasın.
      Maaşlar ekranından gelindiyse (raporKaynagi dolu) liste zaten hazır — dokunulmaz. */
   if(!raporKaynagi) await aktifAyOdemeleriniGuvenceyeAl();
+  await yoklamaCevaplariniYukle(aktifYil, aktifAy);   /* 0.1.6.1: PDF'te PATRON sütunu için */
   /* Kullanıcı isteği: "resim değil, gerçek PDF" — artık gerçek (metin tabanlı,
      seçilebilir/aranabilir yazılı) PDF önceliği. Gömülü Türkçe font sayesinde
      artık bozuk karakter riski yok. html2canvas'lı "resim" yöntemi sadece
@@ -8999,6 +9272,7 @@ function modalAc(id){
   geriKaydet();
   $("#modal-perde").classList.add("acik");
   $("#gun-modal").classList.add("acik");
+  try{ yoklamaDurumYukle(id); }catch(e){}   /* 0.1.6.1: patronun yoklama cevabı (varsa) */
 }
 function modalKapat(){
   $("#modal-perde").classList.remove("acik");
@@ -10005,6 +10279,8 @@ document.addEventListener("DOMContentLoaded", ()=>{
   $("#gun-mesai-saatlik").addEventListener("input", ()=>{ mesaiKarsitiniSifirla("saat"); modalKazancGuncelle(); });
   ["mesai-saat","mesai-arti","mesai-eksi"].forEach(id=>
     $("#"+id).addEventListener(id==="mesai-saat" ? "input" : "click", ()=>{ mesaiKarsitiniSifirla("yev"); modalKazancGuncelle(); }));
+  /* 0.1.6.1 — patrona günlük yoklama bağlantısı */
+  $("#btn-yoklama-gonder").addEventListener("click", ()=> yoklamaGonder(modalTarih));
 
   /* Borç defteri */
   $("#borc-tarih").value = tarihId(new Date());

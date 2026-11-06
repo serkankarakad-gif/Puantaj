@@ -1,3 +1,50 @@
+# 0.1.6.1 — Patron yoklama kuralı + açık okuma uyarısı
+
+## 1) Patron yoklama bağlantısının çalışması için (ZORUNLU, bir kereye mahsus)
+Yoklama özelliği yeni bir koleksiyon (`yoklama`) kullanır. Firebase kuralına bu blok eklenmezse gün penceresindeki
+"📲 Patrona yoklama linki gönder" düğmesi şu uyarıyı verir: *"Yoklama için Firebase kuralına 'yoklama' bloğu eklenmeli"*.
+Uygulamanın geri kalanı etkilenmez.
+
+1. Firebase Console → Firestore Database → **Rules**.
+2. Bu depodaki `firestore.rules` dosyasındaki **`YOKLAMA`** bloğunu (`match /yoklama/{anahtar} { ... }`), mevcut kuralın
+   içine, `mutabakat` bloğunun hemen altına yapıştır. Mevcut hiçbir satırı silme/değiştirme.
+3. **Rules Playground** ile dene (Yayınlamadan önce):
+   - Girişsiz `get /yoklama/ornek` → izin verilmeli. Girişsiz `list /yoklama` → reddedilmeli.
+   - Giriş yapmış, `sahipId` kendi uid'in ve `patronCevap:false` olan bir belge `create` → izin.
+   - Girişsiz, cevapsız belgeye `update` (`patronCevap:true, patronDurum:'tam', patronAd:'Ali Veli', patronNot:'', patronTarih:request.time`) → izin.
+   - Aynı belgeye ikinci `update` → reddedilmeli. Cevap verilmiş belgeye işçi `update`/`delete` → reddedilmeli.
+4. **Yayınla**. Sonra uygulamadan bir günü açıp düğmeyi dene.
+
+## 2) UYARI: şu anki kural, puantaj dışındaki verileri de herkese açıyor
+`firestore.rules` içindeki şu satırlar (`match /{altKoleksiyon=**} { allow read: if request.auth != null; ... }`),
+**giriş yapmış herhangi birinin** (kayıt olmak yeterli) her kullanıcının **tüm alt koleksiyonlarını** okumasına izin veriyor:
+girdiler ve odemeler (bilerek açık — "Herkes" ekranı bunları gösteriyor), ama aynı zamanda masraflar, borçlar, kartlar,
+fiş/fotoğraflar ve ileride eklenecek cüzdan gibi **özel** koleksiyonlar. (PIN kasası ayrı ve korumalı; o etkilenmiyor.)
+Uygulama başka kişi için yalnızca `kullanicilar` (profil/ayarlar), `girdiler` ve `odemeler` okuyor (kod incelemesi).
+
+**ÖNERİ (uygulanmadı — önce Rules Playground'da dene):** `kullanicilar` bloğunu şöyle daralt:
+
+```
+match /kullanicilar/{kullaniciId} {
+  allow read: if request.auth != null;                              // profil/ayarlar: "Herkes" ekranı okuyor
+  allow write: if request.auth != null && request.auth.uid == kullaniciId;
+
+  match /girdiler/{g}  { allow read: if request.auth != null;
+                         allow write: if request.auth != null && request.auth.uid == kullaniciId; }
+  match /odemeler/{o}  { allow read: if request.auth != null;
+                         allow write: if request.auth != null && request.auth.uid == kullaniciId; }
+
+  // Diğer HER ŞEY yalnızca sahibine
+  match /{altKoleksiyon=**} {
+    allow read, write: if request.auth != null && request.auth.uid == kullaniciId;
+  }
+}
+```
+Playground testi: başka bir kullanıcının `masraflar` okuması **reddedilmeli**; `girdiler` ve `odemeler` okuması **izin**; kendi tüm verine okuma/yazma **izin**.
+Bu değişiklik "Herkes" ekranını bozmamalı; yine de yayınladıktan sonra o ekranı ve kendi verini mutlaka aç-kontrol et.
+
+---
+
 # Güvenlik sıkılaştırması — yayına çıkmadan önce yapman gerekenler
 
 Bu sürümde kodda düzelttiklerimin yanında, **Firebase konsolunda senin elinle**

@@ -21,7 +21,7 @@
 <meta name="theme-color" content="#17181C">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <title>Puantaj Defterim</title>
-<meta name="application-version" content="0.1.6.0">
+<meta name="application-version" content="0.1.6.1">
 
 <!-- ================= iOS / Safari "Ana ekrana ekle" desteği ================= -->
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -108,6 +108,38 @@
       <button class="btn btn-sari" id="btn-mut-onayla" style="margin-top:6px">✅ Onaylıyorum</button>
       <div style="font-size:11.5px;color:var(--soluk2);text-align:center;margin-top:10px;line-height:1.5">
         Onayınız tarih ve saatle kaydedilir.<br>Rakamları değiştiremezsiniz — yalnızca onay verirsiniz.
+      </div>
+    </div>
+    <div style="text-align:center;margin-top:22px;font-size:11px;color:var(--soluk2)">
+      Puantaj Defterim ile hazırlandı
+    </div>
+  </div>
+</div>
+
+<!-- ============ PATRON YOKLAMA EKRANI (0.1.6.1) — bağlantıyı açan patron, hesap açmadan işaretler ============ -->
+<div id="yoklama-ekran" class="gizli" style="position:fixed;inset:0;z-index:9800;background:var(--beton);overflow-y:auto;padding:20px 16px 40px">
+  <div style="max-width:520px;margin:0 auto">
+    <div style="text-align:center;padding:10px 0 18px">
+      <div style="font-family:'Saira Condensed';font-size:26px;font-weight:800;color:var(--sari)">GÜNLÜK YOKLAMA</div>
+      <div id="yok-tarih" style="font-size:14px;color:var(--soluk);margin-top:3px">—</div>
+    </div>
+    <div id="yok-govde"></div>
+    <div id="yok-form" class="gizli" style="margin-top:16px">
+      <div class="alan">
+        <label for="yok-ad">Adınız Soyadınız</label>
+        <input type="text" id="yok-ad" placeholder="İşaretleyen kişi" autocomplete="name" maxlength="60">
+      </div>
+      <div class="alan">
+        <label for="yok-not">Not (isteğe bağlı)</label>
+        <input type="text" id="yok-not" placeholder="Varsa açıklama" maxlength="200">
+      </div>
+      <div style="font-size:13px;font-weight:700;margin:10px 0 8px">Bu gün işe geldi mi?</div>
+      <button class="btn btn-sari" id="btn-yok-tam" style="margin-top:4px">✔ Tam gün çalıştı</button>
+      <button class="btn btn-cizgili" id="btn-yok-yarim" style="margin-top:8px">½ Yarım gün çalıştı</button>
+      <button class="btn btn-cizgili" id="btn-yok-gelmedi" style="margin-top:8px;border-color:var(--gelmedi);color:var(--gelmedi)">✖ Gelmedi</button>
+      <div id="yok-mesaj" class="gizli" style="margin-top:10px;font-size:13px;color:var(--gelmedi);text-align:center;line-height:1.5"></div>
+      <div style="font-size:11.5px;color:var(--soluk2);text-align:center;margin-top:10px;line-height:1.5">
+        Cevabınız tarih ve saatle kaydedilir ve değiştirilemez.<br>Yalnızca bir kez işaretleyebilirsiniz.
       </div>
     </div>
     <div style="text-align:center;margin-top:22px;font-size:11px;color:var(--soluk2)">
@@ -485,7 +517,7 @@
       </div>
       <div class="kart gizli" id="yenilik-kart" style="border-color:var(--sari)">
         <h2>🎁 Neler yeni?</h2>
-        <ul style="padding-left:18px;font-size:13.5px;line-height:1.85"><li><b>Para tutarlılığı:</b> PDF, Maaşlar, ana ekran ve yıl özeti aynı yuvarlamayı kullanır; 1 ₺ tutmayan rakam kalmadı.</li><li><b>Yarım dönem raporu:</b> başka ayın tarihiyle alınıp bu aya sayılan avans artık iki raporda birden çıkmaz.</li><li><b>Avans yazımı:</b> avans yalnızca sayıldığı ayın PDF'inde yazar; diğer ayda ek açıklama çıkmaz.</li><li><b>Mesai (saat):</b> 1, 2, 3, 4, 5, 8, 10, 12 saatlik hazır seçenekler; ayardaki mesai saat ücretiyle hesaplanır.</li><li><b>Gün notu zorunlu:</b> çalışılan günde "bugün ne yaptın" (en az 10 harf). PDF'te günlük işler listelenir.</li><li><b>Kronometre kaldırıldı.</b></li><li><b>PDF avans düzeltmesi:</b> Maaşlar ekranından başka ayın PDF'inde avanslar ve Askeriye eksiksiz yazılır.</li></ul>
+        <ul style="padding-left:18px;font-size:13.5px;line-height:1.85"><li><b>Patron yoklaması:</b> gün penceresinden patrona WhatsApp bağlantısı gönder; patron hesap açmadan Tam / Yarım / Gelmedi işaretler. Uyuşmazlıkta ⚠ görürsün, PDF'te PATRON sütunu çıkar.</li><li><b>Para tutarlılığı:</b> PDF, Maaşlar, ana ekran ve yıl özeti aynı yuvarlamayı kullanır; yarım dönem raporunda avans iki kez çıkmaz.</li><li><b>Mesai (saat):</b> 1, 2, 3, 4, 5, 8, 10, 12 saatlik hazır seçenekler; ayardaki mesai saat ücretiyle hesaplanır.</li><li><b>Gün notu zorunlu:</b> çalışılan günde "bugün ne yaptın" (en az 10 harf). PDF'te günlük işler listelenir.</li><li><b>Kronometre kaldırıldı.</b></li><li><b>PDF avans düzeltmesi:</b> Maaşlar ekranından başka ayın PDF'inde avanslar ve Askeriye eksiksiz yazılır.</li></ul>
         <button class="btn btn-cizgili" id="btn-yenilik-kapat">Süper, kapat</button>
       </div>
       <div class="kart gizli" id="ana-hedef-kart">
@@ -684,10 +716,10 @@
 <div class="kart pd55-panel" id="pd55-panel">
  <header class="pd55-head">
   <div class="pd55-sigil" aria-hidden="true">✦</div>
-  <div><div class="pd55-overline">PUANTAJ DEFTERİM · <span class="surum-otomatik">0.1.6.0</span></div><h2>Veri Kalkanı</h2><p>Güncellemeden önce kontrol et, yedeğini doğrula, riskleri gör.</p></div>
+  <div><div class="pd55-overline">PUANTAJ DEFTERİM · <span class="surum-otomatik">0.1.6.1</span></div><h2>Veri Kalkanı</h2><p>Güncellemeden önce kontrol et, yedeğini doğrula, riskleri gör.</p></div>
  </header>
  <div class="pd55-stats" id="pd55-stats" aria-live="polite">
-  <div><small>Uygulama</small><strong id="pd55-version">0.1.6.0</strong></div>
+  <div><small>Uygulama</small><strong id="pd55-version">0.1.6.1</strong></div>
   <div><small>Bağlantı</small><strong id="pd55-online">Kontrol edilmeli</strong></div>
   <div><small>JSON yedek</small><strong id="pd55-backup-age">Bilinmiyor</strong></div>
  </div>
@@ -721,7 +753,7 @@
 </div>
 
 <div class="kart pd54-denetim" id="pd54-denetim">
-  <div class="pd54-eyebrow">KALİTE MERKEZİ · <span class="surum-otomatik">0.1.6.0</span></div>
+  <div class="pd54-eyebrow">KALİTE MERKEZİ · <span class="surum-otomatik">0.1.6.1</span></div>
   <h2>Uygulama Sağlık Kontrolü</h2>
   <p>Arayüz, sürüm, bağlantı, PIN altyapısı, PDF kaynakları, yedekleme ve çevrimdışı hazırlığı için <strong>salt-okunur</strong> kontroller. Her kontrolün sonucu ayrı gösterilir; Firebase kayıtları yazılmaz veya silinmez.</p>
   <div class="pd54-aksiyonlar"><button type="button" class="btn btn-sari" id="pd54-denetle">Sistem kontrolünü başlat</button><button type="button" class="btn btn-cizgili" id="pd54-rapor" disabled>Raporu indir</button></div>
@@ -2045,6 +2077,9 @@
     <div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:8px" id="not-cipler"></div>
     <div style="font-size:12px;color:var(--soluk);margin-top:6px;line-height:1.5">Çalıştığın gün için en az 10 harf yaz; patron sorarsa kanıtın bu olur. Gelmedim / İzinli günlerde gerekmez.</div>
   </div>
+
+  <div id="yoklama-durum" class="gizli" style="margin-top:12px"></div>
+  <button class="btn btn-cizgili" id="btn-yoklama-gonder" style="margin-top:12px;font-size:13px">📲 Patrona yoklama linki gönder</button>
 
   <div class="modal-butonlar">
     <button class="btn btn-sil-kucuk" id="btn-gun-sil">Kaydı sil</button>

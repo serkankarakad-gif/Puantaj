@@ -55,5 +55,56 @@ service cloud.firestore {
       // Silme yalnızca sahibinde
       allow delete: if request.auth != null && resource.data.sahipId == request.auth.uid;
     }
+
+    // ═══ YOKLAMA — patron günlük yoklaması (0.1.6.1) ═══
+    // İşçi bir gün için bağlantı üretir; patron HESAP AÇMADAN işaretler.
+    // Mutabakattan FARKI: patron cevap verdikten sonra işçi belgeyi HİÇ değiştiremez/silemez.
+    match /yoklama/{anahtar} {
+
+      // Yalnızca patron alanlarının değiştiğini doğrular
+      function sadecePatron() {
+        return request.resource.data.diff(resource.data).affectedKeys()
+          .hasOnly(['patronCevap','patronDurum','patronNot','patronAd','patronTarih']);
+      }
+      // Cevap gelmeden işçinin yenileyebildiği alanlar (işçi kaydının anlık görüntüsü)
+      function sadeceIsci() {
+        return request.resource.data.diff(resource.data).affectedKeys()
+          .hasOnly(['durum','mesaiYev','mesai','not','santiye','guncelleme']);
+      }
+
+      // get = bağlantıyı bilen görür; list KAPALI
+      allow get: if true;
+      allow list: if false;
+
+      // Oluşturma: yalnızca giriş yapmış işçi, kendi kimliğiyle, cevapsız olarak
+      allow create: if request.auth != null
+                    && request.resource.data.sahipId == request.auth.uid
+                    && request.resource.data.patronCevap == false;
+
+      allow update: if (
+                         // PATRON: yalnızca cevap alanları, YALNIZCA BİR KEZ
+                         resource.data.patronCevap == false
+                         && sadecePatron()
+                         && request.resource.data.patronCevap == true
+                         && request.resource.data.patronDurum in ['tam','yarim','gelmedi']
+                         && request.resource.data.patronAd is string
+                         && request.resource.data.patronAd.size() >= 2
+                         && request.resource.data.patronAd.size() <= 60
+                         && request.resource.data.patronNot is string
+                         && request.resource.data.patronNot.size() <= 200
+                         && request.resource.data.patronTarih == request.time
+                       ) || (
+                         // İŞÇİ: yalnızca cevap GELMEDEN ve yalnızca kendi alanlarını
+                         request.auth != null
+                         && resource.data.sahipId == request.auth.uid
+                         && resource.data.patronCevap == false
+                         && sadeceIsci()
+                       );
+
+      // Silme: yalnızca sahibi ve yalnızca cevap gelmeden (patron cevabı silinemez)
+      allow delete: if request.auth != null
+                    && resource.data.sahipId == request.auth.uid
+                    && resource.data.patronCevap == false;
+    }
   }
 }
