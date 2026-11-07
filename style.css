@@ -3298,6 +3298,9 @@ html[data-hafif="1"] .pin-tus-takimi{box-shadow:none;backdrop-filter:none;-webki
 body{font-optical-sizing:auto;text-rendering:optimizeLegibility}
 .bakiye,.ozet-kut .deger,.liste .tutar,.sayac input,.sk-tutar,
 #sirket-bakiye{font-variant-numeric:tabular-nums lining-nums}
+/* 0.1.6.3: ana ekrandaki "Hesap belgesi buluttan okundu" bağlantı kutusu ekrandan kaldırıldı (kullanıcı isteği).
+   Eleman ve işlevi DURUYOR (tanı/Veri Kalkanı onu okuyor), yalnızca görünmüyor. */
+#bulut-durum{display:none!important}
 /* 0.1.6.2 — kaydırmalı kart şeridi + Hesabım kartı */
 .kart-serit{display:flex;gap:12px;overflow-x:auto;scroll-snap-type:x mandatory;-webkit-overflow-scrolling:touch;scrollbar-width:none;overscroll-behavior-x:contain}
 .kart-serit::-webkit-scrollbar{display:none}

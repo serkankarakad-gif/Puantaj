@@ -21,7 +21,7 @@
 <meta name="theme-color" content="#17181C">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <title>Puantaj Defterim</title>
-<meta name="application-version" content="0.1.6.2">
+<meta name="application-version" content="0.1.6.4">
 
 <!-- ================= iOS / Safari "Ana ekrana ekle" desteği ================= -->
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -736,10 +736,10 @@
 <div class="kart pd55-panel" id="pd55-panel">
  <header class="pd55-head">
   <div class="pd55-sigil" aria-hidden="true">✦</div>
-  <div><div class="pd55-overline">PUANTAJ DEFTERİM · <span class="surum-otomatik">0.1.6.2</span></div><h2>Veri Kalkanı</h2><p>Güncellemeden önce kontrol et, yedeğini doğrula, riskleri gör.</p></div>
+  <div><div class="pd55-overline">PUANTAJ DEFTERİM · <span class="surum-otomatik">0.1.6.4</span></div><h2>Veri Kalkanı</h2><p>Güncellemeden önce kontrol et, yedeğini doğrula, riskleri gör.</p></div>
  </header>
  <div class="pd55-stats" id="pd55-stats" aria-live="polite">
-  <div><small>Uygulama</small><strong id="pd55-version">0.1.6.2</strong></div>
+  <div><small>Uygulama</small><strong id="pd55-version">0.1.6.4</strong></div>
   <div><small>Bağlantı</small><strong id="pd55-online">Kontrol edilmeli</strong></div>
   <div><small>JSON yedek</small><strong id="pd55-backup-age">Bilinmiyor</strong></div>
  </div>
@@ -773,7 +773,7 @@
 </div>
 
 <div class="kart pd54-denetim" id="pd54-denetim">
-  <div class="pd54-eyebrow">KALİTE MERKEZİ · <span class="surum-otomatik">0.1.6.2</span></div>
+  <div class="pd54-eyebrow">KALİTE MERKEZİ · <span class="surum-otomatik">0.1.6.4</span></div>
   <h2>Uygulama Sağlık Kontrolü</h2>
   <p>Arayüz, sürüm, bağlantı, PIN altyapısı, PDF kaynakları, yedekleme ve çevrimdışı hazırlığı için <strong>salt-okunur</strong> kontroller. Her kontrolün sonucu ayrı gösterilir; Firebase kayıtları yazılmaz veya silinmez.</p>
   <div class="pd54-aksiyonlar"><button type="button" class="btn btn-sari" id="pd54-denetle">Sistem kontrolünü başlat</button><button type="button" class="btn btn-cizgili" id="pd54-rapor" disabled>Raporu indir</button></div>
@@ -2273,6 +2273,7 @@
 <div class="alt-sayfa" id="hesap-gonder-modal">
   <div class="tutamak"></div>
   <h3>Para gönder</h3>
+  <div id="hg-form">
   <div class="tarih-yazi">Bakiyen: <b id="hg-bakiye">—</b></div>
   <div class="alan">
     <label for="hg-no">Alıcının hesap numarası</label>
@@ -2295,6 +2296,16 @@
   <div class="modal-butonlar">
     <button type="button" class="btn btn-cizgili" id="btn-hg-iptal">Vazgeç</button>
     <button type="button" class="btn btn-sari" id="btn-hg-gonder">Gönder</button>
+  </div>
+  </div>
+  <div id="hg-basari" class="gizli">
+    <div style="text-align:center;padding:10px 0 4px">
+      <div style="font-size:18px;font-weight:800;color:var(--tam)">Gönderildi</div>
+      <div id="hg-basari-ozet" style="font-size:15px;font-weight:700;margin-top:8px;line-height:1.5"></div>
+    </div>
+    <button type="button" class="btn btn-sari" id="btn-hg-dekont" style="margin-top:16px" disabled>Dekont hazırlanıyor…</button>
+    <button type="button" class="btn btn-cizgili" id="btn-hg-dekont-metin" style="margin-top:8px">WhatsApp'a yazı olarak gönder</button>
+    <button type="button" class="btn btn-cizgili" id="btn-hg-kapat" style="margin-top:8px">Kapat</button>
   </div>
 </div>
 

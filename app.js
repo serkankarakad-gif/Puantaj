@@ -2712,7 +2712,7 @@ async function yoklamaCevapla(anahtar, durum){
 /* ── İŞÇİ TARAFI: bağlantı üret / paylaş ── */
 function yoklamaIsciHataMesaji(e){
   return (e && e.code === "permission-denied")
-    ? "Yoklama için Firebase kuralına 'yoklama' bloğu eklenmeli — GUVENLIK-KURULUM.md"
+    ? "Yoklama şu an kullanılamıyor."
     : "Yoklama bağlantısı oluşturulamadı — internetini kontrol et 📡";
 }
 async function yoklamaGonder(tarih){
@@ -2902,12 +2902,25 @@ function hesapNoUret(){
 function hesapZaman(){ const d = new Date(); return pad(d.getHours()) + ":" + pad(d.getMinutes()); }
 
 /* Saf hesap: hareketler + bakiye. (Test edilebilsin diye ağdan bağımsız.) */
+function hesapZamanMs(ts){
+  if(ts && typeof ts.toMillis === "function") return ts.toMillis();
+  if(typeof ts === "number" && isFinite(ts)) return ts;
+  if(ts instanceof Date) return ts.getTime();
+  return null;
+}
 function hesapHareketleriUret(profil, odemeler, harcamalar, giden, gelen){
   const liste = [];
   const bas = String((profil && profil.baslangic) || "");
+  const acilisMs = hesapZamanMs(profil && profil.olusturma);
   (odemeler||[]).forEach(o=>{
     const t = String(o.tarih||"").slice(0,10);
-    if(!/^\d{4}-\d{2}-\d{2}$/.test(t) || t < bas) return;
+    if(!/^\d{4}-\d{2}-\d{2}$/.test(t)) return;
+    /* 0.1.6.4 — "Hesap açıldıktan SONRA işlenen ödemeler" ödemenin GİRİLDİĞİ ana (olusturma) göre sayılır, kendi
+       tarih alanına göre değil: geçmiş tarihli bir avansı bugün Maaşlar'a işlesen de hesaba geçer. `olusturma===null`
+       = şu an sunucuya yazılıyor (yeni girildi) → sayılır. Zaman damgası olmayan eski kayıtlar tarihe göre. */
+    const kayitMs = o.olusturma === null ? Infinity : hesapZamanMs(o.olusturma);
+    if(kayitMs !== null && acilisMs !== null){ if(kayitMs < acilisMs) return; }
+    else if(t < bas) return;
     const tur = o.tur || "diger";
     if(!HESAP_ALACAK_TURLERI.includes(tur)) return;       /* kesinti ve bilinmeyen türler hesaba girmez */
     const tutar = Number(o.tutar)||0; if(!(tutar > 0)) return;
@@ -2932,14 +2945,17 @@ function hesapHesapla(){
 }
 
 /* ── Okuma ── */
+/* Kullanıcıya teknik ayrıntı (Firebase/kural/dosya adı) GÖSTERİLMEZ. Kural eksikliği geliştirici işidir:
+   bu durumda Hesabım kartı tamamen gizlenir (bkz. hesapKartCiz), ayrıntı hata kaydına yazılır. */
 function hesapHataMesaji(e){
   return (e && e.code === "permission-denied")
-    ? "Hesabım için Firebase kuralları eklenmeli — GUVENLIK-KURULUM.md"
+    ? "Hesabım şu an kullanılamıyor."
     : "Hesap bilgisi okunamadı — internetini kontrol et";
 }
 async function hesapYukle(zorla){
   if(!kullanici || !kullanici.uid) return null;
-  if(!zorla && Date.now() - hesapSonYukleme < 15000 && hesapDurum && !hesapDurum.hata) return hesapDurum;
+  /* Başarılıysa 15 sn, kural eksikse (permission-denied) 5 dk boyunca ağa tekrar sorulmaz */
+  if(!zorla && hesapDurum && Date.now() - hesapSonYukleme < (hesapDurum.hata === "permission-denied" ? 300000 : (hesapDurum.hata ? 0 : 15000))) return hesapDurum;
   const uid = kullanici.uid;
   try{
     const p = await db.collection("cuzdan").doc(uid).get();
@@ -2960,6 +2976,7 @@ async function hesapYukle(zorla){
     }
   }catch(e){
     hesapDurum = {acik:false, hata: (e && e.code) || "hata", mesaj: hesapHataMesaji(e)};
+    hesapSonYukleme = Date.now();
     try{ hataKaydet("hesapYukle", e); }catch(_){}
   }
   return hesapDurum;
@@ -2974,6 +2991,13 @@ function hesapKartCiz(){
   const ac = $("#btn-hesap-ac"), isl = $("#hesap-islemler");
   if(!bak) return;
   const d = hesapDurum;
+  /* Firebase kuralları henüz yayınlanmamışsa (permission-denied) kart ve nokta göstergesi HİÇ görünmez:
+     kullanıcılar yarım çalışan bir kart görmesin. Kurallar eklenince kart kendiliğinden belirir. */
+  const kuralYok = !!(d && d.hata === "permission-denied");
+  const yuva = $("#hesap-kart") && $("#hesap-kart").closest(".kart-yuva");
+  if(yuva) yuva.classList.toggle("gizli", kuralYok);
+  const noktalar = $("#kart-noktalar");
+  if(noktalar) noktalar.classList.toggle("gizli", kuralYok);
   if(!d){ bak.textContent = "—"; return; }
   if(d.hata){
     bak.textContent = "—"; no.textContent = "";
@@ -3085,6 +3109,7 @@ let hesapAlici = null;   // {no, uid, ad}
 function hesapGonderAc(){
   if(!hesapDurum || !hesapDurum.acik){ toast("Önce hesabını aç"); return; }
   hesapAlici = null;
+  $("#hg-form").classList.remove("gizli"); $("#hg-basari").classList.add("gizli");
   $("#hg-no").value = ""; $("#hg-tutar").value = ""; $("#hg-aciklama").value = "";
   $("#hg-alici").textContent = ""; hesapMesaj("hg-mesaj", "");
   const h = hesapHesapla();
@@ -3125,10 +3150,11 @@ async function hesapGonder(){
       zaman: firebase.firestore.FieldValue.serverTimestamp()
     };
     await db.collection("transferler").doc(id).set(t);
-    hesapModalAc("hesap-gonder-modal", false);
     await hesapYukle(true); hesapKartCiz();
     toast("Gönderildi: " + hesapTL(tutar));
-    hesapDekontPaylas({id, ...t});
+    /* 0.1.6.4: dekont ARTIK kendiliğinden açılmıyor — ağ gecikmesinde tarayıcı otomatik paylaşımı engelliyordu.
+       Başarı panelinde AÇIK bir "Dekontu paylaş" düğmesi var; PDF arka planda hazırlanır, düğme basılınca anında paylaşılır. */
+    hesapBasariGoster({id, ...t});
   }catch(e){
     hesapMesaj("hg-mesaj", hesapHataMesaji(e));
   }finally{ btn.disabled = false; }
@@ -3172,6 +3198,42 @@ async function hesapDekontBlob(t){
   doc.text(doc.splitTextToSize("Bu belge, Puantaj Defterim uygulamasındaki kişisel hesap kayıt defterinin çıktısıdır. Banka veya ödeme kuruluşu dekontu değildir ve gerçek bir para transferi içermez. Tutarın fiilen ödenip ödenmediği taraflar arasındadır.", sag - sol - 20), sol + 10, y + 18);
   return doc.output("blob");
 }
+let hesapSonDekont = null;   // {t, blob} — başarı panelindeki dekont
+function hesapDekontAdi(t){ return "Dekont-" + String(t.id||"").toUpperCase().slice(0, 10) + ".pdf"; }
+function hesapDekontMetni(t){
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(t.tarih||""));
+  return "*DEKONT*\n" +
+    "Gönderen: " + t.gonderenAd + " (" + hesapNoYaz(t.gonderenNo) + ")\n" +
+    "Alıcı: " + t.aliciAd + " (" + hesapNoYaz(t.aliciNo) + ")\n" +
+    "Tutar: " + hesapTL(t.tutar) + "\n" +
+    (t.aciklama ? "Açıklama: " + t.aciklama + "\n" : "") +
+    "Tarih: " + (m ? m[3]+"."+m[2]+"."+m[1] : "—") + (t.saat ? " " + t.saat : "") + "\n" +
+    "Dekont No: " + String(t.id||"").toUpperCase().slice(0, 16) + "\n" +
+    (t.durum === "itiraz" ? "Durum: alıcı tarafından itiraz edildi\n" : "") +
+    "Puantaj Defterim uygulama içi kayıt belgesidir; banka dekontu değildir.";
+}
+/* Yazı olarak paylaşım: dosya paylaşımı desteklemeyen WebView/APK'da da çalışır */
+async function hesapMetinPaylas(baslik, metin){
+  try{ if(navigator.share){ await navigator.share({title: baslik, text: metin}); return; } }
+  catch(e){ if(e && e.name === "AbortError") return; }
+  try{ const p = window.open("https://wa.me/?text=" + encodeURIComponent(metin), "_blank"); if(p) return; }catch(e){}
+  try{ await navigator.clipboard.writeText(metin); toast("Dekont metni panoya kopyalandı 📋"); }
+  catch(e){ toast("Paylaşım açılamadı"); }
+}
+async function hesapBasariGoster(t){
+  hesapSonDekont = {t, blob: null};
+  $("#hg-form").classList.add("gizli"); $("#hg-basari").classList.remove("gizli");
+  $("#hg-basari-ozet").textContent = hesapTL(t.tutar) + " → " + t.aliciAd + " (" + hesapNoYaz(t.aliciNo) + ")";
+  const b = $("#btn-hg-dekont");
+  b.disabled = true; b.textContent = "Dekont hazırlanıyor…";
+  try{
+    const blob = await hesapDekontBlob(t);
+    if(hesapSonDekont && hesapSonDekont.t === t){ hesapSonDekont.blob = blob; b.textContent = "Dekontu paylaş (PDF)"; b.disabled = false; }
+  }catch(e){
+    b.textContent = "Dekont hazırlanamadı — yazı olarak gönder";
+    try{ hataKaydet("hesapDekont", e); }catch(_){}
+  }
+}
 async function hesapDekontPaylas(t){
   try{
     const blob = await hesapDekontBlob(t);
@@ -3196,7 +3258,8 @@ function hesapHareketCiz(){
     const itirazli = gec && x.durum === "itiraz";
     const tarih = x.tarih.split("-").reverse().join(".") + (x.saat ? " " + x.saat : "");
     let islem = "";
-    if(gec) islem += '<button type="button" class="hr-satir-dugme" data-islem="dekont" data-id="'+esc(x.id)+'">Dekont</button>';
+    if(gec) islem += '<button type="button" class="hr-satir-dugme" data-islem="dekont" data-id="'+esc(x.id)+'">Dekont (PDF)</button>' +
+                     '<button type="button" class="hr-satir-dugme" data-islem="dekont-metin" data-id="'+esc(x.id)+'">WhatsApp\'a yaz</button>';
     if(x.k === "gelen" && x.durum === "tamam") islem += '<button type="button" class="hr-satir-dugme" data-islem="itiraz" data-id="'+esc(x.id)+'" style="color:var(--gelmedi)">İtiraz et</button>';
     if(x.k === "harcama") islem += '<button type="button" class="hr-satir-dugme" data-islem="sil" data-id="'+esc(x.id)+'" style="color:var(--gelmedi)">Sil</button>';
     li.innerHTML =
@@ -3211,6 +3274,7 @@ async function hesapHareketAc(){
   if(!hesapDurum || !hesapDurum.acik){ toast("Önce hesabını aç"); return; }
   hesapHareketCiz();
   hesapModalAc("hesap-hareket-modal", true);
+  try{ kutuphaneYukle("jspdf"); pdfFontlariYukle(); }catch(e){}   /* dekont düğmesine basılınca beklemesin */
   await hesapYukle(true); hesapKartCiz(); hesapHareketCiz();
 }
 async function hesapHareketIslem(islem, id){
@@ -3219,6 +3283,9 @@ async function hesapHareketIslem(islem, id){
     if(islem === "dekont"){
       const t = hesapDurum.giden.concat(hesapDurum.gelen).find(x=> x.id === id);
       if(t) await hesapDekontPaylas(t);
+    }else if(islem === "dekont-metin"){
+      const t = hesapDurum.giden.concat(hesapDurum.gelen).find(x=> x.id === id);
+      if(t) await hesapMetinPaylas("Dekont", hesapDekontMetni(t));
     }else if(islem === "itiraz"){
       const t = hesapDurum.gelen.find(x=> x.id === id);
       if(!t) return;
@@ -10674,6 +10741,13 @@ document.addEventListener("DOMContentLoaded", ()=>{
   $("#btn-hg-sorgula").addEventListener("click", hesapNoSorgula);
   $("#btn-hg-gonder").addEventListener("click", hesapGonder);
   $("#btn-hg-iptal").addEventListener("click", ()=> hesapModalAc("hesap-gonder-modal", false));
+  $("#btn-hg-kapat").addEventListener("click", ()=> hesapModalAc("hesap-gonder-modal", false));
+  $("#btn-hg-dekont").addEventListener("click", ()=>{
+    if(hesapSonDekont && hesapSonDekont.blob) pdfDosyaPaylas(hesapSonDekont.blob, hesapDekontAdi(hesapSonDekont.t), "Dekont");
+  });
+  $("#btn-hg-dekont-metin").addEventListener("click", ()=>{
+    if(hesapSonDekont) hesapMetinPaylas("Dekont", hesapDekontMetni(hesapSonDekont.t));
+  });
   $("#hg-no").addEventListener("input", ()=>{ hesapAlici = null; $("#hg-alici").textContent = ""; });
   $("#btn-hh-kaydet").addEventListener("click", hesapHarcamaKaydet);
   $("#btn-hh-iptal").addEventListener("click", ()=> hesapModalAc("hesap-harcama-modal", false));

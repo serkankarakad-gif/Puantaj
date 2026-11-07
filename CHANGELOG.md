@@ -1,3 +1,14 @@
+## 0.1.6.4 — Hesabım: giriş zamanına göre bakiye, dekont paylaşımı (07.11.2026)
+- **`hesapHareketleriUret`:** ödeme, kaydın `olusturma` (girildiği an) zamanı ≥ hesabın `olusturma` zamanı ise sayılır; `olusturma===null` (şu an yazılıyor) sayılır; zaman damgası olmayan eski kayıtlar eskisi gibi `tarih ≥ baslangic`. Kesinti ve bilinmeyen türler yine hariç. Ödeme kayıtlarına yazma yok.
+- **Dekont:** gönderim sonrası otomatik `pdfDosyaPaylas` çağrısı kaldırıldı (kullanıcı dokunuşu süresi dolunca `navigator.share` reddediliyordu). `#hg-basari` paneli: PDF arka planda hazırlanır, `#btn-hg-dekont` basılınca anında paylaşılır; `#btn-hg-dekont-metin` dekontu yazı olarak `navigator.share`/`wa.me` ile gönderir (dosya paylaşımı olmayan WebView/APK için). Hareketler listesinde `Dekont (PDF)` ve `WhatsApp'a yaz`; hareketler açılırken PDF kütüphanesi önceden yüklenir.
+- **Değişmeyenler:** FIFO fonksiyonları, `girdiDokum`, `girdiKazanc`, şirket kartı, ödeme kaydetme, veri şeması, Firestore kuralları (0.1.6.2 ile aynı).
+
+## 0.1.6.3 — Sadeleştirme (07.11.2026)
+- `#bulut-durum` ("Hesap belgesi buluttan okundu … Detay") CSS ile gizlendi. Eleman ve `bulutDurumBaslat` işlevi aynen duruyor (Veri Kalkanı/tanı kodu elemanı okuyor); yalnızca görünmüyor. Yedekleme ayarlarına Ayarlar'dan ulaşılır.
+- **Hesabım:** `permission-denied` (kurallar yayınlanmamış) durumunda kart yuvası ve nokta göstergesi `gizli` olur; teknik mesaj ekranda yok. Bu durumda ağdan yeniden okuma 5 dakikada bir denenir (eskiden her ana ekran yenilemesinde). Kurallar eklenince zorla yenileme/yeniden giriş ile kart belirir.
+- Kullanıcıya görünen hata metinleri sadeleşti: "Hesabım şu an kullanılamıyor.", "Yoklama şu an kullanılamıyor." Teknik ayrıntı `hataKaydet` ile kayda gider.
+- **Değişmeyenler:** FIFO fonksiyonları, `girdiDokum`, `girdiKazanc`, şirket kartı hesapları, ödeme kayıtları, veri şeması.
+
 ## 0.1.6.2 — Hesabım (kişisel hesap kartı) (06.11.2026)
 - **Arayüz:** `#sirket-kart` kaydırmalı şeride (`#kart-serit`, scroll-snap) alındı; kartın kendi içeriğine/kimliklerine dokunulmadı. Yanına `#hesap-kart` ve nokta göstergesi eklendi. Üç alt sayfa: para gönder, harcama, hareketler.
 - **Veri (yeni, ayrı koleksiyonlar):** `hesapNo/{no}` (numara kayıt defteri: `{uid, ad}`), `cuzdan/{uid}` (`{hesapNo, baslangic}`), `cuzdanHarcama/{id}`, `transferler/{id}`. `kullanicilar` altında DEĞİL; sahibine özel kurallarla.
