@@ -3298,6 +3298,22 @@ html[data-hafif="1"] .pin-tus-takimi{box-shadow:none;backdrop-filter:none;-webki
 body{font-optical-sizing:auto;text-rendering:optimizeLegibility}
 .bakiye,.ozet-kut .deger,.liste .tutar,.sayac input,.sk-tutar,
 #sirket-bakiye{font-variant-numeric:tabular-nums lining-nums}
+/* 0.1.6.2 — kaydırmalı kart şeridi + Hesabım kartı */
+.kart-serit{display:flex;gap:12px;overflow-x:auto;scroll-snap-type:x mandatory;-webkit-overflow-scrolling:touch;scrollbar-width:none;overscroll-behavior-x:contain}
+.kart-serit::-webkit-scrollbar{display:none}
+.kart-yuva{flex:0 0 100%;min-width:0;scroll-snap-align:center;display:flex;flex-direction:column}
+.kart-yuva>.banka-kart{flex:1}
+.kart-noktalar{display:flex;justify-content:center;gap:6px;margin:-2px 0 12px}
+.kart-noktalar span{width:6px;height:6px;border-radius:50%;background:var(--cizgi);transition:background .2s,width .2s}
+.kart-noktalar span.aktif{background:var(--sari);width:16px;border-radius:4px}
+.banka-kart.hesabim{background:linear-gradient(120deg,#171F29 0%,#243447 55%,#1C4452 100%);margin-bottom:12px}
+#hesap-no-yazi{letter-spacing:.14em;font-variant-numeric:tabular-nums}
+.hesap-dugme{flex:1;background:rgba(255,255,255,.1);color:#fff;border-radius:12px;padding:11px 6px;font-size:13px;font-weight:600;border:0;cursor:pointer}
+.hesap-dugme:active{background:rgba(255,255,255,.18)}
+#hesap-islemler:not(.gizli){display:flex}
+.hh-kat{font-size:13px;padding:7px 12px}
+.hh-kat.secili{background:var(--sari);color:#111;border-color:var(--sari)}
+.hr-satir-dugme{font-size:12px;color:var(--sari);font-weight:600;margin-right:12px;padding:4px 0}
 /* 0.1.5.9: zorunlu gün notu eksikse vurgu */
 #gun-not.zorunlu-uyari,#toplu-not.zorunlu-uyari{border-color:var(--gelmedi)!important;box-shadow:0 0 0 2px var(--gelmedi)}
 main > section .kart p{line-height:1.58}

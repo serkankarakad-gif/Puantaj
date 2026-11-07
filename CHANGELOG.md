@@ -1,3 +1,14 @@
+## 0.1.6.2 — Hesabım (kişisel hesap kartı) (06.11.2026)
+- **Arayüz:** `#sirket-kart` kaydırmalı şeride (`#kart-serit`, scroll-snap) alındı; kartın kendi içeriğine/kimliklerine dokunulmadı. Yanına `#hesap-kart` ve nokta göstergesi eklendi. Üç alt sayfa: para gönder, harcama, hareketler.
+- **Veri (yeni, ayrı koleksiyonlar):** `hesapNo/{no}` (numara kayıt defteri: `{uid, ad}`), `cuzdan/{uid}` (`{hesapNo, baslangic}`), `cuzdanHarcama/{id}`, `transferler/{id}`. `kullanicilar` altında DEĞİL; sahibine özel kurallarla.
+- **Bakiye = kayıtlardan hesap:** `tarih ≥ baslangic` olan avans/askeriye/hakediş/diğer ödemeler (+), gelen transfer (+), giden transfer (−), harcama (−). `kesinti`, bilinmeyen türler, tarihsiz ve hesap açılışından önceki ödemeler hariç. Ödemelere yalnızca okuma (FIFO/`aitAy` etkilenmez).
+- **Transfer:** anında (`durum:'tamam'`); alıcı bir kez `itiraz` işaretleyebilir → iki tarafın bakiyesine de sayılmaz. Gönderen bakiyeden fazlasını gönderemez (istemci denetimi; kayıt defteri olduğu için kural düzeyinde bakiye yok). Soyad kısaltılır (`hesapAdKisalt`), adlar kayıt defterindekiyle aynı olmak zorunda (kural).
+- **Tutar girişi:** `hesapSayi` — "40.000" kırk bin sayılır (binlik ayracı), "40,5" ve "40.5" kırk buçuk; sıfır/eksi/3 ondalık/harf geçersiz.
+- **Dekont:** `hesapDekontBlob` (jsPDF, mevcut font/paylaşım altyapısı): dekont no, tarih-saat, taraflar, tutar, durum; "banka dekontu değildir" uyarısı.
+- **Metin güvenliği:** başkasının yazdığı ad/açıklama HTML kaçışlı gösterilir.
+- **Test notu:** kurallar bu ortamda emülatörle denenemedi; istemci kodu iki kullanıcılı bir kural modeline karşı test edildi. Yayınlamadan önce GUVENLIK-KURULUM.md Playground listesini uygula. Kaydırmalı kartın görsel hizası gerçek cihazda kontrol edilmeli.
+- **Değişmeyenler:** `odemeAyi`, `enEskiOdenmemisAy`, `tumDonemOzeti`, `girdiDokum`, `girdiKazanc`, şirket kartı hesapları, ödeme kaydetme, PIN kasası. 0.1.6.1 ve öncesi dahildir.
+
 ## 0.1.6.1 — Patron günlük yoklaması (05.11.2026)
 - **Yeni koleksiyon `yoklama/{anahtar}`** (mutabakat mantığıyla): `anahtar = uid_tarih_20 karakter rastgele` (tahmin edilemez). İşçi alanları: `sahipId, isciAd, tarih, durum, mesaiYev, mesai, not, santiye, olusturma, patronCevap:false`. Patron alanları (bir kez): `patronCevap, patronDurum (tam|yarim|gelmedi), patronAd, patronNot, patronTarih`.
 - **Kural farkı (mutabakattan sıkı):** patron cevap verdikten sonra işçi belgeyi **hiçbir alanda değiştiremez ve silemez**; cevap gelmeden yalnızca kendi alanlarını yenileyebilir. Bkz. `firestore.rules` `YOKLAMA` bloğu.

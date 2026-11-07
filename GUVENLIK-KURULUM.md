@@ -1,3 +1,28 @@
+# 0.1.6.2 — Hesabım (kişisel hesap kartı) kuralları
+
+## ZORUNLU, bir kereye mahsus
+Hesabım kartı dört yeni koleksiyon kullanır: `hesapNo`, `cuzdan`, `cuzdanHarcama`, `transferler`.
+Kurallar eklenmezse kartta şu uyarı görünür: *"Hesabım için Firebase kuralları eklenmeli"*; uygulamanın geri kalanı etkilenmez.
+
+1. Firebase Console → Firestore Database → **Rules**.
+2. Bu depodaki `firestore.rules` dosyasından **`HESABIM`** başlıklı dört bloğu (`hesapNo`, `cuzdan`, `cuzdanHarcama`, `transferler`)
+   mevcut kuralın içine, `yoklama` bloğunun altına yapıştır. Mevcut hiçbir satırı değiştirme.
+3. **Rules Playground ile yayınlamadan önce dene** (iki ayrı kullanıcıyla: A ve B):
+   - A: `create /hesapNo/12345678 {uid: A, ad: 'Ahmet Y.'}` → izin. Aynı belgeye ikinci `create`/`update` → ret. B, `{uid: A}` yazarsa → ret.
+   - A: `create /cuzdan/A {hesapNo: '12345678'}` → izin. B, `get /cuzdan/A` → **ret**.
+   - A: `create /cuzdanHarcama/x {uid: A, tutar: 100, ...}` → izin. B okuması → **ret**.
+   - A: `create /transferler/t {gonderenUid: A, aliciUid: B, gonderenNo, aliciNo, gonderenAd, aliciAd (kayıt defterindekiyle AYNI), tutar: 100, durum: 'tamam'}` → izin.
+     Adlardan biri farklıysa, `aliciUid == gonderenUid` ise, `durum != 'tamam'` ise → **ret**.
+   - Üçüncü kişi C: `get /transferler/t` → **ret**. A okuması → izin. B okuması → izin.
+   - B: `update /transferler/t {durum: 'itiraz', itirazNot: '', itirazZaman: request.time}` → izin. İkinci kez → **ret**. A'nın güncellemesi → **ret**. `delete` → **ret**.
+4. **Yayınla**. Sonra iki gerçek hesapla (kendi hesabın + bir arkadaşının) hesap aç, para gönder, dekont al, itiraz et.
+
+## Not
+Bu kartın verileri `kullanicilar` altında DEĞİL, ayrı koleksiyonlarda ve **sahibine özel** kurallarla tutulur; "giriş yapan herkes okur" kuralından etkilenmez.
+Soyad kısaltılır ("Evren K."); bir numarayı bilen yalnızca bu kısaltılmış adı görür.
+
+---
+
 # 0.1.6.1 — Patron yoklama kuralı + açık okuma uyarısı
 
 ## 1) Patron yoklama bağlantısının çalışması için (ZORUNLU, bir kereye mahsus)

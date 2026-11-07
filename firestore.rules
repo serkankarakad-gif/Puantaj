@@ -106,5 +106,65 @@ service cloud.firestore {
                     && resource.data.sahipId == request.auth.uid
                     && resource.data.patronCevap == false;
     }
+
+    // ═══ HESABIM — kişisel hesap kartı (0.1.6.2) ═══
+    // Hesap numarası kayıt defteri: numarayı bilen ADI (kısaltılmış) görür; liste KAPALI; başkasına devredilemez.
+    match /hesapNo/{no} {
+      allow get: if request.auth != null;
+      allow list: if false;
+      allow create: if request.auth != null
+                    && no.matches('[1-9][0-9]{7}')
+                    && request.resource.data.keys().hasOnly(['uid','ad'])
+                    && request.resource.data.uid == request.auth.uid
+                    && request.resource.data.ad is string
+                    && request.resource.data.ad.size() <= 40;
+      allow update, delete: if false;     // bir numara bir kez alınır, değişmez
+    }
+
+    // Kişisel hesap profili: YALNIZCA sahibi okur; yalnız kendi numarasıyla bir kez oluşturulur
+    match /cuzdan/{uid} {
+      allow read: if request.auth != null && request.auth.uid == uid;
+      allow create: if request.auth != null && request.auth.uid == uid
+                    && get(/databases/$(database)/documents/hesapNo/$(request.resource.data.hesapNo)).data.uid == request.auth.uid;
+      allow update, delete: if false;
+    }
+
+    // Harcamalar: yalnızca sahibi okur/yazar/siler
+    match /cuzdanHarcama/{id} {
+      allow read, delete: if request.auth != null && resource.data.uid == request.auth.uid;
+      allow create: if request.auth != null
+                    && request.resource.data.uid == request.auth.uid
+                    && request.resource.data.tutar is number
+                    && request.resource.data.tutar > 0
+                    && request.resource.data.tutar <= 100000000;
+      allow update: if false;
+    }
+
+    // Transferler: yalnızca gönderen ve alıcı okur. Gönderen oluşturur (adlar kayıt defteriyle AYNI olmak zorunda),
+    // alıcı yalnızca BİR KEZ "itiraz" işaretleyebilir. Silinemez, başka alan değiştirilemez.
+    match /transferler/{id} {
+      allow read: if request.auth != null
+                  && (resource.data.gonderenUid == request.auth.uid || resource.data.aliciUid == request.auth.uid);
+      allow create: if request.auth != null
+        && request.resource.data.gonderenUid == request.auth.uid
+        && request.resource.data.aliciUid != request.auth.uid
+        && request.resource.data.durum == 'tamam'
+        && request.resource.data.tutar is number
+        && request.resource.data.tutar > 0
+        && request.resource.data.tutar <= 10000000
+        && get(/databases/$(database)/documents/hesapNo/$(request.resource.data.gonderenNo)).data.uid == request.auth.uid
+        && get(/databases/$(database)/documents/hesapNo/$(request.resource.data.gonderenNo)).data.ad == request.resource.data.gonderenAd
+        && get(/databases/$(database)/documents/hesapNo/$(request.resource.data.aliciNo)).data.uid == request.resource.data.aliciUid
+        && get(/databases/$(database)/documents/hesapNo/$(request.resource.data.aliciNo)).data.ad == request.resource.data.aliciAd;
+      allow update: if request.auth != null
+        && resource.data.aliciUid == request.auth.uid
+        && resource.data.durum == 'tamam'
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['durum','itirazNot','itirazZaman'])
+        && request.resource.data.durum == 'itiraz'
+        && request.resource.data.itirazNot is string
+        && request.resource.data.itirazNot.size() <= 200
+        && request.resource.data.itirazZaman == request.time;
+      allow delete: if false;
+    }
   }
 }
